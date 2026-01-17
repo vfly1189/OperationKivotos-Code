@@ -4,10 +4,11 @@ public class Define
 {
     public enum Scene
     {
-        Unknown,
-        Login,
-        Lobby,
-        Game,
+        Unknown,        //Default
+        Start,          //시작화면
+        Loading,        //로딩 전용 씬
+        Select,         //캐릭터 선택
+        Game,           //인게임
     }
 
     public enum Sound

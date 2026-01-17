@@ -7,8 +7,11 @@ public class Managers : MonoBehaviour
 
     #region Core Manager
     InputManager _input = new InputManager();
-
+    ResourceManager _resource = new ResourceManager();
+    SceneManagerEx _scene = new SceneManagerEx();
     public static InputManager Input { get { return Instance._input; } }
+    public static ResourceManager Resource { get { return Instance._resource; } }
+    public static SceneManagerEx Scene { get { return Instance._scene; } }
     #endregion
 
     void Start()
@@ -43,8 +46,18 @@ public class Managers : MonoBehaviour
         }
     }
 
+
+    // 외부(ResourceManager 등)에서 코루틴이 필요할 때 매니저에게 부탁하는 함수.
+    public static void Start_Coroutine(System.Collections.IEnumerator routine)
+    {
+        // 내부에서는 Instance에 접근 가능하므로 실행 가능
+        Instance.StartCoroutine(routine);
+    }
+
+
     public static void Clear()
     {
         Input.Clear();
+        Scene.Clear();
     }
 }
