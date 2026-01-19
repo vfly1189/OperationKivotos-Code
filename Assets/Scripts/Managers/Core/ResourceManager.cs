@@ -107,5 +107,19 @@ public class ResourceManager
         _resources.Clear();
         Resources.UnloadUnusedAssets();
     }
+    public void Destroy(GameObject go)
+    {
+        if (go == null)
+            return;
 
+        ////만약에 풀링이 필요한 아이라면 -> 풀링 매니저한테 위탁
+        //Poolable poolable = go.GetComponent<Poolable>();
+        //if (poolable != null)
+        //{
+        //    Managers.Pool.Push(poolable);
+        //    return;
+        //}
+
+        Object.Destroy(go);
+    }
 }

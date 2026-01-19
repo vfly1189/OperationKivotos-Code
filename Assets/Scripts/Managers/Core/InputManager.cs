@@ -1,42 +1,78 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class InputManager
 {
-    public Action KeyAction = null;
-    public Action<Define.MouseEvent> MouseAction = null;
+    // 고정 키 (자주 사용, 파라미터 있음)
+    public event Action OnEscapePressed;        //ESC
+    public event Action<Vector2> OnMoveInput;   //이동 <- 나중에 바꿀수도 있음
+    public event Action<Define.MouseEvent> Mouse;
 
-    bool _pressed = false;
+    // 동적 키 (리맵핑 가능)
+    private Dictionary<string, Key> _keyMap = new Dictionary<string, Key>()
+    {
+        { "Interact", Key.E },
+        { "Inventory", Key.I },
+        { "Map", Key.M }
+    };
+
+    private Dictionary<string, Action> _actionMap = new Dictionary<string, Action>();
 
     public void OnUpdate()
     {
+        // 고정 키 (최적화)
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+            OnEscapePressed?.Invoke();
 
-
-        if (Keyboard.current.anyKey.isPressed && KeyAction != null)
-            KeyAction.Invoke();
-
-        if (MouseAction != null)
+        // 동적 키 (유연성)
+        foreach (var pair in _actionMap)
         {
-            if (Mouse.current.rightButton.isPressed)
+            if (_keyMap.TryGetValue(pair.Key, out Key key))
             {
-                MouseAction.Invoke(Define.MouseEvent.Press);
-                _pressed = true;
-            }
-            else
-            {
-                if (_pressed)
+                if (Keyboard.current[key].wasPressedThisFrame)
                 {
-                    MouseAction.Invoke(Define.MouseEvent.Click);
-                    _pressed = false;
+                    pair.Value?.Invoke();
                 }
             }
         }
     }
 
+    // 동적 키 등록 (이름 기반)
+    public void RegisterAction(string actionName, Action callback)
+    {
+        if (_actionMap.ContainsKey(actionName))
+            _actionMap[actionName] += callback;
+        else
+            _actionMap[actionName] = callback;
+    }
+
+    public void UnregisterAction(string actionName, Action callback)
+    {
+        if (_actionMap.ContainsKey(actionName))
+            _actionMap[actionName] -= callback;
+    }
+
+    // 키 리맵핑
+    public void RemapKey(string actionName, Key newKey)
+    {
+        if (_keyMap.ContainsKey(actionName))
+            _keyMap[actionName] = newKey;
+    }
+
+    public Key GetKey(string actionName)
+    {
+        return _keyMap.TryGetValue(actionName, out Key key) ? key : Key.None;
+    }
+
     public void Clear()
     {
-        KeyAction = null;
-        MouseAction = null;
+        _keyMap.Clear();
+        _actionMap.Clear();
+
+        OnEscapePressed = null;        //ESC
+        OnMoveInput = null;   //이동 <- 나중에 바꿀수도 있음
+        Mouse = null;
     }
 }

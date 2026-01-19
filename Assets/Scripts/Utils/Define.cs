@@ -15,6 +15,7 @@ public class Define
     {
         Bgm,
         Effect,
+        Narration,
         MaxCount,
     }
 

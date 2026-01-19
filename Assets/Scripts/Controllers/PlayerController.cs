@@ -9,8 +9,8 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        Managers.Input.MouseAction -= OnMouseClicked;
-        Managers.Input.MouseAction += OnMouseClicked;
+        Managers.Input.Mouse -= OnMouseClicked;
+        Managers.Input.Mouse += OnMouseClicked;
     }
 
 

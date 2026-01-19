@@ -1,86 +1,73 @@
 using System.Collections;
 using System.IO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class LoadingSceneController : BaseScene
 {
-    [SerializeField] Slider _progressBar; // 로딩바 UI 연결
-    [SerializeField] Text _loadingText;   // "Loading..." 텍스트 연결
+    [Header("Random Images")]
+    [SerializeField] 
+    private Sprite[] _randomSprites; // 10개 이미지 배열
+    [SerializeField] 
+    private Image _randomImage;
 
-    protected override void Init()
+    [Header("Loading Bar")]
+    [SerializeField] 
+    private Image _barFill;
+
+    [Header("Loading Text")]
+    [SerializeField] 
+    private TextMeshProUGUI _loadingText;
+    [SerializeField] 
+    private float _dotAnimSpeed = 0.5f;
+
+    private void Start()
     {
-        base.Init();
-        _sceneType = Define.Scene.Loading;
+        // 랜덤 이미지 설정
+        SetRandomImage();
 
-        // 다음 씬 로딩 시작
-        StartCoroutine(LoadSceneAsync());
+        // 로딩바 초기화
+        _barFill.fillAmount = 0f;
+
+        // 점 애니메이션 시작
+        StartCoroutine(AnimateLoadingDots());
     }
 
-    IEnumerator LoadSceneAsync()
+    private void SetRandomImage()
     {
-        // 1. 먼저 이전 씬의 잔재를 확실히 비워줍니다. (GC 호출 포함)
-        yield return null;
-        Resources.UnloadUnusedAssets(); // 사용 안하는 에셋 메모리 해제
-        System.GC.Collect();            // 가비지 컬렉터 강제 호출
-
-        // 2. Managers에 저장해둔 다음 씬 이름을 가져옴
-        string nextScene = Managers.Scene.NextSceneName;
-
-        if (string.IsNullOrEmpty(nextScene))
+        if (_randomSprites.Length == 0)
         {
-            Debug.LogError("Next Scene Name is Empty!");
-            yield break;
+            Debug.LogError("Random sprites not assigned!");
+            return;
         }
 
-        //여기서 이제 비동기로 리소스들 불러오기//
-        
-        //////////////////////////////////////////
+        int randomIndex = Random.Range(0, _randomSprites.Length);
+        _randomImage.sprite = _randomSprites[randomIndex];
+    }
 
+    // 외부에서 진행률 업데이트
+    public void UpdateProgress(float progress)
+    {
+        _barFill.fillAmount = Mathf.Clamp01(progress);
+    }
 
+    private IEnumerator AnimateLoadingDots()
+    {
+        string baseText = "Now Loading";
+        int dotCount = 0;
 
-        // 3. 비동기 로딩 시작
-        AsyncOperation op = SceneManager.LoadSceneAsync(nextScene);
-        op.allowSceneActivation = false; // 로딩 끝나도 바로 넘어가지 않게 막음 (90%에서 멈춤)
-
-        float timer = 0.0f;
-
-        // 4. 로딩 진행률 연출 (너무 빨리 로딩되면 어색하니까 가짜 로딩 시간도 섞음)
-        while (!op.isDone)
+        while (true)
         {
-            yield return null;
-
-            timer += Time.deltaTime;
-
-            // op.progress는 최대 0.9까지만 오름
-            if (op.progress < 0.9f)
-            {
-                _progressBar.value = Mathf.Lerp(_progressBar.value, op.progress, timer);
-                if (_progressBar.value >= op.progress)
-                    timer = 0f;
-            }
-            else
-            {
-                // 로딩은 끝났는데(0.9), 바가 꽉 찰 때까지 조금 더 기다려줌 (연출)
-                _progressBar.value = Mathf.Lerp(_progressBar.value, 1f, timer);
-
-                if (_progressBar.value >= 0.99f)
-                {
-                    _loadingText.text = "Touch to Start"; // 혹은 자동 넘김
-
-                    // 여기서는 1초 뒤 자동 넘김
-                    yield return new WaitForSeconds(1.0f);
-
-                    op.allowSceneActivation = true; // 씬 전환 허용
-                    yield break;
-                }
-            }
+            dotCount = (dotCount + 1) % 4; // 0, 1, 2, 3 반복
+            _loadingText.text = baseText + new string('.', dotCount);
+            yield return new WaitForSeconds(_dotAnimSpeed);
         }
     }
 
     public override void Clear()
     {
-        // 로딩 씬에서 특별히 지울 건 없음
+        
     }
 }
