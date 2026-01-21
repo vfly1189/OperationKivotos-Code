@@ -24,7 +24,7 @@ public class StartScene : BaseScene
         CreateBackgroundSlideShow();
         yield return null; // 1프레임 대기 (생성 완료 보장)
 
-        // 2. TabToStart 생성
+        // 2. TapToStart 생성
         CreateTapToStart();
         yield return null;
 
@@ -57,9 +57,10 @@ public class StartScene : BaseScene
 
     void Update()
     {
-        if (Keyboard.current.qKey.isPressed)
+        if (Keyboard.current.anyKey.isPressed || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame))
         {
-            Managers.Scene.LoadScene(Define.Scene.Select);
+            Managers.SceneEx.LoadScene(Define.Scene.Select);
+            Managers.Sound.StopBgm();
         }
     }
 

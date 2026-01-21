@@ -13,7 +13,7 @@ public class Managers : MonoBehaviour
     UIManager _ui = new UIManager();
     public static InputManager Input { get { return Instance._input; } }
     public static ResourceManager Resource { get { return Instance._resource; } }
-    public static SceneManagerEx Scene { get { return Instance._scene; } }
+    public static SceneManagerEx SceneEx { get { return Instance._scene; } }
     public static SoundManager Sound { get { return Instance._sound; } }    
     public static UIManager UI { get { return Instance._ui; } }
     #endregion
@@ -62,6 +62,6 @@ public class Managers : MonoBehaviour
     public static void Clear()
     {
         Input.Clear();
-        Scene.Clear();
+        SceneEx.Clear();
     }
 }

@@ -8,7 +8,10 @@ public class InputManager
     // 고정 키 (자주 사용, 파라미터 있음)
     public event Action OnEscapePressed;        //ESC
     public event Action<Vector2> OnMoveInput;   //이동 <- 나중에 바꿀수도 있음
-    public event Action<Define.MouseEvent> Mouse;
+    public event Action<Define.MouseEvent> MouseAction;
+
+    bool _pressed = false;
+    float _pressedTime = 0;
 
     // 동적 키 (리맵핑 가능)
     private Dictionary<string, Key> _keyMap = new Dictionary<string, Key>()
@@ -34,6 +37,23 @@ public class InputManager
                 if (Keyboard.current[key].wasPressedThisFrame)
                 {
                     pair.Value?.Invoke();
+                }
+            }
+        }
+
+        if (MouseAction != null)
+        {
+            if (Mouse.current.leftButton.isPressed)
+            {
+                MouseAction.Invoke(Define.MouseEvent.Press);
+                _pressed = true;
+            }
+            else
+            {
+                if (_pressed)
+                {
+                    MouseAction.Invoke(Define.MouseEvent.Click);
+                    _pressed = false;
                 }
             }
         }
@@ -73,6 +93,6 @@ public class InputManager
 
         OnEscapePressed = null;        //ESC
         OnMoveInput = null;   //이동 <- 나중에 바꿀수도 있음
-        Mouse = null;
+        MouseAction = null;
     }
 }

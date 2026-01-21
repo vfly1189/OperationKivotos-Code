@@ -4,13 +4,13 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]        //속성 중 하나. 툴 상에 노출되게 해줌.
-    float _speed = 10.0f;
+    float _speed = 5.0f;
     Vector3 _destPos;
 
     void Start()
     {
-        Managers.Input.Mouse -= OnMouseClicked;
-        Managers.Input.Mouse += OnMouseClicked;
+        Managers.Input.MouseAction -= OnMouseClicked;
+        Managers.Input.MouseAction += OnMouseClicked;
     }
 
 
@@ -33,6 +33,7 @@ public class PlayerController : MonoBehaviour
 
         if (dir.magnitude < 0.1f)
         {
+            Debug.Log("Idle.....");
             _state = PlayerState.Idle;
         }
         else

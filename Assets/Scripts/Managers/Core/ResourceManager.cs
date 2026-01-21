@@ -27,6 +27,8 @@ public class ResourceManager
         // 2. 없으면 리소스 폴더에서 로드
         T loadResult = Resources.Load<T>(path);
 
+        //Debug.Log($"리소스 로드 경로 : {path}");
+
         // 3. 찾았으면 캐시에 저장
         if (loadResult != null)
         {
