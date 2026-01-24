@@ -26,9 +26,6 @@ public class SelectScene : BaseScene
         "Images/School_Icon/School_Icon_Millennium"
     };
 
-    private Dictionary<string, UnityEngine.Object> _loadedResources = new Dictionary<string, UnityEngine.Object>();
-
-    public bool IsResourcesReady { get; private set; }
     public GameObject modelCamera;
 
     protected override void Init()
@@ -38,18 +35,6 @@ public class SelectScene : BaseScene
 
         Debug.Log("SelectScene Init 호출");
 
-        //SceneManagerEx에서 리소스 가져오기
-        if (Managers.SceneEx.LoadedResources != null)
-        {
-            Debug.Log($"리소스 {Managers.SceneEx.LoadedResources.Length}개 받음");
-            SetLoadedResources(Managers.SceneEx.LoadedResources);
-            Managers.SceneEx.LoadedResources = null; // 가져갔으니 Clear
-        }
-        else
-        {
-            Debug.LogWarning("SelectScene: SceneManagerEx에 저장된 리소스 없음");
-        }
-
         modelCamera = Managers.Resource.Instantiate("UI/SelectScene/ModelCamera");
         modelCamera.name = "@modelCamera";
 
@@ -57,57 +42,19 @@ public class SelectScene : BaseScene
         bgSlideshow.name = "@SelectSceneCanvas";
     }
 
-    //외부에서 직접 호출
-    public void SetLoadedResources(UnityEngine.Object[] resources)
+    // BaseScene에서 호출할 리소스 경로 반환
+    protected override string[] GetRequiredResources()
     {
-        if (resources == null)
-        {
-            Debug.LogError("SelectScene: Resources array is null!");
-            return;
-        }
-
-        for (int i = 0; i < REQUIRED_RESOURCES.Length; i++)
-        {
-            if (i < resources.Length)
-            {
-                string fileName = Path.GetFileNameWithoutExtension(REQUIRED_RESOURCES[i]);
-
-                Debug.Log($"파일 이름 : {fileName}");
-
-                // "_Select" 문자열이 있다면 제거
-                if (fileName.EndsWith("_Select"))
-                {
-                    fileName = fileName.Replace("_Select", "");
-                }
-
-                if (_loadedResources.ContainsKey(fileName))
-                {
-                    Debug.LogWarning($"Duplicate resource name: {fileName} at {REQUIRED_RESOURCES[i]}");
-                    continue;
-                }
-
-                _loadedResources[fileName] = resources[i];
-            }
-        }
-
-        IsResourcesReady = true;
-        Debug.Log($"SelectScene: {_loadedResources.Count} resources loaded");
-    }
-
-    public T GetResource<T>(string resourceName) where T : UnityEngine.Object
-    {
-        if (_loadedResources.TryGetValue(resourceName, out UnityEngine.Object resource))
-        {
-            return resource as T;
-        }
-
-        Debug.LogError($"Resource not found: {resourceName}");
-        return null;
+        return REQUIRED_RESOURCES;
     }
 
     public override void Clear()
     {
-        _loadedResources.Clear();
-        IsResourcesReady = false;
+        base.Clear();
+        // SelectScene 전용 정리 로직 추가 가능
+        if (modelCamera != null)
+        {
+            Destroy(modelCamera);
+        }
     }
 }

@@ -66,6 +66,7 @@ public class StartScene : BaseScene
 
     public override void Clear()
     {
+        base.Clear();
         Managers.Input.OnEscapePressed -= HandleEscape;
         Managers.Sound.Stop(Define.Sound.Bgm);
         Debug.Log("StartScene Clear");

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -21,5 +23,22 @@ public abstract class BaseScene : MonoBehaviour
         }
     }
 
-    public abstract void Clear(); // 씬이 바뀔 때 날려야 할 것들 정리
+    // 각 씬마다 필요한 리소스 경로를 반환 (오버라이드 가능)
+    protected virtual string[] GetRequiredResources()
+    {
+        return null;
+    }
+
+    // 리소스 가져오기
+    public T GetResource<T>(string path) where T : UnityEngine.Object
+    {
+        // Managers.Resource는 캐시에 있으면 바로 주고, 없으면 로드함
+        // 이미 LoadingScene에서 프리로드 했으므로 캐시에서 즉시 리턴될 것임
+        return Managers.Resource.Load<T>(path);
+    }
+
+    public virtual void Clear()
+    {
+        Managers.Resource.Clear();
+    }
 }

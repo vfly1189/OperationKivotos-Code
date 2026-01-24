@@ -17,17 +17,35 @@ public class InputManager
     private Dictionary<string, Key> _keyMap = new Dictionary<string, Key>()
     {
         { "Interact", Key.E },
-        { "Inventory", Key.I },
-        { "Map", Key.M }
+        { "Q_Skill", Key.Q },
+        { "Swap_1", Key.Digit1 },
+        { "Swap_2", Key.Digit2 },
+        { "Swap_3", Key.Digit3 },
+        { "Swap_4", Key.Digit4 }
     };
 
     private Dictionary<string, Action> _actionMap = new Dictionary<string, Action>();
 
     public void OnUpdate()
     {
+        if (Keyboard.current == null) return; // 키보드 연결 체크
+
         // 고정 키 (최적화)
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
             OnEscapePressed?.Invoke();
+
+        // 2. 이동 입력 (WASD) 체크 -> BasePlayerController로 전송
+        if (OnMoveInput != null)
+        {
+            Vector2 moveDir = Vector2.zero;
+            if (Keyboard.current.wKey.isPressed) moveDir.y += 1;
+            if (Keyboard.current.sKey.isPressed) moveDir.y -= 1;
+            if (Keyboard.current.aKey.isPressed) moveDir.x -= 1;
+            if (Keyboard.current.dKey.isPressed) moveDir.x += 1;
+
+            // 입력이 없어도 (0,0)을 보내야 멈출 수 있음
+            OnMoveInput.Invoke(moveDir.normalized);
+        }
 
         // 동적 키 (유연성)
         foreach (var pair in _actionMap)
@@ -88,11 +106,11 @@ public class InputManager
 
     public void Clear()
     {
-        _keyMap.Clear();
+        //_keyMap.Clear();
         _actionMap.Clear();
 
         OnEscapePressed = null;        //ESC
-        OnMoveInput = null;   //이동 <- 나중에 바꿀수도 있음
+        OnMoveInput = null;            //이동
         MouseAction = null;
     }
 }

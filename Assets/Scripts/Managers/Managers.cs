@@ -6,12 +6,17 @@ public class Managers : MonoBehaviour
     static Managers Instance { get { Init(); return s_instance; } } // 유일성 보장된다.
 
     #region Core Manager
+    GameManager _game = new GameManager();
     InputManager _input = new InputManager();
+    //PartyManager _party = new PartyManager();
     ResourceManager _resource = new ResourceManager();
     SceneManagerEx _scene = new SceneManagerEx();
     SoundManager _sound = new SoundManager();
     UIManager _ui = new UIManager();
+
+    public static GameManager Game { get { return Instance._game; } }
     public static InputManager Input { get { return Instance._input; } }
+    //public static PartyManager Party { get { return Instance._party; } }
     public static ResourceManager Resource { get { return Instance._resource; } }
     public static SceneManagerEx SceneEx { get { return Instance._scene; } }
     public static SoundManager Sound { get { return Instance._sound; } }    

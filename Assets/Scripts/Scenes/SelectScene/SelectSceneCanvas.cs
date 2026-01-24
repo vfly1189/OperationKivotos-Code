@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
@@ -72,13 +73,6 @@ public class SelectSceneCanvas : MonoBehaviour
             return;
         }
 
-        //리소스 준비 확인
-        if (!_selectScene.IsResourcesReady)
-        {
-            Debug.LogError("SelectSceneCanvas: Resources not ready!");
-            return;
-        }
-
         InitializeUI();
         SetupButtonListeners();
         LoadAndInstantiateModels();
@@ -90,8 +84,6 @@ public class SelectSceneCanvas : MonoBehaviour
     {
         
     }
-
-
     void InitializeUI()
     {
         if (_backgroundImage != null && _backgroundSprite != null)
@@ -123,7 +115,38 @@ public class SelectSceneCanvas : MonoBehaviour
         );
 
         _gameStartButton.onClick.AddListener(
-            () => Managers.SceneEx.LoadScene(Define.Scene.Game)
+            () =>
+            {
+                // 1. 선택된 학교 인덱스 저장 (GameManager에 저장)
+                Managers.Game._selectedSchoolIndex = _currentSelectedSchool;
+
+                // 2. 로딩할 리소스 목록 만들기 (짐 싸기)
+                List<string> resourcesToLoad = new List<string>();
+
+                // A. GameScene의 기본 필수 리소스 (맵 등)
+                resourcesToLoad.AddRange(GameScene.REQUIRED_RESOURCES);
+
+                // B. 선택된 학교의 캐릭터들 리소스 추가
+                string schoolName = _schoolNames[_currentSelectedSchool];
+                string[] students = _characterNames[_currentSelectedSchool];
+
+                foreach (string student in students)
+                {
+                    // ★ 중요: ResourceManager.Instantiate가 "Prefabs/"를 붙이므로
+                    // 여기서도 "Prefabs/"를 붙여서 로딩해야 키(Key)가 일치함.
+                    // 예: "Prefabs/Characters/Abydos/Hoshino"
+
+                    // (주의: SelectScene용 모델은 _Select가 붙었지만, 게임용 모델은 _Select가 없는지, 
+                    //  아니면 경로가 다른지 확인 필요. 여기선 "_Select" 없는 버전이라고 가정)
+                    string path = $"Prefabs/Characters/{schoolName}/{student}_InGame";
+                    resourcesToLoad.Add(path);
+                }
+
+                // 3. 리소스 목록을 들고 GameScene으로 출발!
+                Managers.SceneEx.LoadScene(Define.Scene.Game, resourcesToLoad.ToArray());
+
+                Managers.Sound.StopAll();
+            }
         );
     }
 
@@ -143,53 +166,41 @@ public class SelectSceneCanvas : MonoBehaviour
         _gehennaModels = new GameObject[4];
         _millenniumModels = new GameObject[4];
 
-        //Abydos - SelectScene에서 리소스 가져오기
-        for (int i = 0; i < 4; i++)
-        {
-            GameObject prefab = _selectScene.GetResource<GameObject>(_characterNames[0][i]);
-
-            if (prefab == null)
-            {
-                Debug.LogError($"Abydos {_characterNames[0][i]} 프리팹을 찾을 수 없습니다!");
-                continue;
-            }
-
-            _abydosModels[i] = Instantiate(prefab, spawnPoints[i].position, new Quaternion(0,0,0,0));
-            _abydosModels[i].SetActive(false);
-        }
-
-        //Gehenna - SelectScene에서 리소스 가져오기
-        for (int i = 0; i < 4; i++)
-        {
-            GameObject prefab = _selectScene.GetResource<GameObject>(_characterNames[1][i]);
-
-            if (prefab == null)
-            {
-                Debug.LogError($"Gehenna {_characterNames[1][i]} 프리팹을 찾을 수 없습니다!");
-                continue;
-            }
-
-            _gehennaModels[i] = Instantiate(prefab, spawnPoints[i].position, new Quaternion(0, 0, 0, 0));
-            _gehennaModels[i].SetActive(false);
-        }
-
-        //Millennium - SelectScene에서 리소스 가져오기
-        for (int i = 0; i < 4; i++)
-        {
-            GameObject prefab = _selectScene.GetResource<GameObject>(_characterNames[2][i]);
-
-            if (prefab == null)
-            {
-                Debug.LogError($"Millennium {_characterNames[2][i]} 프리팹을 찾을 수 없습니다!");
-                continue;
-            }
-
-            _millenniumModels[i] = Instantiate(prefab, spawnPoints[i].position, new Quaternion(0, 0, 0, 0));
-            _millenniumModels[i].SetActive(false);
-        }
+        LoadSchoolModels(0, "Abydos", _abydosModels, spawnPoints);
+        LoadSchoolModels(1, "Gehenna", _gehennaModels, spawnPoints);
+        LoadSchoolModels(2, "Millennium", _millenniumModels, spawnPoints);
 
         Debug.Log("모든 캐릭터 모델 Instantiate 완료");
     }
+
+    void LoadSchoolModels(int schoolIdx, string schoolName, GameObject[] modelArray, Transform[] spawnPoints)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            string charName = _characterNames[schoolIdx][i];
+
+            // ★ 수정 포인트: 경로 맞춰주기
+            // SelectScene.REQUIRED_RESOURCES에 적힌 경로는 "Prefabs/Characters/.../_Select" 였음.
+            // Managers.Resource.Instantiate는 "Prefabs/"를 자동으로 붙여주므로, 나머지 경로만 전달.
+            string path = $"Characters/{schoolName}/{charName}_Select";
+
+            // Managers.Resource.Instantiate 사용 (캐시에서 즉시 가져옴)
+            GameObject go = Managers.Resource.Instantiate(path, spawnPoints[i]);
+
+            if (go != null)
+            {
+                go.transform.localPosition = Vector3.zero;
+                go.transform.localRotation = Quaternion.identity;
+                go.SetActive(false);
+                modelArray[i] = go;
+            }
+            else
+            {
+                Debug.LogError($"모델 로드 실패: {path}");
+            }
+        }
+    }
+
 
     void SelectSchool(int schoolIndex)
     {
@@ -210,8 +221,10 @@ public class SelectSceneCanvas : MonoBehaviour
         PlaySchoolTheme(schoolIndex);
 
         // 다음 씬에서 어떤거 불러왔는지 알 수 잇음
-        PlayerPrefs.SetInt("SelectedSchool", schoolIndex);
-        PlayerPrefs.Save();
+        //PlayerPrefs.SetInt("SelectedSchool", schoolIndex);
+        //PlayerPrefs.Save();
+
+        Managers.Game._selectedSchoolIndex = schoolIndex;
     }
 
     void ActivateSchoolModels(int schoolIndex)
@@ -327,15 +340,21 @@ public class SelectSceneCanvas : MonoBehaviour
     }
 
     void ChangeSchoolIcon(int schoolIndex)
-    {
-        Sprite schoolIcon = _selectScene.GetResource<Sprite>("School_Icon_" + _schoolNames[schoolIndex]);
-        _schoolIcon.sprite = schoolIcon;
+    { 
+        // 경로: "Images/School_Icon/School_Icon_Abydos"
+        // Managers.Resource.Load<Sprite> 사용 (이미 캐시됨)
+        string path = $"Images/School_Icon/School_Icon_{_schoolNames[schoolIndex]}";
+        Sprite icon = Managers.Resource.Load<Sprite>(path);
+
+        if (icon != null) _schoolIcon.sprite = icon;
     }
 
     void ChangeSchoolNameImageFont(int schoolIndex)
     {
-        Sprite schoolNameImageFont = _selectScene.GetResource<Sprite>(_schoolNames[schoolIndex] + "_ImageFont");
-        _schoolName.sprite = schoolNameImageFont;
+        string path = $"Images/ImageFont/{_schoolNames[schoolIndex]}_ImageFont";
+        Sprite font = Managers.Resource.Load<Sprite>(path);
+
+        if (font != null) _schoolName.sprite = font;
     }
 
 

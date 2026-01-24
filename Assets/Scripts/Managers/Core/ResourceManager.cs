@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -22,7 +23,9 @@ public class ResourceManager
     {
         // 1. 캐시에 있는지 확인
         if (_resources.TryGetValue(path, out Object resource))
+        {
             return resource as T;
+        }
 
         // 2. 없으면 리소스 폴더에서 로드
         T loadResult = Resources.Load<T>(path);
@@ -42,45 +45,108 @@ public class ResourceManager
         return loadResult;
     }
 
-    // [추가] 비동기 로드 (로딩씬에서 사용)
-    // path: 경로, callback: 로딩 끝났을 때 실행할 함수
-    public void LoadAsync<T>(string path, Action<T> callback = null) where T : Object
-    {
-        // 1. 이미 캐시에 있다면 바로 콜백 실행
-        if (_resources.TryGetValue(path, out Object resource))
+    //// [추가] 비동기 로드 (로딩씬에서 사용)
+    //// path: 경로, callback: 로딩 끝났을 때 실행할 함수
+    //public void LoadAsync<T>(string path, Action<T> callback = null) where T : Object
+    //{
+    //    // 1. 이미 캐시에 있다면 바로 콜백 실행
+    //    if (_resources.TryGetValue(path, out Object resource))
+    //    {
+    //        callback?.Invoke(resource as T);
+    //        return;
+    //    }
+
+    //    // 2. 코루틴을 돌려야 하므로 Managers(MonoBehaviour)에게 위임해야 함
+    //    Managers.Start_Coroutine(CoLoadAsync(path, callback));
+    //}
+
+    //// 실제 비동기 로딩 코루틴
+    //System.Collections.IEnumerator CoLoadAsync<T>(string path, Action<T> callback) where T : Object
+    //{
+    //    ResourceRequest request = Resources.LoadAsync<T>(path);
+
+    //    // 로딩이 끝날때까지 대기
+    //    while (!request.isDone)
+    //    {
+    //        yield return null;
+    //    }
+
+    //    if (request.asset != null)
+    //    {
+    //        // 캐시에 없다면 추가 (중복 체크)
+    //        if (!_resources.ContainsKey(path))
+    //            _resources.Add(path, request.asset);
+
+    //        callback?.Invoke(request.asset as T);
+    //    }
+    //    else
+    //    {
+    //        Debug.LogError($"Failed to Load Async: {path}");
+    //        callback?.Invoke(null);
+    //    }
+    //}
+
+    // [신규] 여러 리소스를 한 번에 로딩 (LoadingScene 전용)
+    // progressCallback: 진행률(0.0 ~ 1.0)과 현재 로딩중인 파일명을 알려주는 콜백
+    public IEnumerator CoLoadAllAsync(string[] paths, Action<float, string> progressCallback, Action onComplete)
+    {     
+        if (paths == null || paths.Length == 0)
         {
-            callback?.Invoke(resource as T);
-            return;
+            onComplete?.Invoke();
+            yield break;
         }
 
-        // 2. 코루틴을 돌려야 하므로 Managers(MonoBehaviour)에게 위임해야 함
-        Managers.Start_Coroutine(CoLoadAsync(path, callback));
-    }
+        int totalCount = paths.Length;
+        int currentCount = 0;
 
-    // 실제 비동기 로딩 코루틴
-    System.Collections.IEnumerator CoLoadAsync<T>(string path, Action<T> callback) where T : Object
-    {
-        ResourceRequest request = Resources.LoadAsync<T>(path);
-
-        // 로딩이 끝날때까지 대기
-        while (!request.isDone)
+        foreach (string path in paths)
         {
-            yield return null;
-        }
+            //Debug.Log($"로딩할 파일 경로 : {path}");
 
-        if (request.asset != null)
-        {
-            // 캐시에 없다면 추가 (중복 체크)
-            if (!_resources.ContainsKey(path))
+            // 이미 캐시에 있다면 스킵하지만, 카운트는 올려야 진행률이 맞음
+            if (_resources.ContainsKey(path))
+            {
+                currentCount++;
+                progressCallback?.Invoke((float)currentCount / totalCount, path);
+                yield return null;
+                continue;
+            }
+
+            // 비동기 로드 시작
+            ResourceRequest request; // ★ 경로에 "Images/"나 "Sprite/" 등이 포함되어 있으면 Sprite로 강제 로딩 시도
+            if (path.Contains("Images/") || path.Contains("Icon/") || path.Contains("Emblem/"))
+            {
+                request = Resources.LoadAsync<Sprite>(path);
+            }
+            else if (path.Contains("Prefabs/"))
+            {
+                request = Resources.LoadAsync<GameObject>(path);
+            }
+            else
+            {
+                request = Resources.LoadAsync(path); // 기본
+            }
+
+            while (!request.isDone) yield return null;
+
+            if (request.asset != null)
+            {
+                //Debug.Log($"로딩된 파일 경로 : {path}");
+                // 성공 시 캐시에 등록
                 _resources.Add(path, request.asset);
+                // Debug.Log($"[Preload] Loaded: {path}");
+            }
+            else
+            {
+                Debug.LogError($"[Preload] Failed: {path}");
+            }
 
-            callback?.Invoke(request.asset as T);
+            currentCount++;
+            progressCallback?.Invoke((float)currentCount / totalCount, path);
         }
-        else
-        {
-            Debug.LogError($"Failed to Load Async: {path}");
-            callback?.Invoke(null);
-        }
+
+        // 모든 로딩 완료
+        onComplete?.Invoke();
     }
 
     public GameObject Instantiate(string path, Transform parent = null)
