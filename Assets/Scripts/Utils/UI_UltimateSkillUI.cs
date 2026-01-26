@@ -23,6 +23,7 @@ public class UI_UltimateSkillUI : MonoBehaviour
         // 에너지가 꽉 차지 않았을 때만 게이지 갱신
         currentEnergy += Time.deltaTime * 10.0f;
         energyFillImage.fillAmount = currentEnergy / maxEnergy;
+        //Debug.Log($"에너지비율 : {energyFillImage.fillAmount}");
 
         // 2. 쿨타임 업데이트 (빙글 돌아 사라짐)
         if (currentCooldown > 0)
@@ -32,8 +33,7 @@ public class UI_UltimateSkillUI : MonoBehaviour
             cdRingImage.fillAmount = currentCooldown / cooldownTime;
         }
         else
-        {
-            
+        {      
             cdRingImage.fillAmount = 0; // 쿨타임 끝
         }
 

@@ -1,0 +1,19 @@
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Game/GameScenePreloadData")]
+public class GameScenePreloadSO : ScriptableObject
+{
+    [Header("맵")]
+    public GameObject mainVillage;
+
+    [Header("메인 UI")]
+    public GameObject gameSceneCanvas;
+
+    [Header("입구 포탈")]
+    public GameObject normalDungeonPortal;
+    public GameObject bossDungeonPortal;
+
+    [Header("상점 캐릭터")]
+    public GameObject shopMaster;
+
+}

@@ -33,7 +33,7 @@ public class BaseCharacter : MonoBehaviour
     // 현재 상태
     protected PlayerState _state = PlayerState.Idle;
 
-
+    public bool IsUsingSkill { get; protected set; } = false;
 
     public CharacterStat Stat { get; private set; }
 
@@ -132,6 +132,7 @@ public class BaseCharacter : MonoBehaviour
         if (_state == PlayerState.Idle || _state == PlayerState.Move || _state == PlayerState.Attack)
         {
             Debug.Log("스킬 사용!");
+
             ChangeState(PlayerState.Skill_CutScene);
         }
     }
@@ -173,6 +174,7 @@ public class BaseCharacter : MonoBehaviour
     {
         if (_skillTimeline != null)
         {
+            IsUsingSkill = true;
             _skillTimeline.Play(); // 재생
         }
         else
@@ -197,6 +199,7 @@ public class BaseCharacter : MonoBehaviour
     void ChangeToIdle()
     {
         ChangeState(PlayerState.Idle);
+        IsUsingSkill = false;
     }
     
     void PlaySFX()

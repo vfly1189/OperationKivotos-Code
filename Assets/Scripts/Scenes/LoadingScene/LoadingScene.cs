@@ -137,74 +137,129 @@ public class LoadingScene : BaseScene
     //    Debug.Log($"리소스 {resources.Length}개 SceneManagerEx에 저장");
     //}
 
+    //IEnumerator LoadProcess()
+    //{
+    //    // 1. 이전 씬 리소스 정리 및 GC
+    //    Managers.Resource.Clear();
+    //    Resources.UnloadUnusedAssets();
+    //    System.GC.Collect();
+    //    yield return null;
+
+    //    // 2. 다음 씬 정보 가져오기
+    //    string nextScene = Managers.SceneEx.NextSceneName;
+    //    ResourceLoadRequest request = Managers.SceneEx.LoadRequest;
+
+    //    // 3. 리소스 프리로딩 (있다면)
+    //    if (request != null && request.resourePaths != null && request.resourePaths.Length > 0)
+    //    {
+    //        //Debug.Log("리소스 프리로딩 시작...");
+
+    //        bool isPreloadComplete = false;
+
+    //        // ResourceManager에게 로딩 위임
+    //        yield return StartCoroutine(Managers.Resource.CoLoadAllAsync(
+    //            request.resourePaths,
+    //            (progress, fileName) =>
+    //            {
+    //                // 진행률 업데이트 (0.0 ~ 0.5 구간 할당)
+    //                _loadingUI.UpdateProgress(progress * 0.5f);
+    //            },
+    //            () =>
+    //            {
+    //                isPreloadComplete = true;
+    //            }
+    //        ));
+
+    //        // 안전장치
+    //        yield return new WaitUntil(() => isPreloadComplete);
+    //    }
+    //    else
+    //    {
+    //        _loadingUI.UpdateProgress(0.5f); // 리소스 없으면 바로 50%
+    //    }
+
+    //    // 4. 씬 전환 (비동기)
+    //    AsyncOperation op = SceneManager.LoadSceneAsync(nextScene);
+    //    op.allowSceneActivation = false;
+
+    //    float timer = 0.0f;
+    //    while (!op.isDone)
+    //    {
+    //        yield return null;
+    //        timer += Time.deltaTime;
+
+    //        // 씬 로딩 진행률 (0.5 ~ 1.0 구간 할당)
+    //        // op.progress는 최대 0.9까지 오름
+    //        if (op.progress < 0.9f)
+    //        {
+    //            // 0.5f(기본) + (씬로딩 0~0.9) * 비율조정
+    //            float currentProgress = 0.5f + (op.progress * (0.5f / 0.9f));
+    //            _loadingUI.UpdateProgress(currentProgress);
+
+    //            if (timer >= op.progress) timer = 0f;
+    //        }
+    //        else
+    //        {
+    //            // 거의 다 됨 (fake loading)
+    //            float fakeProgress = Mathf.Lerp(0.95f, 1f, timer);
+    //            _loadingUI.UpdateProgress(fakeProgress);
+
+    //            if (fakeProgress >= 0.99f)
+    //            {
+    //                op.allowSceneActivation = true;
+    //                yield break;
+    //            }
+    //        }
+    //    }
+    //}
+
+
     IEnumerator LoadProcess()
     {
-        // 1. 이전 씬 리소스 정리 및 GC
+        // 1. 메모리 정리
         Managers.Resource.Clear();
         Resources.UnloadUnusedAssets();
         System.GC.Collect();
         yield return null;
 
-        // 2. 다음 씬 정보 가져오기
+        // 2. 다음 씬 정보
         string nextScene = Managers.SceneEx.NextSceneName;
-        ResourceLoadRequest request = Managers.SceneEx.LoadRequest;
 
-        // 3. 리소스 프리로딩 (있다면)
-        if (request != null && request.resourePaths != null && request.resourePaths.Length > 0)
-        {
-            //Debug.Log("리소스 프리로딩 시작...");
+        // ★ 삭제: 리소스 프리로딩 단계 (Managers.Resource.CoLoadAllAsync)
+        // 이유: 다음 씬의 SO들이 씬 활성화 시점에 자동으로 로드됨
 
-            bool isPreloadComplete = false;
-
-            // ResourceManager에게 로딩 위임
-            yield return StartCoroutine(Managers.Resource.CoLoadAllAsync(
-                request.resourePaths,
-                (progress, fileName) =>
-                {
-                    // 진행률 업데이트 (0.0 ~ 0.5 구간 할당)
-                    _loadingUI.UpdateProgress(progress * 0.5f);
-                },
-                () =>
-                {
-                    isPreloadComplete = true;
-                }
-            ));
-
-            // 안전장치
-            yield return new WaitUntil(() => isPreloadComplete);
-        }
-        else
-        {
-            _loadingUI.UpdateProgress(0.5f); // 리소스 없으면 바로 50%
-        }
-
-        // 4. 씬 전환 (비동기)
+        // 3. 씬 비동기 로드 시작
+        // (이 함수가 호출될 때, 다음 씬에 연결된 SO와 프리팹들이 메모리로 올라갑니다)
         AsyncOperation op = SceneManager.LoadSceneAsync(nextScene);
         op.allowSceneActivation = false;
 
         float timer = 0.0f;
+
+        // ★ 중요: 이제 로딩바는 0~100% 전체를 씬 로딩 진행률로 채웁니다.
+        // (이전에는 50%가 리소스, 50%가 씬 로딩이었음)
         while (!op.isDone)
         {
             yield return null;
             timer += Time.deltaTime;
 
-            // 씬 로딩 진행률 (0.5 ~ 1.0 구간 할당)
-            // op.progress는 최대 0.9까지 오름
             if (op.progress < 0.9f)
             {
-                // 0.5f(기본) + (씬로딩 0~0.9) * 비율조정
-                float currentProgress = 0.5f + (op.progress * (0.5f / 0.9f));
-                _loadingUI.UpdateProgress(currentProgress);
+                // op.progress는 0 ~ 0.9 까지 증가
+                // 이를 0 ~ 1.0 으로 보간하여 UI에 표시
+                float progressValue = Mathf.Lerp(_loadingUI.SliderValue, op.progress / 0.9f, timer);
 
-                if (timer >= op.progress) timer = 0f;
+                // 너무 빨리 차면 재미없으니 최소 시간 보장 (선택사항)
+                if (progressValue >= op.progress / 0.9f) timer = 0f;
+
+                _loadingUI.UpdateProgress(progressValue);
             }
             else
             {
-                // 거의 다 됨 (fake loading)
-                float fakeProgress = Mathf.Lerp(0.95f, 1f, timer);
-                _loadingUI.UpdateProgress(fakeProgress);
+                // 로딩 완료 (90% 도달)
+                _loadingUI.UpdateProgress(1f);
 
-                if (fakeProgress >= 0.99f)
+                // 1초 정도 대기 후 입장 (UX)
+                if (timer > 1.0f)
                 {
                     op.allowSceneActivation = true;
                     yield break;

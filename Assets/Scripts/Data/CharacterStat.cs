@@ -89,13 +89,13 @@ public class CharacterStat : MonoBehaviour
     //테스트용
     private void Update()
     {
-        CurrentEnergy += 20.0f * Time.deltaTime;
+        //CurrentEnergy += 5.0f * Time.deltaTime;
 
-        if(CurrentEnergy > MaxEnergy.Value)
-        {
-            CurrentEnergy = MaxEnergy.Value;
-        }
+        //if (CurrentEnergy > MaxEnergy.Value)
+        //{
+        //    CurrentEnergy = MaxEnergy.Value;
+        //}
 
-        OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
+        //OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
     }
 }

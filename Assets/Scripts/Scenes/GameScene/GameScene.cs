@@ -3,26 +3,14 @@ using UnityEngine;
 
 public class GameScene : BaseScene
 {
-    public static readonly string[] REQUIRED_RESOURCES = new string[]
-    {
-        "Prefabs/Map/MainVillage",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Ako",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Aris",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Asuna",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Karin",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Aru",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Hina",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Hoshino",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Iori",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Nonomi",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Shiroko",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Serika",
-        "Images/Character_Emblem/Emblem_Icon_Favor_Toki"
-    };
     // 씬이 관리하는 핵심 컨트롤러들
     private PartyManager _partyManager;
     private PlayerController _playerController;
+    [SerializeField] private CurrentGameDataSO _currentGameContext; // 인스펙터 연결
+    [SerializeField] private GameScenePreloadSO _preloadData;
 
+    //
+    GameObject _map;
 
     protected override void Init()
     {
@@ -43,54 +31,45 @@ public class GameScene : BaseScene
         // 이미 로딩된 리소스들을 배치
         CreateMainVillage();
         CreateCharacters();
+        CreatePortal();
+        CreateShopMaster();
+
+        //GameObject mainUI = Managers.Resource.Instantiate("UI/GameScene/GameSceneCanvas");
+        //mainUI.name = "@GameSceneCanvas";
 
 
-        GameObject mainUI = Managers.Resource.Instantiate("UI/GameScene/GameSceneCanvas");
+        GameObject mainUI = Object.Instantiate(_preloadData.gameSceneCanvas);
         mainUI.name = "@GameSceneCanvas";
+
+        GameSceneCanvas canvas = mainUI.GetComponent<GameSceneCanvas>();
+        if (canvas != null)
+            canvas.SetPartyManager(_partyManager);
     }
 
-    protected override string[] GetRequiredResources()
-    {
-        return REQUIRED_RESOURCES;
-    }
+
 
     void CreateMainVillage()
     {
-        // ResourceManager 캐시에 "Prefabs/Map/MainVillage"가 있으므로 즉시 생성됨
-        GameObject map = Managers.Resource.Instantiate("Map/MainVillage");
-        if (map != null) map.name = "Map";
+        _map = Object.Instantiate(_preloadData.mainVillage);
+        if (_map != null) _map.name = "@Map";
     }
 
     void CreateCharacters()
     {
+        GameObject root = new GameObject { name = "@Characters" };
+
         // GameManager에서 선택 정보 가져오기
-        int schoolIdx = Managers.Game._selectedSchoolIndex;
-
-        // (데이터 매핑 - SelectSceneCanvas와 동일하게 사용)
-        string[] schoolNames = new string[] { "Abydos", "Gehenna", "Millennium" };
-        string[][] charNames = new string[][]
-        {
-            new string[] { "Hoshino", "Nonomi", "Shiroko", "Serika" },
-            new string[] { "Aru", "Hina", "Ako", "Iori" },
-            new string[] { "Toki", "Karin", "Asuna", "Aris" }
-        };
-
-        string schoolName = schoolNames[schoolIdx];
-        string[] students = charNames[schoolIdx];
+        int schoolIdx = Managers.Context.SchoolIdx;
+        CharacterDataSO[] charactersToSpawn = Managers.Context.SelectedSchool.characters;
 
         // 스폰 포인트 (임시)
         Vector3 spawnStartPos = new Vector3(0, 0, 0);
-
         List<BaseCharacter> partyMembers = new List<BaseCharacter>();
 
-        for (int i = 0; i < students.Length; i++)
+        for (int i = 0; i < charactersToSpawn.Length; i++)
         {
-            // SelectSceneCanvas에서 로딩 요청했던 경로와 일치해야 함 ("Prefabs/" 제외하고 호출)
-            string path = $"Characters/{schoolName}/{students[i]}_InGame";
-
-            // 캐시에서 즉시 꺼냄
-            GameObject go = Managers.Resource.Instantiate(path);
-
+            GameObject go = Object.Instantiate(charactersToSpawn[i].inGamePrefab);
+            go.transform.SetParent(root.transform);
             if (go != null)
             {
                 // 생성된 오브젝트에서 BaseCharacter 컴포넌트 추출
@@ -109,24 +88,57 @@ public class GameScene : BaseScene
                 }
                 else
                 {
-                    Debug.LogError($"프리팹 {students[i]}에 BaseCharacter 스크립트가 없습니다!");
+                    //Debug.LogError($"프리팹 {students[i]}에 BaseCharacter 스크립트가 없습니다!");
                 }
             }
             else
             {
-                Debug.LogError($"캐릭터 생성 실패: {path}");
+                // Debug.LogError($"캐릭터 생성 실패: {path}");
             }
-
-            //Camera.main.GetComponent<CameraController>()._player = go;
-
-            //if (go != null)
-            //{
-            //    go.transform.position = spawnStartPos + new Vector3(i * 1.5f, 0, 0);
-            //}
         }
         if (_partyManager != null)
         {
             _partyManager.Init(partyMembers);
+        }
+    }
+
+    void CreatePortal()
+    {
+        // 1. 포탈 그룹 생성 (Map 밑에)
+        GameObject portalGroup = new GameObject("Portals");
+
+        if (_map != null)
+            portalGroup.transform.SetParent(_map.transform);
+
+        // 2. 포탈 생성 (Instantiate의 2번째 인자로 부모 지정)
+
+        // 노말 던전 포탈
+        if (_preloadData.normalDungeonPortal != null)
+        {
+            GameObject normalPortal = Object.Instantiate(_preloadData.normalDungeonPortal, portalGroup.transform);
+            // 위치를 따로 잡고 싶다면 여기서 수정 (예: portalGroup 기준 상대 좌표)
+            normalPortal.transform.localPosition = new Vector3(-3, 1, 0);
+        }
+
+        // 보스 던전 포탈
+        if (_preloadData.bossDungeonPortal != null)
+        {
+            GameObject bossPortal = Object.Instantiate(_preloadData.bossDungeonPortal, portalGroup.transform);
+            // 위치 수정
+            bossPortal.transform.localPosition = new Vector3(3, 1, 0);
+        }
+    }
+
+    void CreateShopMaster()
+    {
+        GameObject root = new GameObject { name = "@Shop" };
+
+        if (_preloadData.shopMaster != null)
+        {
+            GameObject shopMaster = Object.Instantiate(_preloadData.shopMaster, root.transform);
+            // 위치를 따로 잡고 싶다면 여기서 수정 (예: portalGroup 기준 상대 좌표)
+            shopMaster.transform.localPosition = new Vector3(0, 0, 2);
+            shopMaster.transform.localRotation = Quaternion.Euler(0, 180, 0);
         }
     }
 

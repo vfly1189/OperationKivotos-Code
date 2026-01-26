@@ -5,6 +5,11 @@ using UnityEngine.UI;
 
 public class GameSceneCanvas : MonoBehaviour
 {
+    [SerializeField] private CurrentGameDataSO _currentGameContext; // 인스펙터 연결
+
+    [Header("Data Source")]
+    [SerializeField] private SchoolDataSO[] _schoolDatas;
+
     [Header("Party Slots")]
     [SerializeField] private GameObject[] _partySlots;
 
@@ -23,21 +28,17 @@ public class GameSceneCanvas : MonoBehaviour
     [Header("RotatingLights")]
     [SerializeField] private UI_RotatingLight[] _rotatingLights;
 
+    [Header("Skill UI")]
+    [SerializeField] private Image _qSkillIcon;  // Q 스킬 아이콘 UI
+    [SerializeField] private Image _eSkillIcon;  // E 스킬 아이콘 UI
+
+    [Header("Ultimate Visuals")]
+    [SerializeField] private Image _ultimateFillImage;   // 게이지 채워지는 이미지
+    [SerializeField] private Image _ultimateGlowImage;   // 뒤에 일렁이는 이펙트 이미지
+
+    private PartyManager _partyManager;
+
     int _schoolIdx;
-    // (데이터 매핑 - SelectSceneCanvas와 동일하게 사용)
-    string[] schoolNames = new string[] { "Abydos", "Gehenna", "Millennium" };
-    string[][] charNamesEN = new string[][]
-    {
-            new string[] { "Hoshino", "Nonomi", "Shiroko", "Serika" },
-            new string[] { "Aru", "Hina", "Ako", "Iori" },
-            new string[] { "Toki", "Karin", "Asuna", "Aris" }
-    };
-    string[][] charNamesKR = new string[][]
-    {
-            new string[] { "호시노", "노노미", "시로코", "세리카" },
-            new string[] { "아루", "히나", "아코", "이오리" },
-            new string[] { "토키", "카린", "아스나", "아리스" }
-    };
 
     // 공통 회전 속도 (초당 180도)
     private float _rotationSpeed = 180f;
@@ -45,11 +46,19 @@ public class GameSceneCanvas : MonoBehaviour
 
     void Start()
     {
-        _schoolIdx = Managers.Game._selectedSchoolIndex;
+        _schoolIdx = Managers.Context.SchoolIdx;
 
         SetNames();
         SetPortraits();
-     
+
+        if (_partyManager != null)
+        {
+            // 캐릭터 바뀔 때마다 UpdateActiveCharacterUI 실행
+            _partyManager.OnCharacterChanged += UpdateActiveCharacterUI;
+
+            // 게임 시작 시 0번 캐릭터 기준으로 초기화
+            UpdateActiveCharacterUI(0);
+        }
 
         ConnectCharacterEvents();
     }
@@ -74,13 +83,20 @@ public class GameSceneCanvas : MonoBehaviour
         }
     }
 
+    public void SetPartyManager(PartyManager partyManager)
+    {
+        _partyManager = partyManager;
+    }
+
     void SetNames()
     {
         for(int i=0; i<4; i++)
         {
             TextMeshProUGUI text = _characterNameSlots[i];
 
-            text.SetText(charNamesKR[_schoolIdx][i]);
+            //_schoolDatas[i].schoolNameKR[i]
+            text.SetText(_schoolDatas[_schoolIdx].characters[i].nameKR);
+            //text.SetText(charNamesKR[_schoolIdx][i]);
         }
     }
 
@@ -90,15 +106,13 @@ public class GameSceneCanvas : MonoBehaviour
         {
             Image image = _portraitSlots[i];
 
-            string path = $"Images/Character_Emblem/Emblem_Icon_Favor_{charNamesEN[_schoolIdx][i]}";
-            //Debug.Log($"경로 : {path}");
-            Sprite emblem = Managers.Resource.Load<Sprite>(path);
+            Sprite emblem = Managers.Context.SelectedSchool.characters[i].Portrait;
 
             if(emblem != null ) image.sprite = emblem;
         }
     }
 
-    void SetUltimatePanelOn()
+    public void SetUltimatePanelOn()
     {
         for(int i=0; i<4; i++)
         {
@@ -108,14 +122,7 @@ public class GameSceneCanvas : MonoBehaviour
 
     void ConnectCharacterEvents()
     {
-        // PartyManager에서 현재 멤버 리스트 가져오기
-        // (Managers.Game.CurrentParty나 Scene 내 PartyManager 참조 필요)
-        var partyManager = FindAnyObjectByType<PartyManager>();
-        if (partyManager == null)
-            return;
-
-
-        List<BaseCharacter> members = partyManager.PartyMembers;
+        List<BaseCharacter> members = _partyManager.PartyMembers;
 
         foreach (BaseCharacter member in members)
         {
@@ -156,5 +163,36 @@ public class GameSceneCanvas : MonoBehaviour
 
             if (isReady) Debug.Log($"Slot {slotIndex} 궁극기 준비 완료!");
         }
+    }
+
+    void UpdateActiveCharacterUI(int charIndex)
+    {
+        // 1. 현재 학교의 캐릭터 데이터 가져오기
+        CharacterDataSO charData = Managers.Context.SelectedSchool.characters[charIndex];
+
+        if (charData == null) return;
+
+        // 2. 스킬 아이콘 교체
+        if (_qSkillIcon != null) _qSkillIcon.sprite = charData.qSkillIcon;
+        if (_eSkillIcon != null) _eSkillIcon.sprite = charData.eSkillIcon;
+        // if (_ultimateIcon != null) _ultimateIcon.sprite = charData.ultimateIcon;
+
+        // 3. 궁극기 UI 색상 교체 (SO에 색상 필드가 있다고 가정)
+        // (CharacterDataSO에 public Color energyFillColor, ultimateGlowColor가 있어야 함)
+
+        if (_ultimateFillImage != null)
+            _ultimateFillImage.color = charData.energyFillColor;
+
+        if (_ultimateGlowImage != null)
+            _ultimateGlowImage.color = charData.ultimateGlowColor;
+
+        Debug.Log($"[UI] {charData.nameKR} UI로 갱신 완료");
+    }
+
+    void OnDestroy()
+    {
+        // 이벤트 구독 해제 (메모리 누수 방지)
+        if (_partyManager != null)
+            _partyManager.OnCharacterChanged -= UpdateActiveCharacterUI;
     }
 }

@@ -23,6 +23,13 @@ public class LoadingSceneController : BaseScene
     [SerializeField] 
     private float _dotAnimSpeed = 0.5f;
 
+
+    public float SliderValue
+    {
+        get { return _barFill.fillAmount; }
+        set { _barFill.fillAmount = value; }
+    }
+
     private void Start()
     {
         // 랜덤 이미지 설정

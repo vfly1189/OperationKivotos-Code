@@ -5,6 +5,12 @@ public class Managers : MonoBehaviour
     static Managers s_instance; // 유일성 보장된다.
     static Managers Instance { get { Init(); return s_instance; } } // 유일성 보장된다.
 
+    private CurrentGameDataSO _currentGameContext = null;
+    public static CurrentGameDataSO Context
+    {
+        get { return Instance._currentGameContext; }
+    }
+
     #region Core Manager
     GameManager _game = new GameManager();
     InputManager _input = new InputManager();
@@ -48,6 +54,19 @@ public class Managers : MonoBehaviour
 
             DontDestroyOnLoad(go);
             s_instance = go.GetComponent<Managers>();
+
+            s_instance._currentGameContext = Resources.Load<CurrentGameDataSO>("Data/CurrentGameData/CurrentGameData");
+
+            if (s_instance._currentGameContext == null)
+            {
+                Debug.LogError("CurrentGameDataSO를 찾을 수 없습니다! Resources/Data 폴더에 있는지 확인하세요.");
+            }
+            else
+            {
+                // 로드 성공 시 초기화 (선택사항)
+                s_instance._currentGameContext.Clear();
+            }
+
 
             //s_instance._data.Init();
             //s_instance._pool.Init();

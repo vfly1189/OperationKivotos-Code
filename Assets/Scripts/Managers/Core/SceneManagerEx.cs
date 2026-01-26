@@ -12,17 +12,20 @@ public class SceneManagerEx
     // 다음에 로드할 씬의 이름을 저장해두는 변수
     public string NextSceneName { get; private set; }
 
-    public ResourceLoadRequest LoadRequest { get; set; }
 
-    //임시 저장용 (다음 씬에 전달하기 위해)
-    public UnityEngine.Object[] LoadedResources { get; set; }
+    // =================== 비동기 로딩 레거시 ========================= //
+    //public ResourceLoadRequest LoadRequest { get; set; }
 
-    //씬별 필요 리소스 매핑 (하드코딩 - 나중에 외부 파일로 교체)
-    private static Dictionary<Define.Scene, string[]> _sceneResourceMap = new Dictionary<Define.Scene, string[]>()
-    {
-         { Define.Scene.Select, SelectScene.REQUIRED_RESOURCES }
+    ////임시 저장용 (다음 씬에 전달하기 위해)
+    //public UnityEngine.Object[] LoadedResources { get; set; }
 
-    };
+    ////씬별 필요 리소스 매핑 (하드코딩 - 나중에 외부 파일로 교체)
+    //private static Dictionary<Define.Scene, string[]> _sceneResourceMap = new Dictionary<Define.Scene, string[]>()
+    //{
+    //     { Define.Scene.Select, SelectScene.REQUIRED_RESOURCES }
+
+    //};
+    // =================== 비동기 로딩 레거시 ========================= //
 
     public void LoadScene(Define.Scene type, string[] resoureceToLoad = null)
     {
@@ -30,18 +33,18 @@ public class SceneManagerEx
         if (CurrentScene != null)
             CurrentScene.Clear();
 
-        // 2. resoureceToLoad가 null이면 자동으로 매핑에서 가져오기
-        if (resoureceToLoad == null && _sceneResourceMap.ContainsKey(type))
-        {
-            resoureceToLoad = _sceneResourceMap[type];
-            Debug.Log($"Auto-loaded resources for scene: {type}");
-        }
+        //// 2. resoureceToLoad가 null이면 자동으로 매핑에서 가져오기
+        //if (resoureceToLoad == null && _sceneResourceMap.ContainsKey(type))
+        //{
+        //    resoureceToLoad = _sceneResourceMap[type];
+        //    Debug.Log($"Auto-loaded resources for scene: {type}");
+        //}
 
-        // 3. 로딩할 리소스가 있는지
-        if (resoureceToLoad != null && resoureceToLoad.Length > 0)
-            LoadRequest = new ResourceLoadRequest(resoureceToLoad);
-        else
-            LoadRequest = null;
+        //// 3. 로딩할 리소스가 있는지
+        //if (resoureceToLoad != null && resoureceToLoad.Length > 0)
+        //    LoadRequest = new ResourceLoadRequest(resoureceToLoad);
+        //else
+        //    LoadRequest = null;
 
         Managers.Clear(); // Input 등 전역 매니저 정리
 
