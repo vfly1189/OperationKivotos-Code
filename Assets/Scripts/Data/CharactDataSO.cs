@@ -16,6 +16,15 @@ public class CharacterDataSO : ScriptableObject
     public float MoveSpeed;
     public float AttackSpeed;
     public float MaxEnergy;
+    public float MaxExp;
+    public float QSkillCoolTime;
+    public float ESkillCoolTime;
+
+    [Header("Growth Stats (Per Level)")]
+    public float MaxHpGrowth;   // 레벨당 체력 증가량
+    public float AttackGrowth;  // 레벨당 공격력 증가량
+    public float DefenseGrowth; // 레벨당 방어력 증가량
+    public float ExpGrowth;     // 레벨당 경험치최대치 증가량
 
     [Header("Prefabs")]
     public GameObject originalPrefab;

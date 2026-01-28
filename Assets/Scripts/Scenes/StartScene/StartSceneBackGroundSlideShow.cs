@@ -5,28 +5,22 @@ using UnityEngine.UI;
 public class StartSceneBackGroundSlideShow : MonoBehaviour
 {
     [Header("Background Images")]
-    [SerializeField] 
-    private Sprite[] _backgroundSprites; // 배경 이미지 배열 ( Sprite )
+    [SerializeField] private Sprite[] _backgroundSprites; // 배경 이미지 배열 ( Sprite )
 
     [Header("UI Elements")]
-    [SerializeField]
-    private Image[] _backgourndImages;
-    [SerializeField]
-    private CanvasGroup[] _backgroundCanvasGroups;
+    [SerializeField] private Image[] _backgourndImages;
+    [SerializeField] private CanvasGroup[] _backgroundCanvasGroups;
 
     [Header("Timing")]
-    [SerializeField] 
-    private float _displayDuration = 5.0f; // 각 이미지 표시 시간
-    //[SerializeField] 
-    //private float _fadeDuration = 2.0f; // 크로스페이드 시간
+    [SerializeField]  private float _displayDuration = 5.0f; // 각 이미지 표시 시간
 
     [Header("Pan Settings")]
-    [SerializeField] 
-    private float _panSpeed = 20f; // 이동 속도
-    [SerializeField]
-    private Vector2 _panDirection = new Vector2(1f, 0.5f); // 이동 방향
-    [SerializeField] 
-    private float _panRange = 50f; // 이동 거리
+    [SerializeField] private float _panSpeed = 20f; // 이동 속도
+    [SerializeField] private Vector2 _panDirection = new Vector2(1f, 0.5f); // 이동 방향
+    [SerializeField] private float _panRange = 50f; // 이동 거리
+
+    [Header("Button")]
+    [SerializeField] private Button _sceneChangeButton;
 
     private int _currentSpriteIndex = 0; // 현재 표시 중인 스프라이트 인덱스
     private int _currentLayerIndex = 0; // 현재 활성 레이어 인덱스 (0~6)
@@ -66,8 +60,17 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
         _backgourndImages[_currentLayerIndex].sprite = _backgroundSprites[_currentSpriteIndex];
         _backgroundCanvasGroups[_currentLayerIndex].alpha = 1f;
 
+        _sceneChangeButton.onClick.AddListener(OnClick);
+
+
         // 슬라이드쇼 시작
         StartCoroutine(SlideshowRoutine());
+    }
+    
+    void OnClick()
+    {
+        Managers.SceneEx.LoadScene(Define.Scene.Select);
+        Managers.Sound.StopBgm();
     }
 
     void Update()

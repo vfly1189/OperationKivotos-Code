@@ -40,19 +40,6 @@ public class SelectSceneCanvas : MonoBehaviour
     private GameObject[] _millenniumModels;
 
     private int _currentSelectedSchool = -1;
-
-    //private string[] _schoolNames = new string[3]
-    //{
-    //    "Abydos", "Gehenna", "Millennium"
-    //};
-
-    //private string[][] _characterNames = new string[3][]
-    //{
-    //    new string[] { "Hoshino", "Nonomi", "Shiroko", "Serika" },
-    //    new string[] { "Aru", "Hina", "Ako", "Iori" },
-    //    new string[] { "Toki", "Karin", "Asuna", "Aris" }
-    //};
-
     private SelectScene _selectScene;
 
     void Start()
@@ -83,6 +70,7 @@ public class SelectSceneCanvas : MonoBehaviour
             _backgroundImage.sprite = _backgroundSprite;
         }
     }
+
 
     void SetupButtonListeners()
     {

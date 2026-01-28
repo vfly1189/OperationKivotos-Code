@@ -28,6 +28,9 @@ public class StartScene : BaseScene
         CreateTapToStart();
         yield return null;
 
+        CreateSoundSettingIcon();
+        yield return null;
+
         // 3. Logo 생성
         CreateLogo();
         yield return null;
@@ -57,11 +60,11 @@ public class StartScene : BaseScene
 
     void Update()
     {
-        if (Keyboard.current.anyKey.isPressed || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame))
-        {
-            Managers.SceneEx.LoadScene(Define.Scene.Select);
-            Managers.Sound.StopBgm();
-        }
+        //if (Keyboard.current.aKey.isPressed)
+        //{
+        //    Managers.SceneEx.LoadScene(Define.Scene.Select);
+        //    Managers.Sound.StopBgm();
+        //}
     }
 
     public override void Clear()
@@ -90,6 +93,26 @@ public class StartScene : BaseScene
         Canvas canvas = logo.GetComponent<Canvas>();
         if (canvas != null)
             canvas.sortingOrder = -9;
+    }
+
+    private void CreateSoundSettingIcon()
+    {
+        // SoundSettingIcon 프리팹 생성
+        // 경로는 Resources/UI/StartScene/SoundSettingIcon 이라고 가정
+        GameObject icon = Managers.Resource.Instantiate("UI/common/SoundSettingIcon");
+        icon.name = "@SoundSettingIcon";
+
+        // 캔버스 설정 (UI_Base가 아니라면 직접 Canvas 정렬 필요)
+        Canvas canvas = icon.GetComponent<Canvas>();
+        if (canvas == null) canvas = icon.AddComponent<Canvas>();
+
+        // 로고(-9)나 배경(-10)보다 앞에 보여야 하므로 더 높은 숫자(예: 10)
+        // 하지만 UIManager를 통하지 않고 직접 만든 UI이므로 
+        // SortingOrder를 확실하게 지정해주는 게 좋음.
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = -7; // 맨 위에 보이게
+
+        // [중요] Raycast Target이 켜져 있어야 클릭됨
     }
 
     private void CreateTapToStart()

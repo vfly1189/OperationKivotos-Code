@@ -11,8 +11,9 @@ public class BaseCharacter : MonoBehaviour
         Idle,
         Move,
         Attack,             // 기본 공격
-        Skill_CutScene,     // 스킬 컷신
-        Skill,              // 스킬 모션 (컷신 x)
+        Q_Skill_CutScene,     // 스킬 컷신
+        Q_Skill,              // 스킬 모션 (컷신 x)
+        E_Skill,
         Die
     }
 
@@ -32,7 +33,9 @@ public class BaseCharacter : MonoBehaviour
 
     // 현재 상태
     protected PlayerState _state = PlayerState.Idle;
-
+    protected Rigidbody _rb; // 리지드바디 변수 추가
+    // [추가] 충돌 체크를 위한 레이어 마스크 (원하는 장애물 레이어 이름 입력)
+    private int _obstacleMask;
     public bool IsUsingSkill { get; protected set; } = false;
 
     public CharacterStat Stat { get; private set; }
@@ -56,8 +59,13 @@ public class BaseCharacter : MonoBehaviour
     {
         if (_anim == null) 
             _anim = GetComponent<Animator>();
-
-        if(Stat == null)
+        _rb = GetComponent<Rigidbody>();
+        // [추가] Wall이나 Block 레이어 등 막혀야 할 레이어를 설정하세요.
+        // 예: LayerMask.GetMask("Wall", "Obstacle")
+        // 여기선 임시로 Wall이 없으면 Default를 제외한 모든 것을 체크하도록 설정
+        _obstacleMask = LayerMask.GetMask("Collider");
+        if (_obstacleMask == 0) _obstacleMask = LayerMask.GetMask("Default");
+        if (Stat == null)
         {
             Stat = GetComponent<CharacterStat>();
             if (Stat != null) Stat.Init();
@@ -75,18 +83,59 @@ public class BaseCharacter : MonoBehaviour
 
     public void Move(Vector2 dir)
     {
+        //// 공격 중이나 스킬 중엔 이동 불가
+        //if (_state == PlayerState.Attack 
+        //    || _state == PlayerState.Q_Skill 
+        //    || _state == PlayerState.Q_Skill_CutScene
+        //    || _state == PlayerState.E_Skill)
+        //    return;
+
+        //if (_state != PlayerState.Move)
+        //    ChangeState(PlayerState.Move);
+
+        //// 실제 이동 로직
+        //Vector3 moveDir = new Vector3(dir.x, 0, dir.y).normalized;
+        //transform.position += moveDir * _speed * Time.deltaTime;
+
+        //// 회전 로직
+        //if (moveDir != Vector3.zero)
+        //{
+        //    Quaternion targetRotation = Quaternion.LookRotation(moveDir);
+        //    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10.0f * Time.deltaTime);
+        //}
+
+
         // 공격 중이나 스킬 중엔 이동 불가
-        if (_state == PlayerState.Attack || _state == PlayerState.Skill || _state == PlayerState.Skill_CutScene)
+        if (_state == PlayerState.Attack
+            || _state == PlayerState.Q_Skill
+            || _state == PlayerState.Q_Skill_CutScene
+            || _state == PlayerState.E_Skill)
             return;
 
+        // 1. 상태 변경 (이동 애니메이션은 무조건 재생)
         if (_state != PlayerState.Move)
             ChangeState(PlayerState.Move);
 
-        // 실제 이동 로직
+        // 2. 이동 벡터 계산
         Vector3 moveDir = new Vector3(dir.x, 0, dir.y).normalized;
-        transform.position += moveDir * _speed * Time.deltaTime;
+        float moveDist = _speed * Time.deltaTime;
 
-        // 회전 로직
+        // 3. 충돌 체크 (Raycast)
+        // 캐릭터 발밑(transform.position)보다는 살짝 위(0.5f)에서 쏴야 바닥에 안 걸립니다.
+        Vector3 rayOrigin = gameObject.transform.position + Vector3.up * 0.5f;
+        float checkDistance = moveDist + 0.5f; // 조금 더 길게 체크
+        // "앞으로 moveDist만큼 + 약간의 여유(0.1f)를 두고 쏴서 벽이 있는지 확인"
+        bool isHit = Physics.Raycast(rayOrigin, moveDir, out RaycastHit hit, moveDist + 0.5f, _obstacleMask);
+        Debug.DrawRay(rayOrigin, moveDir * checkDistance, isHit ? Color.red : Color.green);
+
+        // [핵심] 벽이 없으면 이동, 벽이 있으면 제자리 걸음 (이동 코드 건너뜀)
+        if (!isHit)
+        {
+            transform.position += moveDir * moveDist;
+        }
+        // else { 벽에 부딪힘 -> 위치 이동은 안 하지만 _state는 Move 상태이므로 애니메이션은 계속 뜀 }
+
+        // 4. 회전 로직 (벽에 막혀도 바라보는 방향은 입력한 쪽으로 돌아가는 게 자연스러움)
         if (moveDir != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDir);
@@ -102,28 +151,30 @@ public class BaseCharacter : MonoBehaviour
 
     public void Attack(bool isPressing)
     {
-        // 공격 키를 누르고 있는 동안
         if (isPressing)
         {
-            // Idle이나 Move 상태에서만 공격 시작 가능
-            if (_state == PlayerState.Idle || _state == PlayerState.Move || _state == PlayerState.Attack)
+            // 공격 키를 누르면 그냥 '공격 상태'로만 전환
+            // -> 애니메이션이 재생되면서 알아서 이벤트를 호출할 것임
+            if (_state != PlayerState.Attack)
             {
-                if (_state != PlayerState.Attack)
-                    ChangeState(PlayerState.Attack);
-
-                // 쿨타임 체크 및 공격 실행
-                if (Time.time - _lastAttackTime > _attackRate)
-                {
-                    _lastAttackTime = Time.time;
-                    PerformAttackAction();
-                }
+                ChangeState(PlayerState.Attack);
             }
         }
         else
         {
-            // 손 떼면 Idle로 (연사형 무기가 아니라면)
+            // 손 떼면 Idle로 복귀
             if (_state == PlayerState.Attack)
                 ChangeState(PlayerState.Idle);
+        }
+    }
+
+    public void OnAttackEvent(AudioClip sfx)
+    {
+        // 공격 상태일 때만 발사 (혹시 상태가 바뀌었는데 이벤트가 늦게 올 수 있으니 체크)
+        if (_state == PlayerState.Attack)
+        {
+            PerformAttackAction();
+            Managers.Sound.Play(sfx, Define.Sound.Effect);
         }
     }
 
@@ -131,9 +182,24 @@ public class BaseCharacter : MonoBehaviour
     {
         if (_state == PlayerState.Idle || _state == PlayerState.Move || _state == PlayerState.Attack)
         {
-            Debug.Log("스킬 사용!");
+            if (Stat.TryUseSkillQ() == false)
+                return;
 
-            ChangeState(PlayerState.Skill_CutScene);
+            Debug.Log("E 스킬 사용!");
+
+            ChangeState(PlayerState.Q_Skill_CutScene);
+        }
+    }
+    public void UseSkill_E()
+    {
+        if (_state == PlayerState.Idle || _state == PlayerState.Move || _state == PlayerState.Attack)
+        {
+            if (Stat.TryUseSkillE() == false)
+                return;
+
+            Debug.Log("E 스킬 사용!");
+
+            ChangeState(PlayerState.E_Skill);
         }
     }
 
@@ -156,12 +222,15 @@ public class BaseCharacter : MonoBehaviour
             case PlayerState.Attack:
                 _anim.CrossFade("Attack_Ing", 0.1f); // 자식마다 다른 모션일 경우 오버라이드 고려
                 break;
-            case PlayerState.Skill_CutScene:
+            case PlayerState.Q_Skill_CutScene:
                 _anim.CrossFade("Q_Skill_CutScene", 0.0f); //컷씬도 굳이 블렌딩?
                 OnSkillEnter();
                 break;
-            case PlayerState.Skill:
+            case PlayerState.Q_Skill:
                 _anim.CrossFade("Q_Skill", 0.0f);   //컷씬에서 다시 InGame 모션으로 갈때 굳이 블렌딩? 안해도 될듯
+                break;
+            case PlayerState.E_Skill:
+                _anim.CrossFade("E_Skill", 0.0f);
                 break;
                 //case PlayerState.Die:
                 //    _anim.CrossFade("Die", 0.1f);
@@ -175,12 +244,13 @@ public class BaseCharacter : MonoBehaviour
         if (_skillTimeline != null)
         {
             IsUsingSkill = true;
+            
             _skillTimeline.Play(); // 재생
         }
         else
         {
             // 타임라인 없으면 바로 스킬 상태로
-            ChangeState(PlayerState.Skill);
+            ChangeState(PlayerState.Q_Skill);
         }
     }
 
@@ -188,7 +258,7 @@ public class BaseCharacter : MonoBehaviour
     protected virtual void OnCutsceneEnded(PlayableDirector director)
     {
         Debug.Log("컷신 종료 -> 스킬 액션 상태로 전환");
-        ChangeState(PlayerState.Skill);
+        ChangeState(PlayerState.Q_Skill);
     }
 
 
@@ -206,7 +276,15 @@ public class BaseCharacter : MonoBehaviour
     {
         PlaySFXOnly();
     }
-    
+
+    public void OnPlaySoundEvent(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        // 사운드 매니저를 통해 재생
+        Managers.Sound.Play(clip, Define.Sound.Effect);
+    }
+
     #endregion
 
 
@@ -222,7 +300,7 @@ public class BaseCharacter : MonoBehaviour
 
         // Ground 레이어(혹은 Wall이 아닌 레이어) 체크
         // "Ground" 레이어가 없으면 임시로 모든 레이어(-1) 체크
-        int layerMask = LayerMask.GetMask("Wall");
+        int layerMask = LayerMask.GetMask("Map");
         if (layerMask == 0) layerMask = -1;
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100.0f, layerMask))

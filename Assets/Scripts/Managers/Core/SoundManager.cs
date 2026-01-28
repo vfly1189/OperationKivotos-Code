@@ -13,6 +13,10 @@ public class SoundManager
 
     float _bgmVolume = 0.2f;
     float _narrationVolume = 0.5f;
+    float _sfxVolume = 0.2f;
+
+    public float BgmVolume => _bgmVolume;
+    public float SfxVolume => _sfxVolume;
 
 
     public void Init()
@@ -36,6 +40,32 @@ public class SoundManager
         }
     }
 
+    public void SetBgmVolume(float volume)
+    {
+        _bgmVolume = Mathf.Clamp01(volume);
+
+        // 현재 재생 중인 BGM AudioSource에도 즉시 반영
+        AudioSource bgmSource = _audioSources[(int)Define.Sound.Bgm];
+        if (bgmSource != null)
+        {
+            bgmSource.volume = _bgmVolume;
+        }
+
+        // (선택) 저장: PlayerPrefs.SetFloat("BGM_VOL", _bgmVolume);
+    }
+
+    // SFX (효과음) 볼륨 조절
+    public void SetSfxVolume(float volume)
+    {
+        _sfxVolume = Mathf.Clamp01(volume);
+
+        // SFX는 PlayOneShot으로 재생되므로 AudioSource의 볼륨 자체를 미리 바꿔둠
+        AudioSource sfxSource = _audioSources[(int)Define.Sound.Effect];
+        if (sfxSource != null)
+        {
+            sfxSource.volume = _sfxVolume;
+        }
+    }
     public void Clear()
     {
         foreach (AudioSource audioSource in _audioSources)
@@ -83,6 +113,7 @@ public class SoundManager
         {
             AudioSource audioSource = _audioSources[(int)Define.Sound.Effect];
 
+            audioSource.volume = _sfxVolume;
             audioSource.pitch = pitch;
             audioSource.PlayOneShot(audioClip);
         }

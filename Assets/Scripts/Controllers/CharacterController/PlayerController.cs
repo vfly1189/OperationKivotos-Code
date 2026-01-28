@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour
         Managers.Input.MouseAction += HandleMouse;
 
         Managers.Input.RegisterAction("Q_Skill", HandleSkill_Q);
+        Managers.Input.RegisterAction("E_Skill", HandleSkill_E);
     }
 
     // PartyManager가 호출해줄 함수
@@ -69,6 +70,13 @@ public class PlayerController : MonoBehaviour
         if (_currentTarget == null) return;
 
         _currentTarget.UseSkill_Q();
+    }
+
+    void HandleSkill_E()
+    {
+        if (_currentTarget == null) return;
+
+        _currentTarget.UseSkill_E();
     }
 
     // Update에서는 지속적인 입력(공격 키 누르고 있기)을 처리

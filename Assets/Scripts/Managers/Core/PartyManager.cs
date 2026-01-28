@@ -47,58 +47,31 @@ public class PartyManager : MonoBehaviour
             //Debug.Log("PlayerController 없음");
         }
 
-            _currentIndex = 0;
+        _currentIndex = 0;
+
+        RegisterInput();
     }
 
     void Update()
     {
-        //HandleInput();
+        
     }
 
-    void HandleInput()
+    void RegisterInput()
     {
-        // 쿨타임 체크
-        if (Time.time - _lastSwapTime < _swapCooldown) return;
-
-
-        // 키 입력 (1~4)
-        //if (Input.GetKeyDown(KeyCode.Alpha1)) TrySwap(0);
-        //if (Input.GetKeyDown(KeyCode.Alpha2)) TrySwap(1);
-        //if (Input.GetKeyDown(KeyCode.Alpha3)) TrySwap(2);
-        //if (Input.GetKeyDown(KeyCode.Alpha4)) TrySwap(3);
-
-        Managers.Input.RegisterAction("Swap_1", () => TrySwap(0));
-        Managers.Input.RegisterAction("Swap_2", () => TrySwap(1));
-        Managers.Input.RegisterAction("Swap_3", () => TrySwap(2));
-        Managers.Input.RegisterAction("Swap_4", () => TrySwap(3));
+        Managers.Input.RegisterAction("Swap_1", OnSwap1);
+        Managers.Input.RegisterAction("Swap_2", OnSwap2);
+        Managers.Input.RegisterAction("Swap_3", OnSwap3);
+        Managers.Input.RegisterAction("Swap_4", OnSwap4);
     }
+
+    void OnSwap1() => TrySwap(0);
+    void OnSwap2() => TrySwap(1);
+    void OnSwap3() => TrySwap(2);
+    void OnSwap4() => TrySwap(3);
 
     public void TrySwap(int targetIndex)
-    {
-        //// 파티원 수보다 큰 번호거나, 이미 나와있는 캐릭터면 무시
-        //if (targetIndex >= PartyMembers.Count || targetIndex == _currentIndex) return;
-
-        //BaseCharacter currentChar = PartyMembers[_currentIndex];
-        //Debug.Log($"현재 캐릭터 스킬 사용상태 : {currentChar.IsUsingSkill}");
-        //if(currentChar.IsUsingSkill)
-        //{
-        //    Debug.Log("스킬 사용 중에는 교체할 수 없습니다!");
-        //    return;
-        //}
-
-        ////// 죽은 캐릭터는 교체 불가 체크 (HP <= 0)
-        ////if (PartyMembers[targetIndex].IsDead)
-        ////{
-        ////    Debug.Log("캐릭터가 행동 불능 상태입니다.");
-        ////    return;
-        ////}
-
-        //SwapCharacter(_currentIndex, targetIndex);
-
-
-
-
-
+    {        
         // 1. 쿨타임 체크 (HandleInput에서 가져옴)
         if (Time.time - _lastSwapTime < _swapCooldown) return;
 

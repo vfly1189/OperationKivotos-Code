@@ -33,7 +33,8 @@ public class GameScene : BaseScene
         CreateCharacters();
         CreatePortal();
         CreateShopMaster();
-
+        CreateEffectStage();
+        PlayMainBGM();
         //GameObject mainUI = Managers.Resource.Instantiate("UI/GameScene/GameSceneCanvas");
         //mainUI.name = "@GameSceneCanvas";
 
@@ -141,6 +142,31 @@ public class GameScene : BaseScene
             shopMaster.transform.localRotation = Quaternion.Euler(0, 180, 0);
         }
     }
+
+    void CreateEffectStage()
+    {
+        GameObject root = new GameObject { name = "@Effect" };
+
+        if (_preloadData.effectStage != null)
+        {
+            GameObject effectStage = Object.Instantiate(_preloadData.effectStage, root.transform);
+            // 위치를 따로 잡고 싶다면 여기서 수정 (예: portalGroup 기준 상대 좌표)
+            effectStage.SetActive(true);
+        }
+    }
+
+    void PlayMainBGM()
+    {
+        GameObject root = new GameObject { name = "@BGM" };
+
+        if (_preloadData.mainBGMs != null)
+        {
+            int rand = Random.Range(0, 2);
+
+            Managers.Sound.Play(_preloadData.mainBGMs[rand], Define.Sound.Bgm);
+        }
+    }
+
 
     // Update is called once per frame
     void Update()

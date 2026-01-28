@@ -8,6 +8,7 @@ TagManager:
   - unknown_20006
   - unknown_20007
   - unknown_20010
+  - FxTemporaire
   layers:
   - Default
   - TransparentFX
@@ -19,11 +20,11 @@ TagManager:
   - 
   - Wall
   - Unit
-  - Ground
+  - Map
   - CutSceneBg
   - Particle
   - Effect
-  - 
+  - Collider
   - 
   - 
   - 

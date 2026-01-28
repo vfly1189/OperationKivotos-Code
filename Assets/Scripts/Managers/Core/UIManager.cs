@@ -146,4 +146,5 @@ public class UIManager
         _sceneUI = null;
         _root = null;
     }
+
 }

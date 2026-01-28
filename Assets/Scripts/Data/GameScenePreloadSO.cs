@@ -8,6 +8,7 @@ public class GameScenePreloadSO : ScriptableObject
 
     [Header("메인 UI")]
     public GameObject gameSceneCanvas;
+    public GameObject effectStage;
 
     [Header("입구 포탈")]
     public GameObject normalDungeonPortal;
@@ -16,4 +17,6 @@ public class GameScenePreloadSO : ScriptableObject
     [Header("상점 캐릭터")]
     public GameObject shopMaster;
 
+    [Header("메인 브금")]
+    public AudioClip[] mainBGMs;
 }

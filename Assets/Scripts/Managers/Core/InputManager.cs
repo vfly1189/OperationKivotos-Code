@@ -16,7 +16,7 @@ public class InputManager
     // 동적 키 (리맵핑 가능)
     private Dictionary<string, Key> _keyMap = new Dictionary<string, Key>()
     {
-        { "Interact", Key.E },
+        { "E_Skill", Key.E },
         { "Q_Skill", Key.Q },
         { "Swap_1", Key.Digit1 },
         { "Swap_2", Key.Digit2 },
