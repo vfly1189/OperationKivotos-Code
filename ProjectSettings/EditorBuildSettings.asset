@@ -17,6 +17,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Loading.unity
     guid: c3cdf8b0d1a318a41908484cfc17840b
+  - enabled: 1
+    path: Assets/Scenes/NormalDungeon.unity
+    guid: 00ca77e390775bb46b53a221ae549b47
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

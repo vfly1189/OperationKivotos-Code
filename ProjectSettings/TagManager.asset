@@ -9,6 +9,7 @@ TagManager:
   - unknown_20007
   - unknown_20010
   - FxTemporaire
+  - Monster
   layers:
   - Default
   - TransparentFX
@@ -25,8 +26,8 @@ TagManager:
   - Particle
   - Effect
   - Collider
-  - 
-  - 
+  - Buildings
+  - Ground
   - 
   - 
   - 

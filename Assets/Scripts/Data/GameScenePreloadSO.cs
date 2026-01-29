@@ -1,10 +1,11 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Game/GameScenePreloadData")]
+[CreateAssetMenu(menuName = "Preload/GameScenePreloadData")]
 public class GameScenePreloadSO : ScriptableObject
 {
     [Header("∏ ")]
     public GameObject mainVillage;
+    public GameObject normalDungeon;
 
     [Header("∏ﬁ¿Œ UI")]
     public GameObject gameSceneCanvas;

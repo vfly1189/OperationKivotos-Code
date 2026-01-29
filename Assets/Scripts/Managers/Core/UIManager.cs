@@ -108,6 +108,29 @@ public class UIManager
 
         return popup;
     }
+
+    public T ShowPopupUI<T>(GameObject prefab) where T : UI_PopUp
+    {
+        // 1. 프리팹 인스턴스화
+        GameObject go = Object.Instantiate(prefab);
+
+        // 2. 이름 정리 (선택 사항, (Clone) 제거)
+        // go.name = prefab.name; 
+
+        // 3. UI 컴포넌트 가져오기 / 붙이기
+        T popup = Util.GetOrAddComponent<T>(go);
+        _popupStack.Push(popup);
+
+        // 4. 부모 설정
+        go.transform.SetParent(Root.transform);
+
+        // 5. 스케일 초기화 (UI가 캔버스 밑으로 들어갈 때 가끔 꼬이는 경우 방지)
+        go.transform.localScale = Vector3.one;
+        go.transform.localPosition = Vector3.zero;
+
+        return popup;
+    }
+
     public void ClosePopupUI(UI_PopUp popup)
     {
         if (_popupStack.Count == 0)

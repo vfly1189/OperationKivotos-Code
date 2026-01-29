@@ -9,6 +9,8 @@ public class Define
         Loading,        //로딩 전용 씬
         Select,         //캐릭터 선택
         Game,           //인게임
+        NormalDungeon,
+        BossDungeon,
     }
 
     public enum Sound

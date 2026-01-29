@@ -1,17 +1,12 @@
 using System;
 using UnityEngine;
 
-public class CharacterStat : MonoBehaviour
+public class CharacterStat : BaseStat
 {
     [Header("Data")]
     [SerializeField] private CharacterDataSO _data; // 초기 데이터
 
     // 계산된 스탯들
-    public Stat MaxHp;
-    public Stat Attack;
-    public Stat Defense;
-    public Stat MoveSpeed;
-    public Stat AttackSpeed;
     public Stat MaxEnergy;
     public Stat MaxExp;
     public Stat QSkillCoolTime;
@@ -19,37 +14,24 @@ public class CharacterStat : MonoBehaviour
 
     // 실시간 변동 스탯들
     public float CurLevel {  get; private set; }
-    public float CurrentHp { get; private set; }
     public float CurrentEnergy { get; private set; }
     public float CurrentExp { get; private set; }
     public float CurrentQSkillCoolTime { get; private set; }
     public float CurrentESkillCoolTime { get; private set; }
-    public string Name
-    {
-        get
-        {
-            return _data.nameKR;
-        }
-    }
 
     private bool _isUltimateReady = false;
 
     // 액션들 (UI 갱신용)
-    public event Action<float, float> OnHpChanged;      // cur, max
+    //public event Action<float, float> OnHpChanged;      // cur, max
     public event Action<float, float> OnExpChanged;     // cur, max
     public event Action<int> OnLevelChanged;            // level
     public event Action<float, float> OnEnergyChanged;  // cur, max
     public event Action<bool> OnUltimateStateChanged;   // isReady
-
-
-    public void Init()
+    public override void Init()
     {
+        base.Init();
+
         // 초기화
-        MaxHp = new Stat();
-        Attack = new Stat();
-        Defense = new Stat();
-        MoveSpeed = new Stat();
-        AttackSpeed = new Stat();
         MaxEnergy = new Stat();
         MaxExp = new Stat();
         QSkillCoolTime = new Stat();
@@ -57,13 +39,10 @@ public class CharacterStat : MonoBehaviour
 
         if (_data != null) SetCharacterData(_data);
     }
-
-
     void Awake()
     {
           
     }
-
     public void SetCharacterData(CharacterDataSO data)
     {
         _data = data;
@@ -72,8 +51,6 @@ public class CharacterStat : MonoBehaviour
         MaxHp.SetBaseValue(data.MaxHp);
         Attack.SetBaseValue(data.Attack);
         Defense.SetBaseValue(data.Defense);
-        MoveSpeed.SetBaseValue(data.MoveSpeed);
-        AttackSpeed.SetBaseValue(data.AttackSpeed);
         MaxEnergy.SetBaseValue(data.MaxEnergy);
         MaxExp.SetBaseValue(data.MaxExp);
         QSkillCoolTime.SetBaseValue(data.QSkillCoolTime);
@@ -88,22 +65,22 @@ public class CharacterStat : MonoBehaviour
     }
 
     // 데미지 받는 함수 예시
-    public void TakeDamage(float damage)
-    {
-        float finalDamage = Mathf.Max(damage - Defense.Value, 1);
-        CurrentHp -= finalDamage;
-        CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+    //public void TakeDamage(float damage)
+    //{
+    //    float finalDamage = Mathf.Max(damage - Defense.Value, 1);
+    //    CurrentHp -= finalDamage;
+    //    CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
 
-        OnHpChanged?.Invoke(CurrentHp, MaxHp.Value); // UI 알림
+    //    OnHpChanged?.Invoke(CurrentHp, MaxHp.Value); // UI 알림
 
-        if (CurrentHp <= 0) OnDead();
-    }
+    //    if (CurrentHp <= 0) OnDead();
+    //}
 
-    private void OnDead()
-    {
-        Debug.Log($"{name} Died.");
-        // 사망 처리
-    }
+    //private void OnDead()
+    //{
+    //    Debug.Log($"{name} Died.");
+    //    // 사망 처리
+    //}
 
 
     //테스트용
@@ -112,14 +89,14 @@ public class CharacterStat : MonoBehaviour
         CoolTimeUpdate();
 
 
-        //CurrentEnergy += 5.0f * Time.deltaTime;
+        CurrentEnergy += 5.0f * Time.deltaTime;
 
-        //if (CurrentEnergy >= MaxEnergy.Value)
-        //{
-        //    CurrentEnergy = MaxEnergy.Value;
-        //}
-        //OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
-        //CheckUltimateReadyState();
+        if (CurrentEnergy >= MaxEnergy.Value)
+        {
+            CurrentEnergy = MaxEnergy.Value;
+        }
+        OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
+        CheckUltimateReadyState();
     }
 
 
@@ -192,7 +169,6 @@ public class CharacterStat : MonoBehaviour
         return true;
     }
 
-
     private void CheckUltimateReadyState()
     {
         // 준비 완료 조건: (쿨타임 0) 그리고 (에너지 가득 참)
@@ -204,7 +180,6 @@ public class CharacterStat : MonoBehaviour
             OnUltimateStateChanged?.Invoke(_isUltimateReady); // UI야, 상태 바꼈다!
         }
     }
-
     public void LevelUp()
     {
         CurLevel++;
@@ -239,10 +214,16 @@ public class CharacterStat : MonoBehaviour
 
         // 4. UI 갱신 알림
         OnLevelChanged?.Invoke((int)CurLevel);
-        OnHpChanged?.Invoke(CurrentHp, MaxHp.Value);
+        //OnHpChanged?.Invoke(CurrentHp, MaxHp.Value);
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
         OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
 
         Debug.Log($"Level Up! Current Level: {CurLevel}, New Attack: {Attack.Value}");
+    }
+
+    public AudioClip[] GetBattleInVoice()
+    {
+        return _data.battleInVoices;
     }
 }

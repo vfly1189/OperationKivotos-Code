@@ -51,7 +51,7 @@ public class HoshinoCharacter : BaseCharacter
             Quaternion finalRotation = _firePoint.rotation * rotation;
 
             // 총알 생성
-            GameObject bulletObj = Instantiate(_bulletPrefab, _firePoint.position, finalRotation);
+            GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, finalRotation);
 
             // 총알 초기화 (데미지는 Stat에서 가져옴)
             BulletController bulletScript = bulletObj.GetComponent<BulletController>();

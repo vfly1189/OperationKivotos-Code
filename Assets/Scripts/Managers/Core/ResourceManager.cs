@@ -88,6 +88,7 @@ public class ResourceManager
 
     // [신규] 여러 리소스를 한 번에 로딩 (LoadingScene 전용)
     // progressCallback: 진행률(0.0 ~ 1.0)과 현재 로딩중인 파일명을 알려주는 콜백
+
     public IEnumerator CoLoadAllAsync(string[] paths, Action<float, string> progressCallback, Action onComplete)
     {     
         if (paths == null || paths.Length == 0)
@@ -167,6 +168,38 @@ public class ResourceManager
         go.name = original.name; // (Clone) 떼기
         return go;
     }
+    public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent = null)
+    {
+        // 1. 생성 (풀링 혹은 인스턴스화)
+        GameObject go = Instantiate(original, parent); // 기존 Instantiate(GameObject) 활용
+
+        // 2. 위치/회전 설정
+        if (go != null)
+        {
+            go.transform.position = position;
+            go.transform.rotation = rotation;
+        }
+
+        go.SetActive(true); 
+
+        return go;
+    }
+
+    public GameObject Instantiate(GameObject original, Transform parent = null)
+    {
+        // 1. Poolable이 붙어있으면 풀 매니저에게 위임
+        if (original.GetComponent<Poolable>() != null)
+        {
+            return Managers.Pool.Pop(original, parent).gameObject;
+        }
+
+        // 2. 아니면 그냥 생성
+        GameObject go = Object.Instantiate(original, parent);
+        go.name = original.name; // (Clone) 떼기
+        return go;
+    }
+
+
 
     // 메모리 정리 (씬 이동 시 호출)
     public void Clear()
@@ -175,18 +208,21 @@ public class ResourceManager
         _resources.Clear();
         Resources.UnloadUnusedAssets();
     }
+
+
     public void Destroy(GameObject go)
     {
         if (go == null)
             return;
 
-        ////만약에 풀링이 필요한 아이라면 -> 풀링 매니저한테 위탁
-        //Poolable poolable = go.GetComponent<Poolable>();
-        //if (poolable != null)
-        //{
-        //    Managers.Pool.Push(poolable);
-        //    return;
-        //}
+        //만약에 풀링이 필요한 아이라면 -> 풀링 매니저한테 위탁
+        Poolable poolable = go.GetComponent<Poolable>();
+        if (poolable != null)
+        {
+            Debug.Log($"{go.name} 회수");
+            Managers.Pool.Push(poolable);
+            return;
+        }
 
         Object.Destroy(go);
     }

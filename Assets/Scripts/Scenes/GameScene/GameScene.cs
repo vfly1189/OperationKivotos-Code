@@ -18,19 +18,46 @@ public class GameScene : BaseScene
 
         _sceneType = Define.Scene.Game;
 
-        // 1. 관리자용 GameObject 생성 (Hierarchy 정리용)
-        GameObject go = new GameObject("@GameSystem");
+        //// 1. 관리자용 GameObject 생성 (Hierarchy 정리용)
+        //GameObject go = new GameObject("@GameSystem");
 
-        // 2. 컴포넌트 부착
-        _partyManager = go.AddComponent<PartyManager>();
-        _playerController = go.AddComponent<PlayerController>();
+        //// 2. 컴포넌트 부착
+        //_partyManager = go.AddComponent<PartyManager>();
+        //_playerController = go.AddComponent<PlayerController>();
 
-        // 3. 서로 연결 (Dependency Injection)
-        _partyManager._playerController = _playerController;
+        //// 3. 서로 연결 (Dependency Injection)
+        //_partyManager._playerController = _playerController;
+
+        if (PartyManager.Instance == null)
+        {
+            // 최초 생성 (게임 처음 시작 시)
+            GameObject go = new GameObject("@PartyManager");
+            go.transform.position = new Vector3(0, 0, 0);
+            _partyManager = go.AddComponent<PartyManager>();
+
+            // PlayerController도 같이 붙여서 평생 함께 가게 함
+            _playerController = go.AddComponent<PlayerController>();
+            _partyManager._playerController = _playerController;
+
+            // 파티 멤버 최초 생성 및 초기화
+            CreateCharacters();
+        }
+        else
+        {
+            // 이미 생성된 매니저 사용 (던전 갔다 돌아왔을 때 등)
+            _partyManager = PartyManager.Instance;
+            _playerController = _partyManager._playerController;
+
+            // ★ 중요: 파티 멤버들이 비활성화되어 있을 수 있으므로 위치 잡고 활성화 처리 등 필요
+            // (CreateCharacters는 호출하지 않음 - 이미 멤버가 있으니까)
+            // 예를 들어 마을 스폰 포인트로 이동
+            _partyManager.TeleportParty(new Vector3(0, 0, 0));
+        }
+
 
         // 이미 로딩된 리소스들을 배치
         CreateMainVillage();
-        CreateCharacters();
+        //CreateCharacters();
         CreatePortal();
         CreateShopMaster();
         CreateEffectStage();
@@ -39,15 +66,20 @@ public class GameScene : BaseScene
         //mainUI.name = "@GameSceneCanvas";
 
 
+        SetupUI();
+    }
+
+    void SetupUI()
+    {
+        // UI도 씬마다 새로 만들 것인지, DDOL로 유지할 것인지 결정 필요.
+        // 여기서는 "GameSceneCanvas는 씬마다 새로 만든다"고 가정 (가장 쉬운 접근)
         GameObject mainUI = Object.Instantiate(_preloadData.gameSceneCanvas);
         mainUI.name = "@GameSceneCanvas";
 
         GameSceneCanvas canvas = mainUI.GetComponent<GameSceneCanvas>();
         if (canvas != null)
-            canvas.SetPartyManager(_partyManager);
+            canvas.SetPartyManager(_partyManager); // 싱글톤 매니저 연결
     }
-
-
 
     void CreateMainVillage()
     {
@@ -57,8 +89,6 @@ public class GameScene : BaseScene
 
     void CreateCharacters()
     {
-        GameObject root = new GameObject { name = "@Characters" };
-
         // GameManager에서 선택 정보 가져오기
         int schoolIdx = Managers.Context.SchoolIdx;
         CharacterDataSO[] charactersToSpawn = Managers.Context.SelectedSchool.characters;
@@ -70,7 +100,7 @@ public class GameScene : BaseScene
         for (int i = 0; i < charactersToSpawn.Length; i++)
         {
             GameObject go = Object.Instantiate(charactersToSpawn[i].inGamePrefab);
-            go.transform.SetParent(root.transform);
+            go.transform.SetParent(_partyManager.transform);
             if (go != null)
             {
                 // 생성된 오브젝트에서 BaseCharacter 컴포넌트 추출
@@ -172,5 +202,11 @@ public class GameScene : BaseScene
     void Update()
     {
         
+    }
+
+    public override void Clear()
+    {
+        base.Clear();
+        Managers.Sound.StopAll();
     }
 }

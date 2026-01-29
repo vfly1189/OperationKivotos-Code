@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PartyManager : MonoBehaviour
 {
+    public static PartyManager Instance { get; private set; }
     [Header("Party Settings")]
     // 실제 인게임에 로드된 캐릭터 인스턴스들 (최대 4명)
     public List<BaseCharacter> PartyMembers = new List<BaseCharacter>();
@@ -24,6 +26,56 @@ public class PartyManager : MonoBehaviour
     public PlayerController _playerController;
     //컨트롤러
     public PlayerController PlayerController { get; set; }
+
+    private void Awake()
+    {
+        // 2. 싱글톤 보장 로직
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject); // 씬 바뀌어도 파괴 금지
+
+            // 씬 로드 이벤트 등록 (카메라 갱신 등을 위해)
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+        else
+        {
+            // 이미 매니저가 있으면, 새로 생긴 나는 파괴 (GameScene 다시 왔을 때 등)
+            Destroy(gameObject);
+        }
+    }
+    private void OnDestroy()
+    {
+        // 파괴될 때 이벤트 구독 해제 (안 하면 메모리 누수/에러)
+        if (Instance == this)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+        }
+    }
+
+    // 씬이 로드될 때마다 호출됨
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // 씬이 바뀌면 메인 카메라도 바뀌므로 갱신 필요
+        if (Camera.main != null && PartyMembers.Count > 0)
+        {
+            CameraController cam = Camera.main.GetComponent<CameraController>();
+            if (cam != null)
+            {
+                cam._player = GetCurrentCharacter().gameObject;
+            }
+        }
+    }
+    // [추가] 씬 이동 시 파티원 전체 이동 편의 함수
+    public void TeleportParty(Vector3 position)
+    {
+        foreach (var member in PartyMembers)
+        {
+            member.transform.position = position;
+        }
+        // 현재 활성 캐릭터 위치 강제 동기화 (물리 등 꼬임 방지)
+        GetCurrentCharacter().transform.position = position;
+    }
 
     public void Init(List<BaseCharacter> loadedCharacters)
     {

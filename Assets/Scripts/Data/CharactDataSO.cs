@@ -30,9 +30,12 @@ public class CharacterDataSO : ScriptableObject
     public GameObject originalPrefab;
     public GameObject selectPrefab;
     public GameObject inGamePrefab;
+    public GameObject bulletPrefab;
 
     [Header("Voices")]
     public AudioClip[] formationInVoices; // "Formation_In_1", "Formation_In_2" µî
+    public AudioClip[] battleInVoices;
+   
 
     [Header("SkillIcon")]
     public Sprite qSkillIcon;

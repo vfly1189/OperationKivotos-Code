@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
 
     // 마우스 상태 저장 (누르고 있는지 여부)
     private bool _isMousePressed = false;
-
+    private Vector2 _currentMoveInput;
     void Start()
     {
         // 1. 입력 이벤트 등록 (한 번만 하면 됨)
@@ -31,11 +31,16 @@ public class PlayerController : MonoBehaviour
 
         // 카메라 타겟 변경 (만약 CameraController가 있다면)
         // Camera.main.GetComponent<CameraController>().SetTarget(newTarget.transform);
+        if (_currentTarget != null && _currentMoveInput.sqrMagnitude > 0.01f)
+        {
+            _currentTarget.Move(_currentMoveInput);
+        }
     }
 
     // 매 프레임 이동 입력 처리
     void HandleMove(Vector2 dir)
     {
+        _currentMoveInput = dir;
         if (_currentTarget == null) return;
 
         // 입력값이 있으면 이동 명령, 없으면 정지 명령
@@ -95,5 +100,6 @@ public class PlayerController : MonoBehaviour
             // 공격 중지 신호 (손 뗐음)
             _currentTarget.Attack(false);
         }
+
     }
 }

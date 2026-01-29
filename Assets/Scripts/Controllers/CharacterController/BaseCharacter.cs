@@ -10,10 +10,10 @@ public class BaseCharacter : MonoBehaviour
     {
         Idle,
         Move,
-        Attack,             // 기본 공격
-        Q_Skill_CutScene,     // 스킬 컷신
-        Q_Skill,              // 스킬 모션 (컷신 x)
-        E_Skill,
+        Attack,             // 기본 공격            (이동불가)
+        Q_Skill_CutScene,   // 스킬 컷신            (이동불가)
+        Q_Skill,            // 스킬 모션 (컷신 x)   (이동불가)
+        E_Skill,            // 기본 스킬            (이동불가)
         Die
     }
 
@@ -26,7 +26,7 @@ public class BaseCharacter : MonoBehaviour
 
     [Header("Common Attack Settings")]
     [SerializeField] protected float _attackRate = 0.5f; // 공격 속도
-    protected float _lastAttackTime = 0f;
+    protected float _lastAttackTime = -99f;
 
     [Header("Sounds")]
     [SerializeField] protected AudioClip _sfx;
@@ -83,33 +83,14 @@ public class BaseCharacter : MonoBehaviour
 
     public void Move(Vector2 dir)
     {
-        //// 공격 중이나 스킬 중엔 이동 불가
-        //if (_state == PlayerState.Attack 
-        //    || _state == PlayerState.Q_Skill 
-        //    || _state == PlayerState.Q_Skill_CutScene
-        //    || _state == PlayerState.E_Skill)
-        //    return;
-
-        //if (_state != PlayerState.Move)
-        //    ChangeState(PlayerState.Move);
-
-        //// 실제 이동 로직
-        //Vector3 moveDir = new Vector3(dir.x, 0, dir.y).normalized;
-        //transform.position += moveDir * _speed * Time.deltaTime;
-
-        //// 회전 로직
-        //if (moveDir != Vector3.zero)
-        //{
-        //    Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-        //    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10.0f * Time.deltaTime);
-        //}
-
-
-        // 공격 중이나 스킬 중엔 이동 불가
-        if (_state == PlayerState.Attack
-            || _state == PlayerState.Q_Skill
+        // [수정] 스킬 사용 중인 경우에만 이동 불가 
+        // ★ Attack 상태일 때는 이동 허용! (캔슬 무빙)
+        if (IsUsingSkill
             || _state == PlayerState.Q_Skill_CutScene
-            || _state == PlayerState.E_Skill)
+            || _state == PlayerState.Q_Skill
+            || _state == PlayerState.E_Skill
+            || _state == PlayerState.Die
+            || _state == PlayerState.Attack)
             return;
 
         // 1. 상태 변경 (이동 애니메이션은 무조건 재생)
@@ -142,7 +123,15 @@ public class BaseCharacter : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10.0f * Time.deltaTime);
         }
     }
+    void OnEnable()
+    {
+        // 캐릭터가 켜질 때마다 상태를 Idle로 리셋 (또는 현재 상태에 맞게 애니 재설정)
+        // 가장 안전한 건 그냥 Idle로 시작하는 것.
+        _state = PlayerState.Idle;
 
+        // 만약 켜지자마자 움직여야 한다면, PlayerController가 곧 Move()를 부를 테니
+        // 그때 _state != Move 조건이 참이 되어 ChangeState가 정상 작동함.
+    }
     public void StopMove()
     {
         if (_state == PlayerState.Move)
@@ -153,54 +142,50 @@ public class BaseCharacter : MonoBehaviour
     {
         if (isPressing)
         {
-            // 공격 키를 누르면 그냥 '공격 상태'로만 전환
-            // -> 애니메이션이 재생되면서 알아서 이벤트를 호출할 것임
-            if (_state != PlayerState.Attack)
-            {
-                ChangeState(PlayerState.Attack);
-            }
+            //// 1. 이미 공격 중이면 패스 (애니메이션이 끝날 때까지 대기)
+            //if (_state == PlayerState.Attack) return;
+            // 2. 스킬 사용 중이면 패스
+            if (IsUsingSkill) return;
+
+            // 3. 쿨타임 체크
+            if (Time.time - _lastAttackTime < _attackRate) return;
+
+            // [공격 시작]
+            _lastAttackTime = Time.time;
+            ChangeState(PlayerState.Attack);
+
+            //// 공격 시작 시 리지드바디가 있다면 멈춰주는 게 안전함 (미끄러짐 방지)
+            //if (_rb != null) _rb.linearVelocity = Vector3.zero;
         }
         else
         {
-            // 손 떼면 Idle로 복귀
-            if (_state == PlayerState.Attack)
-                ChangeState(PlayerState.Idle);
+            //// 손을 뗐을 때는 아무것도 안 함.
+            //// 공격 상태 해제는 오직 "애니메이션 이벤트(ChangeToIdle)"가 담당함.
+            //if (_state == PlayerState.Attack)
+            //    ChangeState(PlayerState.Idle);
         }
+
     }
 
-    public void OnAttackEvent(AudioClip sfx)
-    {
-        // 공격 상태일 때만 발사 (혹시 상태가 바뀌었는데 이벤트가 늦게 올 수 있으니 체크)
-        if (_state == PlayerState.Attack)
-        {
-            PerformAttackAction();
-            Managers.Sound.Play(sfx, Define.Sound.Effect);
-        }
-    }
+   
 
     public void UseSkill_Q()
     {
-        if (_state == PlayerState.Idle || _state == PlayerState.Move || _state == PlayerState.Attack)
-        {
-            if (Stat.TryUseSkillQ() == false)
-                return;
+        if (IsUsingSkill || _state == PlayerState.Attack) return;
 
-            Debug.Log("E 스킬 사용!");
+        if (Stat.TryUseSkillQ() == false) return;
 
-            ChangeState(PlayerState.Q_Skill_CutScene);
-        }
+        Debug.Log("Q 스킬 사용!");
+        ChangeState(PlayerState.Q_Skill_CutScene);
     }
     public void UseSkill_E()
     {
-        if (_state == PlayerState.Idle || _state == PlayerState.Move || _state == PlayerState.Attack)
-        {
-            if (Stat.TryUseSkillE() == false)
-                return;
+        if (IsUsingSkill || _state == PlayerState.Attack) return;
 
-            Debug.Log("E 스킬 사용!");
+        if (Stat.TryUseSkillE() == false) return;
 
-            ChangeState(PlayerState.E_Skill);
-        }
+        Debug.Log("E 스킬 사용!");
+        ChangeState(PlayerState.E_Skill);
     }
 
     // 상태 변경 메서드 
@@ -214,13 +199,13 @@ public class BaseCharacter : MonoBehaviour
         switch (_state)
         {
             case PlayerState.Idle:
-                _anim.CrossFade("Idle", 0.1f);
+                _anim.CrossFade("Idle", 0.3f);
                 break;
             case PlayerState.Move:
                 _anim.CrossFade("Move", 0.1f);
                 break;
             case PlayerState.Attack:
-                _anim.CrossFade("Attack_Ing", 0.1f); // 자식마다 다른 모션일 경우 오버라이드 고려
+                _anim.CrossFade("Attack_Ing", 0.0f); // 자식마다 다른 모션일 경우 오버라이드 고려
                 break;
             case PlayerState.Q_Skill_CutScene:
                 _anim.CrossFade("Q_Skill_CutScene", 0.0f); //컷씬도 굳이 블렌딩?
@@ -268,13 +253,57 @@ public class BaseCharacter : MonoBehaviour
     //애니메이션 이벤트 콜백
     void ChangeToIdle()
     {
+        Debug.Log("Idle 전환");
+        if (_state == PlayerState.Die) return;
+
         ChangeState(PlayerState.Idle);
         IsUsingSkill = false;
     }
-    
+
+    void CheckAttackFinished()
+    {
+        // 1. 죽었으면 무시
+        if (_state == PlayerState.Die) return;
+
+        // 2. 공격 키를 계속 누르고 있는지 체크
+        // (PlayerController가 없어도 InputSystem으로 직접 확인 가능)
+        bool isAttackPressed = Mouse.current.leftButton.isPressed;
+
+        // 3. 누르고 있다면 -> 계속 공격!
+        if (isAttackPressed && _state == PlayerState.Attack)
+        {
+            // 쿨타임도 이미 지났거나, 혹은 연타 타이밍이라면 재시작
+            // (애니메이션이 끝났다는 건 이미 한 사이클 돌았다는 뜻이므로 쿨타임 로직은 살짝 무시하거나 재설정)
+
+            // 모션 처음부터 다시 재생
+            _anim.Play("Attack_Ing", 0, 0f);
+
+            // 공격 시간 갱신 (중요: 그래야 Attack() 함수가 또 호출돼도 중복 실행 안 됨)
+            _lastAttackTime = Time.time;
+
+            // 상태는 변경하지 않음 (계속 Attack 상태 유지)
+            // Debug.Log("연사: 공격 유지");
+            return;
+        }
+
+        // 4. 손을 뗐다면 -> Idle로 복귀
+        // Debug.Log("공격 종료: Idle 전환");
+        ChangeState(PlayerState.Idle);
+        IsUsingSkill = false;
+    }
+
     void PlaySFX()
     {
         PlaySFXOnly();
+    }
+    public void OnAttackEvent(AudioClip sfx)
+    {
+        // 공격 상태일 때만 발사 (혹시 상태가 바뀌었는데 이벤트가 늦게 올 수 있으니 체크)
+        if (_state == PlayerState.Attack)
+        {
+            PerformAttackAction();
+            Managers.Sound.Play(sfx, Define.Sound.Effect);
+        }
     }
 
     public void OnPlaySoundEvent(AudioClip clip)

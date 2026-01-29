@@ -24,6 +24,7 @@ public class MonsterController : MonoBehaviour
     private void Awake()
     {
         Stat = GetComponent<CharacterStat>();
+
         if (Stat != null) Stat.Init();
 
         if (_anim == null) _anim = GetComponent<Animator>();
@@ -54,11 +55,11 @@ public class MonsterController : MonoBehaviour
         if (_topNode != null)
             _topNode.Evaluate();
 
-        // 사망 체크 등은 별도 이벤트로 처리하거나 여기서 체크
-        if (Stat.CurrentHp <= 0)
-        {
-            // 사망 처리 로직...
-        }
+        //// 사망 체크 등은 별도 이벤트로 처리하거나 여기서 체크
+        //if (Stat.CurrentHp <= 0)
+        //{
+        //    // 사망 처리 로직...
+        //}
     }
 
     // ========================================================================
@@ -108,8 +109,9 @@ public class MonsterController : MonoBehaviour
         // 쿨타임 체크 등 필요 시 추가
 
         _agent.isStopped = true; // 이동 멈춤
-        _anim.SetBool("IsMoving", false);
-        _anim.SetTrigger("Attack"); // 애니메이션 트리거
+        _anim.CrossFade("Attack", 0.0f);
+        //_anim.SetBool("IsMoving", false);
+        //_anim.SetTrigger("Attack"); // 애니메이션 트리거
 
         // 회전 (공격 시 타겟 바라보기)
         Vector3 dir = (_target.position - transform.position).normalized;
@@ -135,7 +137,8 @@ public class MonsterController : MonoBehaviour
         _agent.isStopped = false;
         _agent.SetDestination(_target.position);
 
-        _anim.SetBool("IsMoving", true);
+        //_anim.SetBool("IsMoving", true);
+        _anim.CrossFade("Move", 0.0f);
         return NodeState.Success;
     }
 
@@ -143,7 +146,8 @@ public class MonsterController : MonoBehaviour
     private NodeState Idle()
     {
         _agent.isStopped = true;
-        _anim.SetBool("IsMoving", false);
+        _anim.CrossFade("Idle", 0.0f);
+        //_anim.SetBool("IsMoving", false);
         return NodeState.Success;
     }
 

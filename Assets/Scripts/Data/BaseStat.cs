@@ -1,0 +1,56 @@
+using System;
+using UnityEngine;
+
+public class BaseStat : MonoBehaviour
+{
+    // 공통 스탯 (HP, 공격력, 방어력)
+    public Stat MaxHp;
+    public Stat Attack;
+    public Stat Defense;
+
+    public float CurrentHp { get; protected set; }
+    public bool IsDead => CurrentHp <= 0;
+
+
+
+    // 사망 이벤트는 공통
+    public event Action OnDead;
+    public event Action<float, float> OnHpChanged;
+
+    public virtual void Init()
+    {
+        // 스탯 클래스 초기화
+        MaxHp = new Stat();
+        Attack = new Stat();
+        Defense = new Stat();
+
+
+    }
+
+    public virtual void TakeDamage(float damage)
+    {
+        // 기본 데미지 공식 (방어력 적용)
+        float finalDamage = Mathf.Max(damage - Defense.Value, 1);
+
+        CurrentHp -= finalDamage;
+        CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+
+        OnHpChanged?.Invoke(CurrentHp, MaxHp.Value);
+
+        if (CurrentHp <= 0)
+        {
+            HandleDeath();
+        }
+    }
+
+    protected virtual void HandleDeath()
+    {
+        OnDead?.Invoke();
+        // 실제 파괴나 비활성화는 Controller에서 이벤트 구독해서 처리하거나 여기서 구현
+    }
+
+    protected void CallOnHpChanged(float current, float max)
+    {
+        OnHpChanged?.Invoke(current, max);
+    }
+}
