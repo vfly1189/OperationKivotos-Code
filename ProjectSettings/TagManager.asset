@@ -21,7 +21,7 @@ TagManager:
   - 
   - Wall
   - Unit
-  - Map
+  - MapGround
   - CutSceneBg
   - Particle
   - Effect

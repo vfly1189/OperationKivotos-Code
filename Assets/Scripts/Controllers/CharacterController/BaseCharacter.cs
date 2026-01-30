@@ -63,7 +63,7 @@ public class BaseCharacter : MonoBehaviour
         // [추가] Wall이나 Block 레이어 등 막혀야 할 레이어를 설정하세요.
         // 예: LayerMask.GetMask("Wall", "Obstacle")
         // 여기선 임시로 Wall이 없으면 Default를 제외한 모든 것을 체크하도록 설정
-        _obstacleMask = LayerMask.GetMask("Collider");
+        _obstacleMask = LayerMask.GetMask("Wall");
         if (_obstacleMask == 0) _obstacleMask = LayerMask.GetMask("Default");
         if (Stat == null)
         {
@@ -329,7 +329,7 @@ public class BaseCharacter : MonoBehaviour
 
         // Ground 레이어(혹은 Wall이 아닌 레이어) 체크
         // "Ground" 레이어가 없으면 임시로 모든 레이어(-1) 체크
-        int layerMask = LayerMask.GetMask("Map");
+        int layerMask = LayerMask.GetMask("MapGround");
         if (layerMask == 0) layerMask = -1;
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100.0f, layerMask))

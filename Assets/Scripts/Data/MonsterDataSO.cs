@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewMonsterData", menuName = "Data/MonsterData")]
-public class MonsterDataSO : MonoBehaviour
+public class MonsterDataSO : ScriptableObject
 {
     [Header("Info")]
     public string id;           //

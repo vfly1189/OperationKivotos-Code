@@ -89,7 +89,7 @@ public class CharacterStat : BaseStat
         CoolTimeUpdate();
 
 
-        CurrentEnergy += 5.0f * Time.deltaTime;
+        CurrentEnergy += 10.0f * Time.deltaTime;
 
         if (CurrentEnergy >= MaxEnergy.Value)
         {

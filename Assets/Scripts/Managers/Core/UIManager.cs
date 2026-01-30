@@ -66,16 +66,33 @@ public class UIManager
         return Util.GetOrAddComponent<T>(go);
     }
 
-    public T MakeSubItem<T>(Transform parent = null, string name = null) where T : UI_Base
+    public T MakeSubItem<T>(GameObject prefab, Transform parent = null) where T : UI_Base
     {
-        if (string.IsNullOrEmpty(name))
-            name = typeof(T).Name;
+        // 1. 프리팹 인스턴스화
+        GameObject go = Object.Instantiate(prefab);
 
-        GameObject go = Managers.Resource.Instantiate($"UI/SubItem/{name}");
+        // 2. 부모 설정
         if (parent != null)
+        {
             go.transform.SetParent(parent);
+        }
+        else
+        {
+            // 부모가 없으면 보통 SceneUI(전체화면 캔버스) 밑으로 가야 함.
+            // 만약 현재 _sceneUI가 있다면 그리로, 없다면 Root나 임시 캔버스 찾기
+            if (_sceneUI != null)
+                go.transform.SetParent(_sceneUI.transform);
+            else
+            {
+                // 씬에 있는 캔버스 찾아서 붙이기 (안전장치)
+                Canvas canvas = Object.FindAnyObjectByType<Canvas>();
+                if (canvas != null) go.transform.SetParent(canvas.transform);
+            }
+        }
 
-
+        // 3. 스케일 초기화 (필수)
+        go.transform.localScale = Vector3.one;
+        go.transform.localPosition = Vector3.zero;
 
         return Util.GetOrAddComponent<T>(go);
     }

@@ -28,6 +28,7 @@ public class NormalDungeonScene : BaseScene
         PlayBGM();
         PlayBattleInVoice();
         CreatePool();
+        CreateEffectStage();
     }
 
     // Update is called once per frame
@@ -84,7 +85,18 @@ public class NormalDungeonScene : BaseScene
         //몬스터
         Managers.Pool.CreatePool(_preloadData.monsterAR, 20);
     }
-   
+
+    void CreateEffectStage()
+    {
+        GameObject root = new GameObject { name = "@Effect" };
+
+        if (_preloadData.effectStage != null)
+        {
+            GameObject effectStage = Object.Instantiate(_preloadData.effectStage, root.transform);
+            // 위치를 따로 잡고 싶다면 여기서 수정 (예: portalGroup 기준 상대 좌표)
+            effectStage.SetActive(true);
+        }
+    }
 
     void SpawnCharacter()
     {

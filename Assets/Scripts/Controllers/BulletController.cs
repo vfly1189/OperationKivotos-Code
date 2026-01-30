@@ -45,7 +45,23 @@ public class BulletController : MonoBehaviour
 
             Debug.Log("몬스터 피격!!!");
 
-            // ★ 수정: 매니저를 통해 반납 (Destroy 대체)
+            MonsterStat monsterStat = other.GetComponent<MonsterStat>();
+
+            if (monsterStat != null)
+            {
+                // 2. 데미지 전달
+                monsterStat.TakeDamage(_damage);
+
+                // (선택) 피격 이펙트 생성, 사운드 재생 등
+                // Managers.Effect.Play("HitEffect", transform.position);
+            }
+
+            // 3. 총알 소멸 (관통이 아니라면 즉시 삭제)
+            Managers.Resource.Destroy(gameObject);
+        }
+        else if (other.CompareTag("Wall") || other.CompareTag("Collider"))
+        {
+            // 벽에 맞으면 그냥 삭제
             Managers.Resource.Destroy(gameObject);
         }
     }
@@ -56,7 +72,6 @@ public class BulletController : MonoBehaviour
         TrailRenderer trail = GetComponent<TrailRenderer>();
         if (trail != null) trail.Clear();
 
-        
     }
 
         // 일정 시간(_lifeTime) 지나면 자동 반납
