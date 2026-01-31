@@ -28,6 +28,12 @@ public class BaseCharacter : MonoBehaviour
     [SerializeField] protected float _attackRate = 0.5f; // 공격 속도
     protected float _lastAttackTime = -99f;
 
+    [Header("Bullet Info")]
+    [SerializeField] protected GameObject _bulletPrefab;
+    [SerializeField] protected Transform _firePoint;
+    [SerializeField] protected ParticleSystem _fireEffectParticle;
+
+
     [Header("Sounds")]
     [SerializeField] protected AudioClip _sfx;
 
@@ -83,8 +89,7 @@ public class BaseCharacter : MonoBehaviour
 
     public void Move(Vector2 dir)
     {
-        // [수정] 스킬 사용 중인 경우에만 이동 불가 
-        // ★ Attack 상태일 때는 이동 허용! (캔슬 무빙)
+        // 스킬 사용 중인 경우에만 이동 불가 
         if (IsUsingSkill
             || _state == PlayerState.Q_Skill_CutScene
             || _state == PlayerState.Q_Skill
@@ -102,7 +107,7 @@ public class BaseCharacter : MonoBehaviour
         float moveDist = _speed * Time.deltaTime;
 
         // 3. 충돌 체크 (Raycast)
-        // 캐릭터 발밑(transform.position)보다는 살짝 위(0.5f)에서 쏴야 바닥에 안 걸립니다.
+        // 캐릭터 발밑(transform.position)보다는 살짝 위(0.5f)에서 쏴야 바닥에 안 걸림
         Vector3 rayOrigin = gameObject.transform.position + Vector3.up * 0.5f;
         float checkDistance = moveDist + 0.5f; // 조금 더 길게 체크
         // "앞으로 moveDist만큼 + 약간의 여유(0.1f)를 두고 쏴서 벽이 있는지 확인"
@@ -296,6 +301,7 @@ public class BaseCharacter : MonoBehaviour
     {
         PlaySFXOnly();
     }
+
     public void OnAttackEvent(AudioClip sfx)
     {
         // 공격 상태일 때만 발사 (혹시 상태가 바뀌었는데 이벤트가 늦게 올 수 있으니 체크)
@@ -339,16 +345,22 @@ public class BaseCharacter : MonoBehaviour
             transform.LookAt(target);
         }
     }
- 
+
+    //총구 화염 이펙트
+    protected virtual void PlayFireEffect()
+    {
+        if (_fireEffectParticle == null) return;
+
+        // 이미 재생 중이라면 강제 재시작 (기관총 연사 느낌)
+        _fireEffectParticle.Stop();
+        _fireEffectParticle.Play();
+    }
 
     #endregion
 
 
     #region virtual function
-    protected virtual void PlaySFXOnly()
-    {
-
-    }
+    protected virtual void PlaySFXOnly() { }
     protected virtual void PerformAttackAction() { }
     #endregion
 

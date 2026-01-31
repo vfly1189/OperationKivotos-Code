@@ -5,10 +5,6 @@ using UnityEngine.Playables;
 
 public class ShirokoCharacter : BaseCharacter
 {
-    [Header("Weapon Settings")]
-    [SerializeField] private GameObject _bulletPrefab; // 풀링용 프리팹 (Poolable 필수)
-    [SerializeField] private Transform _firePoint;     // 총구 위치
-
     [Header("Rapid Fire Settings")]
     [SerializeField] private int _shotCount = 1;       // 한 번 공격에 나가는 총알 수
     [SerializeField] private float _fireDelay = 0.1f;  // 총알 사이 간격 (초)
@@ -19,8 +15,6 @@ public class ShirokoCharacter : BaseCharacter
 
     protected override void PerformAttackAction()
     {
-        Debug.Log("시로코 공격 시작");
-
         if (_bulletPrefab == null || _firePoint == null) return;
 
         FireOneBullet();
@@ -41,7 +35,6 @@ public class ShirokoCharacter : BaseCharacter
         {
             bulletScript.Init(Stat.Attack.Value);
         }
+        PlayFireEffect();
     }
-
-
 }

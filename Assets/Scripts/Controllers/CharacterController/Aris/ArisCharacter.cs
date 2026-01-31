@@ -6,9 +6,7 @@ using UnityEngine.Playables;
 public class ArisCharacter : BaseCharacter
 {
     [Header("Weapon Settings")]
-    [SerializeField] private GameObject _bulletPrefab;
     [SerializeField] private GameObject _chargeEffect;
-    [SerializeField] private Transform _firePoint;
     [SerializeField] private Transform _chargePoint;
     [SerializeField] private float _fireDelay = 1.0f; // 발사 지연 시간 (Inspector에서 조절 가능)
 

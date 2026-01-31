@@ -5,18 +5,12 @@ using UnityEngine.Playables;
 
 public class NonomiCharacter : BaseCharacter
 {
-    [Header("Weapon Settings")]
-    [SerializeField] private GameObject _bulletPrefab; // 풀링용 프리팹 (Poolable 필수)
-    [SerializeField] private Transform _firePoint;     // 총구 위치
-
     [Header("Rapid Fire Settings")]
     [SerializeField] private int _shotCount = 10;       // 한 번 공격에 나가는 총알 수
     [SerializeField] private float _fireDelay = 0.05f;  // 총알 사이 간격 (초)
 
     protected override void PerformAttackAction()
     {
-        Debug.Log("노노미 공격 시작");
-
         if (_bulletPrefab == null || _firePoint == null) return;
 
         StartCoroutine(CoRapidFire());
@@ -41,10 +35,11 @@ public class NonomiCharacter : BaseCharacter
             {
                 bulletScript.Init(Stat.Attack.Value);
             }
-
+            PlayFireEffect();
             // 3. 다음 발사까지 대기
             yield return new WaitForSeconds(_fireDelay);
         }
     }
 
+    
 }
