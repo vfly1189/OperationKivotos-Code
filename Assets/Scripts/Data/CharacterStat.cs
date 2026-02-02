@@ -226,4 +226,20 @@ public class CharacterStat : BaseStat
     {
         return _data.battleInVoices;
     }
+
+    public override void TakeDamage(float damage, GameObject shooter)
+    {
+        // 기본 데미지 공식 (방어력 적용)
+        float finalDamage = Mathf.Max(damage - Defense.Value, 1);
+
+        CurrentHp -= finalDamage;
+        CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
+
+        if (CurrentHp <= 0)
+        {
+            HandleDeath(shooter);
+        }
+    }
 }

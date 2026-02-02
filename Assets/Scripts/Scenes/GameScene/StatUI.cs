@@ -14,7 +14,6 @@ public class StatUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _expText;
     [SerializeField] private Slider _expBar;
 
-
     public void Initialize(CharacterStat stat)
     {
         SetLevel(stat.CurLevel);

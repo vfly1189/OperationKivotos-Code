@@ -178,13 +178,25 @@ public class GameSceneCanvas : MonoBehaviour
 
     void OnDestroy()
     {
+        // 1. PartyManager 이벤트 해제
         if (_partyManager != null)
-            _partyManager.OnCharacterChanged -= UpdateActiveCharacterUI;
-
-        // 마지막 캐릭터 구독 해제
-        if (_cachedActiveCharacter != null)
         {
-            // ... 해제 로직 (UpdateActiveCharacterUI의 해제 부분과 동일) ...
+            _partyManager.OnCharacterChanged -= UpdateActiveCharacterUI;
+        }
+
+        // 2. [핵심] 현재 보고 있던 캐릭터의 스탯 이벤트 해제 (이게 빠져서 문제였음)
+        if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
+        {
+            CharacterStat stat = _cachedActiveCharacter.Stat;
+
+            // StatUI 관련 해제
+            stat.OnHpChanged -= _statUI.SetHp;
+            stat.OnExpChanged -= _statUI.SetExp;
+            stat.OnLevelChanged -= HandleLevelChanged;
+
+            // 스킬 UI 관련 해제
+            stat.OnEnergyChanged -= HandleActiveSkillEnergy;
+            stat.OnUltimateStateChanged -= HandleActiveSkillReady;
         }
     }
 }

@@ -19,6 +19,7 @@ public class ArisBulletController : MonoBehaviour
     [SerializeField] private VisualEffect _projectileVFX; // 투사체 자체의 VFX 컴포넌트
     [SerializeField] private GameObject _hitVFXPrefab;    // 충돌 시 생성될 폭발/스파크 이펙트 (프리팹)
 
+    private GameObject _shooter;
     private float _damage;
     private Vector3 _direction;
     private Rigidbody _rb;
@@ -42,9 +43,10 @@ public class ArisBulletController : MonoBehaviour
         }
     }
 
-    public void Init(float damage)
+    public void Init(float damage, GameObject shooter)
     {
         _damage = damage;
+        _shooter = shooter;
     }
 
     void Update()

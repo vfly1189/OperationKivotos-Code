@@ -1,11 +1,13 @@
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using static BaseCharacter;
 
 public class MonsterStat : BaseStat
 {
     [Header("Data")]
     [SerializeField] private MonsterDataSO _data; // 초기 데이터
     // 몬스터 전용: 처치 시 주는 경험치, 드랍 아이템 확률 등
-    public float DropExpAmount = 10f;
+    public float DropExpAmount = 300f;
 
     public void Init(MonsterDataSO data, int stageLevel)
     {
@@ -32,7 +34,7 @@ public class MonsterStat : BaseStat
         }
     }
 
-    public override void TakeDamage(float damage)
+    public override void TakeDamage(float damage, GameObject shooter)
     {
         // 1. 이미 죽었으면 무시
         if (CurrentHp <= 0) return;
@@ -55,7 +57,27 @@ public class MonsterStat : BaseStat
         // 6. 사망 처리
         if (CurrentHp <= 0)
         {
-            HandleDeath();
+            HandleDeath(shooter);
         }
+    }
+
+    protected override void HandleDeath(GameObject shooter)
+    {
+        // 1. 공격자가 있고, 플레이어라면 경험치 지급
+        if (shooter != null && shooter.CompareTag("Player"))
+        {
+            // 플레이어 스탯 컴포넌트 가져오기 (예: PlayerStat)
+            CharacterStat playerStat = shooter.GetComponent<CharacterStat>();
+            if (playerStat != null)
+            {
+                playerStat.AddExp(DropExpAmount); // 경험치 추가 함수 호출
+                Debug.Log($"플레이어에게 경험치 {DropExpAmount} 지급!");
+            }
+        }
+
+        // 2. 몬스터 소멸 처리
+        Debug.Log("몬스터 사망!");
+        //Managers.Resource.Destroy(gameObject); // 혹은 풀링 반납
+        //몬스터 사망은 MonsterController에서 처리함
     }
 }

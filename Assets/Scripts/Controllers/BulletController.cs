@@ -6,16 +6,18 @@ public class BulletController : MonoBehaviour
     [SerializeField] private float _speed = 20f;
     [SerializeField] private float _lifeTime = 1f;
 
+    private GameObject _shooter;
+
     private float _damage;
     private Coroutine _lifeTimeCoroutine; // 실행 중인 코루틴 저장용
 
     // 풀에서 꺼낼 때마다 호출됨 (NonomiCharacter 등에서 호출)
 
 
-    public void Init(float damage)
+    public void Init(float damage, GameObject shooter)
     {
         _damage = damage;
-
+        _shooter = shooter;
         // 기존에 돌던 코루틴이 있다면 멈춤 (재사용 시 안전장치)
         if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
 
@@ -37,31 +39,47 @@ public class BulletController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Monster"))
+        // 0. 예외 처리: 주인이 없으면(이미 죽거나 파괴됨) 아무것도 안 함
+        if (_shooter == null) return;
+
+        // 1. 벽 충돌 처리 (가장 흔하므로 먼저 체크하거나 따로 뺌)
+        if ((LayerMask.GetMask("Wall") & (1 << other.gameObject.layer)) != 0)
         {
-            // 데미지 처리
-            // Monster monster = other.GetComponent<Monster>();
-            // if(monster != null) monster.TakeDamage(_damage);
+            Managers.Resource.Destroy(gameObject);
+            return;
+        }
+        else if ((LayerMask.GetMask("Barricade") & (1 << other.gameObject.layer)) != 0)
+        {
+            // 부모에 스크립트가 있을 수 있으니 GetComponentInParent 권장 
+            // (Rigidbody 덕분에 GetComponent로도 찾아질 수 있지만 안전하게)
+            Barricade barricade = other.GetComponentInParent<Barricade>();
 
-            Debug.Log("몬스터 피격!!!");
-
-            MonsterStat monsterStat = other.GetComponent<MonsterStat>();
-
-            if (monsterStat != null)
+            if (barricade != null)
             {
-                // 2. 데미지 전달
-                monsterStat.TakeDamage(_damage);
-
-                // (선택) 피격 이펙트 생성, 사운드 재생 등
-                // Managers.Effect.Play("HitEffect", transform.position);
+                barricade.TakeDamage(_damage);
+                Managers.Resource.Destroy(gameObject); // 총알 삭제
+                return;
             }
 
-            // 3. 총알 소멸 (관통이 아니라면 즉시 삭제)
+            // 만약 파괴 불가능한 그냥 벽이라면 그냥 삭제
             Managers.Resource.Destroy(gameObject);
         }
-        else if (other.CompareTag("Wall") || other.CompareTag("Collider"))
+        // 2. 피아 식별 (아군 오사 방지)
+        // "나를 쏜 놈과 맞은 놈의 태그가 같으면(같은 팀이면) 무시"
+        if (other.CompareTag(_shooter.tag)) return;
+
+
+        // 3. 적군 피격 처리 (이제 남은 건 적군뿐)
+        // 맞은 놈이 데미지를 받을 수 있는 놈인지 확인 (인터페이스나 BaseStat 활용)
+        BaseStat targetStat = other.GetComponent<BaseStat>();
+
+        if (targetStat != null)
         {
-            // 벽에 맞으면 그냥 삭제
+            // Player -> Monster 공격이든, Monster -> Player 공격이든 
+            // TakeDamage는 다형성으로 알아서 잘 동작함
+            targetStat.TakeDamage(_damage, _shooter);
+
+            // 이펙트 생성 등...
             Managers.Resource.Destroy(gameObject);
         }
     }

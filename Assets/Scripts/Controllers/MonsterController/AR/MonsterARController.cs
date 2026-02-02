@@ -36,7 +36,7 @@ public class MonsterARController : MonsterController
             BulletController bulletScript = bulletObj.GetComponent<BulletController>();
             if (bulletScript != null && Stat != null)
             {
-                bulletScript.Init(Stat.Attack.Value);
+                bulletScript.Init(Stat.Attack.Value, this.gameObject);
             }
             PlayFireEffect();
             // 3. 다음 발사까지 대기

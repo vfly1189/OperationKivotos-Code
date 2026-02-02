@@ -25,6 +25,7 @@ public class PoolManager
         {
             GameObject go = Object.Instantiate(Original);
             go.name = Original.name;
+            go.transform.position = Vector3.zero;
 
             return go.GetOrAddComponent<Poolable>();
         }
@@ -86,6 +87,10 @@ public class PoolManager
     // 풀 생성 (미리 만들어두기)
     public void CreatePool(GameObject original, int count = 10)
     {
+        //이미 풀이 존재하면 중복 생성하지 않고 리턴
+        if (_pool.ContainsKey(original.name))
+            return;
+
         Pool pool = new Pool();
         pool.Init(original, count);
         pool.Root.SetParent(_root);

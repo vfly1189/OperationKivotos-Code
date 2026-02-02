@@ -63,7 +63,7 @@ public class ArisCharacter : BaseCharacter
         ArisBulletController bulletScript = bulletObj.GetComponent<ArisBulletController>();
         if (bulletScript != null && Stat != null)
         {
-            bulletScript.Init(Stat.Attack.Value);
+            bulletScript.Init(Stat.Attack.Value, this.gameObject);
         }
     }
 }

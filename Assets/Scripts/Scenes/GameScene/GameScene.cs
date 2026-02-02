@@ -85,6 +85,8 @@ public class GameScene : BaseScene
     {
         _map = Object.Instantiate(_preloadData.mainVillage);
         if (_map != null) _map.name = "@Map";
+
+        _map.gameObject.transform.position = Vector3.zero;
     }
 
     void CreateCharacters()
@@ -115,7 +117,7 @@ public class GameScene : BaseScene
 
                     // 초기 위치 설정 (일단 모두 같은 곳에 두거나, 안 보이는 곳에 둠)
                     // 어차피 PartyManager.Init()에서 1번만 남기고 나머지는 비활성화 시킬 것임
-                    go.transform.position = spawnStartPos;
+                    go.transform.position = Vector3.zero;
                 }
                 else
                 {

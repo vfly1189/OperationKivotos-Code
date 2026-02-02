@@ -24,7 +24,7 @@ public class MonsterController : MonoBehaviour
     public MonsterStat Stat { get; private set; }
 
     // 타겟(플레이어)
-    private Transform _target;
+    protected Transform _target;
     // 행동 트리 루트 노드
     private Node _topNode;
 
@@ -85,6 +85,7 @@ public class MonsterController : MonoBehaviour
             PartyManager.Instance.OnCharacterChanged += OnPlayerCharacterChanged;
         }
     }
+
 
     private void OnDestroy()
     {
@@ -278,6 +279,7 @@ public class MonsterController : MonoBehaviour
         // HP바 삭제
         if (_hpBar != null)
         {
+            Stat.OnHpChanged -= _hpBar.UpdateHpBar;
             Managers.Resource.Destroy(_hpBar.gameObject);
             _hpBar = null;
         }

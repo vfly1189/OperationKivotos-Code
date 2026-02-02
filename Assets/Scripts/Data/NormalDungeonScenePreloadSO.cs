@@ -3,7 +3,10 @@ using UnityEngine;
 public class NormalDungeonScenePreloadSO : ScriptableObject
 {
     [Header("∏ ")]
-    public GameObject normalDungeon;
+    public GameObject normalDungeonEasy;
+    public GameObject normalDungeonNormal;
+    public GameObject normalDungeonHard;
+
 
     [Header("∏ÛΩ∫≈Õ")]
     public GameObject monsterAR;

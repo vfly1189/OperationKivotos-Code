@@ -69,7 +69,7 @@ public class BaseCharacter : MonoBehaviour
         // [추가] Wall이나 Block 레이어 등 막혀야 할 레이어를 설정하세요.
         // 예: LayerMask.GetMask("Wall", "Obstacle")
         // 여기선 임시로 Wall이 없으면 Default를 제외한 모든 것을 체크하도록 설정
-        _obstacleMask = LayerMask.GetMask("Wall");
+        _obstacleMask = LayerMask.GetMask("Wall") | LayerMask.GetMask("Barricade");
         if (_obstacleMask == 0) _obstacleMask = LayerMask.GetMask("Default");
         if (Stat == null)
         {
@@ -89,6 +89,47 @@ public class BaseCharacter : MonoBehaviour
 
     public void Move(Vector2 dir)
     {
+        //// 스킬 사용 중인 경우에만 이동 불가 
+        //if (IsUsingSkill
+        //    || _state == PlayerState.Q_Skill_CutScene
+        //    || _state == PlayerState.Q_Skill
+        //    || _state == PlayerState.E_Skill
+        //    || _state == PlayerState.Die
+        //    || _state == PlayerState.Attack)
+        //    return;
+
+        //// 1. 상태 변경 (이동 애니메이션은 무조건 재생)
+        //if (_state != PlayerState.Move)
+        //    ChangeState(PlayerState.Move);
+
+        //// 2. 이동 벡터 계산
+        //Vector3 moveDir = new Vector3(dir.x, 0, dir.y).normalized;
+        //float moveDist = _speed * Time.deltaTime;
+
+        //// 3. 충돌 체크 (Raycast)
+        //// 캐릭터 발밑(transform.position)보다는 살짝 위(0.5f)에서 쏴야 바닥에 안 걸림
+        //Vector3 rayOrigin = gameObject.transform.position + Vector3.up * 0.5f;
+        //float checkDistance = moveDist + 0.5f; // 조금 더 길게 체크
+        //// "앞으로 moveDist만큼 + 약간의 여유(0.1f)를 두고 쏴서 벽이 있는지 확인"
+        //bool isHit = Physics.Raycast(rayOrigin, moveDir, out RaycastHit hit, moveDist + 0.5f, _obstacleMask);
+        //Debug.DrawRay(rayOrigin, moveDir * checkDistance, isHit ? Color.red : Color.green);
+
+        //// [핵심] 벽이 없으면 이동, 벽이 있으면 제자리 걸음 (이동 코드 건너뜀)
+        //if (!isHit)
+        //{
+        //    transform.position += moveDir * moveDist;
+        //}
+        //// else { 벽에 부딪힘 -> 위치 이동은 안 하지만 _state는 Move 상태이므로 애니메이션은 계속 뜀 }
+
+        //// 4. 회전 로직 (벽에 막혀도 바라보는 방향은 입력한 쪽으로 돌아가는 게 자연스러움)
+        //if (moveDir != Vector3.zero)
+        //{
+        //    Quaternion targetRotation = Quaternion.LookRotation(moveDir);
+        //    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10.0f * Time.deltaTime);
+        //}
+
+
+
         // 스킬 사용 중인 경우에만 이동 불가 
         if (IsUsingSkill
             || _state == PlayerState.Q_Skill_CutScene
@@ -102,26 +143,48 @@ public class BaseCharacter : MonoBehaviour
         if (_state != PlayerState.Move)
             ChangeState(PlayerState.Move);
 
-        // 2. 이동 벡터 계산
-        Vector3 moveDir = new Vector3(dir.x, 0, dir.y).normalized;
+        // [핵심 수정] 2. 카메라 기준 이동 벡터 계산 -----------------------------
+        Vector3 moveDir;
+
+        if (Camera.main != null)
+        {
+            // 카메라의 앞/오른쪽 방향 가져오기
+            Vector3 camFwd = Camera.main.transform.forward;
+            Vector3 camRight = Camera.main.transform.right;
+
+            // Y축(높이) 정보 제거 (땅 위를 걸어야 하니까)
+            camFwd.y = 0;
+            camRight.y = 0;
+            camFwd.Normalize();
+            camRight.Normalize();
+
+            // 입력값(dir)을 카메라 기준 방향으로 변환
+            // dir.x = 좌우(Horizontal), dir.y = 상하(Vertical)
+            moveDir = (camFwd * dir.y + camRight * dir.x).normalized;
+        }
+        else
+        {
+            // 카메라가 없으면 기존 방식(절대 좌표계) 사용
+            moveDir = new Vector3(dir.x, 0, dir.y).normalized;
+        }
+        // -----------------------------------------------------------------------
+
         float moveDist = _speed * Time.deltaTime;
 
         // 3. 충돌 체크 (Raycast)
-        // 캐릭터 발밑(transform.position)보다는 살짝 위(0.5f)에서 쏴야 바닥에 안 걸림
         Vector3 rayOrigin = gameObject.transform.position + Vector3.up * 0.5f;
-        float checkDistance = moveDist + 0.5f; // 조금 더 길게 체크
-        // "앞으로 moveDist만큼 + 약간의 여유(0.1f)를 두고 쏴서 벽이 있는지 확인"
+        float checkDistance = moveDist + 0.5f;
+
         bool isHit = Physics.Raycast(rayOrigin, moveDir, out RaycastHit hit, moveDist + 0.5f, _obstacleMask);
         Debug.DrawRay(rayOrigin, moveDir * checkDistance, isHit ? Color.red : Color.green);
 
-        // [핵심] 벽이 없으면 이동, 벽이 있으면 제자리 걸음 (이동 코드 건너뜀)
+        // [핵심] 벽이 없으면 이동
         if (!isHit)
         {
             transform.position += moveDir * moveDist;
         }
-        // else { 벽에 부딪힘 -> 위치 이동은 안 하지만 _state는 Move 상태이므로 애니메이션은 계속 뜀 }
 
-        // 4. 회전 로직 (벽에 막혀도 바라보는 방향은 입력한 쪽으로 돌아가는 게 자연스러움)
+        // 4. 회전 로직
         if (moveDir != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDir);

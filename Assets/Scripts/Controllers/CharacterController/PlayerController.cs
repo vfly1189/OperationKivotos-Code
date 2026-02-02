@@ -59,6 +59,14 @@ public class PlayerController : MonoBehaviour
     {
         if (_currentTarget == null) return;
 
+        // [추가] 마을(GameScene)에서는 공격 금지
+        if (Managers.SceneEx.CurrentSceneType == Define.Scene.Game)
+        {
+            // 클릭해도 무시하고 리턴
+            _isMousePressed = false;
+            return;
+        }
+
         if (evt == Define.MouseEvent.Press)
         {
             _isMousePressed = true;

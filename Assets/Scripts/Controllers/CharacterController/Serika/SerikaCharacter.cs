@@ -26,6 +26,8 @@ public class SerikaCharacter : BaseCharacter
         // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
         GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
 
+
+
         bulletObj.transform.position = _firePoint.position;
         // 캐릭터가 바라보는 방향 기준으로 회전
         bulletObj.transform.rotation = transform.rotation;
@@ -33,7 +35,7 @@ public class SerikaCharacter : BaseCharacter
         BulletController bulletScript = bulletObj.GetComponent<BulletController>();
         if (bulletScript != null && Stat != null)
         {
-            bulletScript.Init(Stat.Attack.Value);
+            bulletScript.Init(Stat.Attack.Value, this.gameObject);
         }
         PlayFireEffect();
     }

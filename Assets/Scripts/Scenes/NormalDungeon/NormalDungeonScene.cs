@@ -42,11 +42,31 @@ public class NormalDungeonScene : BaseScene
     void CreateMap()
     {
         GameObject root = new GameObject { name = "@Map" };
+        GameObject mapPrefab = null;
 
-        GameObject map = Object.Instantiate(_preloadData.normalDungeon);
-        map.transform.SetParent(root.transform);
+        // Enum에 따라 프리팹 선택
+        switch (Managers.Game.SelectedDifficulty)
+        {
+            case DungeonDifficulty.Easy:
+                mapPrefab = _preloadData.normalDungeonEasy;
+                break;
+            case DungeonDifficulty.Normal:
+                mapPrefab = _preloadData.normalDungeonNormal;
+                break;
+            case DungeonDifficulty.Hard:
+                mapPrefab = _preloadData.normalDungeonHard;
+                break;
+        }
 
-        map.transform.position = new Vector3(0, 0, 0);
+        if (mapPrefab != null)
+        {
+            GameObject map = Object.Instantiate(mapPrefab, root.transform);
+            map.transform.position = Vector3.zero;
+        }
+        else
+        {
+            Debug.LogError("맵 프리팹이 할당되지 않았습니다!");
+        }
     }
 
     void CreateUI()
@@ -83,7 +103,7 @@ public class NormalDungeonScene : BaseScene
         //총알
         Managers.Pool.CreatePool(_preloadData.bullet, 60);
         //몬스터
-        Managers.Pool.CreatePool(_preloadData.monsterAR, 20);
+        //Managers.Pool.CreatePool(_preloadData.monsterAR, 20);
     }
 
     void CreateEffectStage()

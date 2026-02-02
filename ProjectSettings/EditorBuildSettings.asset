@@ -20,6 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/NormalDungeon.unity
     guid: 00ca77e390775bb46b53a221ae549b47
+  - enabled: 1
+    path: Assets/Scenes/BossDungeon.unity
+    guid: 731a36a59c66eee41b48508996ed5f7d
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

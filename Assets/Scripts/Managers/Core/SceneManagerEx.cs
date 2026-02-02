@@ -9,6 +9,17 @@ public class SceneManagerEx
 {
     public BaseScene CurrentScene { get { return GameObject.FindAnyObjectByType<BaseScene>(); } }
 
+    public Define.Scene CurrentSceneType
+    {
+        get
+        {
+            if (CurrentScene != null)
+                return CurrentScene._sceneType; // BaseScene에 있는 _sceneType 리턴
+
+            return Define.Scene.Unknown; // 혹은 Default값
+        }
+    }
+
     // 다음에 로드할 씬의 이름을 저장해두는 변수
     public string NextSceneName { get; private set; }
 
