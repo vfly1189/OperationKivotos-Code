@@ -66,8 +66,8 @@ public class Sequence : Node
                     isAnyChildRunning = true;
                     continue; // 다음 노드 평가 안 하고 Running 반환해도 되지만, 보통 Sequence는 멈춤
                     // (여기서는 간단한 구현을 위해 Running이면 즉시 리턴)
-                    _nodeState = NodeState.Running;
-                    return _nodeState;
+                    //_nodeState = NodeState.Running;
+                    //return _nodeState;
                 case NodeState.Success:
                     continue; // 다음 단계로
                 case NodeState.Failure:

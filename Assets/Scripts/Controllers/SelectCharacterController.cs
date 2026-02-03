@@ -14,7 +14,7 @@ public class SelectCharacterController : MonoBehaviour
     }
 
     private State _currentState = State.None;
-    private float _stateTimer = 0f; // 현재 상태가 얼마나 지났는지 체크
+    //private float _stateTimer = 0f; // 현재 상태가 얼마나 지났는지 체크
     private float _currentAnimLength = 0f; // 현재 재생 중인 애니메이션의 길이
 
     private static readonly int Hash_SelectStart = Animator.StringToHash("Select_Start");
@@ -59,7 +59,7 @@ public class SelectCharacterController : MonoBehaviour
     private void ChangeState(State newState)
     {
         _currentState = newState;
-        _stateTimer = 0f;
+        //_stateTimer = 0f;
 
         switch (newState)
         {

@@ -3,7 +3,7 @@ using UnityEngine;
 public class MouthController : MonoBehaviour
 {
     [SerializeField] private Renderer targetRenderer;
-    [SerializeField] private int materialIndex = 0;
+    //[SerializeField] private int materialIndex = 0;
 
     private Material material;
     private static readonly int MouthOffsetID = Shader.PropertyToID("_MouthOffset");

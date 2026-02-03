@@ -11,7 +11,6 @@ public class InputManager
     public event Action<Define.MouseEvent> MouseAction;
 
     bool _pressed = false;
-    float _pressedTime = 0;
 
     // 동적 키 (리맵핑 가능)
     private Dictionary<string, Key> _keyMap = new Dictionary<string, Key>()

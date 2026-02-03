@@ -17,8 +17,12 @@ public class NormalDungeonScenePreloadSO : ScriptableObject
     public GameObject gameSceneCanvas;
     public GameObject effectStage;
 
+    [Header("클리어 UI")]
+    public GameObject dungeonClearUI;
+
     [Header("브금")]
     public AudioClip[] fightingBgms;
+    public AudioClip successBgm;
 
     [Header("총알")]
     public GameObject bullet;

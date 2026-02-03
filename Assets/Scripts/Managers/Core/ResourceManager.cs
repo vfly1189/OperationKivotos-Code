@@ -219,7 +219,7 @@ public class ResourceManager
         Poolable poolable = go.GetComponent<Poolable>();
         if (poolable != null)
         {
-            Debug.Log($"{go.name} 회수");
+            //Debug.Log($"{go.name} 회수");
             Managers.Pool.Push(poolable);
             return;
         }

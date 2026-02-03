@@ -11,6 +11,11 @@ public class CurrentGameDataSO : ScriptableObject
     public int SchoolIdx;
     public int textidx;
 
+    // 캐릭터 ID를 키로 사용하여 런타임 데이터 저장
+    public Dictionary<int, CharacterRuntimeData> SavedCharacterStats = new Dictionary<int, CharacterRuntimeData>();
+    public Define.DungeonDifficulty SelectedDifficulty { get; set; } = Define.DungeonDifficulty.Easy;
+
+
     public SchoolDataSO SelectedSchool
     {
         get { return _selectedSchool; }
@@ -43,5 +48,24 @@ public class CurrentGameDataSO : ScriptableObject
     {
         Debug.Log("[SO] OnDisable 호출됨 (씬 전환 시 호출될 수 있음)");
         // 여기서 초기화하면 안 됨!
+    }
+
+
+    // 던전 진입 전이나, 레벨업 할 때마다 저장
+    public void SaveCharacterStat(int charId, int level, float exp)
+    {
+        if (!SavedCharacterStats.ContainsKey(charId))
+            SavedCharacterStats[charId] = new CharacterRuntimeData();
+
+        SavedCharacterStats[charId].level = level;
+        SavedCharacterStats[charId].currentExp = exp;
+    }
+
+    // 캐릭터 생성 시 불러오기
+    public CharacterRuntimeData LoadCharacterStat(int charId)
+    {
+        if (SavedCharacterStats.ContainsKey(charId))
+            return SavedCharacterStats[charId];
+        return null; // 저장된 게 없으면 1레벨
     }
 }

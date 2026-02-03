@@ -12,7 +12,7 @@ public class Managers : MonoBehaviour
     }
 
     #region Core Manager
-    GameManager _game = new GameManager();
+    //GameManager _game = new GameManager();
     InputManager _input = new InputManager();
     //PartyManager _party = new PartyManager();
     PoolManager _pool = new PoolManager();
@@ -21,7 +21,7 @@ public class Managers : MonoBehaviour
     SoundManager _sound = new SoundManager();
     UIManager _ui = new UIManager();
 
-    public static GameManager Game { get { return Instance._game; } }
+    //public static GameManager Game { get { return Instance._game; } }
     public static InputManager Input { get { return Instance._input; } }
     //public static PartyManager Party { get { return Instance._party; } }
     public static PoolManager Pool { get { return Instance._pool; } }   

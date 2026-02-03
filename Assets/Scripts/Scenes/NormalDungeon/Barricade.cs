@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class Barricade : MonoBehaviour
+public class Barricade : MonoBehaviour, IDamageable
 {
     [SerializeField] private float _maxHp = 50f;
     private float _currentHp;
@@ -25,6 +25,19 @@ public class Barricade : MonoBehaviour
         if (_currentHp <= 0) return; // 이미 부서졌으면 무시
 
         _currentHp -= damage;
+        Debug.Log($"바리케이드 체력: {_currentHp}");
+
+        if (_currentHp <= 0)
+        {
+            StartCoroutine(CoDestroyBarricade());
+        }
+    }
+
+    public void TakeDamage(DamageInfo damage)
+    {
+        if (_currentHp <= 0) return; // 이미 부서졌으면 무시
+
+        _currentHp -= damage.Amount;
         Debug.Log($"바리케이드 체력: {_currentHp}");
 
         if (_currentHp <= 0)

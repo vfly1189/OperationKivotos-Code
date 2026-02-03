@@ -18,16 +18,6 @@ public class GameScene : BaseScene
 
         _sceneType = Define.Scene.Game;
 
-        //// 1. 관리자용 GameObject 생성 (Hierarchy 정리용)
-        //GameObject go = new GameObject("@GameSystem");
-
-        //// 2. 컴포넌트 부착
-        //_partyManager = go.AddComponent<PartyManager>();
-        //_playerController = go.AddComponent<PlayerController>();
-
-        //// 3. 서로 연결 (Dependency Injection)
-        //_partyManager._playerController = _playerController;
-
         if (PartyManager.Instance == null)
         {
             // 최초 생성 (게임 처음 시작 시)
@@ -40,7 +30,7 @@ public class GameScene : BaseScene
             _partyManager._playerController = _playerController;
 
             // 파티 멤버 최초 생성 및 초기화
-            CreateCharacters();
+            //CreateCharacters();
         }
         else
         {
@@ -57,13 +47,11 @@ public class GameScene : BaseScene
 
         // 이미 로딩된 리소스들을 배치
         CreateMainVillage();
-        //CreateCharacters();
+        CreateCharacters();
         CreatePortal();
         CreateShopMaster();
         CreateEffectStage();
         PlayMainBGM();
-        //GameObject mainUI = Managers.Resource.Instantiate("UI/GameScene/GameSceneCanvas");
-        //mainUI.name = "@GameSceneCanvas";
 
 
         SetupUI();
@@ -91,48 +79,32 @@ public class GameScene : BaseScene
 
     void CreateCharacters()
     {
-        // GameManager에서 선택 정보 가져오기
-        int schoolIdx = Managers.Context.SchoolIdx;
-        CharacterDataSO[] charactersToSpawn = Managers.Context.SelectedSchool.characters;
+        // [추가] 기존 파티 멤버가 있다면 싹 다 삭제 (Destroy)
+        _partyManager.ClearParty();
 
-        // 스폰 포인트 (임시)
-        Vector3 spawnStartPos = new Vector3(0, 0, 0);
+        // ... 기존 생성 로직 그대로 ...
+        CharacterDataSO[] charactersToSpawn = Managers.Context.SelectedSchool.characters;
         List<BaseCharacter> partyMembers = new List<BaseCharacter>();
 
         for (int i = 0; i < charactersToSpawn.Length; i++)
         {
             GameObject go = Object.Instantiate(charactersToSpawn[i].inGamePrefab);
+            BaseCharacter character = go.GetComponent<BaseCharacter>();
+            character.Init();
+
+            // [핵심 추가] 저장된 성장 데이터(레벨, 경험치)가 있으면 복구해라!
+            CharacterRuntimeData savedData = Managers.Context.LoadCharacterStat(charactersToSpawn[i].id);
+            if (savedData != null)
+            {
+                character.Stat.ApplyRuntimeData(savedData);
+            }
+
+            partyMembers.Add(character);
             go.transform.SetParent(_partyManager.transform);
-            if (go != null)
-            {
-                // 생성된 오브젝트에서 BaseCharacter 컴포넌트 추출
-                // (NonomiCharacter 같은 자식 클래스도 BaseCharacter로 받아짐)
-                BaseCharacter character = go.GetComponent<BaseCharacter>();
-
-                if (character != null)
-                {
-                    character.Init();
-                    // 리스트에 추가
-                    partyMembers.Add(character);
-
-                    // 초기 위치 설정 (일단 모두 같은 곳에 두거나, 안 보이는 곳에 둠)
-                    // 어차피 PartyManager.Init()에서 1번만 남기고 나머지는 비활성화 시킬 것임
-                    go.transform.position = Vector3.zero;
-                }
-                else
-                {
-                    //Debug.LogError($"프리팹 {students[i]}에 BaseCharacter 스크립트가 없습니다!");
-                }
-            }
-            else
-            {
-                // Debug.LogError($"캐릭터 생성 실패: {path}");
-            }
         }
-        if (_partyManager != null)
-        {
-            _partyManager.Init(partyMembers);
-        }
+
+        // 매니저에게 "새 멤버들이다. 다시 관리해라"라고 넘김
+        _partyManager.Init(partyMembers);
     }
 
     void CreatePortal()

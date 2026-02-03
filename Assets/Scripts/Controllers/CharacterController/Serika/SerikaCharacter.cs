@@ -5,9 +5,6 @@ using UnityEngine.Playables;
 
 public class SerikaCharacter : BaseCharacter
 {
-    [Header("Rapid Fire Settings")]
-    [SerializeField] private int _shotCount = 1;       // 한 번 공격에 나가는 총알 수
-    [SerializeField] private float _fireDelay = 0.1f;  // 총알 사이 간격 (초)
     public override void Init()
     {
         base.Init();
@@ -25,8 +22,6 @@ public class SerikaCharacter : BaseCharacter
     {
         // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
         GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
-
-
 
         bulletObj.transform.position = _firePoint.position;
         // 캐릭터가 바라보는 방향 기준으로 회전

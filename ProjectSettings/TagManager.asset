@@ -20,7 +20,7 @@ TagManager:
   - 
   - 
   - Wall
-  - Unit
+  - Player
   - MapGround
   - CutSceneBg
   - Particle
@@ -29,9 +29,9 @@ TagManager:
   - Buildings
   - Ground
   - Barricade
-  - 
-  - 
-  - 
+  - PlayerBullet
+  - MonsterBullet
+  - Monster
   - 
   - 
   - 

@@ -59,7 +59,7 @@ public class MonsterARController : MonsterController
         var ps = effect.GetComponent<ParticleSystem>();
         if (ps != null)
         {
-            Debug.Log("파티클 재생");
+            //Debug.Log("파티클 재생");
             ps.Play();
         }
 

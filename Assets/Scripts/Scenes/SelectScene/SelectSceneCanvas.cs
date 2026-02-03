@@ -179,7 +179,7 @@ public class SelectSceneCanvas : MonoBehaviour
         //PlayerPrefs.SetInt("SelectedSchool", schoolIndex);
         //PlayerPrefs.Save();
 
-        Managers.Game._selectedSchoolIndex = schoolIndex;
+        Managers.Context.SchoolIdx = schoolIndex;
     }
 
     void ActivateSchoolModels(int schoolIndex)

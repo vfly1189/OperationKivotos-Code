@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -19,6 +20,11 @@ public class GameSceneCanvas : MonoBehaviour
 
     [Header("Stat UI")]
     [SerializeField] private StatUI _statUI;
+
+    [Header("Failed or Success")]
+    [SerializeField] private Image _failedImageFont;
+    [SerializeField] private Image _sucessImageFont;
+
 
     private PartyManager _partyManager;
     private BaseCharacter _cachedActiveCharacter; // 현재 UI가 구독 중인 캐릭터
@@ -43,7 +49,14 @@ public class GameSceneCanvas : MonoBehaviour
 
             // 4. 초기 캐릭터 UI 세팅
             UpdateActiveCharacterUI(0);
+
+            // [추가] 게임 종료 이벤트 연결
+            _partyManager.OnGameFinished += HandleGameFinished;
         }
+
+        // 시작할 때 이미지는 꺼두기
+        if (_failedImageFont) _failedImageFont.gameObject.SetActive(false);
+        if (_sucessImageFont) _sucessImageFont.gameObject.SetActive(false);
     }
 
     void Update()
@@ -182,6 +195,7 @@ public class GameSceneCanvas : MonoBehaviour
         if (_partyManager != null)
         {
             _partyManager.OnCharacterChanged -= UpdateActiveCharacterUI;
+            _partyManager.OnGameFinished -= HandleGameFinished;
         }
 
         // 2. [핵심] 현재 보고 있던 캐릭터의 스탯 이벤트 해제 (이게 빠져서 문제였음)
@@ -198,5 +212,48 @@ public class GameSceneCanvas : MonoBehaviour
             stat.OnEnergyChanged -= HandleActiveSkillEnergy;
             stat.OnUltimateStateChanged -= HandleActiveSkillReady;
         }
+    }
+
+    // [추가] 게임 종료 핸들러
+    private void HandleGameFinished(bool isSuccess)
+    {
+        if (isSuccess)
+        {
+            if (_sucessImageFont != null)
+                StartCoroutine(CoShowResultEffect(_sucessImageFont));
+        }
+        else
+        {
+            if (_failedImageFont != null)
+                StartCoroutine(CoShowResultEffect(_failedImageFont));
+        }
+    }
+
+    // [추가] 점점 커지는 연출 코루틴
+    private IEnumerator CoShowResultEffect(Image targetImage)
+    {
+        targetImage.gameObject.SetActive(true);
+        targetImage.transform.localScale = Vector3.zero; // 0에서 시작
+
+        float duration = 0.5f; // 0.5초 동안 커짐
+        float timer = 0f;
+
+        // 약간 튕기는 듯한 연출을 위한 Overshoot 커브 (선택사항)
+        // AnimationCurve.EaseInOut(0,0,1,1) 등을 써도 됨
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / duration;
+
+            // 부드러운 보간 (Lerp)
+            // t * (2 - t)는 EaseOut 효과 (빠르게 시작해서 천천히 도착)
+            float scale = Mathf.Lerp(0f, 1f, t * (2 - t));
+
+            targetImage.transform.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        targetImage.transform.localScale = Vector3.one;
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class BaseStat : MonoBehaviour
+public class BaseStat : MonoBehaviour, IDamageable
 {
     // 공통 스탯 (HP, 공격력, 방어력)
     public Stat MaxHp;
@@ -24,9 +24,6 @@ public class BaseStat : MonoBehaviour
 
 
     }
-
-    public virtual void TakeDamage(float damage, GameObject shooter) { }
-
     protected virtual void HandleDeath(GameObject shooter)
     {
         OnDead?.Invoke();
@@ -37,4 +34,11 @@ public class BaseStat : MonoBehaviour
     {
         OnHpChanged?.Invoke(current, max);
     }
+
+    protected void CallOnDead()
+    {
+        OnDead?.Invoke();
+    }
+
+    public virtual void TakeDamage(DamageInfo damageInfo) { }
 }

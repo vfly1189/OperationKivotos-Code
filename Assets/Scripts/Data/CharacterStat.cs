@@ -1,7 +1,8 @@
 using System;
 using UnityEngine;
 
-public class CharacterStat : BaseStat
+
+public class CharacterStat : BaseStat, IDamageable
 {
     [Header("Data")]
     [SerializeField] private CharacterDataSO _data; // 초기 데이터
@@ -18,6 +19,8 @@ public class CharacterStat : BaseStat
     public float CurrentExp { get; private set; }
     public float CurrentQSkillCoolTime { get; private set; }
     public float CurrentESkillCoolTime { get; private set; }
+
+    public bool IsInvincible { get; set; } = false; //무적인지
 
     private bool _isUltimateReady = false;
 
@@ -63,24 +66,6 @@ public class CharacterStat : BaseStat
         CurrentESkillCoolTime = 0;
         CurrentExp = 0;
     }
-
-    // 데미지 받는 함수 예시
-    //public void TakeDamage(float damage)
-    //{
-    //    float finalDamage = Mathf.Max(damage - Defense.Value, 1);
-    //    CurrentHp -= finalDamage;
-    //    CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
-
-    //    OnHpChanged?.Invoke(CurrentHp, MaxHp.Value); // UI 알림
-
-    //    if (CurrentHp <= 0) OnDead();
-    //}
-
-    //private void OnDead()
-    //{
-    //    Debug.Log($"{name} Died.");
-    //    // 사망 처리
-    //}
 
 
     //테스트용
@@ -147,6 +132,7 @@ public class CharacterStat : BaseStat
         OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
 
         Debug.Log($"[Exp] Added {amount}. Current: {CurrentExp}/{MaxExp.Value}, Level: {CurLevel}");
+        Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp);
     }
 
     public bool TryUseSkillQ()
@@ -220,6 +206,7 @@ public class CharacterStat : BaseStat
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
 
         Debug.Log($"Level Up! Current Level: {CurLevel}, New Attack: {Attack.Value}");
+        Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp);
     }
 
     public AudioClip[] GetBattleInVoice()
@@ -227,19 +214,74 @@ public class CharacterStat : BaseStat
         return _data.battleInVoices;
     }
 
-    public override void TakeDamage(float damage, GameObject shooter)
+    public AudioClip[] GetBattleVictoryVoices()
     {
-        // 기본 데미지 공식 (방어력 적용)
-        float finalDamage = Mathf.Max(damage - Defense.Value, 1);
+        return _data.battleVictoryVocies;
+    }
 
+    public override void TakeDamage(DamageInfo damageInfo)
+    {
+        // 1. 무적 체크: 무적이면 데미지 연산 스킵
+        if (IsInvincible)
+        {
+            Debug.Log("무적 상태라 데미지를 입지 않습니다.");
+            // (선택) 여기서 "IMMUNE" 같은 텍스트 이펙트를 띄우면 좋습니다.
+            return;
+        }
+
+        float finalDamage = Mathf.Max(damageInfo.Amount - Defense.Value, 1);
         CurrentHp -= finalDamage;
         CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+        // 피격 이펙트, 사운드 처리 등을 damageInfo.HitPoint를 활용해 여기서 처리 가능
+
+        if (CurrentHp <= 0) HandleDeath(damageInfo.Attacker);
 
         CallOnHpChanged(CurrentHp, MaxHp.Value);
+    }
 
-        if (CurrentHp <= 0)
+    protected override void HandleDeath(GameObject shooter)
+    {
+        CallOnDead();
+    }
+
+    public void ResetStat()
+    {
+        CurrentHp = MaxHp.Value;
+    }
+
+
+    // [추가] 런타임 데이터 적용 함수 (Restore)
+    public void ApplyRuntimeData(CharacterRuntimeData savedData)
+    {
+        if (savedData == null) return;
+
+        // 1. 레벨 복구 (레벨업 로직을 반복 수행해서 스탯 뻥튀기)
+        // 현재 1레벨이므로 (savedData.level - 1)번 레벨업
+        for (int i = 1; i < savedData.level; i++)
         {
-            HandleDeath(shooter);
+            LevelUp(); // 이 함수 안에서 스탯 증가가 일어남
         }
+
+        // 2. 경험치 복구
+        CurrentExp = savedData.currentExp;
+
+        // 3. 체력/에너지는 풀로 채워주기 (마을 귀환 서비스)
+        CurrentHp = MaxHp.Value;
+        CurrentEnergy = 0; // 또는 MaxEnergy
+
+        // UI 갱신
+        OnLevelChanged?.Invoke((int)CurLevel);
+        OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
+    }
+
+    // [추가] 현재 데이터 내보내기 (Save) - 레벨업 할 때나 던전 클리어 시 호출
+    public CharacterRuntimeData ExportRuntimeData()
+    {
+        return new CharacterRuntimeData()
+        {
+            id = _data.id,
+            level = (int)CurLevel,
+            currentExp = CurrentExp
+        };
     }
 }

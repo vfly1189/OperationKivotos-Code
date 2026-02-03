@@ -1,14 +1,16 @@
+using System;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using static BaseCharacter;
 
-public class MonsterStat : BaseStat
+public class MonsterStat : BaseStat, IDamageable
 {
     [Header("Data")]
     [SerializeField] private MonsterDataSO _data; // 초기 데이터
     // 몬스터 전용: 처치 시 주는 경험치, 드랍 아이템 확률 등
     public float DropExpAmount = 300f;
 
+    private bool _isDead = false;
     public void Init(MonsterDataSO data, int stageLevel)
     {
         base.Init();
@@ -34,36 +36,27 @@ public class MonsterStat : BaseStat
         }
     }
 
-    public override void TakeDamage(float damage, GameObject shooter)
+    public override void TakeDamage(DamageInfo damageInfo)
     {
-        // 1. 이미 죽었으면 무시
-        if (CurrentHp <= 0) return;
-
-        // 2. 데미지 계산 (최소 1 데미지 보장)
-        // 방어력이 높으면 데미지가 0이 될 수 있으므로 Mathf.Max(..., 1) 사용
-        float finalDamage = Mathf.Max(damage - Defense.Value, 1f);
-
-        // 3. HP 차감
+        float finalDamage = Mathf.Max(damageInfo.Amount - Defense.Value, 1);
         CurrentHp -= finalDamage;
-
-        // 4. HP 범위 제한 (0 ~ MaxHp)
         CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+        // 피격 이펙트, 사운드 처리 등을 damageInfo.HitPoint를 활용해 여기서 처리 가능
 
-        Debug.Log($"몬스터 피격! 남은 체력: {CurrentHp}");
-
-        // 5. HP 변경 이벤트 발생 (UI 갱신용)
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
-
-        // 6. 사망 처리
-        if (CurrentHp <= 0)
+        if (CurrentHp <= 0 && _isDead == false)
         {
-            HandleDeath(shooter);
+            Debug.Log("몬스터 사망 ");
+            _isDead = true;
+            HandleDeath(damageInfo.Attacker);
         }
+
+
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 
     protected override void HandleDeath(GameObject shooter)
     {
-        // 1. 공격자가 있고, 플레이어라면 경험치 지급
+        //공격자가 있고, 플레이어라면 경험치 지급
         if (shooter != null && shooter.CompareTag("Player"))
         {
             // 플레이어 스탯 컴포넌트 가져오기 (예: PlayerStat)
@@ -75,9 +68,7 @@ public class MonsterStat : BaseStat
             }
         }
 
-        // 2. 몬스터 소멸 처리
-        Debug.Log("몬스터 사망!");
-        //Managers.Resource.Destroy(gameObject); // 혹은 풀링 반납
-        //몬스터 사망은 MonsterController에서 처리함
+        // 2. 이벤트 발송 (나 죽었다!)
+        CallOnDead();
     }
 }

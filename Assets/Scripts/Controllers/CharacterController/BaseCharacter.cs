@@ -14,7 +14,8 @@ public class BaseCharacter : MonoBehaviour
         Q_Skill_CutScene,   // 스킬 컷신            (이동불가)
         Q_Skill,            // 스킬 모션 (컷신 x)   (이동불가)
         E_Skill,            // 기본 스킬            (이동불가)
-        Die
+        Death,
+        Victory
     }
 
     [Header("Base Settings")]
@@ -60,6 +61,9 @@ public class BaseCharacter : MonoBehaviour
             _skillTimeline.stopped += OnCutsceneEnded;
             _skillTimeline.Stop();
         }
+
+        Stat.OnDead -= HandleDeath;
+        Stat.OnDead += HandleDeath;
     }
     public virtual void Init()
     {
@@ -130,12 +134,12 @@ public class BaseCharacter : MonoBehaviour
 
 
 
-        // 스킬 사용 중인 경우에만 이동 불가 
+        //  이동 불가 조건 처리
         if (IsUsingSkill
             || _state == PlayerState.Q_Skill_CutScene
             || _state == PlayerState.Q_Skill
             || _state == PlayerState.E_Skill
-            || _state == PlayerState.Die
+            || _state == PlayerState.Death
             || _state == PlayerState.Attack)
             return;
 
@@ -193,6 +197,10 @@ public class BaseCharacter : MonoBehaviour
     }
     void OnEnable()
     {
+        if (Stat != null)
+        {
+            Stat.OnDead += HandleDeath;
+        }
         // 캐릭터가 켜질 때마다 상태를 Idle로 리셋 (또는 현재 상태에 맞게 애니 재설정)
         // 가장 안전한 건 그냥 Idle로 시작하는 것.
         _state = PlayerState.Idle;
@@ -200,6 +208,17 @@ public class BaseCharacter : MonoBehaviour
         // 만약 켜지자마자 움직여야 한다면, PlayerController가 곧 Move()를 부를 테니
         // 그때 _state != Move 조건이 참이 되어 ChangeState가 정상 작동함.
     }
+
+    void OnDisable()
+    {
+        if (Stat != null)
+        {
+            Stat.OnDead -= HandleDeath;
+        }
+    }
+
+
+
     public void StopMove()
     {
         if (_state == PlayerState.Move)
@@ -235,7 +254,10 @@ public class BaseCharacter : MonoBehaviour
 
     }
 
-   
+    private void HandleDeath()
+    {
+        ChangeState(PlayerState.Death);        
+    }
 
     public void UseSkill_Q()
     {
@@ -267,27 +289,38 @@ public class BaseCharacter : MonoBehaviour
         switch (_state)
         {
             case PlayerState.Idle:
+                Stat.IsInvincible = false;
                 _anim.CrossFade("Idle", 0.3f);
                 break;
             case PlayerState.Move:
+                Stat.IsInvincible = false; 
                 _anim.CrossFade("Move", 0.1f);
                 break;
             case PlayerState.Attack:
+                Stat.IsInvincible = false; 
                 _anim.CrossFade("Attack_Ing", 0.0f); // 자식마다 다른 모션일 경우 오버라이드 고려
                 break;
             case PlayerState.Q_Skill_CutScene:
+                Stat.IsInvincible = true; 
                 _anim.CrossFade("Q_Skill_CutScene", 0.0f); //컷씬도 굳이 블렌딩?
                 OnSkillEnter();
                 break;
             case PlayerState.Q_Skill:
+                Stat.IsInvincible = true; 
                 _anim.CrossFade("Q_Skill", 0.0f);   //컷씬에서 다시 InGame 모션으로 갈때 굳이 블렌딩? 안해도 될듯
                 break;
             case PlayerState.E_Skill:
+                Stat.IsInvincible = false; 
                 _anim.CrossFade("E_Skill", 0.0f);
                 break;
-                //case PlayerState.Die:
-                //    _anim.CrossFade("Die", 0.1f);
-                //    break;
+            case PlayerState.Death:
+                Stat.IsInvincible = false; 
+                _anim.CrossFade("Death", 0.1f);
+                break;
+            case PlayerState.Victory:
+                Stat.IsInvincible = true;
+                _anim.CrossFade("Victory_Start", 0.0f);
+                break;
         }
     }
 
@@ -322,7 +355,7 @@ public class BaseCharacter : MonoBehaviour
     void ChangeToIdle()
     {
         Debug.Log("Idle 전환");
-        if (_state == PlayerState.Die) return;
+        if (_state == PlayerState.Death) return;
 
         ChangeState(PlayerState.Idle);
         IsUsingSkill = false;
@@ -331,7 +364,7 @@ public class BaseCharacter : MonoBehaviour
     void CheckAttackFinished()
     {
         // 1. 죽었으면 무시
-        if (_state == PlayerState.Die) return;
+        if (_state == PlayerState.Death) return;
 
         // 2. 공격 키를 계속 누르고 있는지 체크
         // (PlayerController가 없어도 InputSystem으로 직접 확인 가능)

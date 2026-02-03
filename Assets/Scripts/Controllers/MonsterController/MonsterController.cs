@@ -65,8 +65,24 @@ public class MonsterController : MonoBehaviour
         // [핵심] UIManager에게 "내가 들고 있는 이 프리팹으로 만들어줘" 요청
         if (_hpBarPrefab != null)
         {
-            // 부모를 null로 주면 UIManager가 알아서 SceneUI나 Canvas 밑으로 넣어줌
-            _hpBar = Managers.UI.MakeSubItem<UI_MonsterHPBar>(_hpBarPrefab, null);
+
+            GameObject canvasObj = GameObject.Find("@GameSceneCanvas");
+            Transform uiParent = null;
+
+            if (canvasObj != null)
+            {
+                uiParent = canvasObj.transform;
+            }
+            else
+            {
+                // 못 찾았으면 최후의 수단으로 Canvas 타입 찾되, "Player" 태그가 아닌 놈을 찾거나 해야 함
+                // 하지만 위에서 이름으로 찾는 게 제일 확실함.
+            }
+
+            // 부모(uiParent)를 명시적으로 넘겨줌
+            // 이제 운빨로 이펙트 캔버스에 붙지 않음!
+            _hpBar = Managers.UI.MakeSubItem<UI_MonsterHPBar>(_hpBarPrefab, uiParent);
+
 
             // 타겟 세팅
             _hpBar.SetTarget(_hpBarTransform, Stat);
@@ -112,7 +128,7 @@ public class MonsterController : MonoBehaviour
     // [추가] 캐릭터 교체 이벤트 핸들러
     private void OnPlayerCharacterChanged(int newIndex)
     {
-        Debug.Log($"Monster: Player switched to character {newIndex}, updating target.");
+        //Debug.Log($"Monster: Player switched to character {newIndex}, updating target.");
         UpdateTarget();
     }
 
@@ -226,7 +242,7 @@ public class MonsterController : MonoBehaviour
 
         // 탄알 차감
         _currentAmmo--;
-        Debug.Log($"공격 시작! 남은 탄: {_currentAmmo}");
+        //Debug.Log($"공격 시작! 남은 탄: {_currentAmmo}");
     }
 
     private void StartReload()
@@ -236,7 +252,7 @@ public class MonsterController : MonoBehaviour
         _isMoving = false;
 
         _anim.CrossFade("Reload", 0.1f);
-        Debug.Log("재장전 시작...");
+        //Debug.Log("재장전 시작...");
     }
 
     // 조건: HP가 0 이하인가? (Stat.IsDead 활용)
@@ -262,7 +278,7 @@ public class MonsterController : MonoBehaviour
 
         // 2. 사망 처리 최초 진입
         _isDeadProcessed = true;
-        Debug.Log("BehaviorTree: Monster Dead Logic Start");
+        //Debug.Log("BehaviorTree: Monster Dead Logic Start");
 
         // 이동 정지 및 콜라이더 해제
         if (_agent != null)
@@ -297,14 +313,14 @@ public class MonsterController : MonoBehaviour
     // Attack_End 애니메이션의 끝부분에 심으세요.
     public void OnAttackFinished()
     {
-        Debug.Log("공격 사이클 종료");
+        //Debug.Log("공격 사이클 종료");
         _isAttacking = false; // 상태 해제 -> 다음 프레임에 트리에서 다시 판단
     }
 
     // Reload 애니메이션의 끝부분에 심으세요.
     public void OnReloadFinished()
     {
-        Debug.Log("재장전 완료");
+        //Debug.Log("재장전 완료");
         _currentAmmo = _maxAmmo; // 탄알 충전
         _isReloading = false;
     }
@@ -343,7 +359,7 @@ public class MonsterController : MonoBehaviour
         {
             _isMoving = true; // 이동 상태로 변경
             _anim.CrossFade("Move", 0.1f);
-            Debug.Log("무빙 애니메이션 재생 (최초 1회)");
+            //Debug.Log("무빙 애니메이션 재생 (최초 1회)");
         }
 
         return NodeState.Success;

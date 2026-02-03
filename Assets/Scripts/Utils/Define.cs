@@ -13,6 +13,13 @@ public class Define
         BossDungeon,
     }
 
+    public enum DungeonDifficulty
+    {
+        Easy,
+        Normal,
+        Hard
+    }
+
     public enum Sound
     {
         Bgm,

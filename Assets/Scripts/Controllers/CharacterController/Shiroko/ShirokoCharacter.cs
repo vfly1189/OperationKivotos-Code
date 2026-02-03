@@ -5,9 +5,6 @@ using UnityEngine.Playables;
 
 public class ShirokoCharacter : BaseCharacter
 {
-    [Header("Rapid Fire Settings")]
-    [SerializeField] private int _shotCount = 1;       // 한 번 공격에 나가는 총알 수
-    [SerializeField] private float _fireDelay = 0.1f;  // 총알 사이 간격 (초)
     public override void Init()
     {
         base.Init();

@@ -4,7 +4,7 @@ using UnityEngine;
 public class CharacterDataSO : ScriptableObject
 {
     [Header("Info")]
-    public string id;           // "char_hoshino"
+    public int id;           // "char_hoshino"
     public string nameEN;
     public string nameKR;
     public Sprite Portrait;
@@ -35,7 +35,8 @@ public class CharacterDataSO : ScriptableObject
     [Header("Voices")]
     public AudioClip[] formationInVoices; // "Formation_In_1", "Formation_In_2" µî
     public AudioClip[] battleInVoices;
-   
+    public AudioClip[] battleVictoryVocies;
+
 
     [Header("SkillIcon")]
     public Sprite qSkillIcon;

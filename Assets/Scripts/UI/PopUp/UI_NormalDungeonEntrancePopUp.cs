@@ -41,30 +41,30 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
         _enterButton.onClick.AddListener(OnEnterClicked);
         _cancelButton.onClick.AddListener(OnCancelClicked);
 
-        _easyButton.onClick.AddListener(() => OnDifficultySelected(DungeonDifficulty.Easy));
-        _normalButton.onClick.AddListener(() => OnDifficultySelected(DungeonDifficulty.Normal));
-        _hardButton.onClick.AddListener(() => OnDifficultySelected(DungeonDifficulty.Hard));
+        _easyButton.onClick.AddListener(() => OnDifficultySelected(Define.DungeonDifficulty.Easy));
+        _normalButton.onClick.AddListener(() => OnDifficultySelected(Define.DungeonDifficulty.Normal));
+        _hardButton.onClick.AddListener(() => OnDifficultySelected(Define.DungeonDifficulty.Hard));
 
         // 4. 초기값 설정 (Easy 선택 상태로 시작)
         OnDifficultySelected(0);
     }
 
     // 난이도 선택 처리 (0: Easy, 1: Normal, 2: Hard)
-    void OnDifficultySelected(DungeonDifficulty difficulty)
+    void OnDifficultySelected(Define.DungeonDifficulty difficulty)
     {
         // 1. 매니저에 저장
-        Managers.Game.SelectedDifficulty = difficulty;
+        Managers.Context.SelectedDifficulty = difficulty;
 
         // 2. 버튼 색상 갱신
         UpdateButtonColors(difficulty);
     }
 
-    void UpdateButtonColors(DungeonDifficulty selectedDifficulty)
+    void UpdateButtonColors(Define.DungeonDifficulty selectedDifficulty)
     {
         // 로직: 선택된 놈은 자기 색깔, 안 된 놈은 회색(_colDeactive)
 
         // Easy 버튼
-        if (selectedDifficulty == DungeonDifficulty.Easy)
+        if (selectedDifficulty == Define.DungeonDifficulty.Easy)
         {
             SetButtonColor(_easyButton, _easyText, _colEasy, true);
         }
@@ -74,7 +74,7 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
         }
 
         // Normal 버튼
-        if (selectedDifficulty == DungeonDifficulty.Normal)
+        if (selectedDifficulty == Define.DungeonDifficulty.Normal)
         {
             SetButtonColor(_normalButton, _normalText, _colNormal, true);
         }
@@ -84,7 +84,7 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
         }
 
         // Hard 버튼
-        if (selectedDifficulty == DungeonDifficulty.Hard)
+        if (selectedDifficulty == Define.DungeonDifficulty.Hard)
         {
             SetButtonColor(_hardButton, _hardText, _colHard, true);
         }
