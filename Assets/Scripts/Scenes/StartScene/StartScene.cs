@@ -8,37 +8,22 @@ public class StartScene : BaseScene
     [SerializeField] private StartScenePreloadSO _preloadData;
 
     float _voiceDelay = 1.5f;
-
-
     protected override void Init()
     {
         base.Init();
 
         _sceneType = Define.Scene.Start;
 
-        // 코루틴으로 순차 실행
-        StartCoroutine(InitializeScene());
-    }
-
-    private IEnumerator InitializeScene()
-    {
         CreateBackgroundSlideShow();
-
         CreateTapToStart();
-
         CreateSoundSettingIcon();
-
         CreateLogo();
-
-        Managers.Input.OnEscapePressed += HandleEscape;
-
-        yield return null;
 
         PlayMainTitle();
 
-        yield return new WaitForSeconds(_voiceDelay); // 1.5초 대기
+        Invoke(nameof(PlayTitleVoice), _voiceDelay);
 
-        PlayTitleVoice();
+        Managers.Input.OnEscapePressed += HandleEscape;
     }
 
 
@@ -46,25 +31,25 @@ public class StartScene : BaseScene
     {
         Managers.Sound.Play(_preloadData.mainTitleBgm, Define.Sound.Bgm);
     }
+
     private void PlayTitleVoice()
     {
         int length = _preloadData.titleVoices.Count;
-        int voiceNum = Random.Range(0, length + 1);
-
-        Managers.Sound.Play(_preloadData.titleVoices[voiceNum], Define.Sound.Narration);
-    }
-
-    void Update()
-    {
-
+        if (length > 0)
+        {
+            int voiceNum = Random.Range(0, length); 
+            Managers.Sound.Play(_preloadData.titleVoices[voiceNum], Define.Sound.Narration);
+        }
     }
 
     public override void Clear()
     {
         base.Clear();
+        CancelInvoke(); // Invoke 취소
+
         Managers.Input.OnEscapePressed -= HandleEscape;
+
         Managers.Sound.Stop(Define.Sound.Bgm);
-        Debug.Log("StartScene Clear");
     }
 
     private void CreateBackgroundSlideShow()
@@ -95,10 +80,18 @@ public class StartScene : BaseScene
         icon.name = "@SoundSettingIcon";
 
         Canvas canvas = icon.GetComponent<Canvas>();
-        if (canvas == null) canvas = icon.AddComponent<Canvas>();
+        if (canvas == null)
+            canvas = icon.AddComponent<Canvas>();
 
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = -7; 
+        canvas.sortingOrder = -7;
+
+        // SoundButton에 Prefab 전달
+        SoundButton soundBtn = icon.GetComponent<SoundButton>();
+        if (soundBtn != null && _preloadData.soundSettingPopup != null)
+        {
+            soundBtn.SetPopupPrefab(_preloadData.soundSettingPopup);
+        }
     }
 
     private void CreateTapToStart()

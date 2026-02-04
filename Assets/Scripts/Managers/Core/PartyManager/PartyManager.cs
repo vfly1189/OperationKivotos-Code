@@ -15,6 +15,8 @@ public class PartyManager : MonoBehaviour
     // 현재 조작 중인 캐릭터의 인덱스
     private int _currentIndex = 0;
 
+    private PartyInputHandler _inputHandler;
+
     // 교체 쿨타임 (원신은 약 1초)
     private float _swapCooldown = 1.0f;
     private float _lastSwapTime = -99f;
@@ -87,7 +89,8 @@ public class PartyManager : MonoBehaviour
 
         _currentIndex = 0;
 
-        RegisterInput();
+        _inputHandler = new PartyInputHandler();
+        //RegisterInput();
     }
     void Update()
     {
@@ -108,6 +111,8 @@ public class PartyManager : MonoBehaviour
                 cam._player = GetCurrentCharacter().gameObject;
             }
         }
+        OnCharacterChanged?.Invoke(_currentIndex);
+
     }
     //씬 이동 시 파티원 전체 이동 편의 함수
     public void TeleportParty(Vector3 position)
@@ -209,45 +214,20 @@ public class PartyManager : MonoBehaviour
         return -1; // 다 죽음
     }
 
-    
-
-    void RegisterInput()
+    public void TrySwap(int targetIndex)
     {
-        Managers.Input.RegisterAction("Swap_1", OnSwap1);
-        Managers.Input.RegisterAction("Swap_2", OnSwap2);
-        Managers.Input.RegisterAction("Swap_3", OnSwap3);
-        Managers.Input.RegisterAction("Swap_4", OnSwap4);
+        if (!CanSwap(targetIndex)) return;
+        SwapCharacter(_currentIndex, targetIndex);
     }
 
-    void OnSwap1() => TrySwap(0);
-    void OnSwap2() => TrySwap(1);
-    void OnSwap3() => TrySwap(2);
-    void OnSwap4() => TrySwap(3);
-
-    public void TrySwap(int targetIndex)
-    {        
-        //쿨타임 체크 
-        if (Time.time - _lastSwapTime < _swapCooldown) return;
-
-        //인덱스, 중복 체크
-        if (targetIndex >= PartyMembers.Count || targetIndex == _currentIndex) return;
-
-        if (PartyMembers[targetIndex].Stat.IsDead)
-        {
-            Debug.Log("사망한 캐릭터로는 교체할 수 없습니다.");
-            return;
-        }
-
-
-        //스킬 사용 중 체크
-        BaseCharacter currentChar = PartyMembers[_currentIndex]; // targetIndex 아님! 현재 나와있는 애를 검사해야 함
-        if (currentChar.IsUsingSkill)
-        {
-            Debug.Log("스킬 사용 중에는 교체할 수 없습니다!");
-            return;
-        }
-
-        SwapCharacter(_currentIndex, targetIndex);
+    // 교체 가능 여부 체크 (조건문 분리)
+    private bool CanSwap(int targetIndex)
+    {
+        if (Time.time - _lastSwapTime < _swapCooldown) return false;
+        if (targetIndex >= PartyMembers.Count || targetIndex == _currentIndex) return false;
+        if (PartyMembers[targetIndex].Stat.IsDead) return false;
+        if (PartyMembers[_currentIndex].IsUsingSkill) return false;
+        return true;
     }
 
     private void SwapCharacter(int prevIdx, int nextIdx)

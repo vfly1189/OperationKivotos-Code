@@ -10,6 +10,7 @@ public class StartScenePreloadSO : ScriptableObject
     public GameObject logo;
     public GameObject soundSettingIcon;
     public GameObject exitPopup;
+    public GameObject soundSettingPopup;
 
     [Header("»ç¿îµå")]
     public AudioClip mainTitleBgm;

@@ -4,9 +4,10 @@ using UnityEngine;
 
 public class SelectScene : BaseScene
 {
-    [SerializeField] private ScenePreloadDataSO _preloadData;
+    [SerializeField] private SelectScenePreloadSO _preloadData;
 
-    public GameObject modelCamera;
+    private GameObject _modelCamera;
+    private GameObject _mainUI;
 
     protected override void Init()
     {
@@ -15,21 +16,31 @@ public class SelectScene : BaseScene
 
         Debug.Log("SelectScene Init 호출");
 
-        modelCamera = Managers.Resource.Instantiate("UI/SelectScene/ModelCamera");
-        modelCamera.name = "@modelCamera";
-
-        GameObject bgSlideshow = Managers.Resource.Instantiate("UI/SelectScene/SelectSceneCanvas");
-        bgSlideshow.name = "@SelectSceneCanvas";
-
+        CreateModelCamera();
+        CreateMainUI();
     }
+
+    void CreateModelCamera()
+    {
+        GameObject modelCamera = Object.Instantiate(_preloadData.modelCamera);
+        modelCamera.name = "@ModelCamera";
+        _modelCamera = modelCamera;
+    }
+
+    void CreateMainUI()
+    {
+        GameObject mainUI = Object.Instantiate(_preloadData.mainUI);
+        mainUI.name = "@SelectSceneCanvas";
+        _mainUI = mainUI;
+
+        //Init 할때 카메라 먼저 만들어줄것
+        SelectSceneCanvas selectSceneCanvas = mainUI.GetComponent<SelectSceneCanvas>();
+        selectSceneCanvas.SetModelCamera(_modelCamera);
+    }
+
 
     public override void Clear()
     {
         base.Clear();
-        // SelectScene 전용 정리 로직 추가 가능
-        if (modelCamera != null)
-        {
-            Destroy(modelCamera);
-        }
     }
 }

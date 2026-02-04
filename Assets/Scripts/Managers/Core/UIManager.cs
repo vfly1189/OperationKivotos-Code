@@ -50,21 +50,6 @@ public class UIManager
 
     }
 
-    public T MakeWorldSpaceUI<T>(Transform parent = null, string name = null) where T : UI_Base
-    {
-        if (string.IsNullOrEmpty(name))
-            name = typeof(T).Name;
-
-        GameObject go = Managers.Resource.Instantiate($"UI/WorldSpace/{name}");
-        if (parent != null)
-            go.transform.SetParent(parent);
-
-        Canvas canvas = go.GetOrAddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-        canvas.worldCamera = Camera.main;
-
-        return Util.GetOrAddComponent<T>(go);
-    }
 
     public T MakeSubItem<T>(GameObject prefab, Transform parent = null) where T : UI_Base
     {
@@ -95,35 +80,6 @@ public class UIManager
         go.transform.localPosition = Vector3.zero;
 
         return Util.GetOrAddComponent<T>(go);
-    }
-
-
-    public T ShowSceneUI<T>(string name = null) where T : UI_Scene
-    {
-        if (string.IsNullOrEmpty(name))
-            name = typeof(T).Name;
-
-        GameObject go = Managers.Resource.Instantiate($"UI/Scene/{name}");
-        T sceneUI = Util.GetOrAddComponent<T>(go);
-        _sceneUI = sceneUI;
-
-        go.transform.SetParent(Root.transform);
-
-        return sceneUI;
-    }
-
-    public T ShowPopupUI<T>(string name = null) where T : UI_PopUp
-    {
-        if (string.IsNullOrEmpty(name))
-            name = typeof(T).Name;
-
-        GameObject go = Managers.Resource.Instantiate($"UI/{name}");
-        T popup = Util.GetOrAddComponent<T>(go);
-        _popupStack.Push(popup);
-
-        go.transform.SetParent(Root.transform);
-
-        return popup;
     }
 
     public T ShowPopupUI<T>(GameObject prefab) where T : UI_PopUp

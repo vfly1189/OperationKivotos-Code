@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class NormalDungeonScene : BaseScene
 {
-
     [SerializeField] private NormalDungeonScenePreloadSO _preloadData;
 
     private int _remainingMonsters = 0;
@@ -80,13 +79,15 @@ public class NormalDungeonScene : BaseScene
 
     void CreateUI()
     {
-        GameObject mainUI = Object.Instantiate(_preloadData.gameSceneCanvas);
-        mainUI.name = "@GameSceneCanvas";
+        //GameObject mainUI = Object.Instantiate(_preloadData.gameSceneCanvas);
+        GameObject mainUI = GameObject.Find("@GameSceneCanvas");
+        //mainUI.name = "@GameSceneCanvas";
         _mainUI = mainUI;
 
-        GameSceneCanvas canvas = mainUI.GetComponent<GameSceneCanvas>();
-        if (canvas != null)
-            canvas.SetPartyManager(PartyManager.Instance); // 싱글톤 매니저 연결
+        //GameSceneCanvas canvas = mainUI.GetComponent<GameSceneCanvas>();
+        //if (canvas != null)
+        //    canvas.SetPartyManager(PartyManager.Instance); // 싱글톤 매니저 연결
+
     }
 
     void PlayBGM()
@@ -197,11 +198,14 @@ public class NormalDungeonScene : BaseScene
 
     private System.Collections.IEnumerator CoVictoryPoze()
     {
-        yield return new WaitForSeconds(2.0f);
+        yield return new WaitForSeconds(3.0f);
 
         PlayVictoryVoice();
 
-        if (_mainUI != null) Managers.Resource.Destroy(_mainUI);
+        if (_mainUI != null)
+        {
+            _mainUI.SetActive(false); // 파괴 대신 비활성화
+        }
 
         // [중요] 일괄 활성화 함수(TurnOnAllMembers) 대신, 아래 루프에서 하나씩 정교하게 제어하는 것을 추천
         // PartyManager.Instance.TurnOnAllMembers(); (삭제)

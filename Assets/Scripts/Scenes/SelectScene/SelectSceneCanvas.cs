@@ -8,6 +8,9 @@ using Image = UnityEngine.UI.Image;
 
 public class SelectSceneCanvas : MonoBehaviour
 {
+    // ========================================================================
+    // [1] 데이터 및 설정
+    // ========================================================================
     [Header("School Data")]
     [SerializeField] private SchoolDataSO[] _schoolDatas;
     [SerializeField] private CurrentGameDataSO _currentGameContext; // 인스펙터 연결
@@ -16,53 +19,50 @@ public class SelectSceneCanvas : MonoBehaviour
     [SerializeField] private Image _backgroundImage; // 배경 이미지 (Image)
     [SerializeField] private Sprite _backgroundSprite; // 배경 이미지 ( Sprite )
 
-    [Header("UI Buttons")]
-    [SerializeField] private Button _abydosSelectButton;
-    [SerializeField] private Button _gehennaSelectButton;
-    [SerializeField] private Button _millenniumSelectButton;
+
+    // ========================================================================
+    // [2] UI 요소 그룹화 (버튼 및 표시부)
+    // ========================================================================
+    [System.Serializable]
+    public class SchoolUIElements
+    {
+        public Button textButton;  
+        public Button imageButton; 
+    }
+
+    [Header("UI Controls")]
+    [SerializeField] private SchoolUIElements[] _schoolUIElements; // 0:아비도스, 1:게헨나, 2:밀레니엄
     [SerializeField] private Button _gameStartButton;
 
-    [Header("UI Image Buttons")]
-    [SerializeField] private Button _abydosSelectImageButton;
-    [SerializeField] private Button _gehennaSelectImageButton;
-    [SerializeField] private Button _millenniumSelectImageButton;
 
-    [Header("ShowingGroup")]
+    [Header("Display Info")]
     [SerializeField] private Image _schoolIcon;
     [SerializeField] private Image _schoolName;
 
-
-    [Header("Spawn Points")]
-    [SerializeField] private Transform[] _spawnPoints; // 4개 (각 학교별 4마리 위치)
-
-    private GameObject[] _abydosModels;
-    private GameObject[] _gehennaModels;
-    private GameObject[] _millenniumModels;
-
+    // ========================================================================
+    // [3] 내부 상태 변수
+    // ========================================================================
+    private GameObject _modelCamera;
+    private readonly string[] _spawnPointNames = { "SpawnPoint1", "SpawnPoint2", "SpawnPoint3", "SpawnPoint4" };
     private int _currentSelectedSchool = -1;
-    private SelectScene _selectScene;
+    private List<GameObject[]> _loadedModels = new List<GameObject[]>();
+
+
 
     void Start()
     {
-        _selectScene = GameObject.FindAnyObjectByType<SelectScene>();
-
-        if (_selectScene == null)
-        {
-            Debug.LogError("SelectScene을 찾을 수 없습니다!");
-            return;
-        }
-
         InitializeUI();
         SetupButtonListeners();
-        LoadAndInstantiateModels();
-        SelectSchool(0);
+
+        if(_modelCamera != null)
+        {
+            LoadAndInstantiateModels();
+            SelectSchool(0);
+        }     
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public void SetModelCamera(GameObject modelCamera) { _modelCamera = modelCamera; }
+
     void InitializeUI()
     {
         if (_backgroundImage != null && _backgroundSprite != null)
@@ -74,205 +74,164 @@ public class SelectSceneCanvas : MonoBehaviour
 
     void SetupButtonListeners()
     {
-        _abydosSelectButton.onClick.AddListener(
-            () => SelectSchool(0)
-        );
-        _gehennaSelectButton.onClick.AddListener(
-            () => SelectSchool(1)
-        );
-        _millenniumSelectButton.onClick.AddListener(
-            () => SelectSchool(2)
-        );
+        // 학교별 버튼 리스너 일괄 등록
+        for (int i = 0; i < _schoolUIElements.Length; i++)
+        {
+            int index = i; // Closure 캡처
+            _schoolUIElements[i].textButton.onClick.AddListener(() => SelectSchool(index));
+            _schoolUIElements[i].imageButton.onClick.AddListener(() => SelectSchool(index));
+        }
 
-        _abydosSelectImageButton.onClick.AddListener(
-            () => SelectSchool(0)
-        );
-        _gehennaSelectImageButton.onClick.AddListener(
-            () => SelectSchool(1)
-        );
-        _millenniumSelectImageButton.onClick.AddListener(
-            () => SelectSchool(2)
-        );
+        // 게임 시작 버튼
+        _gameStartButton.onClick.AddListener(OnGameStartClicked);
+    }
 
-        _gameStartButton.onClick.AddListener(
-            () =>
-            {
-                //선택된 학교 인덱스 검증
-                if (_currentSelectedSchool < 0)
-                {
-                    Debug.LogWarning("학교가 선택되지 않았습니다.");
-                    return;
-                }
+    void OnGameStartClicked()
+    {
+        if (_currentSelectedSchool < 0) return;
 
-                Managers.Context.SchoolIdx = _currentSelectedSchool;
-                Managers.Context.SelectedSchool = _schoolDatas[_currentSelectedSchool];             
+        // Context 설정
+        Managers.Context.SchoolIdx = _currentSelectedSchool;
+        Managers.Context.SelectedSchool = _schoolDatas[_currentSelectedSchool];
 
-                // 3. 리소스 목록을 들고 GameScene으로 출발!
-                Managers.SceneEx.LoadScene(Define.Scene.Game);
-
-                Managers.Sound.StopAll();
-            }
-        );
+        // 사운드 정리 후 씬 이동
+        Managers.Sound.StopAll();
+        Managers.SceneEx.LoadScene(Define.Scene.Game);
     }
 
     void LoadAndInstantiateModels()
     {
-        if (_selectScene.modelCamera == null)
-            Debug.Log("카메라없음");
+        Transform[] spawnPoints = GetSpawnPoints();
+        _loadedModels.Clear();
 
-        Transform[] spawnPoints = new Transform[4];
+        // 각 학교별로 모델 생성 후 리스트에 저장
+        for (int i = 0; i < _schoolDatas.Length; i++)
+        {
+            GameObject[] models = CreateModelsForSchool(i, spawnPoints);
+            _loadedModels.Add(models);
+        }
 
-        spawnPoints[0] = _selectScene.modelCamera.transform.Find("SpawnPoint1");
-        spawnPoints[1] = _selectScene.modelCamera.transform.Find("SpawnPoint2");
-        spawnPoints[2] = _selectScene.modelCamera.transform.Find("SpawnPoint3");
-        spawnPoints[3] = _selectScene.modelCamera.transform.Find("SpawnPoint4");
-
-        _abydosModels = new GameObject[4];
-        _gehennaModels = new GameObject[4];
-        _millenniumModels = new GameObject[4];
-
-        LoadSchoolModels(0, _abydosModels, spawnPoints);
-        LoadSchoolModels(1, _gehennaModels, spawnPoints);
-        LoadSchoolModels(2, _millenniumModels, spawnPoints);
-
-        Debug.Log("모든 캐릭터 모델 Instantiate 완료");
+        Debug.Log("모든 캐릭터 모델 로딩 완료");
     }
 
-    void LoadSchoolModels(int schoolIdx, GameObject[] modelArray, Transform[] spawnPoints)
+    Transform[] GetSpawnPoints()
     {
+        Transform[] points = new Transform[_spawnPointNames.Length];
+        for (int i = 0; i < points.Length; i++)
+        {
+            points[i] = _modelCamera.transform.Find(_spawnPointNames[i]);
+        }
+        return points;
+    }
+
+    GameObject[] CreateModelsForSchool(int schoolIdx, Transform[] spawnPoints)
+    {
+        GameObject[] models = new GameObject[4];
+        CharacterDataSO[] chars = _schoolDatas[schoolIdx].characters;
+
         for (int i = 0; i < 4; i++)
         {
-            string charName = _schoolDatas[schoolIdx].characters[i].nameEN;
+            if (i >= chars.Length) break;
 
-            GameObject go = Object.Instantiate(_schoolDatas[schoolIdx].characters[i].selectPrefab, spawnPoints[i].transform);
+            GameObject go = Instantiate(chars[i].selectPrefab, spawnPoints[i]);
+            go.transform.localPosition = Vector3.zero;
 
-            if (go != null)
+            // 카메라 방향 바라보기 (Y축만 회전)
+            if (_modelCamera != null)
             {
-                go.transform.localPosition = Vector3.zero;
-                go.transform.localRotation = Quaternion.identity;
-                go.SetActive(false);
-                modelArray[i] = go;
+                Vector3 direction = _modelCamera.transform.position - go.transform.position;
+                direction.y = 0; // 높이 차이는 무시 (수평 회전만)
+
+                if (direction != Vector3.zero) // 안전장치
+                {
+                    go.transform.rotation = Quaternion.LookRotation(direction);
+                }
             }
+            else
+            {
+                go.transform.localRotation = Quaternion.identity;
+            }
+
+            go.SetActive(false); // 기본은 꺼둠
+            models[i] = go;
         }
+        return models;
     }
 
-
+    // ========================================================================
+    // [4] 선택 로직 (SelectSchool)
+    // ========================================================================
     void SelectSchool(int schoolIndex)
     {
-        if (_currentSelectedSchool >= 0)
-        {
-            DeactivateSchoolModels(_currentSelectedSchool);
-        }
+        Debug.Log($"선택된 학교 index : {schoolIndex}");
 
-        ActivateSchoolModels(schoolIndex);
+        if (schoolIndex == _currentSelectedSchool) return;
+
+        // 이전 모델 끄기
+        if (_currentSelectedSchool >= 0 && _currentSelectedSchool < _loadedModels.Count)
+            SetModelsActive(_currentSelectedSchool, false);
+
+        // 새 모델 켜기
+        if (schoolIndex >= 0 && schoolIndex < _loadedModels.Count)
+            SetModelsActive(schoolIndex, true);
+
         _currentSelectedSchool = schoolIndex;
-        UpdateButtonStates(schoolIndex);
 
-        ChangeSchoolIcon(schoolIndex);
-        ChangeSchoolNameImageFont(schoolIndex);
+        // UI 갱신
+        UpdateUIState(schoolIndex);
 
-        Managers.Sound.StopAll();
-        PlayRandomSchoolVoice(schoolIndex);
-        PlaySchoolTheme(schoolIndex);
+        // 사운드 재생
+        PlaySchoolSound(schoolIndex);
 
-        // 다음 씬에서 어떤거 불러왔는지 알 수 잇음
-        //PlayerPrefs.SetInt("SelectedSchool", schoolIndex);
-        //PlayerPrefs.Save();
-
+        // Context 미리 업데이트 
         Managers.Context.SchoolIdx = schoolIndex;
     }
 
-    void ActivateSchoolModels(int schoolIndex)
+    void SetModelsActive(int schoolIdx, bool isActive)
     {
-        GameObject[] models = schoolIndex switch
+        foreach (var model in _loadedModels[schoolIdx])
         {
-            0 => _abydosModels,
-            1 => _gehennaModels,
-            2 => _millenniumModels,
-            _ => null
-        };
+            if (model != null) model.SetActive(isActive);
+        }
+    }
 
-        if (models != null)
+    void UpdateUIState(int selectedIndex)
+    {
+        // 버튼 상태 갱신 
+        for (int i = 0; i < _schoolUIElements.Length; i++)
         {
-            foreach (var model in models)
+            bool isNotSelected = (i != selectedIndex);
+            _schoolUIElements[i].textButton.interactable = isNotSelected;
+            _schoolUIElements[i].imageButton.interactable = isNotSelected;
+        }
+
+        // 아이콘 및 폰트 변경
+        if (_schoolDatas[selectedIndex] != null)
+        {
+            _schoolIcon.sprite = _schoolDatas[selectedIndex].schoolIcon;
+            _schoolName.sprite = _schoolDatas[selectedIndex].schoolNameFont;
+        }
+    }
+
+    void PlaySchoolSound(int schoolIndex)
+    {
+        Managers.Sound.StopAll();
+
+        SchoolDataSO data = _schoolDatas[schoolIndex];
+
+        // 테마곡
+        if (data.themeBGM != null)
+            Managers.Sound.Play(data.themeBGM, Define.Sound.Bgm);
+
+        // 랜덤 보이스
+        if (data.characters.Length > 0)
+        {
+            var character = data.characters[Random.Range(0, data.characters.Length)];
+            if (character.formationInVoices != null && character.formationInVoices.Length > 0)
             {
-                model.SetActive(true);
+                var clip = character.formationInVoices[Random.Range(0, character.formationInVoices.Length)];
+                Managers.Sound.Play(clip, Define.Sound.Effect);
             }
         }
     }
-
-    void DeactivateSchoolModels(int schoolIndex)
-    {
-        GameObject[] models = schoolIndex switch
-        {
-            0 => _abydosModels,
-            1 => _gehennaModels,
-            2 => _millenniumModels,
-            _ => null
-        };
-
-        if (models != null)
-        {
-            foreach (var model in models)
-            {
-                model.SetActive(false);
-            }
-        }
-    }
-    void UpdateButtonStates(int selectedIndex)
-    {
-        _abydosSelectButton.interactable = (selectedIndex != 0);
-        _gehennaSelectButton.interactable = (selectedIndex != 1);
-        _millenniumSelectButton.interactable = (selectedIndex != 2);
-
-        _abydosSelectImageButton.interactable = (selectedIndex != 0);
-        _gehennaSelectImageButton.interactable = (selectedIndex != 1);
-        _millenniumSelectImageButton.interactable = (selectedIndex != 2);
-    }
-
-
-    // ★ 랜덤 학생 음성 재생
-    void PlayRandomSchoolVoice(int schoolIndex)
-    {
-        // 1. 현재 학교 데이터 가져오기
-        SchoolDataSO school = _schoolDatas[schoolIndex];
-
-        // 2. 랜덤 학생 데이터 가져오기 (문자열 필요 없음!)
-        int randomCharIndex = Random.Range(0, school.characters.Length);
-        CharacterDataSO character = school.characters[randomCharIndex];
-
-        // 3. 그 학생의 보이스 목록 중 하나 랜덤 재생
-        if (character.formationInVoices != null && character.formationInVoices.Length > 0)
-        {
-            int randomVoiceIdx = Random.Range(0, character.formationInVoices.Length);
-            AudioClip clip = character.formationInVoices[randomVoiceIdx];
-
-            Managers.Sound.Play(clip, Define.Sound.Effect);
-            Debug.Log($"{character.nameEN} 음성 재생");
-        }
-    }
-
-    void PlaySchoolTheme(int schoolIndex)
-    {
-        // 바로 꺼내 쓰면 됨
-        AudioClip theme = _schoolDatas[schoolIndex].themeBGM;
-
-        if (theme != null)
-        {
-            Managers.Sound.Play(theme, Define.Sound.Bgm);
-        }
-    }
-
-    void ChangeSchoolIcon(int schoolIndex)
-    {
-        _schoolIcon.sprite = _schoolDatas[schoolIndex].schoolIcon;
-    }
-
-    void ChangeSchoolNameImageFont(int schoolIndex)
-    {
-        _schoolName.sprite = _schoolDatas[schoolIndex].schoolNameFont;
-    }
-
-
-
 }

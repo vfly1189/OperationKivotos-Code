@@ -28,9 +28,6 @@ public class GameScene : BaseScene
             // PlayerController도 같이 붙여서 평생 함께 가게 함
             _playerController = go.AddComponent<PlayerController>();
             _partyManager._playerController = _playerController;
-
-            // 파티 멤버 최초 생성 및 초기화
-            //CreateCharacters();
         }
         else
         {
@@ -38,7 +35,7 @@ public class GameScene : BaseScene
             _partyManager = PartyManager.Instance;
             _playerController = _partyManager._playerController;
 
-            // ★ 중요: 파티 멤버들이 비활성화되어 있을 수 있으므로 위치 잡고 활성화 처리 등 필요
+            // 중요: 파티 멤버들이 비활성화되어 있을 수 있으므로 위치 잡고 활성화 처리 등 필요
             // (CreateCharacters는 호출하지 않음 - 이미 멤버가 있으니까)
             // 예를 들어 마을 스폰 포인트로 이동
             _partyManager.TeleportParty(new Vector3(0, 0, 0));
@@ -59,14 +56,26 @@ public class GameScene : BaseScene
 
     void SetupUI()
     {
-        // UI도 씬마다 새로 만들 것인지, DDOL로 유지할 것인지 결정 필요.
-        // 여기서는 "GameSceneCanvas는 씬마다 새로 만든다"고 가정 (가장 쉬운 접근)
+        // 이미 존재하는지 확인
+        GameObject existingUI = GameObject.Find("@GameSceneCanvas");
+        if (existingUI != null)
+        {
+            existingUI.SetActive(true); // ← 추가: 던전에서 숨긴 경우 다시 활성화
+            GameSceneCanvas canvas = existingUI.GetComponent<GameSceneCanvas>();
+            canvas.SetPartyManager(_partyManager);
+            return;
+        }
+
+        // 없으면 새로 생성
         GameObject mainUI = Object.Instantiate(_preloadData.gameSceneCanvas);
         mainUI.name = "@GameSceneCanvas";
+        DontDestroyOnLoad(mainUI); // DDOL 적용
 
-        GameSceneCanvas canvas = mainUI.GetComponent<GameSceneCanvas>();
-        if (canvas != null)
-            canvas.SetPartyManager(_partyManager); // 싱글톤 매니저 연결
+        GameSceneCanvas newCanvas = mainUI.GetComponent<GameSceneCanvas>();
+        if (newCanvas != null)
+        {
+            newCanvas.SetPartyManager(_partyManager);
+        }
     }
 
     void CreateMainVillage()
@@ -171,12 +180,6 @@ public class GameScene : BaseScene
         }
     }
 
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public override void Clear()
     {
