@@ -14,7 +14,7 @@ public class Managers : MonoBehaviour
     #region Core Manager
     //GameManager _game = new GameManager();
     InputManager _input = new InputManager();
-    //PartyManager _party = new PartyManager();
+    PartyManager _party;
     PoolManager _pool = new PoolManager();
     ResourceManager _resource = new ResourceManager();
     SceneManagerEx _scene = new SceneManagerEx();
@@ -23,7 +23,7 @@ public class Managers : MonoBehaviour
 
     //public static GameManager Game { get { return Instance._game; } }
     public static InputManager Input { get { return Instance._input; } }
-    //public static PartyManager Party { get { return Instance._party; } }
+    public static PartyManager Party { get { return Instance._party; } }
     public static PoolManager Pool { get { return Instance._pool; } }   
     public static ResourceManager Resource { get { return Instance._resource; } }
     public static SceneManagerEx SceneEx { get { return Instance._scene; } }
@@ -39,6 +39,12 @@ public class Managers : MonoBehaviour
     void Update()
     {
         _input.OnUpdate();
+
+        // PlayerController의 Update 로직 호출
+        if (_party != null && _party.PlayerController != null)
+        {
+            _party.PlayerController.OnUpdate();
+        }
     }
 
     static void Init()
@@ -69,25 +75,30 @@ public class Managers : MonoBehaviour
                 s_instance._currentGameContext.Clear();
             }
 
-
-            //s_instance._data.Init();
+            s_instance._party = new PartyManager(s_instance);
+           
             s_instance._pool.Init();
             s_instance._sound.Init();
         }
     }
 
 
-    // 외부(ResourceManager 등)에서 코루틴이 필요할 때 매니저에게 부탁하는 함수.
+    void OnDestroy()
+    {
+        // PartyManager 정리
+        if (_party != null)
+        {
+            _party.Dispose();
+        }
+    }
+
     public static void Start_Coroutine(System.Collections.IEnumerator routine)
     {
-        // 내부에서는 Instance에 접근 가능하므로 실행 가능
         Instance.StartCoroutine(routine);
     }
 
-
     public static void Clear()
     {
-        //Input.Clear();
         SceneEx.Clear();
     }
 }

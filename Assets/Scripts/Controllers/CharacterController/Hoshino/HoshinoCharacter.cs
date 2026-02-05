@@ -8,6 +8,10 @@ public class HoshinoCharacter : BaseCharacter
     [SerializeField] private int _pelletCount = 5;     // 한 번에 나가는 총알 개수
     [SerializeField] private float _spreadAngle = 20f; // 탄 퍼짐 각도
 
+    [Header("ESkill Fire Point")]
+    [SerializeField] private Transform _eSkillFirePoint;
+    [SerializeField] private ParticleSystem _eSkillFireEffect;
+
     public override void Init()
     {
         base.Init();
@@ -44,5 +48,29 @@ public class HoshinoCharacter : BaseCharacter
             }
         }
         PlayFireEffect();
+    }
+
+    protected override void OnESkillEvent(AudioClip sfx) 
+    {
+        // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
+        GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _eSkillFirePoint.position, _eSkillFirePoint.rotation);
+
+        bulletObj.transform.position = _eSkillFirePoint.position;
+        // 캐릭터가 바라보는 방향 기준으로 회전
+        bulletObj.transform.rotation = transform.rotation;
+        // 2. 데미지 주입
+        BulletController bulletScript = bulletObj.GetComponent<BulletController>();
+        if (bulletScript != null && Stat != null)
+        {
+            bulletScript.Init(Stat.Attack.Value, this.gameObject);
+        }
+        PlayESkillFireEffect();
+    }
+
+    protected virtual void PlayESkillFireEffect()
+    {
+        if (_eSkillFireEffect == null) return;
+        _eSkillFireEffect.Stop();
+        _eSkillFireEffect.Play();
     }
 }

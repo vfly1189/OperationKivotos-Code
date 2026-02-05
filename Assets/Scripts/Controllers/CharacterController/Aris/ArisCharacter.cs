@@ -41,7 +41,7 @@ public class ArisCharacter : BaseCharacter
         }
 
         // 3. 상태 체크 (캔슬되었는지 확인)
-        if (_state != PlayerState.Attack && _state != PlayerState.Q_Skill && _state != PlayerState.E_Skill)
+        if (_stateMachine.CurrentState != CharacterStateMachine.PlayerState.Attack && _stateMachine.CurrentState != CharacterStateMachine.PlayerState.Q_Skill && _stateMachine.CurrentState != CharacterStateMachine.PlayerState.E_Skill)
         {
             yield break;
         }
@@ -50,7 +50,7 @@ public class ArisCharacter : BaseCharacter
         FireOneBullet();
     }
 
-    private void FireOneBullet()
+    protected override void FireOneBullet()
     {
         if (_bulletPrefab == null || _firePoint == null) return;
 

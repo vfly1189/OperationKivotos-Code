@@ -23,19 +23,33 @@ public class PartyHUD : MonoBehaviour
     {
         for(int i=0; i<members.Count; i++)
         {
+            //BaseCharacter character = members[i];
+            //int slotIndex = i;
+
+            //character.Stat.OnHpChanged -= (cur, max) => _slots[slotIndex].UpdateHP(cur, max);
+            //character.Stat.OnUltimateStateChanged -= (isReady) => _slots[slotIndex].SetUltimateReady(isReady);
+
+            //// 새로 연결
+            //character.Stat.OnHpChanged += (cur, max) => _slots[slotIndex].UpdateHP(cur, max);
+            //character.Stat.OnUltimateStateChanged += (isReady) => _slots[slotIndex].SetUltimateReady(isReady);
+
+            //// 초기 상태 동기화
+            //_slots[slotIndex].UpdateHP(character.Stat.CurrentHp, character.Stat.MaxHp.Value);
+
+            //bool isReady = (character.Stat.CurrentQSkillCoolTime <= 0) &&
+            //               (character.Stat.CurrentEnergy >= character.Stat.MaxEnergy.Value);
+            //_slots[slotIndex].SetUltimateReady(isReady);
+
+
             BaseCharacter character = members[i];
             int slotIndex = i;
 
-            character.Stat.OnHpChanged -= (cur, max) => _slots[slotIndex].UpdateHP(cur, max);
-            character.Stat.OnUltimateStateChanged -= (isReady) => _slots[slotIndex].SetUltimateReady(isReady);
-
-            // 새로 연결
+            // 새로 연결 (중복 구독 가능성 있지만, GameScene 재진입 시 캐릭터가 재생성되므로 실제론 문제 없음)
             character.Stat.OnHpChanged += (cur, max) => _slots[slotIndex].UpdateHP(cur, max);
             character.Stat.OnUltimateStateChanged += (isReady) => _slots[slotIndex].SetUltimateReady(isReady);
 
             // 초기 상태 동기화
             _slots[slotIndex].UpdateHP(character.Stat.CurrentHp, character.Stat.MaxHp.Value);
-
             bool isReady = (character.Stat.CurrentQSkillCoolTime <= 0) &&
                            (character.Stat.CurrentEnergy >= character.Stat.MaxEnergy.Value);
             _slots[slotIndex].SetUltimateReady(isReady);

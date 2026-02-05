@@ -19,27 +19,22 @@ public class LoadingScene : BaseScene
 
     IEnumerator LoadProcess()
     {
-        // 1. 메모리 정리
+        //메모리 정리
         Managers.Resource.Clear();
         Resources.UnloadUnusedAssets();
         System.GC.Collect();
         yield return null;
 
-        // 2. 다음 씬 정보
+        //다음 씬 정보
         string nextScene = Managers.SceneEx.NextSceneName;
 
-        // ★ 삭제: 리소스 프리로딩 단계 (Managers.Resource.CoLoadAllAsync)
-        // 이유: 다음 씬의 SO들이 씬 활성화 시점에 자동으로 로드됨
-
-        // 3. 씬 비동기 로드 시작
-        // (이 함수가 호출될 때, 다음 씬에 연결된 SO와 프리팹들이 메모리로 올라갑니다)
+        // 씬 비동기 로드 시작
+        // 이 함수가 호출될 때, 다음 씬에 연결된 SO와 프리팹들이 메모리로 올라감
         AsyncOperation op = SceneManager.LoadSceneAsync(nextScene);
         op.allowSceneActivation = false;
 
         float timer = 0.0f;
 
-        // ★ 중요: 이제 로딩바는 0~100% 전체를 씬 로딩 진행률로 채웁니다.
-        // (이전에는 50%가 리소스, 50%가 씬 로딩이었음)
         while (!op.isDone)
         {
             yield return null;
@@ -70,7 +65,6 @@ public class LoadingScene : BaseScene
             }
         }
     }
-
     public override void Clear()
     {
 

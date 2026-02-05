@@ -12,6 +12,7 @@ public class DungeonClearUI : MonoBehaviour
 
     public void Confirm()
     {
+        Managers.Party.PlayerController.VictoryTime = false;  //승리화면에서는 공격 불가능했던거 이제 풀리게
         Managers.Sound.StopAll();
         Managers.SceneEx.LoadScene(Define.Scene.Game);
     }

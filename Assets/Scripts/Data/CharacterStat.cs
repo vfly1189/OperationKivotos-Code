@@ -49,7 +49,6 @@ public class CharacterStat : BaseStat, IDamageable
     public void SetCharacterData(CharacterDataSO data)
     {
         _data = data;
-
         // 기본값 세팅
         MaxHp.SetBaseValue(data.MaxHp);
         Attack.SetBaseValue(data.Attack);
@@ -67,6 +66,7 @@ public class CharacterStat : BaseStat, IDamageable
         CurrentExp = 0;
     }
 
+    public CharacterDataSO GetData() { return _data; }
 
     //테스트용
     private void Update()
@@ -228,6 +228,7 @@ public class CharacterStat : BaseStat, IDamageable
             // (선택) 여기서 "IMMUNE" 같은 텍스트 이펙트를 띄우면 좋습니다.
             return;
         }
+        if (IsDead) return;
 
         float finalDamage = Mathf.Max(damageInfo.Amount - Defense.Value, 1);
         CurrentHp -= finalDamage;
@@ -241,6 +242,21 @@ public class CharacterStat : BaseStat, IDamageable
 
     protected override void HandleDeath(GameObject shooter)
     {
+        if (IsDead) return; // 중복 호출 방지
+
+        IsDead = true;
+
+        // Collider 비활성화 (추가 피격 방지)
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = false;
+
+        // Rigidbody 정지 (시체가 밀려나지 않게)
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+        }
+
         CallOnDead();
     }
 

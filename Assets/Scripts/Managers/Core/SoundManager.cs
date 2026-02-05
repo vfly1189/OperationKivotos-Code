@@ -66,6 +66,7 @@ public class SoundManager
             sfxSource.volume = _sfxVolume;
         }
     }
+
     public void Clear()
     {
         foreach (AudioSource audioSource in _audioSources)
@@ -74,12 +75,6 @@ public class SoundManager
             audioSource.Stop();
         }
         _audioClips.Clear();
-    }
-
-    public void Play(string path, Define.Sound type = Define.Sound.Effect, float pitch = 1.0f)
-    {
-        AudioClip audioClip = GetOrAddAudioClip(path, type);
-        Play(audioClip, type, pitch);
     }
 
     public void Play(AudioClip audioClip, Define.Sound type = Define.Sound.Effect, float pitch = 1.0f)
@@ -150,33 +145,5 @@ public class SoundManager
                 audioSource.Stop();
         }
         // 캐시는 유지
-    }
-
-    AudioClip GetOrAddAudioClip(string path, Define.Sound type = Define.Sound.Effect)
-    {
-        if (path.Contains("Sounds/") == false)
-            path = $"Sounds/{path}";
-
-        AudioClip audioClip = null;
-
-        //BGM
-        if (type == Define.Sound.Bgm)
-        {
-            audioClip = Managers.Resource.Load<AudioClip>(path);
-        }
-        //other
-        else
-        {
-            if (_audioClips.TryGetValue(path, out audioClip) == false)
-            {
-                audioClip = Managers.Resource.Load<AudioClip>(path);
-                _audioClips.Add(path, audioClip);
-            }
-        }
-
-        if (audioClip == null)
-            Debug.Log($"AudioClip Missing ! {path}");
-
-        return audioClip;
     }
 }

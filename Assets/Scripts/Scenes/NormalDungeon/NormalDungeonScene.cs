@@ -26,7 +26,7 @@ public class NormalDungeonScene : BaseScene
         Debug.Log("Normal Dungeon Init 호출");
 
 
-        Camera.main.GetComponent<CameraController>().SetTarget(PartyManager.Instance.GetCurrentCharacter().gameObject);
+        //Camera.main.GetComponent<CameraController>().SetTarget(Managers.Party.GetCurrentCharacter().gameObject);
 
         CreateUI();
         CreateMap();
@@ -99,7 +99,7 @@ public class NormalDungeonScene : BaseScene
 
     void PlayBattleInVoice()
     {
-        List<BaseCharacter> partyMemebers = PartyManager.Instance.PartyMembers;
+        List<BaseCharacter> partyMemebers = Managers.Party.GetMemeber();
 
         int randomNum_partyMembers = Random.Range(0, 4);
         AudioClip[] voices = partyMemebers[randomNum_partyMembers].Stat.GetBattleInVoice();
@@ -111,7 +111,7 @@ public class NormalDungeonScene : BaseScene
 
     void PlayVictoryVoice()
     {
-        List<BaseCharacter> partyMemebers = PartyManager.Instance.PartyMembers;
+        List<BaseCharacter> partyMemebers = Managers.Party.GetMemeber();
 
         int randomNum_partyMembers = Random.Range(0, 4);
         AudioClip[] voices = partyMemebers[randomNum_partyMembers].Stat.GetBattleVictoryVoices();
@@ -124,7 +124,7 @@ public class NormalDungeonScene : BaseScene
     void CreatePool()
     {
         //총알
-        Managers.Pool.CreatePool(_preloadData.bullet, 60);
+        Managers.Pool.CreatePool(_preloadData.bullet, 10);
         //몬스터
         //Managers.Pool.CreatePool(_preloadData.monsterAR, 20);
     }
@@ -176,6 +176,7 @@ public class NormalDungeonScene : BaseScene
             monster.Stat.OnDead += OnMonsterDead;
         }
     }
+
     private void OnMonsterDead()
     {
         _remainingMonsters--;
@@ -189,7 +190,7 @@ public class NormalDungeonScene : BaseScene
             Managers.Sound.Play(_preloadData.successBgm, Define.Sound.Bgm); // 실제 BGM 이름이나 AudioClip 필요
 
             // 2. PartyManager에게 승리 통보 (이게 핵심)
-            PartyManager.Instance.FinishGame(true); // true = Success
+            Managers.Party.FinishGame(true); // true = Success
             StartCoroutine(CoVictoryPoze());
         }
     }
@@ -198,6 +199,7 @@ public class NormalDungeonScene : BaseScene
 
     private System.Collections.IEnumerator CoVictoryPoze()
     {
+        Managers.Party.PlayerController.VictoryTime = true; // 승리화면에서는 공격(좌클릭) 불가능하게
         yield return new WaitForSeconds(3.0f);
 
         PlayVictoryVoice();
@@ -219,7 +221,7 @@ public class NormalDungeonScene : BaseScene
         StartCoroutine(CoCameraZoomEffect(camObj.transform));
 
         Transform[] endingPositions = _curMap.GetComponent<NormalDungeonMap>().GetTransforms();
-        List<BaseCharacter> characters = PartyManager.Instance.PartyMembers;
+        List<BaseCharacter> characters = Managers.Party.GetMemeber();
 
         int index = 0;
         foreach (BaseCharacter character in characters)
@@ -258,7 +260,8 @@ public class NormalDungeonScene : BaseScene
             }
 
             // [단계 4] 승리 포즈 애니메이션 재생
-            character.ChangeState(BaseCharacter.PlayerState.Victory);
+            //character.ChangeState(BaseCharacter.PlayerState.Victory); //변경전
+            character.Victory();
         }
     }
 

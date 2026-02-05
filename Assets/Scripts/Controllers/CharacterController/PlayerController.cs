@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController
 {
     // 현재 조작해야 할 대상(PartyManager가 꽂아줌)
     private BaseCharacter _currentTarget;
@@ -8,9 +8,19 @@ public class PlayerController : MonoBehaviour
     // 마우스 상태 저장 (누르고 있는지 여부)
     private bool _isMousePressed = false;
     private Vector2 _currentMoveInput;
-    void Start()
+
+    public bool VictoryTime { get; set; }
+
+    // 생성자에서 입력 이벤트 등록
+    public PlayerController()
     {
-        // 1. 입력 이벤트 등록 (한 번만 하면 됨)
+        RegisterInputEvents();
+    }
+
+    // Start() 대신 생성자에서 호출
+    private void RegisterInputEvents()
+    {
+        // 기존 구독이 있다면 먼저 해제 (중복 방지)
         Managers.Input.OnMoveInput -= HandleMove;
         Managers.Input.OnMoveInput += HandleMove;
 
@@ -26,11 +36,10 @@ public class PlayerController : MonoBehaviour
     {
         _currentTarget = newTarget;
 
-        // 타겟이 바뀌면 마우스 누름 상태 같은 건 초기화해주는 게 안전함
+        // 타겟이 바뀌면 마우스 누름 상태 초기화
         _isMousePressed = false;
 
-        // 카메라 타겟 변경 (만약 CameraController가 있다면)
-        // Camera.main.GetComponent<CameraController>().SetTarget(newTarget.transform);
+        // 타겟 설정 시 현재 입력값이 있으면 즉시 적용
         if (_currentTarget != null && _currentMoveInput.sqrMagnitude > 0.01f)
         {
             _currentTarget.Move(_currentMoveInput);
@@ -38,7 +47,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // 매 프레임 이동 입력 처리
-    void HandleMove(Vector2 dir)
+    private void HandleMove(Vector2 dir)
     {
         _currentMoveInput = dir;
         if (_currentTarget == null) return;
@@ -55,14 +64,13 @@ public class PlayerController : MonoBehaviour
     }
 
     // 마우스 입력 처리 (공격)
-    void HandleMouse(Define.MouseEvent evt)
+    private void HandleMouse(Define.MouseEvent evt)
     {
         if (_currentTarget == null) return;
 
-        // [추가] 마을(GameScene)에서는 공격 금지
+        // 마을(GameScene)에서는 공격 금지
         if (Managers.SceneEx.CurrentSceneType == Define.Scene.Game)
         {
-            // 클릭해도 무시하고 리턴
             _isMousePressed = false;
             return;
         }
@@ -71,43 +79,35 @@ public class PlayerController : MonoBehaviour
         {
             _isMousePressed = true;
         }
-        else if (evt == Define.MouseEvent.Click) // Click = Press 후 Release 된 시점 or 단순 뗌
+        else if (evt == Define.MouseEvent.Click)
         {
             _isMousePressed = false;
         }
     }
 
     // 스킬 입력 처리
-    void HandleSkill_Q()
+    private void HandleSkill_Q()
     {
-        if (_currentTarget == null) return;
-
-        _currentTarget.UseSkill_Q();
+        _currentTarget?.UseSkill_Q();
     }
 
-    void HandleSkill_E()
+    private void HandleSkill_E()
     {
-        if (_currentTarget == null) return;
-
-        _currentTarget.UseSkill_E();
+        _currentTarget?.UseSkill_E();
     }
 
-    // Update에서는 지속적인 입력(공격 키 누르고 있기)을 처리
-    void Update()
+    // Update 로직 → Managers.Update에서 호출
+    public void OnUpdate()
     {
-        if (_currentTarget == null) return;
+        if (_currentTarget == null || _currentTarget.Stat.IsDead) return;
 
-        // 마우스 누르고 있으면 계속 공격 명령 (연사)
-        // 만약 단발 공격만 원한다면 HandleMouse에서 한 번만 호출하면 됨
-        if (_isMousePressed)
-        {
-            _currentTarget.Attack(true);
-        }
-        else
-        {
-            // 공격 중지 신호 (손 뗐음)
-            _currentTarget.Attack(false);
-        }
+        _currentTarget.Attack(_isMousePressed);
+    }
 
+    // 정리 메서드 (Dispose 시 호출)
+    public void Dispose()
+    {
+        Managers.Input.OnMoveInput -= HandleMove;
+        Managers.Input.MouseAction -= HandleMouse;
     }
 }

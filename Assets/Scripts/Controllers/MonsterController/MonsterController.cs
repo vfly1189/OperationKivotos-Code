@@ -92,13 +92,13 @@ public class MonsterController : MonoBehaviour
         }
 
         // [수정] PartyManager를 통해 현재 플레이어 타겟 가져오기
-        UpdateTarget();
+        UpdateTarget(Managers.Party.GetCurrentCharacter().gameObject);
 
         // [핵심] 캐릭터 교체 이벤트 구독
-        if (PartyManager.Instance != null)
+        if (Managers.Party != null)
         {
-            PartyManager.Instance.OnCharacterChanged -= OnPlayerCharacterChanged;
-            PartyManager.Instance.OnCharacterChanged += OnPlayerCharacterChanged;
+            Managers.Party.OnActiveCharacterChanged -= OnPlayerCharacterChanged;
+            Managers.Party.OnActiveCharacterChanged += OnPlayerCharacterChanged;
         }
     }
 
@@ -106,30 +106,23 @@ public class MonsterController : MonoBehaviour
     private void OnDestroy()
     {
         // 이벤트 구독 해제 (메모리 누수 방지)
-        if (PartyManager.Instance != null)
+        if (Managers.Party != null)
         {
-            PartyManager.Instance.OnCharacterChanged -= OnPlayerCharacterChanged;
+            Managers.Party.OnActiveCharacterChanged -= OnPlayerCharacterChanged;
         }
     }
 
     // [추가] 타겟 갱신 함수
-    private void UpdateTarget()
+    private void UpdateTarget(GameObject player)
     {
-        _target = PartyManager.Instance.GetCurrentCharacter().gameObject.transform;
-
-        if (_target == null)
-        {
-            // 만약 PartyManager가 없다면 예전 방식으로 폴백
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null) _target = player.transform;
-        }
+        if (player != null) _target = player.transform;
     }
 
     // [추가] 캐릭터 교체 이벤트 핸들러
-    private void OnPlayerCharacterChanged(int newIndex)
+    private void OnPlayerCharacterChanged(GameObject player)
     {
         //Debug.Log($"Monster: Player switched to character {newIndex}, updating target.");
-        UpdateTarget();
+        UpdateTarget(player);
     }
 
     // 풀링 사용 시 OnEnable에서 초기화 필요

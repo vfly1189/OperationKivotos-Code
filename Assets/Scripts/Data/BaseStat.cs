@@ -9,8 +9,8 @@ public class BaseStat : MonoBehaviour, IDamageable
     public Stat Defense;
 
     public float CurrentHp { get; protected set; }
-    public bool IsDead => CurrentHp <= 0;
-
+    //public bool IsDead => CurrentHp <= 0;
+    public bool IsDead { get; protected set; }
     // 사망 이벤트는 공통
     public event Action OnDead;
     public event Action<float, float> OnHpChanged;

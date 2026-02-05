@@ -6,6 +6,9 @@ using UnityEngine.UI;
 
 public class GameSceneCanvas : MonoBehaviour
 {
+    //private static GameSceneCanvas _instance;
+
+
     [SerializeField] private CurrentGameDataSO _currentGameContext; // 인스펙터 연결
 
     [Header("Data Source")]
@@ -23,34 +26,35 @@ public class GameSceneCanvas : MonoBehaviour
     [SerializeField] private Image _sucessImageFont;
 
 
-    private PartyManager _partyManager;
+    //private PartyManager _partyManager;
     private BaseCharacter _cachedActiveCharacter; // 현재 UI가 구독 중인 캐릭터
     int _schoolIdx;
+    private bool _isShowingResult = false; // [추가] 중복 실행 방지
 
-    public void SetPartyManager(PartyManager partyManager)
+
+    public void SetPartyManager()
     {
-        // 기존 파티 매니저 이벤트 해제
-        if (_partyManager != null)
+        if (Managers.Party != null)
         {
-            _partyManager.OnCharacterChanged -= UpdateActiveCharacterUI;
-            _partyManager.OnGameFinished -= HandleGameFinished;
+            Managers.Party.OnActiveCharacterChanged -= UpdateActiveCharacterUI;
+            Managers.Party.OnGameFinished -= HandleGameFinished;
         }
 
-        _partyManager = partyManager;
+        // 파티 슬롯 이벤트 재연결
+        ConnectPermanentPartyEvents();
 
-        if (_partyManager != null)
+        // 파티 매니저 이벤트 재연결
+        if (Managers.Party != null)
         {
-            // [핵심] 캐릭터가 재생성되었을 수 있으므로 파티 슬롯 이벤트 재연결
-            ConnectPermanentPartyEvents();
+            Managers.Party.OnActiveCharacterChanged += UpdateActiveCharacterUI;
+            Managers.Party.OnGameFinished += HandleGameFinished;
+        }
 
-            // 파티 매니저 이벤트 재연결
-            _partyManager.OnCharacterChanged += UpdateActiveCharacterUI;
-            _partyManager.OnGameFinished += HandleGameFinished;
-
-            // 현재 캐릭터로 UI 갱신 (OnSceneLoaded에서도 호출되지만 명시적으로)
-            UpdateActiveCharacterUI(_partyManager.PartyMembers.FindIndex(
-                c => c.gameObject.activeSelf
-            ));
+        // UI 갱신
+        BaseCharacter currentChar = Managers.Party?.GetCurrentCharacter();
+        if (currentChar != null)
+        {
+            UpdateActiveCharacterUI(currentChar.gameObject);
         }
     }
 
@@ -82,17 +86,23 @@ public class GameSceneCanvas : MonoBehaviour
 
     void ConnectPermanentPartyEvents()
     {
-        if (_partyManager == null || _partyManager.PartyMembers == null)
+        if (Managers.Party == null || Managers.Party.GetMemeber() == null)
             return;
 
-        _partyHUD.ConnectPartyEvents(_partyManager.PartyMembers);
+        _partyHUD.ConnectPartyEvents(Managers.Party.GetMemeber());
     }
 
     // ========================================================================
     // [2] 활성 캐릭터 (메인 UI) - 교체될 때마다 갈아끼우기
     // ========================================================================
-    void UpdateActiveCharacterUI(int charIndex)
+    void UpdateActiveCharacterUI(GameObject currentCharacter)
     {
+        // [추가] null 체크
+        if (currentCharacter == null)
+        {
+            return;
+        }
+
         // --- 1. 기존 캐릭터 구독 해제 ---
         if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
         {
@@ -100,24 +110,43 @@ public class GameSceneCanvas : MonoBehaviour
         }
 
         // --- 2. 새 캐릭터 가져오기 ---
-        BaseCharacter newChar = _partyManager.PartyMembers[charIndex];
-        CharacterDataSO charData = Managers.Context.SelectedSchool.characters[charIndex];
+        BaseCharacter newChar = currentCharacter.GetComponent<BaseCharacter>();
+
+        if (newChar == null)
+        { 
+            return;
+        }
+
+        if (newChar.Stat == null)
+        {
+            return;
+        }
+
+        CharacterDataSO charData = newChar.Stat.GetData();
+
+        if (charData == null)
+        {
+            return;
+        }
+
         _cachedActiveCharacter = newChar;
 
-        // 아이콘 등 정적 데이터 교체
-        if (charData != null)
+        // [핵심 수정] 정적 데이터 먼저 교체
+        if (_activeCharacterHUD != null)
         {
             _activeCharacterHUD.ChangeStaticData(charData);
+        }
+        else
+        {
+            return;
         }
 
         // --- 3. 새 캐릭터 구독 및 초기화 ---
         if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
         {
-            CharacterStat newStat = _cachedActiveCharacter.Stat;
             _activeCharacterHUD.SubscribeEvent(_cachedActiveCharacter);
         }
     }
-
 
 
     // ========================================================================
@@ -127,10 +156,10 @@ public class GameSceneCanvas : MonoBehaviour
     void OnDestroy()
     {
         // 1. PartyManager 이벤트 해제
-        if (_partyManager != null)
+        if (Managers.Party != null)
         {
-            _partyManager.OnCharacterChanged -= UpdateActiveCharacterUI;
-            _partyManager.OnGameFinished -= HandleGameFinished;
+            Managers.Party.OnActiveCharacterChanged -= UpdateActiveCharacterUI;
+            Managers.Party.OnGameFinished -= HandleGameFinished;
         }
 
         // 2. [핵심] 현재 보고 있던 캐릭터의 스탯 이벤트 해제 (이게 빠져서 문제였음)
@@ -140,9 +169,12 @@ public class GameSceneCanvas : MonoBehaviour
         }
     }
 
-    // [추가] 게임 종료 핸들러
+    // 게임 종료 핸들러
     private void HandleGameFinished(bool isSuccess)
     {
+        if (_isShowingResult) return;
+        _isShowingResult = true;
+
         if (isSuccess)
         {
             if (_sucessImageFont != null)
@@ -184,5 +216,7 @@ public class GameSceneCanvas : MonoBehaviour
 
         yield return new WaitForSeconds(2.0f);
         targetImage.gameObject.SetActive(false);
+
+        _isShowingResult = false; // 플래그 리셋
     }
 }

@@ -5,306 +5,213 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class PartyManager : MonoBehaviour
+public class PartyManager
 {
-    public static PartyManager Instance { get; private set; }
-    [Header("Party Settings")]
-    // 실제 인게임에 로드된 캐릭터 인스턴스들 (최대 4명)
-    public List<BaseCharacter> PartyMembers = new List<BaseCharacter>();
+    private Dictionary<BaseCharacter, Action> _deathHandlers = new Dictionary<BaseCharacter, Action>();
 
-    // 현재 조작 중인 캐릭터의 인덱스
-    private int _currentIndex = 0;
-
+    // 하위 시스템들
+    private PartyRegistry _registry;
+    private PartySwapController _swapController;
+    private PartyCharacterActivator _activator;
+    private PartyDeathHandler _deathHandler;
     private PartyInputHandler _inputHandler;
 
-    // 교체 쿨타임 (원신은 약 1초)
-    private float _swapCooldown = 1.0f;
-    private float _lastSwapTime = -99f;
-
-    //이벤트 정의: 캐릭터가 교체될 때 호출됨 (인자: 바뀐 캐릭터의 Index)
-    public event Action<int> OnCharacterChanged;
-    // [추가] 게임 종료 이벤트 (true: 성공, false: 실패)
+    // 외부 노출 이벤트 (카메라/컨트롤러가 구독)
+    public event Action<GameObject> OnActiveCharacterChanged;
     public event Action<bool> OnGameFinished;
 
-    public PlayerController _playerController;
-    //컨트롤러
-    public PlayerController PlayerController { get; set; }
+    // PlayerController 참조 (외부 주입)
+    public PlayerController PlayerController { get; private set; }
 
-    private bool _isSwapping = false;
+    // 코루틴 실행용 MonoBehaviour 참조
+    private MonoBehaviour _coroutineRunner;
 
+    // 캐릭터들의 부모 역할을 할 GameObject (한 번만 생성)
+    private GameObject _characterContainer;
 
-    #region 필수(Awake, Start, Init, Update ... )
-    private void Awake()
+    private bool _isGameEnding = false;
+
+    // 생성자로 Managers 받기
+    public PartyManager(MonoBehaviour coroutineRunner)
     {
-        // 2. 싱글톤 보장 로직
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject); // 씬 바뀌어도 파괴 금지
+        _coroutineRunner = coroutineRunner;
+        InitializeSubsystems();
+        SceneManager.sceneLoaded += OnSceneLoaded;
 
-            // 씬 로드 이벤트 등록 (카메라 갱신 등을 위해)
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
-        else
+        // 캐릭터 컨테이너 생성
+        CreateCharacterContainer();
+    }
+
+    private void CreateCharacterContainer()
+    {
+        // @PartyMembers 오브젝트 생성
+        _characterContainer = new GameObject("@PartyMembers");
+        _characterContainer.transform.SetParent(((MonoBehaviour)_coroutineRunner).transform); // Managers의 자식
+    }   
+
+    // 의존성 주입으로 하위 시스템 생성
+    private void InitializeSubsystems()
+    {
+        PlayerController = new PlayerController();
+
+        _registry = new PartyRegistry();
+        _swapController = new PartySwapController(_registry);
+        _activator = new PartyCharacterActivator(_registry);
+        _deathHandler = new PartyDeathHandler(_registry, _swapController, _coroutineRunner);
+
+        // 이벤트 체인 연결
+        _swapController.OnSwapRequested += HandleSwapRequest;
+        _deathHandler.OnPartyWiped += () => FinishGame(false);
+    }
+
+    // 교체 요청 처리 (카메라 + 컨트롤러 갱신)
+    private void HandleSwapRequest(int prevIdx, int nextIdx)
+    {
+        _activator.SyncSwap(prevIdx, nextIdx);
+
+        // 플레이어 컨트롤러 타겟 변경
+        if (PlayerController != null)
         {
-            // 이미 매니저가 있으면, 새로 생긴 나는 파괴 (GameScene 다시 왔을 때 등)
-            Destroy(gameObject);
+            PlayerController.SetControlTarget(_registry.GetCurrent());
+        }
+
+        // 외부에 알림
+        OnActiveCharacterChanged?.Invoke(_registry.GetCurrent().gameObject);
+    }
+
+    // 파티 초기화
+    public void Init(List<BaseCharacter> characters)
+    {
+        // 기존 멤버 이벤트 완전 정리
+        if (_registry.Members != null && _registry.Members.Count > 0)
+        {
+            foreach (var oldMember in _registry.Members)
+            {
+                if (oldMember != null && oldMember.Stat != null && _deathHandlers.ContainsKey(oldMember))
+                {
+                    oldMember.Stat.OnDead -= _deathHandlers[oldMember];
+                }
+            }
+            _deathHandlers.Clear();
+        }
+
+        _registry.Init(characters);
+
+        // 사망 이벤트 구독 (메서드 참조 방식)
+        foreach (var member in characters)
+        {
+            // 각 캐릭터마다 Action을 저장해서 나중에 정확히 해제 가능
+            Action handler = () => _deathHandler.HandleCharacterDeath(member);
+            _deathHandlers[member] = handler;
+            member.Stat.OnDead += handler;
+        }
+
+        // 첫 번째 캐릭터만 활성화
+        _activator.ActivateCharacter(0, Vector3.zero, Quaternion.identity);
+        for (int i = 1; i < characters.Count; i++)
+        {
+            _activator.DeactivateCharacter(i);
+        }
+
+        // 입력 핸들러 초기화
+        _inputHandler = new PartyInputHandler(_swapController);
+
+        // 컨트롤러 연동
+        if (PlayerController != null)
+        {
+            PlayerController.SetControlTarget(_registry.GetCurrent());
         }
     }
-    private void OnDestroy()
-    {
-        // 파괴될 때 이벤트 구독 해제 (안 하면 메모리 누수/에러)
-        if (Instance == this)
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-        }
-    }
-    public void Init(List<BaseCharacter> loadedCharacters)
-    {
-        _isSwapping = false;
-        _currentIndex = 0;
 
-        PartyMembers = loadedCharacters;
-
-        // 첫 번째 캐릭터만 활성화, 나머지는 비활성화
-        for (int i = 0; i < PartyMembers.Count; i++)
-        {
-            // 1. PartyManager도 이벤트를 듣습니다.
-            // BaseCharacter가 듣는 것과는 별개입니다. (Multi-cast Delegate)
-            BaseCharacter member = PartyMembers[i];
-
-            member.Stat.OnDead += () => HandleCharacterDeath(member);
-
-            if (i == 0) ActivateCharacter(i, Vector3.zero, Quaternion.identity); // 초기 위치
-            else DeactivateCharacter(i);
-        }
-
-        Camera.main.GetComponent<CameraController>()._player = loadedCharacters[0].gameObject;
-        if (_playerController != null)
-        {
-            //Debug.Log("PlayerController 있음");
-            _playerController.SetControlTarget(loadedCharacters[0]);
-        }
-
-
-        _currentIndex = 0;
-
-        _inputHandler = new PartyInputHandler();
-        //RegisterInput();
-    }
-    void Update()
-    {
-
-    }
-    #endregion
-
-
-    // 씬이 로드될 때마다 호출됨
+    // 씬 로드 시 카메라 갱신
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // 씬이 바뀌면 메인 카메라도 바뀌므로 갱신 필요
-        if (Camera.main != null && PartyMembers.Count > 0)
+        if (_registry != null && _registry.Members != null && _registry.Members.Count > 0)
         {
-            CameraController cam = Camera.main.GetComponent<CameraController>();
-            if (cam != null)
-            {
-                cam._player = GetCurrentCharacter().gameObject;
-            }
-        }
-        OnCharacterChanged?.Invoke(_currentIndex);
-
-    }
-    //씬 이동 시 파티원 전체 이동 편의 함수
-    public void TeleportParty(Vector3 position)
-    {
-        foreach (var member in PartyMembers)
-        {
-            member.transform.position = position;
-        }
-        // 현재 활성 캐릭터 위치 강제 동기화
-        GetCurrentCharacter().transform.position = position;
-    }
-
-
-    public void FinishGame(bool isSuccess)
-    {
-        //던전 클리어
-        if(isSuccess)
-        {
-            OnGameFinished?.Invoke(isSuccess);
-        }
-        //던전 실패
-        else
-        {
-            OnGameFinished?.Invoke(isSuccess);
-            // 승리 시에도 씬 이동 시퀀스 실행 (패배 때와 비슷하게)
-            StartCoroutine(CoGameOverSequence());
+            OnActiveCharacterChanged?.Invoke(_registry.GetCurrent().gameObject);
         }
     }
 
-
-    //CharacterStat에서 OnDead가 발생하면 호출됨
-    private void HandleCharacterDeath(BaseCharacter deadChar)
-    {
-        // 지금 죽은 게 현재 조작 중인 캐릭터가 맞는지 확인
-        if (deadChar != GetCurrentCharacter()) return;
-
-        // 이미 교체 시퀀스가 돌고 있다면 또 실행x
-        if (_isSwapping) return;
-
-        Debug.Log($"캐릭터 {deadChar.name} 사망! 자동 교체 시퀀스 시작.");
-
-        // 코루틴으로 자동 교체 로직 위임
-        StartCoroutine(CoAutoSwapAfterDeath());
-    }
-
-    //사망 후 자동 교체 코루틴
-    private System.Collections.IEnumerator CoAutoSwapAfterDeath()
-    {
-        _isSwapping = true; // 교체 시작 잠금
-
-        // (1) 조작 차단: 플레이어가 아무것도 못하게 막음
-         _playerController.SetControlTarget(null); // 혹은 입력을 무시하는 상태로 전환
-
-        //사망 애니메이션/연출 대기 
-        yield return new WaitForSeconds(2.0f);
-
-        //다음 살아있는 캐릭터 찾기
-        int nextAliveIndex = FindNextAliveCharacterIndex();
-
-        if (nextAliveIndex != -1)
-        {
-            // 살아있는 동료가 있다면 교체
-            Debug.Log($"다음 생존자(인덱스 {nextAliveIndex})로 교체합니다.");
-            SwapCharacter(_currentIndex, nextAliveIndex);
-            _isSwapping = false; // 교체 완료 후 잠금 해제
-        }
-        else
-        {
-            Debug.Log("파티 전멸! 게임 오버.");
-            //UI에게 "실패했다"고 알림
-            //OnGameFinished?.Invoke(false); // false = Failed
-            FinishGame(false);
-            //yield return StartCoroutine(CoGameOverSequence());
-        }
-        
-    }
     private IEnumerator CoGameOverSequence()
     {
-        // UI 연출 시간(약 2~3초)만큼 대기
         yield return new WaitForSeconds(4.0f);
 
-        // 사운드 정리 및 씬 재시작
+        _isGameEnding = false; //  플래그 리셋 (씬 전환 전)
+
         Managers.Sound.StopAll();
-        Managers.SceneEx.LoadScene(Define.Scene.Game); // 또는 로비로 이동
+        Managers.SceneEx.LoadScene(Define.Scene.Game);
     }
 
-    // 살아있는 캐릭터 인덱스 찾기
-    private int FindNextAliveCharacterIndex()
-    {
-        // 현재 인덱스 다음부터 한 바퀴 돌면서 찾기
-        for (int i = 1; i < PartyMembers.Count; i++)
-        {
-            int checkIndex = (_currentIndex + i) % PartyMembers.Count;
-            if (!PartyMembers[checkIndex].Stat.IsDead)
-            {
-                return checkIndex;
-            }
-        }
-        return -1; // 다 죽음
-    }
 
-    public void TrySwap(int targetIndex)
-    {
-        if (!CanSwap(targetIndex)) return;
-        SwapCharacter(_currentIndex, targetIndex);
-    }
 
-    // 교체 가능 여부 체크 (조건문 분리)
-    private bool CanSwap(int targetIndex)
-    {
-        if (Time.time - _lastSwapTime < _swapCooldown) return false;
-        if (targetIndex >= PartyMembers.Count || targetIndex == _currentIndex) return false;
-        if (PartyMembers[targetIndex].Stat.IsDead) return false;
-        if (PartyMembers[_currentIndex].IsUsingSkill) return false;
-        return true;
-    }
 
-    private void SwapCharacter(int prevIdx, int nextIdx)
-    {
-        BaseCharacter prevChar = PartyMembers[prevIdx];
-        BaseCharacter nextChar = PartyMembers[nextIdx];
-
-        // 위치/회전 동기화
-        // 나가려는 캐릭터의 현재 위치와 방향을 들어올 캐릭터에게 복사
-        Vector3 position = prevChar.transform.position;
-        Quaternion rotation = prevChar.transform.rotation;
-
-        //이전 캐릭터 퇴장 (이펙트 처리 가능)
-        DeactivateCharacter(prevIdx);
-
-        //다음 캐릭터 등장
-        ActivateCharacter(nextIdx, position, rotation);
-
-        //카메라 타겟 변경
-        if (Camera.main != null)
-        {
-            Camera.main.GetComponent<CameraController>()._player = nextChar.gameObject;
-        }
-        _playerController.SetControlTarget(PartyMembers[nextIdx]);
-
-        //인덱스 갱신 및 쿨타임 적용
-        _currentIndex = nextIdx;
-        _lastSwapTime = Time.time;
-
-        //교체 이펙트/사운드 재생 (Managers.Sound.Play...)
-        //Managers.Effect.Play("SwitchEffect", position);
-
-        OnCharacterChanged?.Invoke(nextIdx);
-    }
-
-    private void ActivateCharacter(int index, Vector3 pos, Quaternion rot)
-    {
-        var character = PartyMembers[index];
-        character.transform.position = pos;
-        character.transform.rotation = rot;
-        character.gameObject.SetActive(true);
-        //character.OnSwitchIn(); // 등장 시 버프/대사 처리
-    }
-
-    private void DeactivateCharacter(int index)
-    {
-        var character = PartyMembers[index];
-        //character.OnSwitchOut(); // 퇴장 시 버프 해제 등
-        character.gameObject.SetActive(false);
-    }
-
-    public BaseCharacter GetCurrentCharacter()
-    {
-        return PartyMembers[_currentIndex];
-    }
-
+    #region 외부 호출용 및 Getter
     public void ClearParty()
     {
-        // 기존 멤버들을 물리적으로 파괴 (씬에 남아있지 않게)
-        foreach (var member in PartyMembers)
-        {
-            if (member != null)
-                Destroy(member.gameObject);
-        }
-        PartyMembers.Clear();
+        if (_registry.Members == null) return;
 
-        // 각종 상태 변수 초기화
-        _currentIndex = 0;
-        _isSwapping = false;
-        _lastSwapTime = -99f;
+        // 저장된 핸들러로 정확히 이벤트 해제
+        foreach (var member in _registry.Members)
+        {
+            if (member != null && member.Stat != null && _deathHandlers.ContainsKey(member))
+            {
+                member.Stat.OnDead -= _deathHandlers[member];
+            }
+
+            if (member != null)
+            {
+                UnityEngine.Object.Destroy(member.gameObject);
+            }
+        }
+
+        _registry.Members.Clear();
+        _deathHandlers.Clear(); // Dictionary도 초기화
     }
 
     public void TurnOnAllMembers()
     {
-        foreach (var member in PartyMembers)
+        foreach (var member in _registry.Members)
         {
             member.gameObject.SetActive(true);
+        }
+    }
+
+    // Public API
+    public BaseCharacter GetCurrentCharacter() => _registry.GetCurrent();
+    public void TrySwap(int targetIndex) => _swapController.TrySwap(targetIndex);
+    public void TeleportParty(Vector3 pos) => _activator.TeleportAll(pos);
+    public List<BaseCharacter> GetMemeber() => _registry.Members;
+    // 파티 초기화 시 컨테이너 참조 전달
+    public Transform GetCharacterContainer() => _characterContainer.transform;
+
+
+    public void FinishGame(bool isSuccess)
+    {
+        if (_isGameEnding) return; // [추가]
+        _isGameEnding = true;
+
+        OnGameFinished?.Invoke(isSuccess);
+
+        if (!isSuccess)
+        {
+            _coroutineRunner.StartCoroutine(CoGameOverSequence());
+        }
+    }
+    #endregion
+
+
+    // 파괴 시 정리 (Managers에서 호출)
+    public void Dispose()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
+        // 파티 정리
+        ClearParty();
+
+        // PlayerController 정리
+        if (PlayerController != null)
+        {
+            PlayerController.Dispose();
         }
     }
 }

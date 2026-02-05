@@ -22,7 +22,7 @@ public class BossDungeonScene : BaseScene
         Debug.Log("Boss Dungeon Init »£√‚");
 
 
-        Camera.main.GetComponent<CameraController>().SetTarget(PartyManager.Instance.GetCurrentCharacter().gameObject);
+        Camera.main.GetComponent<CameraController>().SetTarget(Managers.Party.GetCurrentCharacter().gameObject);
 
 
         CreateMap();
@@ -36,7 +36,7 @@ public class BossDungeonScene : BaseScene
         _cameraPoint = _preloadData.bossDungeon.GetComponent<BossDungeonMap>().GetCameraPoint();
         _bossSpawnPoint = _preloadData.bossDungeon.GetComponent<BossDungeonMap>().GetBossSpawnPoint();
 
-        PartyManager.Instance.TeleportParty(_spawnPoint.position);
+        Managers.Party.TeleportParty(_spawnPoint.position);
         Camera.main.transform.position = _cameraPoint.position;
         Camera.main.transform.rotation = _cameraPoint.rotation;
     }
@@ -66,7 +66,7 @@ public class BossDungeonScene : BaseScene
 
         GameSceneCanvas canvas = mainUI.GetComponent<GameSceneCanvas>();
         if (canvas != null)
-            canvas.SetPartyManager(PartyManager.Instance); // ΩÃ±€≈Ê ∏≈¥œ¿˙ ø¨∞·
+            canvas.SetPartyManager(); // ΩÃ±€≈Ê ∏≈¥œ¿˙ ø¨∞·
     }
 
     void PlayBGM()
@@ -106,11 +106,5 @@ public class BossDungeonScene : BaseScene
         }
     }
 
-    void SpawnCharacter()
-    {
-        if (PartyManager.Instance != null)
-        {
 
-        }
-    }
 }

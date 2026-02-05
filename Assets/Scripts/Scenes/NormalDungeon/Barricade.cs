@@ -20,19 +20,6 @@ public class Barricade : MonoBehaviour, IDamageable
 
     // 총알 스크립트에서 호출할 함수
     // (만약 BaseStat을 상속받았다면 override TakeDamage가 되겠죠?)
-    public void TakeDamage(float damage)
-    {
-        if (_currentHp <= 0) return; // 이미 부서졌으면 무시
-
-        _currentHp -= damage;
-        Debug.Log($"바리케이드 체력: {_currentHp}");
-
-        if (_currentHp <= 0)
-        {
-            StartCoroutine(CoDestroyBarricade());
-        }
-    }
-
     public void TakeDamage(DamageInfo damage)
     {
         if (_currentHp <= 0) return; // 이미 부서졌으면 무시

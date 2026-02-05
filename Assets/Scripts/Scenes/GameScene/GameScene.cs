@@ -4,7 +4,6 @@ using UnityEngine;
 public class GameScene : BaseScene
 {
     // 씬이 관리하는 핵심 컨트롤러들
-    private PartyManager _partyManager;
     private PlayerController _playerController;
     [SerializeField] private CurrentGameDataSO _currentGameContext; // 인스펙터 연결
     [SerializeField] private GameScenePreloadSO _preloadData;
@@ -18,29 +17,8 @@ public class GameScene : BaseScene
 
         _sceneType = Define.Scene.Game;
 
-        if (PartyManager.Instance == null)
-        {
-            // 최초 생성 (게임 처음 시작 시)
-            GameObject go = new GameObject("@PartyManager");
-            go.transform.position = new Vector3(0, 0, 0);
-            _partyManager = go.AddComponent<PartyManager>();
-
-            // PlayerController도 같이 붙여서 평생 함께 가게 함
-            _playerController = go.AddComponent<PlayerController>();
-            _partyManager._playerController = _playerController;
-        }
-        else
-        {
-            // 이미 생성된 매니저 사용 (던전 갔다 돌아왔을 때 등)
-            _partyManager = PartyManager.Instance;
-            _playerController = _partyManager._playerController;
-
-            // 중요: 파티 멤버들이 비활성화되어 있을 수 있으므로 위치 잡고 활성화 처리 등 필요
-            // (CreateCharacters는 호출하지 않음 - 이미 멤버가 있으니까)
-            // 예를 들어 마을 스폰 포인트로 이동
-            _partyManager.TeleportParty(new Vector3(0, 0, 0));
-        }
-
+        
+        _playerController = Managers.Party.PlayerController;
 
         // 이미 로딩된 리소스들을 배치
         CreateMainVillage();
@@ -49,7 +27,6 @@ public class GameScene : BaseScene
         CreateShopMaster();
         CreateEffectStage();
         PlayMainBGM();
-
 
         SetupUI();
     }
@@ -62,7 +39,7 @@ public class GameScene : BaseScene
         {
             existingUI.SetActive(true); // ← 추가: 던전에서 숨긴 경우 다시 활성화
             GameSceneCanvas canvas = existingUI.GetComponent<GameSceneCanvas>();
-            canvas.SetPartyManager(_partyManager);
+            canvas.SetPartyManager();
             return;
         }
 
@@ -74,7 +51,7 @@ public class GameScene : BaseScene
         GameSceneCanvas newCanvas = mainUI.GetComponent<GameSceneCanvas>();
         if (newCanvas != null)
         {
-            newCanvas.SetPartyManager(_partyManager);
+            newCanvas.SetPartyManager();
         }
     }
 
@@ -88,12 +65,13 @@ public class GameScene : BaseScene
 
     void CreateCharacters()
     {
-        // [추가] 기존 파티 멤버가 있다면 싹 다 삭제 (Destroy)
-        _partyManager.ClearParty();
+        Managers.Party.ClearParty();
 
-        // ... 기존 생성 로직 그대로 ...
         CharacterDataSO[] charactersToSpawn = Managers.Context.SelectedSchool.characters;
         List<BaseCharacter> partyMembers = new List<BaseCharacter>();
+
+        // [핵심] PartyManager의 전용 컨테이너 사용
+        Transform partyContainer = Managers.Party.GetCharacterContainer();
 
         for (int i = 0; i < charactersToSpawn.Length; i++)
         {
@@ -101,7 +79,6 @@ public class GameScene : BaseScene
             BaseCharacter character = go.GetComponent<BaseCharacter>();
             character.Init();
 
-            // [핵심 추가] 저장된 성장 데이터(레벨, 경험치)가 있으면 복구해라!
             CharacterRuntimeData savedData = Managers.Context.LoadCharacterStat(charactersToSpawn[i].id);
             if (savedData != null)
             {
@@ -109,11 +86,12 @@ public class GameScene : BaseScene
             }
 
             partyMembers.Add(character);
-            go.transform.SetParent(_partyManager.transform);
+
+            // 파티 전용 컨테이너의 자식으로 설정
+            go.transform.SetParent(partyContainer);
         }
 
-        // 매니저에게 "새 멤버들이다. 다시 관리해라"라고 넘김
-        _partyManager.Init(partyMembers);
+        Managers.Party.Init(partyMembers);
     }
 
     void CreatePortal()

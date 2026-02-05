@@ -13,13 +13,22 @@ public class CameraController : MonoBehaviour
 
     void Start()
     {
-
+        //Managers.Party.OnActiveCharacterChanged += SetTarget;
     }
 
+    private void Awake()
+    {
+        // [수정] 중복 구독 방지
+        if (Managers.Party != null)
+        {
+            Managers.Party.OnActiveCharacterChanged -= SetTarget;
+            Managers.Party.OnActiveCharacterChanged += SetTarget;
+        }
+    }
 
     void LateUpdate()
     {
-        if (_mode == Define.CameraMode.QuarterView)
+        if (_mode == Define.CameraMode.QuarterView && _player != null)
         {
             //RaycastHit hit;
 
@@ -50,6 +59,17 @@ public class CameraController : MonoBehaviour
 
     public void SetTarget(GameObject target)
     {
+        Debug.Log($"카메라 타겟 설정 : {target.name}");
         _player = target;
     }
+
+    // [추가] 파괴 시 이벤트 해제
+    private void OnDestroy()
+    {
+        if (Managers.Party != null)
+        {
+            Managers.Party.OnActiveCharacterChanged -= SetTarget;
+        }
+    }
+
 }
