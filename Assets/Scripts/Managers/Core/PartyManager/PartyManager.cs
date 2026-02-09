@@ -138,6 +138,8 @@ public class PartyManager
 
         _isGameEnding = false; //  플래그 리셋 (씬 전환 전)
 
+        Debug.Log($"{_isGameEnding} false 전환");
+
         Managers.Sound.StopAll();
         Managers.SceneEx.LoadScene(Define.Scene.Game);
     }
@@ -187,15 +189,18 @@ public class PartyManager
 
     public void FinishGame(bool isSuccess)
     {
-        if (_isGameEnding) return; // [추가]
-        _isGameEnding = true;
+        Debug.Log("Finish Game 호출");
 
+        //if (_isGameEnding) return; // [추가]
+        //_isGameEnding = true;
+        Debug.Log("_isGameEnding false 였음");
         OnGameFinished?.Invoke(isSuccess);
 
-        if (!isSuccess)
-        {
-            _coroutineRunner.StartCoroutine(CoGameOverSequence());
-        }
+
+        //if (!isSuccess)
+        //{
+        //    _coroutineRunner.StartCoroutine(CoGameOverSequence());
+        //}
     }
     #endregion
 

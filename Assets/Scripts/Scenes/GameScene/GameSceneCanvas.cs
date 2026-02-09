@@ -172,18 +172,27 @@ public class GameSceneCanvas : MonoBehaviour
     // 게임 종료 핸들러
     private void HandleGameFinished(bool isSuccess)
     {
+        Debug.Log("HandleGameFinished 호출됐음!!");
         if (_isShowingResult) return;
         _isShowingResult = true;
+
+        Debug.Log("_isShowingResult false 였음!!");
 
         if (isSuccess)
         {
             if (_sucessImageFont != null)
+            {
+                gameObject.SetActive(true);
                 StartCoroutine(CoShowResultEffect(_sucessImageFont));
+            }
         }
         else
         {
             if (_failedImageFont != null)
+            {
+                gameObject.SetActive(true);
                 StartCoroutine(CoShowResultEffect(_failedImageFont));
+            }
         }
     }
 
@@ -218,5 +227,6 @@ public class GameSceneCanvas : MonoBehaviour
         targetImage.gameObject.SetActive(false);
 
         _isShowingResult = false; // 플래그 리셋
+        gameObject.SetActive(false);
     }
 }

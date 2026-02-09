@@ -134,7 +134,7 @@ public class MonsterController : MonoBehaviour
         _currentAmmo = _maxAmmo;
 
         if (_agent != null) _agent.enabled = true;
-        if (_anim != null) _anim.Play("Idle"); // 초기 상태
+        if (_anim != null) _anim.Play("Appear"); // 초기 상태
 
         // HP바 생성 등은 Start 혹은 여기서 처리
     }
@@ -380,14 +380,7 @@ public class MonsterController : MonoBehaviour
         }
     }
 
-    // Node 클래스들 (그대로 유지)
-    public class ActionNode : Node
-    {
-        public delegate NodeState ActionDelegate();
-        private ActionDelegate _action;
-        public ActionNode(ActionDelegate action) { _action = action; }
-        public override NodeState Evaluate() { return _action(); }
-    }
+    
 
     private IEnumerator CoDespawn()
     {

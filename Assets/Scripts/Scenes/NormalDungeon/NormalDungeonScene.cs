@@ -124,7 +124,7 @@ public class NormalDungeonScene : BaseScene
     void CreatePool()
     {
         //ÃÑ¾Ë
-        Managers.Pool.CreatePool(_preloadData.bullet, 10);
+        Managers.Pool.CreatePool(_preloadData.bullet, 40);
         //¸ó½ºÅÍ
         //Managers.Pool.CreatePool(_preloadData.monsterAR, 20);
     }

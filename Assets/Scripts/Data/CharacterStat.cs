@@ -205,7 +205,7 @@ public class CharacterStat : BaseStat, IDamageable
         OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
 
-        Debug.Log($"Level Up! Current Level: {CurLevel}, New Attack: {Attack.Value}");
+        Debug.Log($"Level Up! Current Level: {CurLevel}, New Attack: {Attack.Value}, CurrentExp : {CurrentExp}");
         Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp);
     }
 
@@ -271,6 +271,8 @@ public class CharacterStat : BaseStat, IDamageable
     {
         if (savedData == null) return;
 
+        float exp = savedData.currentExp;
+
         // 1. 레벨 복구 (레벨업 로직을 반복 수행해서 스탯 뻥튀기)
         // 현재 1레벨이므로 (savedData.level - 1)번 레벨업
         for (int i = 1; i < savedData.level; i++)
@@ -279,7 +281,7 @@ public class CharacterStat : BaseStat, IDamageable
         }
 
         // 2. 경험치 복구
-        CurrentExp = savedData.currentExp;
+        CurrentExp = exp;
 
         // 3. 체력/에너지는 풀로 채워주기 (마을 귀환 서비스)
         CurrentHp = MaxHp.Value;
