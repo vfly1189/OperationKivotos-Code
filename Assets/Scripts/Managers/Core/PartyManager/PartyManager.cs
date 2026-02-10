@@ -197,10 +197,10 @@ public class PartyManager
         OnGameFinished?.Invoke(isSuccess);
 
 
-        //if (!isSuccess)
-        //{
-        //    _coroutineRunner.StartCoroutine(CoGameOverSequence());
-        //}
+        if (!isSuccess)
+        {
+            _coroutineRunner.StartCoroutine(CoGameOverSequence());
+        }
     }
     #endregion
 

@@ -14,6 +14,8 @@ public class BossMonsterController : MonoBehaviour
     [SerializeField] private PlayableDirector _director;
     [SerializeField] private List<TimelineAsset> _skills;
 
+    [SerializeField] private GameObject[] _relics;
+
     // [추가] 사망 처리를 위한 변수
     private bool _isDeadProcessed = false;
 
@@ -58,6 +60,8 @@ public class BossMonsterController : MonoBehaviour
         if (_director != null)
             _director.stopped -= OnTimelineStopped;
     }
+
+    public GameObject[] GetRelic() => _relics;
 
     // ====================================================
     // Timeline Event Handler
@@ -217,7 +221,7 @@ public class BossMonsterController : MonoBehaviour
         if (col != null) col.enabled = false;
 
         // 3. 사망 애니메이션 재생
-        _anim.CrossFade("Death", 0.1f);
+        _anim.CrossFade("Death", 0.0f);
         // 또는 타임라인으로 사망 연출을 하려면: _director.Play(_deathTimeline);
 
         // 4. HP바 제거 (연결되어 있다면)

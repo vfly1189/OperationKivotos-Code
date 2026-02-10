@@ -94,7 +94,7 @@ public class BossDungeonScene : BaseScene
         //총알
         Managers.Pool.CreatePool(_preloadData.bullet, 60);
         //몬스터
-        //Managers.Pool.CreatePool(_preloadData.monsterAR, 20);
+        Managers.Pool.CreatePool(_preloadData.monsterRL, 10);
     }
 
     void CreateEffectStage()
@@ -120,6 +120,9 @@ public class BossDungeonScene : BaseScene
             _boss = boss;
             _boss.GetComponent<BossMonsterController>().OnDead -= OnMonsterDead;
             _boss.GetComponent<BossMonsterController>().OnDead += OnMonsterDead;
+            _boss.GetComponent<BossSkillController>().SetSpawnPoints(_curMap.GetComponent<BossDungeonMap>().GetMonsterSpawnPoints());
+            _boss.GetComponent<BossSkillController>().SetLightningPoints(_curMap.GetComponent<BossDungeonMap>().GetLightningPoints());
+
         }
     }
 
@@ -133,6 +136,18 @@ public class BossDungeonScene : BaseScene
             _bossHPBar = hpBarUI;
             hpBarUI.GetComponent<BossHPBar>().SetBoss(_boss);
         }
+    }
+
+    void PlayVictoryVoice()
+    {
+        List<BaseCharacter> partyMemebers = Managers.Party.GetMemeber();
+
+        int randomNum_partyMembers = Random.Range(0, 4);
+        AudioClip[] voices = partyMemebers[randomNum_partyMembers].Stat.GetBattleVictoryVoices();
+
+        int randomNum_voice = Random.Range(0, 2);
+        Debug.Log($"번호 : {randomNum_partyMembers} , {randomNum_voice}");
+        Managers.Sound.Play(voices[randomNum_voice], Define.Sound.Effect);
     }
 
 
@@ -154,7 +169,7 @@ public class BossDungeonScene : BaseScene
         Managers.Party.PlayerController.VictoryTime = true; // 승리화면에서는 공격(좌클릭) 불가능하게
         yield return new WaitForSeconds(3.0f);
 
-        //PlayVictoryVoice();
+        PlayVictoryVoice();
 
         if (_mainUI != null)
         {

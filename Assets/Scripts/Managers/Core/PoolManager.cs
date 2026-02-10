@@ -55,8 +55,8 @@ public class PoolManager
             poolable.transform.localScale = Vector3.one;
 
             // 2. 위치/회전 리셋 (필요하다면)
-            poolable.transform.localPosition = Vector3.zero;
-            poolable.transform.localRotation = Quaternion.identity;
+            //poolable.transform.localPosition = Vector3.zero;
+            //poolable.transform.localRotation = Quaternion.identity;
 
             poolable.IsUsing = true;
 

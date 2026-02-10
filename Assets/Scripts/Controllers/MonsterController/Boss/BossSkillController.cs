@@ -22,6 +22,13 @@ public class BossSkillController : MonoBehaviour
     // 생성된 인스턴스 캐싱 (String -> GameObject Instance)
     private Dictionary<string, GameObject> _spawnedInstances = new Dictionary<string, GameObject>();
 
+    private Transform[] _monsterSpawnPoints;
+    private Transform[] _lightningSpawnPoints;
+
+    public void SetSpawnPoints(Transform[] points) { _monsterSpawnPoints = points; }
+
+    public void SetLightningPoints(Transform[] points) { _lightningSpawnPoints = points; }
+
     private void Awake()
     {
         // 1. 리스트를 딕셔너리로 변환 (검색 속도 UP)
@@ -51,18 +58,40 @@ public class BossSkillController : MonoBehaviour
         {
             GameObject prefab = _skillMap[skillName];
             GameObject instance = Instantiate(prefab, transform);
-            instance.SetActive(false);
+            //instance.SetActive(false);
             _spawnedInstances[skillName] = instance;
         }
 
         GameObject skillObj = _spawnedInstances[skillName];
 
-        skillObj.transform.position = Managers.Party.GetCurrentCharacter().transform.position;
-
-        // 5. 실행
-        skillObj.SetActive(true);
-
-        skillObj.GetComponent<ParticleSystem>().Stop();
-        skillObj.GetComponent<ParticleSystem>().Play();
+        BossSkillBase skillLogic = skillObj.GetComponent<BossSkillBase>();
+        if (skillLogic != null)
+        {
+            ////skillObj.SetActive(true);
+            //if (skillLogic is SummonMonsterSkill)
+            //{
+            //    // 소환 스킬이면 스폰 포인트 배열을 넘겨줌
+            //    skillLogic.Cast(_monsterSpawnPoints);
+            //}
+            //else
+            //{
+            //    // 일반 스킬이면 플레이어 위치 넘겨줌
+            //    skillLogic.Cast(Managers.Party.GetCurrentCharacter().transform.position);
+            //}
+            BossSkillContext context = new BossSkillContext()
+            {
+                _targetPosition = Managers.Party.GetCurrentCharacter().transform.position,
+                _spawnPoints = _monsterSpawnPoints,
+                _boss = this.gameObject,
+                _lightningPoints = _lightningSpawnPoints
+            };
+            skillLogic.Cast(context);
+        }
+        else
+        {
+            //skillObj.SetActive(true);
+            skillObj.GetComponent<ParticleSystem>().Stop();
+            skillObj.GetComponent<ParticleSystem>().Play();
+        }
     }
 }

@@ -34,10 +34,10 @@ public class GameScene : BaseScene
     void SetupUI()
     {
         // 이미 존재하는지 확인
-        GameObject existingUI = GameObject.Find("@GameSceneCanvas");
+        GameSceneCanvas existingUI = Object.FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
         if (existingUI != null)
         {
-            existingUI.SetActive(true); // ← 추가: 던전에서 숨긴 경우 다시 활성화
+            existingUI.gameObject.SetActive(true); // ← 추가: 던전에서 숨긴 경우 다시 활성화
             GameSceneCanvas canvas = existingUI.GetComponent<GameSceneCanvas>();
             canvas.SetPartyManager();
             return;

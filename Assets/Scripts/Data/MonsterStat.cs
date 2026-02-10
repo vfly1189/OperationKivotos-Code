@@ -26,6 +26,8 @@ public class MonsterStat : BaseStat, IDamageable
     public override void Init()
     {
         base.Init();
+        _isDead = false;
+
         if (_data != null)
         {
             MaxHp.SetBaseValue(_data.MaxHp);
@@ -33,6 +35,8 @@ public class MonsterStat : BaseStat, IDamageable
             Defense.SetBaseValue(_data.Defense);
             CurrentHp = MaxHp.Value;
         }
+        // 혹시 모르니 HP바 갱신 이벤트 한 번 쏴주기
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 
     public override void TakeDamage(DamageInfo damageInfo)

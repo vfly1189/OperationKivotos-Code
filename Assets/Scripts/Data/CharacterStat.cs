@@ -166,7 +166,7 @@ public class CharacterStat : BaseStat, IDamageable
             OnUltimateStateChanged?.Invoke(_isUltimateReady); // UI야, 상태 바꼈다!
         }
     }
-    public void LevelUp()
+    public void LevelUp(bool isRuntimeRestoring = false)
     {
         CurLevel++;
 
@@ -177,8 +177,6 @@ public class CharacterStat : BaseStat, IDamageable
         float newDefenseBase = _data.Defense + (_data.DefenseGrowth * (CurLevel - 1));
         float newMaxExpBase = _data.MaxExp + (_data.ExpGrowth * (CurLevel - 1));
 
-        Debug.Log($"새로운 최대체력 : {newMaxHpBase}");
-
         // 2. Stat 클래스의 BaseValue 업데이트
         // (이 함수를 호출하면 Stat 내부의 _isDirty가 true가 되어 다음 Value 호출 시 재계산됨)
         MaxHp.SetBaseValue(newMaxHpBase);
@@ -186,26 +184,18 @@ public class CharacterStat : BaseStat, IDamageable
         Defense.SetBaseValue(newDefenseBase);
         MaxExp.SetBaseValue(newMaxExpBase);
 
-        // 3. 변동된 수치에 따른 후처리 (선택 사항)
-        // 예: 최대 체력이 늘어났으니, 늘어난 만큼 현재 체력도 채워준다.
-        // 혹은 레벨업 시 체/스테미너를 100% 회복시켜준다.
-
-        // (옵션 A) 늘어난 최대치만큼 현재 체력 회복
-        // float hpDiff = newMaxHpBase - (_data.MaxHp + (_data.MaxHpGrowth * (CurLevel - 2)));
-        // CurrentHp += hpDiff; 
-
-        // (옵션 B) 레벨업 시 풀 회복 (Eternal Return 등 많은 게임 방식)
+        // 레벨업 시 풀 회복
         CurrentHp = MaxHp.Value;
         CurrentEnergy = MaxEnergy.Value;
 
+        if (isRuntimeRestoring) return;
+
         // 4. UI 갱신 알림
         OnLevelChanged?.Invoke((int)CurLevel);
-        //OnHpChanged?.Invoke(CurrentHp, MaxHp.Value);
         CallOnHpChanged(CurrentHp, MaxHp.Value);
         OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
 
-        Debug.Log($"Level Up! Current Level: {CurLevel}, New Attack: {Attack.Value}, CurrentExp : {CurrentExp}");
         Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp);
     }
 
@@ -271,25 +261,31 @@ public class CharacterStat : BaseStat, IDamageable
     {
         if (savedData == null) return;
 
-        float exp = savedData.currentExp;
+
+        // [핵심 1] 데이터를 미리 로컬 변수(값)로 복사해둠 (참조 오염 방지)
+        int targetLevel = savedData.level;
+        float targetExp = savedData.currentExp;
 
         // 1. 레벨 복구 (레벨업 로직을 반복 수행해서 스탯 뻥튀기)
         // 현재 1레벨이므로 (savedData.level - 1)번 레벨업
         for (int i = 1; i < savedData.level; i++)
         {
-            LevelUp(); // 이 함수 안에서 스탯 증가가 일어남
+            LevelUp(true); // 이 함수 안에서 스탯 증가가 일어남
         }
 
         // 2. 경험치 복구
-        CurrentExp = exp;
+        CurrentExp = targetExp;
 
         // 3. 체력/에너지는 풀로 채워주기 (마을 귀환 서비스)
         CurrentHp = MaxHp.Value;
         CurrentEnergy = 0; // 또는 MaxEnergy
 
-        // UI 갱신
+        // 4. UI 및 데이터 갱신을 여기서 한 번만 수행
         OnLevelChanged?.Invoke((int)CurLevel);
         OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
+        OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
+
     }
 
     // [추가] 현재 데이터 내보내기 (Save) - 레벨업 할 때나 던전 클리어 시 호출

@@ -79,6 +79,8 @@ public class Managers : MonoBehaviour
            
             s_instance._pool.Init();
             s_instance._sound.Init();
+
+            Application.targetFrameRate = 144; // 60프레임 고정
         }
     }
 

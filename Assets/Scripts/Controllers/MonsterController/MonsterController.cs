@@ -128,15 +128,40 @@ public class MonsterController : MonoBehaviour
     // 풀링 사용 시 OnEnable에서 초기화 필요
     private void OnEnable()
     {
+        // 1. 상태 플래그 초기화
         _isDeadProcessed = false;
         _isAttacking = false;
         _isReloading = false;
         _currentAmmo = _maxAmmo;
 
-        if (_agent != null) _agent.enabled = true;
-        if (_anim != null) _anim.Play("Appear"); // 초기 상태
+        // 2. 스탯 초기화 (죽은 상태 복구)
+        if (Stat != null)
+        {
+            Stat.Init(); // ★ 이 부분이 반드시 필요합니다!
+        }
 
-        // HP바 생성 등은 Start 혹은 여기서 처리
+        // 3. 컴포넌트 재활성화
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = true; // 죽을 때 껐던 콜라이더 다시 켜기
+
+        if (_agent != null)
+        {
+            _agent.enabled = true;
+            _agent.isStopped = false; // 멈춰있던거 풀기
+        }
+
+        // 4. 애니메이션 리셋 (중요: 죽는 모션에서 바로 Idle로)
+        if (_anim != null)
+        {
+            _anim.Rebind(); // 애니메이터 완전 초기화
+            _anim.Play("Appear"); // 혹은 "Idle"
+        }
+
+        if(_hpBar != null)
+        {
+            _hpBar.gameObject.SetActive(true);
+            _hpBar.UpdateHpBar(Stat.CurrentHp, Stat.MaxHp.Value);
+        }
     }
 
 
@@ -288,9 +313,10 @@ public class MonsterController : MonoBehaviour
         // HP바 삭제
         if (_hpBar != null)
         {
-            Stat.OnHpChanged -= _hpBar.UpdateHpBar;
-            Managers.Resource.Destroy(_hpBar.gameObject);
-            _hpBar = null;
+            //Stat.OnHpChanged -= _hpBar.UpdateHpBar;
+            //Managers.Resource.Destroy(_hpBar.gameObject);
+            //_hpBar = null;
+            _hpBar.gameObject.SetActive(false);
         }
 
         // 2초 뒤 삭제 코루틴 시작

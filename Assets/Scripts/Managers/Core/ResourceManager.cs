@@ -176,6 +176,13 @@ public class ResourceManager
         // 2. 위치/회전 설정
         if (go != null)
         {
+            // [추가] NavMeshAgent가 있다면 Warp로 이동 (활성화 전이라도 안전하게 위치 잡기)
+            var agent = go.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null)
+            {
+                agent.Warp(position);
+            }
+
             go.transform.position = position;
             go.transform.rotation = rotation;
         }
