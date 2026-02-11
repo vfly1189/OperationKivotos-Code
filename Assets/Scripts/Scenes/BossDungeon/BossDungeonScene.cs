@@ -40,10 +40,13 @@ public class BossDungeonScene : BaseScene
         CreateEffectStage();
         CreateBoss();
         CreateBossHPBarUI();
-       
-        Managers.Party.TeleportParty(_spawnPoint.position);
-        Camera.main.transform.position = _cameraPoint.position;
-        Camera.main.transform.rotation = _cameraPoint.rotation;
+
+        //Managers.Party.TeleportParty(_spawnPoint.position);
+        //Camera.main.transform.position = _cameraPoint.position;
+        //Camera.main.transform.rotation = _cameraPoint.rotation;
+
+        // [핵심] 바로 이동하지 말고 코루틴으로 한 박자 쉼
+        StartCoroutine(CoSafeTeleport());
     }
 
     void CreateMap()
@@ -259,5 +262,19 @@ public class BossDungeonScene : BaseScene
 
         // 최종 위치 보정
         camTr.position = targetPos;
+    }
+
+
+    private IEnumerator CoSafeTeleport()
+    {
+        // 맵의 콜라이더들이 물리 엔진에 등록될 시간을 줌 (1프레임)
+        yield return null;
+
+        // 그 다음 안전하게 이동
+        Managers.Party.TeleportParty(_spawnPoint.position);
+
+        // 카메라 이동
+        Camera.main.transform.position = _cameraPoint.position;
+        Camera.main.transform.rotation = _cameraPoint.rotation;
     }
 }

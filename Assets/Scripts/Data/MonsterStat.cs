@@ -37,6 +37,7 @@ public class MonsterStat : BaseStat, IDamageable
         }
         // 혹시 모르니 HP바 갱신 이벤트 한 번 쏴주기
         CallOnHpChanged(CurrentHp, MaxHp.Value);
+        ClearDeadEvent();
     }
 
     public override void TakeDamage(DamageInfo damageInfo)

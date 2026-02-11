@@ -96,12 +96,11 @@ public class BossMonsterController : MonoBehaviour
             new ActionNode(CheckEntranceFinished), // 입장이 끝났나? (안끝났으면 실패 -> B로 넘어감)                          // 
             new RandomSelector(new List<Node>
             {
-                new ActionNode(() => UseAttack()),    // 평타 (Animator)
                 new ActionNode(() => UseSkill(0)),    // 스킬 1 (Timeline)
                 new ActionNode(() => UseSkill(1)),    // 스킬 2 (Timeline)
                 new ActionNode(() => UseSkill(2)),    // 스킬 3 (Timeline) - 필요시 인덱스 조정
                 new ActionNode(() => UseSkill(3)),    // 스킬 3 (Timeline) - 필요시 인덱스 조정
-
+                new ActionNode(() => UseSkill(4))     // 평타
             }),
             new WaitNode(_patternInterval)
         });
@@ -251,7 +250,7 @@ public class BossMonsterController : MonoBehaviour
     public void OnAnimationFinished()
     {
         _isActionRunning = false;
-        _anim.CrossFade("Idle", 0.2f);
+        _anim.CrossFade("Idle", 0.5f);
         // 여기서 NodeState를 Success로 바꿔줄 방법이 필요함.
         // ActionNode 구조상, 외부 변수(_isActionRunning)를 보고 
         // 다음 프레임 Evaluate()에서 Success를 리턴하게 설계해야 함.

@@ -6,7 +6,8 @@ public class BossSkillContext
     public Vector3 _targetPosition;
     public Transform[] _spawnPoints;
     public GameObject _boss;
-    public Transform[] _lightningPoints; 
+    public Transform[] _lightningPoints;
+    public BossRelicController _bossRelicController;
 }
 
 public abstract class BossSkillBase : MonoBehaviour

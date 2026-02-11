@@ -68,7 +68,6 @@ public class PoolManager
 
             // 활성화는 ResourceManager에서 위치 잡은 뒤에 함
             // poolable.gameObject.SetActive(true); 
-
             return poolable;
         }
     }

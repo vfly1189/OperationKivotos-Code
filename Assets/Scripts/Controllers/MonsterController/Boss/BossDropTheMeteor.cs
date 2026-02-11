@@ -21,8 +21,6 @@ public class BossDropTheMeteor : MonoBehaviour
         }
 
         _attackFieldInstance.transform.position = Managers.Party.GetCurrentCharacter().transform.position;
-        //Transform transform = _attackFieldInstance.gameObject.transform;
-        //Debug.Log($"À§Ä¡ : {transform.position.x} , {transform.position.y} , {transform.position.z}");
 
         _attackFieldInstance.GetComponent<ParticleSystem>().Stop();
         _attackFieldInstance.GetComponent<ParticleSystem>().Play();

@@ -18,20 +18,18 @@ public class RelicAttack : BossSkillBase
 
     private IEnumerator ProcessAttack(BossSkillContext context)
     {
-        // 1. 렐릭 컨트롤러 찾기
-        if (_relicController == null)
-            _relicController = context._boss.GetComponent<BossRelicController>();
+        _relicController = context._bossRelicController;
 
-        // 2. 색상 정보 가져오기
+        // 색상 정보 가져오기
         bool isRed = _relicController.CurrentIsRed;
 
-        // 3. 타겟 위치 계산 (보스 전방 5m)
+        // 타겟 위치 계산 (보스 전방 5m)
         Vector3 warningZonePos = context._boss.transform.position + context._boss.transform.forward * 5.0f;
 
-        // 4. 소리 재생 (한 번만 재생하는 게 듣기 좋음, 루프 밖에서)
+        // 소리 재생
         if (_sfx != null) Managers.Sound.Play(_sfx, Define.Sound.Effect);
 
-        // 5. 공격 실행
+        // 공격 실행
         if (isRed)
         {
             // [빨강] 집중 공격 (장판 위치 1곳)
@@ -53,7 +51,7 @@ public class RelicAttack : BossSkillBase
             }
         }
 
-        // 6. 렐릭 끄기 (공격 시작했으니 렐릭 연출 종료)
+        // 렐릭 끄기
         _relicController.DeactivateRelic();
 
         yield return null;
@@ -62,20 +60,20 @@ public class RelicAttack : BossSkillBase
     // 개별 번개 생성 및 파괴 로직
     private IEnumerator SpawnLightningRoutine(Vector3 pos)
     {
-        // 1. 생성
+        //생성
         GameObject go = Managers.Resource.Instantiate(_lightningPrefab, pos, Quaternion.identity);
 
-        // 2. 파티클 재생
+        //파티클 재생
         if (go != null)
         {
             var ps = go.GetComponent<ParticleSystem>();
             if (ps != null) ps.Play();
         }
 
-        // 3. 2초 대기
+        //2초 대기
         yield return new WaitForSeconds(2.0f);
 
-        // 4. 파괴
+        //파괴
         if (go != null) Managers.Resource.Destroy(go);
     }
 }

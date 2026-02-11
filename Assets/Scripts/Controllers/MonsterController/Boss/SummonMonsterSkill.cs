@@ -15,12 +15,12 @@ public class SummonMonsterSkill : BossSkillBase
 
     private IEnumerator ProcessSkillRoutine(Transform[] monsterSpawnPoints)
     {
-       // GameObject root = new GameObject { name = "@Test" }; 
         for(int i=0; i<monsterSpawnPoints.Length; i++)
         {
             // 1. 생성 시 위치/회전 지정 (이게 제일 안전함)
             GameObject monster = Managers.Resource.Instantiate(_monsterRL, monsterSpawnPoints[i].position, Quaternion.identity);
 
+            monster.GetComponent<MonsterController>().Stat.Init();
             //// 2. 만약 NavMeshAgent가 있다면 Warp로 강제 이동
             //UnityEngine.AI.NavMeshAgent agent = monster.GetComponent<UnityEngine.AI.NavMeshAgent>();
             //if (agent != null)

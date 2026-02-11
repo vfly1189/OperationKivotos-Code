@@ -41,4 +41,6 @@ public class BaseStat : MonoBehaviour, IDamageable
     }
 
     public virtual void TakeDamage(DamageInfo damageInfo) { }
+
+    protected void ClearDeadEvent() { OnDead = null; }
 }
