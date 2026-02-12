@@ -1,10 +1,11 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 [CreateAssetMenu(menuName = "Preload/SelectScenePreloadData")]
-public class SelectScenePreloadSO : ScriptableObject
+public class SelectScenePreloadSO : SceneDataSO
 {
     [Header("모델들 찍을 카메라")]
-    public GameObject modelCamera;
+    public AssetReferenceGameObject modelCamera;
 
     [Header("선택창 메인 UI")]
-    public GameObject mainUI;
+    public AssetReferenceGameObject mainUI;
 }

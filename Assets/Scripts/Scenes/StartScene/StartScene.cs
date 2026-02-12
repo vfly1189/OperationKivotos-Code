@@ -1,6 +1,9 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class StartScene : BaseScene
 {
@@ -8,10 +11,11 @@ public class StartScene : BaseScene
     [SerializeField] private StartScenePreloadSO _preloadData;
 
     float _voiceDelay = 1.5f;
+
+  
     protected override void Init()
     {
         base.Init();
-
         _sceneType = Define.Scene.Start;
 
         CreateBackgroundSlideShow();
@@ -25,11 +29,11 @@ public class StartScene : BaseScene
 
         Managers.Input.OnEscapePressed += HandleEscape;
     }
-
+   
 
     private void PlayMainTitle()
     {
-        Managers.Sound.Play(_preloadData.mainTitleBgm, Define.Sound.Bgm);
+        Managers.Sound.Play(_preloadData.mainTitleBgm, Define.Sound.Bgm);       
     }
 
     private void PlayTitleVoice()
@@ -37,7 +41,7 @@ public class StartScene : BaseScene
         int length = _preloadData.titleVoices.Count;
         if (length > 0)
         {
-            int voiceNum = Random.Range(0, length); 
+            int voiceNum = Random.Range(0, length);
             Managers.Sound.Play(_preloadData.titleVoices[voiceNum], Define.Sound.Narration);
         }
     }
@@ -48,7 +52,6 @@ public class StartScene : BaseScene
         CancelInvoke(); // Invoke √Îº“
 
         Managers.Input.OnEscapePressed -= HandleEscape;
-
         Managers.Sound.Stop(Define.Sound.Bgm);
     }
 

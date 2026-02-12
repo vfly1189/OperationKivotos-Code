@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,7 +8,15 @@ using UnityEngine.SceneManagement;
 
 public class SceneManagerEx
 {
+    private LoadingSceneController _transitionUI; // 전역 트랜지션 UI 캐싱
+
+    // Inspector에서 SceneTableSO를 연결
+    private SceneTableSO _sceneTable;
+
     public BaseScene CurrentScene { get { return GameObject.FindAnyObjectByType<BaseScene>(); } }
+
+    // 다음 씬으로 넘겨줄 데이터를 임시 저장
+    public SceneDataSO NextSceneData { get; private set; }
 
     public Define.Scene CurrentSceneType
     {
@@ -23,46 +32,59 @@ public class SceneManagerEx
     // 다음에 로드할 씬의 이름을 저장해두는 변수
     public string NextSceneName { get; private set; }
 
+    public void Init()
+    {
 
-    // =================== 비동기 로딩 레거시 ========================= //
-    //public ResourceLoadRequest LoadRequest { get; set; }
+        // 게임 시작 시(StartScene) 딱 한 번만 생성
+        if (_transitionUI == null)
+        {
+            GameObject go = Managers.Resource.Instantiate("UI/LoadingScene/LoadingCover");
+            _transitionUI = go.GetComponent<LoadingSceneController>();
+            Object.DontDestroyOnLoad(go);
+            go.SetActive(false);
+        }
 
-    ////임시 저장용 (다음 씬에 전달하기 위해)
-    //public UnityEngine.Object[] LoadedResources { get; set; }
+        // Resources 폴더에서 로드 (확장자 제외)
+        _sceneTable = Resources.Load<SceneTableSO>("Data/Scene/SceneTable");
 
-    ////씬별 필요 리소스 매핑 (하드코딩 - 나중에 외부 파일로 교체)
-    //private static Dictionary<Define.Scene, string[]> _sceneResourceMap = new Dictionary<Define.Scene, string[]>()
-    //{
-    //     { Define.Scene.Select, SelectScene.REQUIRED_RESOURCES }
+        if (_sceneTable == null)
+            Debug.LogError("SceneTableSO를 찾을 수 없습니다! Resources 폴더를 확인하세요.");
+        else
+            Debug.LogError("SceneTableSO를 불러왔음.");
+    
+    }
 
-    //};
-    // =================== 비동기 로딩 레거시 ========================= //
 
     public void LoadScene(Define.Scene type, string[] resoureceToLoad = null)
     {
-        // 1. 현재 씬 정리
-        if (CurrentScene != null)
-            CurrentScene.Clear();
+        //// 1. 현재 씬 정리
+        //if (CurrentScene != null)
+        //    CurrentScene.Clear();
 
-        //// 2. resoureceToLoad가 null이면 자동으로 매핑에서 가져오기
-        //if (resoureceToLoad == null && _sceneResourceMap.ContainsKey(type))
+        //Managers.Clear(); // Input 등 전역 매니저 정리
+
+        //// 1. 테이블에서 해당 씬의 데이터(SO)를 찾음
+        //SceneDataSO data = _sceneTable.GetSceneData(type);
+        //if (data == null)
         //{
-        //    resoureceToLoad = _sceneResourceMap[type];
-        //    Debug.Log($"Auto-loaded resources for scene: {type}");
+        //    Debug.LogError($"[SceneManagerEx] {type}에 해당하는 데이터가 없습니다!");
+        //    return;
         //}
+        //// 2. 데이터 저장 (LoadingScene이 가져갈 것임)
+        //NextSceneData = data;
+        //// 4. 다음 씬 정보를 저장하고 'Loading' 씬으로 이동
+        //NextSceneName = GetSceneName(type);
 
-        //// 3. 로딩할 리소스가 있는지
-        //if (resoureceToLoad != null && resoureceToLoad.Length > 0)
-        //    LoadRequest = new ResourceLoadRequest(resoureceToLoad);
-        //else
-        //    LoadRequest = null;
+        //SceneManager.LoadScene(GetSceneName(Define.Scene.Loading));
 
-        Managers.Clear(); // Input 등 전역 매니저 정리
+        //_transitionUI.gameObject.SetActive(false);
+        //Managers.StartCoroutine(CoLoadScene(type));
+        Managers.Start_Coroutine(CoLoadScene(type));
+    }
 
-        // 4. 다음 씬 정보를 저장하고 'Loading' 씬으로 이동
-        NextSceneName = GetSceneName(type);
-
-        SceneManager.LoadScene(GetSceneName(Define.Scene.Loading));
+    public void SetActiveCover(bool value)
+    {
+        _transitionUI.gameObject.SetActive(value);
     }
 
     // Enum -> String 변환 (실제 유니티 씬 파일 이름과 일치시켜야 함)
@@ -77,5 +99,31 @@ public class SceneManagerEx
     {
         // LoadRequest = null;
         // 씬 전환 시 필요한 정리 로직
+    }
+
+    IEnumerator CoLoadScene(Define.Scene type)
+    {
+        // 1. [핵심] 커버 켜고 1프레임 대기 (화면에 확실히 그려지도록)
+        if (_transitionUI != null)
+        {
+            _transitionUI.gameObject.SetActive(true);
+        }
+
+        // 1프레임 대기 (중요: 커버가 그려질 시간 확보)
+        yield return null;
+
+        // 2. 현재 씬 정리
+        if (CurrentScene != null)
+            CurrentScene.Clear();
+
+        Managers.Clear();
+
+        // 3. 데이터 준비
+        SceneDataSO data = _sceneTable.GetSceneData(type);
+        NextSceneData = data;
+        NextSceneName = GetSceneName(type);
+
+        // 4. Loading 씬으로 이동
+        SceneManager.LoadScene(GetSceneName(Define.Scene.Loading));
     }
 }

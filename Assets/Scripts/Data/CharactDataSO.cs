@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets; // ÇÊ¼ö
 
 [CreateAssetMenu(fileName = "NewCharacterData", menuName = "Data/CharacterData")]
 public class CharacterDataSO : ScriptableObject
@@ -28,8 +29,10 @@ public class CharacterDataSO : ScriptableObject
 
     [Header("Prefabs")]
     public GameObject originalPrefab;
-    public GameObject selectPrefab;
-    public GameObject inGamePrefab;
+    //public GameObject selectPrefab;
+    public AssetReferenceGameObject selectPrefab;
+    //public GameObject inGamePrefab;
+    public AssetReferenceGameObject inGamePrefab;
     public GameObject bulletPrefab;
 
     [Header("Voices")]

@@ -76,7 +76,7 @@ public class Managers : MonoBehaviour
             }
 
             s_instance._party = new PartyManager(s_instance);
-           
+            s_instance._scene.Init();
             s_instance._pool.Init();
             s_instance._sound.Init();
 

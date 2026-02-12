@@ -24,5 +24,6 @@ EditorBuildSettings:
     path: Assets/Scenes/BossDungeon.unity
     guid: 731a36a59c66eee41b48508996ed5f7d
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: e6c0acbc036fb6949814b73602b56e9e, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

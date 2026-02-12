@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Preload/BossDungeonScenePreloadData")]
-public class BossDungeonScenePreloadSO : ScriptableObject
+public class BossDungeonScenePreloadSO : SceneDataSO
 {
     [Header("¸Ê")]
     public GameObject bossDungeon;

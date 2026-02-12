@@ -1,6 +1,6 @@
 using UnityEngine;
 [CreateAssetMenu(menuName = "Preload/NormalDungeonScenePreloadData")]
-public class NormalDungeonScenePreloadSO : ScriptableObject
+public class NormalDungeonScenePreloadSO : SceneDataSO
 {
     [Header("¸Ê")]
     public GameObject normalDungeonEasy;
