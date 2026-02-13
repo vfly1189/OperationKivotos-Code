@@ -24,6 +24,7 @@ public class GameScene : BaseScene
 
     private GameObject _loadingCoverInstance;
     private GameObject _map;
+    private AudioClip _mainBGM;
 
     private Dictionary<ObjectType, List<AsyncOperationHandle>> _spawnedHandles
     = new Dictionary<ObjectType, List<AsyncOperationHandle>>();
@@ -46,7 +47,7 @@ public class GameScene : BaseScene
 
         var mapTask = CreateMainVillage();
         var shopTask = CreateShopMaster();
-        var bgmTask = PlayMainBGM();
+        var bgmTask = SetupMainBGM();
 
         //위에 3개 끝날때까지 대기
         await Task.WhenAll(mapTask, shopTask, bgmTask);
@@ -60,6 +61,7 @@ public class GameScene : BaseScene
 
         SetupCamera();
         StartCoroutine(FadeInSequence());
+        PlayMainBGM();
     }
 
     // ========================================================================
@@ -69,22 +71,26 @@ public class GameScene : BaseScene
     {
         if (refObj == null) return null;
 
-        var handle = refObj.InstantiateAsync(parent);
+        // [변경] InstantiateAsync -> LoadAssetAsync
+        var handle = Addressables.LoadAssetAsync<GameObject>(refObj);
         await handle.Task;
 
         if (handle.Status == AsyncOperationStatus.Succeeded)
         {
-            // 핸들 저장
+            // Instantiate 실행
+            GameObject go = Object.Instantiate(handle.Result, parent);
+
+            // 핸들 저장 (Clear에서 해제용)
             if (!_spawnedHandles.ContainsKey(type))
                 _spawnedHandles[type] = new List<AsyncOperationHandle>();
-
             _spawnedHandles[type].Add(handle);
 
-            return handle.Result;
+            return go;
         }
         return null;
     }
 
+    void PlayMainBGM() { Managers.Sound.Play(_mainBGM, Define.Sound.Bgm); }
     async Task SetupUI()
     {
         //// 이미 존재하는지 확인
@@ -141,7 +147,24 @@ public class GameScene : BaseScene
             return;
         }
 
-        // 2. 없으면 새로 생성
+        //// 2. 없으면 새로 생성
+        //var handle = _preloadData.gameSceneCanvas.LoadAssetAsync();
+        //await handle.Task;
+
+        //if (handle.Status == AsyncOperationStatus.Succeeded)
+        //{
+        //    GameObject ui = Object.Instantiate(handle.Result);
+        //    ui.name = "@GameSceneCanvas";
+        //    DontDestroyOnLoad(ui);
+
+        //    ui.GetComponent<GameSceneCanvas>()?.SetPartyManager();
+
+        //    // 프리팹 에셋만 유지, GameObject는 일반 오브젝트로 관리
+        //    Addressables.Release(handle); // 안전하게 release 가능
+        //}
+
+
+        // 2. 없으면 새로 생성 (LoadAndSpawnAsync 사용)
         GameObject ui = await LoadAndSpawnAsync(_preloadData.gameSceneCanvas, ObjectType.UI);
         if (ui != null)
         {
@@ -265,12 +288,14 @@ public class GameScene : BaseScene
     // 캐릭터 개별 로딩 로직
     async Task LoadCharacterSequential(CharacterDataSO data, Transform parent, List<BaseCharacter> list)
     {
-        var handle = data.inGamePrefab.InstantiateAsync(parent);
+        // [변경] InstantiateAsync -> LoadAssetAsync
+        var handle = Addressables.LoadAssetAsync<GameObject>(data.inGamePrefab);
         await handle.Task;
 
         if (handle.Status == AsyncOperationStatus.Succeeded)
         {
-            BaseCharacter character = handle.Result.GetComponent<BaseCharacter>();        
+            GameObject characterGO = Object.Instantiate(handle.Result, parent);
+            BaseCharacter character = characterGO.GetComponent<BaseCharacter>();        
             character.Init();
 
             // 데이터 로드
@@ -280,10 +305,17 @@ public class GameScene : BaseScene
             // 리스트 추가
             list.Add(character);
 
-            // 핸들 저장
+            // 핸들 저장 (중요: 캐릭터 핸들은 보관해야 나중에 해제 가능)
             if (!_spawnedHandles.ContainsKey(ObjectType.Character))
                 _spawnedHandles[ObjectType.Character] = new List<AsyncOperationHandle>();
             _spawnedHandles[ObjectType.Character].Add(handle);
+
+            //Addressables.Release(handle);
+
+            //// 핸들 저장
+            //if (!_spawnedHandles.ContainsKey(ObjectType.Character))
+            //    _spawnedHandles[ObjectType.Character] = new List<AsyncOperationHandle>();
+            //_spawnedHandles[ObjectType.Character].Add(handle);
         }
     }
 
@@ -420,7 +452,7 @@ public class GameScene : BaseScene
         //}
     }
 
-    async Task PlayMainBGM()
+    async Task SetupMainBGM()
     {
         //GameObject root = new GameObject { name = "@BGM" };
 
@@ -460,18 +492,18 @@ public class GameScene : BaseScene
         int rand = Random.Range(0, _preloadData.mainBGMs.Length);
         var bgmRef = _preloadData.mainBGMs[rand];
 
-        // BGM 로드 (Instantiate 아님!)
-        var handle = bgmRef.LoadAssetAsync();
+        // [변경] Addressables.LoadAssetAsync 사용
+        var handle = Addressables.LoadAssetAsync<AudioClip>(bgmRef);
         await handle.Task;
 
         if (handle.Status == AsyncOperationStatus.Succeeded)
         {
-            Managers.Sound.Play(handle.Result, Define.Sound.Bgm);
+            _mainBGM = handle.Result;
+            //Managers.Sound.Play(handle.Result, Define.Sound.Bgm);
 
             // 핸들 저장
             if (!_spawnedHandles.ContainsKey(ObjectType.BGM))
                 _spawnedHandles[ObjectType.BGM] = new List<AsyncOperationHandle>();
-
             _spawnedHandles[ObjectType.BGM].Add(handle);
         }
     }

@@ -42,7 +42,7 @@ public class StartScene : BaseScene
         if (length > 0)
         {
             int voiceNum = Random.Range(0, length);
-            Managers.Sound.Play(_preloadData.titleVoices[voiceNum], Define.Sound.Narration);
+            Managers.Sound.Play(_preloadData.titleVoices[voiceNum], Define.Sound.Voice);
         }
     }
 

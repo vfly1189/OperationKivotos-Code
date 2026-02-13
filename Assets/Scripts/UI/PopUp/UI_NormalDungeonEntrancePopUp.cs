@@ -110,6 +110,7 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
 
     void OnEnterClicked()
     {
+        Managers.Sound.StopAll();
         Managers.SceneEx.LoadScene(Define.Scene.NormalDungeon);
         ClosePopupUI();
     }

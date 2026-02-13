@@ -7,6 +7,7 @@ public class UI_SoundSetting : UI_PopUp
     [Header("Slider")]
     [SerializeField] private Slider _bgmSlider;
     [SerializeField] private Slider _sfxSlider;
+    [SerializeField] private Slider _voiceSlider;
 
     [Header("Button")]
     [SerializeField] private Button _confirmButton;
@@ -31,6 +32,12 @@ public class UI_SoundSetting : UI_PopUp
             _sfxSlider.onValueChanged.AddListener(OnSfxValueChanged);
         }
 
+        if (_voiceSlider != null)
+        {
+            _voiceSlider.value = Managers.Sound.VoiceVolume;
+            _voiceSlider.onValueChanged.AddListener(OnVoiceValueChanged);
+        }
+
         if (_confirmButton != null)
             _confirmButton.onClick.AddListener(OnConfirmClicked);
     }
@@ -44,6 +51,11 @@ public class UI_SoundSetting : UI_PopUp
     private void OnSfxValueChanged(float value)
     {
         Managers.Sound.SetSfxVolume(value);
+    }
+
+    private void OnVoiceValueChanged(float value)
+    {
+        Managers.Sound.SetVoiceVolume(value);
     }
 
     private void OnConfirmClicked()

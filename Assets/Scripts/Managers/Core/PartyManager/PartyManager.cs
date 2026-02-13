@@ -109,7 +109,7 @@ public class PartyManager
         // 첫 번째 캐릭터만 활성화
         _activator.ActivateCharacter(0, Vector3.zero, Quaternion.identity);
         for (int i = 1; i < characters.Count; i++)
-        {
+        {          
             _activator.DeactivateCharacter(i);
         }
 

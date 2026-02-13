@@ -21,6 +21,7 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
 
     void OnEnterClicked()
     {
+        Managers.Sound.StopAll();
         Managers.SceneEx.LoadScene(Define.Scene.BossDungeon);
         ClosePopupUI();
     }

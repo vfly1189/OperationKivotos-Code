@@ -12,11 +12,12 @@ public class SoundManager
     // °ü°´(±Í)       -> AudioListener
 
     float _bgmVolume = 0.2f;
-    float _narrationVolume = 0.5f;
+    float _voiceVolume = 0.7f;
     float _sfxVolume = 0.2f;
 
     public float BgmVolume => _bgmVolume;
     public float SfxVolume => _sfxVolume;
+    public float VoiceVolume => _voiceVolume;
 
 
     public void Init()
@@ -67,6 +68,18 @@ public class SoundManager
         }
     }
 
+    public void SetVoiceVolume(float volume)
+    {
+        _sfxVolume = Mathf.Clamp01(volume);
+
+        // SFX´Â PlayOneShotÀ¸·Î Àç»ýµÇ¹Ç·Î AudioSourceÀÇ º¼·ý ÀÚÃ¼¸¦ ¹Ì¸® ¹Ù²ãµÒ
+        AudioSource sfxSource = _audioSources[(int)Define.Sound.Voice];
+        if (sfxSource != null)
+        {
+            sfxSource.volume = _sfxVolume;
+        }
+    }
+
     public void Clear()
     {
         foreach (AudioSource audioSource in _audioSources)
@@ -95,11 +108,11 @@ public class SoundManager
             audioSource.clip = audioClip;
             audioSource.Play();
         }
-        else if(type == Define.Sound.Narration)
+        else if(type == Define.Sound.Voice)
         {
-            AudioSource audioSource = _audioSources[(int)Define.Sound.Narration];
+            AudioSource audioSource = _audioSources[(int)Define.Sound.Voice];
 
-            audioSource.volume = _narrationVolume;
+            audioSource.volume = _voiceVolume;
             audioSource.pitch = pitch;
             audioSource.PlayOneShot(audioClip);
         }

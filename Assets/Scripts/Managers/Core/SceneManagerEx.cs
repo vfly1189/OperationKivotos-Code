@@ -47,10 +47,10 @@ public class SceneManagerEx
         // Resources 폴더에서 로드 (확장자 제외)
         _sceneTable = Resources.Load<SceneTableSO>("Data/Scene/SceneTable");
 
-        if (_sceneTable == null)
-            Debug.LogError("SceneTableSO를 찾을 수 없습니다! Resources 폴더를 확인하세요.");
-        else
-            Debug.LogError("SceneTableSO를 불러왔음.");
+        //if (_sceneTable == null)
+        //    Debug.LogError("SceneTableSO를 찾을 수 없습니다! Resources 폴더를 확인하세요.");
+        //else
+        //    Debug.LogError("SceneTableSO를 불러왔음.");
     
     }
 
@@ -124,6 +124,7 @@ public class SceneManagerEx
         NextSceneName = GetSceneName(type);
 
         // 4. Loading 씬으로 이동
-        SceneManager.LoadScene(GetSceneName(Define.Scene.Loading));
+        //SceneManager.LoadScene(GetSceneName(Define.Scene.Loading));
+        SceneManager.LoadScene("Loading");
     }
 }

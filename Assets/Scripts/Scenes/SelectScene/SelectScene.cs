@@ -111,7 +111,7 @@ public class SelectScene : BaseScene
             if (character.formationInVoices != null && character.formationInVoices.Length > 0)
             {
                 var clip = character.formationInVoices[Random.Range(0, character.formationInVoices.Length)];
-                Managers.Sound.Play(clip, Define.Sound.Effect);
+                Managers.Sound.Play(clip, Define.Sound.Voice);
             }
         }
     }
@@ -149,15 +149,16 @@ public class SelectScene : BaseScene
         {
             if (k >= chars.Length) break;
 
-            var handle = chars[k].selectPrefab.InstantiateAsync(spawnPoints[k]);
+            // [변경] InstantiateAsync -> LoadAssetAsync + Instantiate
+            var handle = Addressables.LoadAssetAsync<GameObject>(chars[k].selectPrefab);
             await handle.Task;
 
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
-                GameObject go = handle.Result;
-                go.SetActive(false); // 기본 숨김
+                // 생성 및 설정
+                GameObject go = Object.Instantiate(handle.Result, spawnPoints[k]);
+                go.SetActive(false);
 
-                // 카메라 보기 설정
                 go.transform.localPosition = Vector3.zero;
                 if (_modelCamera != null)
                 {
@@ -166,10 +167,7 @@ public class SelectScene : BaseScene
                     if (dir != Vector3.zero) go.transform.rotation = Quaternion.LookRotation(dir);
                 }
 
-                // 리스트에 추가
                 _schoolModels[schoolIdx].Add(go);
-
-                // 핸들 저장 (메모리 해제용)
                 RegisterHandle(ObjectType.Character, handle);
             }
         }
@@ -178,11 +176,13 @@ public class SelectScene : BaseScene
 
     async System.Threading.Tasks.Task CreateModelCamera()
     {
-        var handle = _preloadData.modelCamera.InstantiateAsync();
+        // [변경] InstantiateAsync -> LoadAssetAsync
+        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.modelCamera);
         await handle.Task;
+
         if (handle.Status == AsyncOperationStatus.Succeeded)
         {
-            _modelCamera = handle.Result;
+            _modelCamera = Object.Instantiate(handle.Result);
             _modelCamera.name = "@ModelCamera";
             RegisterHandle(ObjectType.Camera, handle);
         }
@@ -190,11 +190,13 @@ public class SelectScene : BaseScene
 
     async System.Threading.Tasks.Task CreateMainUI()
     {
-        var handle = _preloadData.mainUI.InstantiateAsync();
+        // [변경] InstantiateAsync -> LoadAssetAsync
+        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.mainUI);
         await handle.Task;
+
         if (handle.Status == AsyncOperationStatus.Succeeded)
         {
-            GameObject uiObj = handle.Result;
+            GameObject uiObj = Object.Instantiate(handle.Result);
             uiObj.name = "@SelectSceneCanvas";
             _uiCanvas = uiObj.GetComponent<SelectSceneCanvas>();
             RegisterHandle(ObjectType.UI, handle);

@@ -24,7 +24,7 @@ public class Define
     {
         Bgm,
         Effect,
-        Narration,
+        Voice,
         MaxCount,
     }
 
