@@ -35,6 +35,8 @@ public class GameScene : BaseScene
 
         _sceneType = Define.Scene.Game;
 
+  
+
         // 로딩하는거 가려줄 화면
         if (_loadingCover != null)
         {
@@ -44,6 +46,8 @@ public class GameScene : BaseScene
             if (_loadingCoverInstance.GetComponent<CanvasGroup>() == null)
                 _loadingCoverInstance.AddComponent<CanvasGroup>().alpha = 1f;
         }
+
+        await Task.Delay(1000);
 
         var mapTask = CreateMainVillage();
         var shopTask = CreateShopMaster();
@@ -60,8 +64,11 @@ public class GameScene : BaseScene
         await SetupUI();
 
         SetupCamera();
-        StartCoroutine(FadeInSequence());
         PlayMainBGM();
+
+        StartCoroutine(FadeInSequence());
+        
+        Debug.Log("GameScene Init Complete");
     }
 
     // ========================================================================
@@ -164,13 +171,29 @@ public class GameScene : BaseScene
         //}
 
 
-        // 2. 없으면 새로 생성 (LoadAndSpawnAsync 사용)
-        GameObject ui = await LoadAndSpawnAsync(_preloadData.gameSceneCanvas, ObjectType.UI);
-        if (ui != null)
+        //// 2. 없으면 새로 생성 (LoadAndSpawnAsync 사용)
+        //GameObject ui = await LoadAndSpawnAsync(_preloadData.gameSceneCanvas, ObjectType.UI);
+        //if (ui != null)
+        //{
+        //    ui.name = "@GameSceneCanvas";
+        //    DontDestroyOnLoad(ui);
+        //    ui.GetComponent<GameSceneCanvas>()?.SetPartyManager();
+        //}
+
+        // 2. 없으면 새로 생성 (LoadAndSpawnAsync 대신 직접 로드)
+        // [중요] 여기서 로드한 핸들은 _spawnedHandles에 넣지 않음! (Clear 때 Release 안 당하게)
+        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.gameSceneCanvas);
+        await handle.Task;
+
+        if (handle.Status == AsyncOperationStatus.Succeeded)
         {
+            GameObject ui = Instantiate(handle.Result);
             ui.name = "@GameSceneCanvas";
             DontDestroyOnLoad(ui);
             ui.GetComponent<GameSceneCanvas>()?.SetPartyManager();
+
+            // 핸들을 _spawnedHandles에 넣지 마세요!
+            // 이 핸들은 앱 종료 시점까지 유지되어야 함 (UI가 DDOL이니까)
         }
     }
 
@@ -520,17 +543,36 @@ public class GameScene : BaseScene
 
     public override void Clear()
     {
+        //base.Clear();
+        //Managers.Sound.StopAll();
+
+        //// [중요] 모든 핸들 해제 (메모리 정리)
+        //foreach (var list in _spawnedHandles.Values)
+        //{
+        //    foreach (var handle in list)
+        //    {
+        //        if (handle.IsValid()) Addressables.Release(handle);
+        //    }
+        //}
+        //_spawnedHandles.Clear();
+
         base.Clear();
         Managers.Sound.StopAll();
 
-        // [중요] 모든 핸들 해제 (메모리 정리)
-        foreach (var list in _spawnedHandles.Values)
-        {
-            foreach (var handle in list)
-            {
-                if (handle.IsValid()) Addressables.Release(handle);
-            }
-        }
+        //// [수정] 모든 핸들 Release를 await 하기
+        //List<AsyncOperationHandle> allHandles = new List<AsyncOperationHandle>();
+        //foreach (var list in _spawnedHandles.Values)
+        //    allHandles.AddRange(list);
+
+        //// Release는 동기라서 await 필요 없지만, 한 프레임 쉬어줌
+        //foreach (var handle in allHandles)
+        //{
+        //    if (handle.IsValid())
+        //    {
+        //        Addressables.Release(handle);
+        //    }
+        //}
+
         _spawnedHandles.Clear();
     }
 
@@ -558,5 +600,30 @@ public class GameScene : BaseScene
 
         // 완전히 사라지면 삭제
         Managers.Resource.Destroy(_loadingCoverInstance);
+    }
+
+    void OnDestroy()
+    {
+        Debug.Log("=== GameScene OnDestroy 시작 ===");
+
+        foreach (var kvp in _spawnedHandles)
+        {
+            Debug.Log($"[핸들 체크] {kvp.Key} 타입: {kvp.Value.Count}개");
+
+            foreach (var handle in kvp.Value)
+            {
+                if (!handle.IsDone)
+                {
+                    Debug.LogError($"[범인 발견!] {kvp.Key} 타입의 핸들이 아직 로딩 중!");
+                    Debug.LogError($"핸들 이름: {handle.DebugName}");
+                }
+                else
+                {
+                    Debug.Log($"{kvp.Key} 핸들은 로딩 완료");
+                }
+            }
+        }
+
+        Debug.Log("=== GameScene OnDestroy 끝 ===");
     }
 }

@@ -47,6 +47,8 @@ public class SelectScene : BaseScene
                 _loadingCoverInstance.AddComponent<CanvasGroup>().alpha = 1f;
         }
 
+        await Task.Delay(1000);
+
         await CreateModelCamera();
         await CreateMainUI();
      
@@ -215,12 +217,13 @@ public class SelectScene : BaseScene
     {
         base.Clear();
 
-        // 씬 나갈 때 모든 핸들 해제
-        foreach (var list in _spawnedHandles.Values)
-        {
-            foreach (var handle in list)
-                if (handle.IsValid()) Addressables.Release(handle);
-        }
+        //// 씬 나갈 때 모든 핸들 해제
+        //foreach (var list in _spawnedHandles.Values)
+        //{
+        //    foreach (var handle in list)
+        //        if (handle.IsValid()) Addressables.Release(handle);
+        //}
+
         _spawnedHandles.Clear();
         _schoolModels.Clear();
     }
@@ -249,5 +252,30 @@ public class SelectScene : BaseScene
 
         // 완전히 사라지면 삭제
         Managers.Resource.Destroy(_loadingCoverInstance);
+    }
+
+    void OnDestroy()
+    {
+        Debug.Log("=== SelectScene OnDestroy 시작 ===");
+
+        foreach (var kvp in _spawnedHandles)
+        {
+            Debug.Log($"[핸들 체크] {kvp.Key} 타입: {kvp.Value.Count}개");
+
+            foreach (var handle in kvp.Value)
+            {
+                if (!handle.IsDone)
+                {
+                    Debug.LogError($"[범인 발견!] {kvp.Key} 타입의 핸들이 아직 로딩 중!");
+                    Debug.LogError($"핸들 이름: {handle.DebugName}");
+                }
+                else
+                {
+                    Debug.Log($"{kvp.Key} 핸들은 로딩 완료");
+                }
+            }
+        }
+
+        Debug.Log("=== SelectScene OnDestroy 끝 ===");
     }
 }

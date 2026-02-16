@@ -45,6 +45,8 @@ public class BossDungeonScene : BaseScene
         base.Init();
         _sceneType = Define.Scene.BossDungeon;
 
+ 
+
         // 로딩하는거 가려줄 화면
         if (_loadingCover != null)
         {
@@ -54,6 +56,8 @@ public class BossDungeonScene : BaseScene
             if (_loadingCoverInstance.GetComponent<CanvasGroup>() == null)
                 _loadingCoverInstance.AddComponent<CanvasGroup>().alpha = 1f;
         }
+
+        await Task.Delay(1000);
 
         //await CreateMap();
         //CreateUI();
@@ -97,7 +101,7 @@ public class BossDungeonScene : BaseScene
 
         // 6. 게임 시작 처리
         PlayBGM();
-        PlayBattleInVoice();
+        //PlayBattleInVoice();
         StartCoroutine(CoSafeTeleport());
         StartCoroutine(FadeInSequence());
     }
