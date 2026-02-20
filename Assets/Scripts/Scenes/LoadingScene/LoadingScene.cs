@@ -89,7 +89,7 @@ public class LoadingScene : BaseScene
         {
             float sceneProgress = sceneHandle.PercentComplete;
             float totalProgress = 0.5f + (sceneProgress * 0.5f);
-            _loadingUI.UpdateProgress(totalProgress);
+            _loadingUI.UpdateProgress(sceneProgress);
 
             if (sceneHandle.PercentComplete >= 0.9f)
             {

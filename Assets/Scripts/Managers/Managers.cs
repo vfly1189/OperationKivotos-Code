@@ -20,6 +20,8 @@ public class Managers : MonoBehaviour
     SceneManagerEx _scene = new SceneManagerEx();
     SoundManager _sound = new SoundManager();
     UIManager _ui = new UIManager();
+    DataManager _data = new DataManager();
+    WalletManager _wallet = new WalletManager();
 
     //public static GameManager Game { get { return Instance._game; } }
     public static InputManager Input { get { return Instance._input; } }
@@ -29,6 +31,9 @@ public class Managers : MonoBehaviour
     public static SceneManagerEx SceneEx { get { return Instance._scene; } }
     public static SoundManager Sound { get { return Instance._sound; } }    
     public static UIManager UI { get { return Instance._ui; } }
+    public static DataManager Data { get { return Instance._data; } }
+
+    public static WalletManager Wallet { get { return Instance._wallet; } }
     #endregion
 
     void Start()
@@ -79,6 +84,8 @@ public class Managers : MonoBehaviour
             s_instance._scene.Init();
             s_instance._pool.Init();
             s_instance._sound.Init();
+            s_instance._data.Init();
+            s_instance._wallet.Init();
 
             Application.targetFrameRate = 144; // 60프레임 고정
         }

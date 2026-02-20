@@ -52,13 +52,14 @@ public class CurrentGameDataSO : ScriptableObject
 
 
     // 던전 진입 전이나, 레벨업 할 때마다 저장
-    public void SaveCharacterStat(int charId, int level, float exp)
+    public void SaveCharacterStat(int charId, int level, float exp, int weaponLevel)
     {
         if (!SavedCharacterStats.ContainsKey(charId))
             SavedCharacterStats[charId] = new CharacterRuntimeData();
 
         SavedCharacterStats[charId].level = level;
         SavedCharacterStats[charId].currentExp = exp;
+        SavedCharacterStats[charId].weaponLevel = weaponLevel;
     }
 
     // 캐릭터 생성 시 불러오기

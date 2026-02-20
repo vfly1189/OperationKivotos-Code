@@ -7,6 +7,11 @@ public class CharacterStat : BaseStat, IDamageable
     [Header("Data")]
     [SerializeField] private CharacterDataSO _data; // 초기 데이터
 
+    [Header("Equipment")]
+    [SerializeField] public WeaponDataSO _weaponData; // 인스펙터에서 캐릭터별로 할당
+
+    public int WeaponLevel { get; private set; } = 1;
+
     // 계산된 스탯들
     public Stat MaxEnergy;
     public Stat MaxExp;
@@ -30,6 +35,7 @@ public class CharacterStat : BaseStat, IDamageable
     public event Action<int> OnLevelChanged;            // level
     public event Action<float, float> OnEnergyChanged;  // cur, max
     public event Action<bool> OnUltimateStateChanged;   // isReady
+
     public override void Init()
     {
         base.Init();
@@ -41,6 +47,8 @@ public class CharacterStat : BaseStat, IDamageable
         ESkillCoolTime = new Stat();
 
         if (_data != null) SetCharacterData(_data);
+
+        ApplyWeaponStats();
     }
     void Awake()
     {
@@ -132,7 +140,7 @@ public class CharacterStat : BaseStat, IDamageable
         OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
 
         Debug.Log($"[Exp] Added {amount}. Current: {CurrentExp}/{MaxExp.Value}, Level: {CurLevel}");
-        Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp);
+        Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp, WeaponLevel);
     }
 
     public bool TryUseSkillQ()
@@ -196,7 +204,7 @@ public class CharacterStat : BaseStat, IDamageable
         OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
 
-        Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp);
+        Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp, WeaponLevel);
     }
 
     public AudioClip[] GetBattleInVoice()
@@ -265,6 +273,7 @@ public class CharacterStat : BaseStat, IDamageable
         // [핵심 1] 데이터를 미리 로컬 변수(값)로 복사해둠 (참조 오염 방지)
         int targetLevel = savedData.level;
         float targetExp = savedData.currentExp;
+        int targetWeaponLevel = savedData.weaponLevel;
 
         // 1. 레벨 복구 (레벨업 로직을 반복 수행해서 스탯 뻥튀기)
         // 현재 1레벨이므로 (savedData.level - 1)번 레벨업
@@ -272,6 +281,9 @@ public class CharacterStat : BaseStat, IDamageable
         {
             LevelUp(true); // 이 함수 안에서 스탯 증가가 일어남
         }
+
+        WeaponLevel = targetWeaponLevel;
+        ApplyWeaponStats();
 
         // 2. 경험치 복구
         CurrentExp = targetExp;
@@ -288,14 +300,32 @@ public class CharacterStat : BaseStat, IDamageable
 
     }
 
-    // [추가] 현재 데이터 내보내기 (Save) - 레벨업 할 때나 던전 클리어 시 호출
-    public CharacterRuntimeData ExportRuntimeData()
+    private void ApplyWeaponStats()
     {
-        return new CharacterRuntimeData()
-        {
-            id = _data.id,
-            level = (int)CurLevel,
-            currentExp = CurrentExp
-        };
+        // 기존 무기 보정치 초기화
+        Attack.ClearModifier();
+        MaxHp.ClearModifier();
+
+        if (_weaponData == null) return;
+
+        WeaponData w = _weaponData.GetLevelData(WeaponLevel);
+        if (w == null) return;
+
+        Attack.AddModifier(w.AttackBonus);
+        MaxHp.AddModifier(w.HpBonus);
+
+        // HP가 MaxHp를 초과하지 않도록 보정
+        CurrentHp = Mathf.Min(CurrentHp, MaxHp.Value);
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
+
+        Debug.Log($"[{_data?.nameKR}] 무기 Lv{WeaponLevel} 적용 → ATK+{w.AttackBonus}, HP+{w.HpBonus}");
+    }
+
+    public void WeaponLevelUp()
+    {
+        WeaponLevel++;
+
+        ApplyWeaponStats();
+        Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp, WeaponLevel);
     }
 }

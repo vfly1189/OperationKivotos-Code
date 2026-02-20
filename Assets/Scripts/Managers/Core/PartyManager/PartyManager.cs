@@ -179,6 +179,7 @@ public class PartyManager
     }
 
     // Public API
+    public int GetCurrentCharacterIndex() => _registry.CurrentIndex;
     public BaseCharacter GetCurrentCharacter() => _registry.GetCurrent();
     public void TrySwap(int targetIndex) => _swapController.TrySwap(targetIndex);
     public void TeleportParty(Vector3 pos) => _activator.TeleportAll(pos);

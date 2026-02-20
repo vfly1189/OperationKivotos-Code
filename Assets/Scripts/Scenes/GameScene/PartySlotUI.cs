@@ -6,7 +6,7 @@ public class PartySlotUI : MonoBehaviour
 {
     [Header("UI Components")]
     [SerializeField] private TextMeshProUGUI _nameText;
-    [SerializeField] private Image _portraitImage;
+    [SerializeField] private Image _emblemImage;
     [SerializeField] private Slider _hpBar;
     [SerializeField] private GameObject _ultimateReadyObj;
     //[SerializeField] private UI_RotatingLight _rotatingLight;
@@ -16,7 +16,7 @@ public class PartySlotUI : MonoBehaviour
 
     // 데이터 갱신 메서드들을 이곳으로 이동
     public void SetCharacterName(string name) => _nameText.text = name;
-    public void SetPortrait(Sprite sprite) => _portraitImage.sprite = sprite;
+    public void SetEmblem(Sprite sprite) => _emblemImage.sprite = sprite;
 
     // [이벤트용] HP 갱신
     public void UpdateHP(float current, float max)

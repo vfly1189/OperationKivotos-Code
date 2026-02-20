@@ -35,7 +35,8 @@ public class GameScene : BaseScene
 
         _sceneType = Define.Scene.Game;
 
-  
+        Managers.Input.OnEscapePressed -= HandleEscape;
+        Managers.Input.OnEscapePressed += HandleEscape;
 
         // 로딩하는거 가려줄 화면
         if (_loadingCover != null)
@@ -319,7 +320,7 @@ public class GameScene : BaseScene
         {
             GameObject characterGO = Object.Instantiate(handle.Result, parent);
             BaseCharacter character = characterGO.GetComponent<BaseCharacter>();        
-            character.Init();
+            //character.Init();
 
             // 데이터 로드
             var savedData = Managers.Context.LoadCharacterStat(data.id);
@@ -344,64 +345,6 @@ public class GameScene : BaseScene
 
     async System.Threading.Tasks.Task CreatePortal()
     { 
-        //if (_map != null)
-        //    portalGroup.transform.SetParent(_map.transform);
-
-        //// 1. 포탈 그룹 생성 (Map 밑에)
-        //GameObject portalGroup = new GameObject("Portals");
-
-        //if (_map != null)
-        //    portalGroup.transform.SetParent(_map.transform);
-
-        //// 2. 포탈 생성 (Instantiate의 2번째 인자로 부모 지정)
-
-        //// 노말 던전 포탈
-        //if (_preloadData.normalDungeonPortal != null)
-        //{
-        //    GameObject normalPortal = Object.Instantiate(_preloadData.normalDungeonPortal, portalGroup.transform);
-        //    // 위치를 따로 잡고 싶다면 여기서 수정 (예: portalGroup 기준 상대 좌표)
-        //    normalPortal.transform.localPosition = new Vector3(-3, 1, 0);
-        //}
-
-        //// 보스 던전 포탈
-        //if (_preloadData.bossDungeonPortal != null)
-        //{
-        //    GameObject bossPortal = Object.Instantiate(_preloadData.bossDungeonPortal, portalGroup.transform);
-        //    // 위치 수정
-        //    bossPortal.transform.localPosition = new Vector3(3, 1, 0);
-        //}
-
-
-
-
-        //if (!_spawnedHandles.ContainsKey(ObjectType.Map))
-        //    _spawnedHandles[ObjectType.Map] = new List<AsyncOperationHandle>();
-
-        //if(_preloadData.normalDungeonPortal != null)
-        //{
-        //    var handle = _preloadData.normalDungeonPortal.InstantiateAsync();
-            
-        //    await handle.Task;
-
-        //    GameObject normalDungeonPortal = handle.Result;
-        //    normalDungeonPortal.transform.localPosition = new Vector3(-3, 1, 0);
-        //    _spawnedHandles[ObjectType.Map].Add(handle);
-        //}
-
-        //if(_preloadData.bossDungeonPortal != null)
-        //{
-        //    var handle = _preloadData.bossDungeonPortal.InstantiateAsync();
-            
-        //    await handle.Task;
-
-        //    GameObject bossDungeonPortal = handle.Result;
-        //    bossDungeonPortal.transform.localPosition = new Vector3(3, 1, 0);
-        //    _spawnedHandles[ObjectType.Map].Add(handle);
-        //}
-
-
-
-
         if (_map == null) return;
 
         // 포탈 그룹 생성
@@ -574,6 +517,8 @@ public class GameScene : BaseScene
         //}
 
         _spawnedHandles.Clear();
+
+        Managers.Input.OnEscapePressed -= HandleEscape;
     }
 
     IEnumerator FadeInSequence()
@@ -625,5 +570,13 @@ public class GameScene : BaseScene
         }
 
         Debug.Log("=== GameScene OnDestroy 끝 ===");
+    }
+
+    private void HandleEscape()
+    {
+        if (Managers.UI.IsPopupOpen)
+        {
+            Managers.UI.ClosePopupUI();
+        }
     }
 }

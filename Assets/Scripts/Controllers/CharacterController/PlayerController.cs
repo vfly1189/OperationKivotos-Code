@@ -29,6 +29,7 @@ public class PlayerController
 
         Managers.Input.RegisterAction("Q_Skill", HandleSkill_Q);
         Managers.Input.RegisterAction("E_Skill", HandleSkill_E);
+        Managers.Input.RegisterAction("Interact", HandleInteract);
     }
 
     // PartyManager가 호출해줄 함수
@@ -94,6 +95,18 @@ public class PlayerController
     private void HandleSkill_E()
     {
         _currentTarget?.UseSkill_E();
+    }
+
+    private void HandleInteract()
+    {
+        if (_currentTarget == null || _currentTarget.Stat.IsDead) return;
+
+        // 현재 컨트롤 중인 캐릭터 주변에 상호작용 가능한 NPC가 있다면
+        if (_currentTarget.CurrentInteractable != null)
+        {
+            // 상호작용 실행! (NoahController.Interact 호출됨)
+            _currentTarget.CurrentInteractable.Interact();
+        }
     }
 
     // Update 로직 → Managers.Update에서 호출

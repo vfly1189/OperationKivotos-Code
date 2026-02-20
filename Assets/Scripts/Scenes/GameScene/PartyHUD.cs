@@ -13,7 +13,7 @@ public class PartyHUD : MonoBehaviour
         {
             CharacterDataSO charDataSO = schoolData.characters[i];
             _slots[i].SetCharacterName(charDataSO.nameKR);
-            _slots[i].SetPortrait(charDataSO.Portrait);
+            _slots[i].SetEmblem(charDataSO.Emblem);
         }
     }
 

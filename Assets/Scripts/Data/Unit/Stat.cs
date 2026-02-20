@@ -51,6 +51,12 @@ public class Stat
         }
     }
 
+    public void ClearModifier()
+    {
+        _modifiers.Clear();
+        _isDirty = true;
+    }
+
     // 수정자 제거 (장비 해제, 버프 종료)
     public void RemoveModifier(float modifier)
     {

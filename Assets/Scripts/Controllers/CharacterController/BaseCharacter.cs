@@ -25,6 +25,9 @@ public class BaseCharacter : MonoBehaviour
     protected CharacterCombat _combat;
     protected CharacterAnimationController _animController;
 
+    protected GameObject _gameCanvas;
+
+    public IInteractable CurrentInteractable { get; private set; }
     public bool IsUsingSkill { get; protected set; }
 
     private void Awake()
@@ -36,7 +39,9 @@ public class BaseCharacter : MonoBehaviour
     {
         // 컴포넌트 초기화
         if (_anim == null) _anim = GetComponent<Animator>();
+
         Stat = GetComponent<CharacterStat>();
+
         if (Stat != null) Stat.Init();
 
         // 서브시스템 초기화
@@ -164,6 +169,16 @@ public class BaseCharacter : MonoBehaviour
         {
             IsUsingSkill = true;
             _skillTimeline.Play();
+
+            if(_gameCanvas == null)
+            {
+                GameSceneCanvas existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
+                if (existingUI != null)
+                {
+                    existingUI.gameObject.SetActive(false);
+                    _gameCanvas = existingUI.gameObject;
+                }
+            }
         }
         else
         {
@@ -174,6 +189,7 @@ public class BaseCharacter : MonoBehaviour
     protected virtual void OnCutsceneEnded(PlayableDirector director)
     {
         Debug.Log("컷신 종료 -> 스킬 액션 상태로 전환");
+        if (_gameCanvas != null) _gameCanvas.SetActive(true);
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Q_Skill);
     }
 
@@ -248,6 +264,7 @@ public class BaseCharacter : MonoBehaviour
         BulletController bulletScript = bulletObj.GetComponent<BulletController>();
         if (bulletScript != null && Stat != null)
         {
+            Debug.Log($"데미지 : {Stat.Attack.Value}");
             bulletScript.Init(Stat.Attack.Value, this.gameObject);
         }
         PlayFireEffect();
@@ -258,4 +275,29 @@ public class BaseCharacter : MonoBehaviour
 
     protected virtual void OnESkillEvent(AudioClip sfx) { }
 
+
+
+    // ==================== Collision ====================
+    // NPC의 Trigger Collider 영역에 들어갔을 때
+    private void OnTriggerEnter(Collider other)
+    {
+        IInteractable interactable = other.GetComponent<IInteractable>();
+        if (interactable != null)
+        {
+            Debug.Log($"{other.gameObject.name}");
+            CurrentInteractable = interactable;
+            // TODO: 머리 위에 "F키로 상호작용" UI 띄우기
+        }
+    }
+
+    // NPC 영역에서 벗어났을 때
+    private void OnTriggerExit(Collider other)
+    {
+        IInteractable interactable = other.GetComponent<IInteractable>();
+        if (interactable != null && CurrentInteractable == interactable)
+        {
+            CurrentInteractable = null;
+            // TODO: "F키로 상호작용" UI 숨기기
+        }
+    }
 }

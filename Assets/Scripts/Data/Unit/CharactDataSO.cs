@@ -8,6 +8,7 @@ public class CharacterDataSO : ScriptableObject
     public int id;           // "char_hoshino"
     public string nameEN;
     public string nameKR;
+    public Sprite Emblem;
     public Sprite Portrait;
 
     [Header("Base Stats")]

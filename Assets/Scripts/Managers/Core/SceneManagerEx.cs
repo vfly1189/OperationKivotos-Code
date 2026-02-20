@@ -38,7 +38,7 @@ public class SceneManagerEx
         // 게임 시작 시(StartScene) 딱 한 번만 생성
         if (_transitionUI == null)
         {
-            GameObject go = Managers.Resource.Instantiate("UI/LoadingScene/LoadingCover");
+            GameObject go = Managers.Resource.Instantiate("UI/LoadingScene/LoadingCover_Zero");
             _transitionUI = go.GetComponent<LoadingSceneController>();
             Object.DontDestroyOnLoad(go);
             go.SetActive(false);
