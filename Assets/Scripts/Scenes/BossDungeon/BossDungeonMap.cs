@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class BossDungeonMap : MonoBehaviour
+public class BossDungeonMap : BaseMap
 {
     [SerializeField] private Transform _spawnPoint;
     [SerializeField] private Transform _cameraPoint;

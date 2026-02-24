@@ -92,7 +92,7 @@ public class MonsterController : MonoBehaviour
         }
 
         // [수정] PartyManager를 통해 현재 플레이어 타겟 가져오기
-        UpdateTarget(Managers.Party.GetCurrentCharacter().gameObject);
+        //UpdateTarget(Managers.Party.GetCurrentCharacter().gameObject);
 
         // [핵심] 캐릭터 교체 이벤트 구독
         if (Managers.Party != null)
@@ -373,6 +373,7 @@ public class MonsterController : MonoBehaviour
 
         _agent.isStopped = false;
         _agent.SetDestination(_target.position);
+        
 
         if (!_isMoving)
         {

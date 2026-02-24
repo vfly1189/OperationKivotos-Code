@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Managers : MonoBehaviour
@@ -36,9 +37,12 @@ public class Managers : MonoBehaviour
     public static WalletManager Wallet { get { return Instance._wallet; } }
     #endregion
 
-    void Start()
+    // Managers.cs - Start()를 코루틴으로 변경
+    IEnumerator Start()
     {
         Init();
+        yield return StartCoroutine(_data.InitCoroutine());
+        // data 로드 완료 후 추가 초기화 가능
     }
 
     void Update()
@@ -84,8 +88,8 @@ public class Managers : MonoBehaviour
             s_instance._scene.Init();
             s_instance._pool.Init();
             s_instance._sound.Init();
-            s_instance._data.Init();
-            s_instance._wallet.Init();
+            //s_instance._data.Init();
+            //s_instance._wallet.Init();
 
             Application.targetFrameRate = 144; // 60프레임 고정
         }

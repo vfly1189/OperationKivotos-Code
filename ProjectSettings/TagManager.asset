@@ -32,7 +32,7 @@ TagManager:
   - PlayerBullet
   - MonsterBullet
   - Monster
-  - 
+  - MapBoundary
   - 
   - 
   - 

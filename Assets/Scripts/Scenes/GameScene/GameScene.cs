@@ -51,14 +51,14 @@ public class GameScene : BaseScene
         await Task.Delay(1000);
 
         var mapTask = CreateMainVillage();
-        var shopTask = CreateShopMaster();
+        //var shopTask = CreateShopMaster();
         var bgmTask = SetupMainBGM();
 
         //위에 3개 끝날때까지 대기
-        await Task.WhenAll(mapTask, shopTask, bgmTask);
+        await Task.WhenAll(mapTask, bgmTask);
 
         // 포탈은 맵이 있어야됨
-        await CreatePortal();
+        //await CreatePortal();
         
         // 캐릭터 및 UI 생성
         await CreateCharacters();
@@ -306,7 +306,9 @@ public class GameScene : BaseScene
         }
 
         //await Task.WhenAll(tasks);
-        Managers.Party.Init(partyMembers);
+        Transform spawnPoint = _map.GetComponent<BaseMap>().GetPlayerSpawnPoint();
+
+        Managers.Party.Init(partyMembers, spawnPoint);
     }
 
     // 캐릭터 개별 로딩 로직
@@ -319,7 +321,7 @@ public class GameScene : BaseScene
         if (handle.Status == AsyncOperationStatus.Succeeded)
         {
             GameObject characterGO = Object.Instantiate(handle.Result, parent);
-            BaseCharacter character = characterGO.GetComponent<BaseCharacter>();        
+            BaseCharacter character = characterGO.GetComponent<BaseCharacter>();
             //character.Init();
 
             // 데이터 로드

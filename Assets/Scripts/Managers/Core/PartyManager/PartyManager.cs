@@ -80,7 +80,7 @@ public class PartyManager
     }
 
     // 파티 초기화
-    public void Init(List<BaseCharacter> characters)
+    public void Init(List<BaseCharacter> characters, Transform spawnPoint)
     {
         // 기존 멤버 이벤트 완전 정리
         if (_registry.Members != null && _registry.Members.Count > 0)
@@ -107,7 +107,7 @@ public class PartyManager
         }
 
         // 첫 번째 캐릭터만 활성화
-        _activator.ActivateCharacter(0, Vector3.zero, Quaternion.identity);
+        _activator.ActivateCharacter(0, spawnPoint.position, Quaternion.identity);
         for (int i = 1; i < characters.Count; i++)
         {          
             _activator.DeactivateCharacter(i);

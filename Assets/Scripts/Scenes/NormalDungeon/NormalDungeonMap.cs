@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class NormalDungeonMap : MonoBehaviour
+public class NormalDungeonMap : BaseMap
 {
     [SerializeField] private Transform[] _endingPoints;
     [SerializeField] private Transform _cameraPoint;

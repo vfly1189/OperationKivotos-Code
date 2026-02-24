@@ -7,7 +7,6 @@ public class EnhancementRateData
     // JSON의 키 이름과 일치해야 합니다.
     public int currentLevel;          // 현재 무기 레벨 (1 -> 2로 갈 때의 데이터는 Level: 1)
     public float successRate;  // 성공 확률 (0.0 ~ 1.0)
-    public float failRate;
 }
 
 [System.Serializable] // <<<<< 여기도 확인!
