@@ -34,51 +34,22 @@ public class SceneManagerEx
 
     public void Init()
     {
-
-        // 게임 시작 시(StartScene) 딱 한 번만 생성
-        if (_transitionUI == null)
-        {
-            GameObject go = Managers.Resource.Instantiate("UI/LoadingScene/LoadingCover_Zero");
-            _transitionUI = go.GetComponent<LoadingSceneController>();
-            Object.DontDestroyOnLoad(go);
-            go.SetActive(false);
-        }
+        //// 게임 시작 시(StartScene) 딱 한 번만 생성
+        //if (_transitionUI == null)
+        //{
+        //    GameObject go = Managers.Resource.Instantiate("UI/LoadingScene/LoadingCover_Zero");
+        //    _transitionUI = go.GetComponent<LoadingSceneController>();
+        //    Object.DontDestroyOnLoad(go);
+        //    go.SetActive(false);
+        //}
 
         // Resources 폴더에서 로드 (확장자 제외)
         _sceneTable = Resources.Load<SceneTableSO>("Data/Scene/SceneTable");
-
-        //if (_sceneTable == null)
-        //    Debug.LogError("SceneTableSO를 찾을 수 없습니다! Resources 폴더를 확인하세요.");
-        //else
-        //    Debug.LogError("SceneTableSO를 불러왔음.");
-    
     }
 
 
     public void LoadScene(Define.Scene type, string[] resoureceToLoad = null)
     {
-        //// 1. 현재 씬 정리
-        //if (CurrentScene != null)
-        //    CurrentScene.Clear();
-
-        //Managers.Clear(); // Input 등 전역 매니저 정리
-
-        //// 1. 테이블에서 해당 씬의 데이터(SO)를 찾음
-        //SceneDataSO data = _sceneTable.GetSceneData(type);
-        //if (data == null)
-        //{
-        //    Debug.LogError($"[SceneManagerEx] {type}에 해당하는 데이터가 없습니다!");
-        //    return;
-        //}
-        //// 2. 데이터 저장 (LoadingScene이 가져갈 것임)
-        //NextSceneData = data;
-        //// 4. 다음 씬 정보를 저장하고 'Loading' 씬으로 이동
-        //NextSceneName = GetSceneName(type);
-
-        //SceneManager.LoadScene(GetSceneName(Define.Scene.Loading));
-
-        //_transitionUI.gameObject.SetActive(false);
-        //Managers.StartCoroutine(CoLoadScene(type));
         Managers.Start_Coroutine(CoLoadScene(type));
     }
 
@@ -97,8 +68,7 @@ public class SceneManagerEx
 
     public void Clear()
     {
-        // LoadRequest = null;
-        // 씬 전환 시 필요한 정리 로직
+
     }
 
     IEnumerator CoLoadScene(Define.Scene type)
@@ -124,7 +94,6 @@ public class SceneManagerEx
         NextSceneName = GetSceneName(type);
 
         // 4. Loading 씬으로 이동
-        //SceneManager.LoadScene(GetSceneName(Define.Scene.Loading));
         SceneManager.LoadScene("Loading");
     }
 }

@@ -8,15 +8,15 @@ using UnityEngine.AddressableAssets;
 public class StartScenePreloadSO : SceneDataSO
 {
     [Header("UI 프리팹")]
-    public GameObject backgroundSlideShow;
-    public GameObject tapToStart;
-    public GameObject logo;
-    public GameObject soundSettingIcon;
-    public GameObject exitPopup;
-    public GameObject soundSettingPopup;
+    public AssetReferenceGameObject backgroundSlideShow;
+    public AssetReferenceGameObject tapToStart;
+    public AssetReferenceGameObject logo;
+    public AssetReferenceGameObject soundSettingIcon;
+    public AssetReferenceGameObject exitPopup;
+    public AssetReferenceGameObject soundSettingPopup;
 
     [Header("사운드")]
-    public AudioClip mainTitleBgm;
+    public AssetReferenceT<AudioClip> mainTitleBgm;
 
-    public List<AudioClip> titleVoices = new List<AudioClip>();
+    public AssetReferenceT<AudioClip>[] titleVoices;
 }

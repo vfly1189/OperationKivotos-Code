@@ -8,19 +8,6 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class NormalDungeonScene : BaseScene
 {
-    private enum ObjectType
-    {
-        Map,
-        Monster,
-        UI,
-        BGM,
-        Pool
-    }
-
-    // 핸들 관리 (모델 포함)
-    private Dictionary<ObjectType, List<AsyncOperationHandle>> _spawnedHandles
-    = new Dictionary<ObjectType, List<AsyncOperationHandle>>();
-
     [SerializeField] private GameObject _loadingCover;
     [SerializeField] private NormalDungeonScenePreloadSO _preloadData;
 
@@ -38,6 +25,7 @@ public class NormalDungeonScene : BaseScene
         base.Init();
         _sceneType = Define.Scene.NormalDungeon;
 
+        Managers.Party.TeleportParty(new Vector3(0, 0, 0));
 
         // 로딩하는거 가려줄 화면
         if (_loadingCover != null)
@@ -53,6 +41,7 @@ public class NormalDungeonScene : BaseScene
         await Task.Delay(1000);
 
         CreateUI();
+
         var mapTask = CreateMap();
         var poolTask =  CreatePool();
         var effectStageTask = CreateEffectStage();
@@ -70,35 +59,31 @@ public class NormalDungeonScene : BaseScene
     async Task CreateMap()
     {
         GameObject root = new GameObject { name = "@Map" };
-        AssetReferenceGameObject mapPrefab = null;
+        AssetReferenceGameObject mapPrefabRef = null;
 
-        // Enum에 따라 프리팹 선택
+        // 난이도에 따른 맵 프리팹 선택
         switch (Managers.Context.SelectedDifficulty)
         {
             case Define.DungeonDifficulty.Easy:
-                mapPrefab = _preloadData.normalDungeonEasy;
+                mapPrefabRef = _preloadData.normalDungeonEasy;
                 break;
             case Define.DungeonDifficulty.Normal:
-                mapPrefab = _preloadData.normalDungeonNormal;
+                mapPrefabRef = _preloadData.normalDungeonNormal;
                 break;
             case Define.DungeonDifficulty.Hard:
-                mapPrefab = _preloadData.normalDungeonHard;
+                mapPrefabRef = _preloadData.normalDungeonHard;
                 break;
         }
 
-        if (mapPrefab != null)
+        if (mapPrefabRef != null)
         {
-            // [변경] InstantiateAsync -> LoadAssetAsync + Instantiate
-            var handle = Addressables.LoadAssetAsync<GameObject>(mapPrefab);
-            await handle.Task;
-
-            if (handle.Status == AsyncOperationStatus.Succeeded)
+            GameObject mapPrefab = await Managers.Resource.LoadAsync<GameObject>(mapPrefabRef);
+            if (mapPrefab != null)
             {
-                _curMap = Object.Instantiate(handle.Result, root.transform); // 부모 설정
+                _curMap = Instantiate(mapPrefab, root.transform);
                 _curMap.transform.position = Vector3.zero;
 
                 CountAndRegisterMonsters(_curMap);
-                RegisterHandle(ObjectType.Map, handle);
             }
         }
         else
@@ -109,63 +94,43 @@ public class NormalDungeonScene : BaseScene
 
     void CreateUI()
     {
-        GameObject mainUI = GameObject.Find("@GameSceneCanvas");
-        _mainUI = mainUI;
+        _mainUI = GameObject.Find("@GameSceneCanvas");
     }
 
     async Task CreateSuccessBGM()
-    {   
+    {
         if (_preloadData.successBgm == null) return;
-
-        // [유지] Addressables.LoadAssetAsync 사용
-        var handle = Addressables.LoadAssetAsync<AudioClip>(_preloadData.successBgm);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
-        {
-            _successBGM = handle.Result; // Instantiate 불필요 (AudioClip은 리소스임)
-            RegisterHandle(ObjectType.BGM, handle);
-        }
+        _successBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.successBgm);
     }
 
     async Task CreateClearUI()
-    {      
+    {
         if (_preloadData.dungeonClearUI == null) return;
 
-        // [변경] InstantiateAsync -> LoadAssetAsync + Instantiate
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.dungeonClearUI);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.dungeonClearUI);
+        if (prefab != null)
         {
-            _clearUI = Object.Instantiate(handle.Result);
+            _clearUI = Instantiate(prefab);
             _clearUI.SetActive(false);
-            RegisterHandle(ObjectType.UI, handle);
         }
     }
 
     async Task SetupBGM()
-    {       
+    {
         if (_preloadData.fightingBgms == null || _preloadData.fightingBgms.Length == 0) return;
 
         int rand = Random.Range(0, _preloadData.fightingBgms.Length);
-        var bgmRef = _preloadData.fightingBgms[rand];
-
-        // [유지] Addressables.LoadAssetAsync 사용
-        var handle = Addressables.LoadAssetAsync<AudioClip>(bgmRef);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
-        {
-            //Managers.Sound.Play(handle.Result, Define.Sound.Bgm);
-            _mainBGM = handle.Result;
-            RegisterHandle(ObjectType.BGM, handle);
-        }
+        _mainBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.fightingBgms[rand]);
     }
-    void PlayBGM() { Managers.Sound.Play(_mainBGM, Define.Sound.Bgm); }
+
+    void PlayBGM()
+    {
+        if (_mainBGM != null)
+            Managers.Sound.Play(_mainBGM, Define.Sound.Bgm);
+    }
 
     void PlayBattleInVoice()
-    {        
+    {
         List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
         if (partyMembers.Count == 0) return;
 
@@ -181,48 +146,41 @@ public class NormalDungeonScene : BaseScene
 
     void PlayVictoryVoice()
     {
-        List<BaseCharacter> partyMemebers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        if (partyMembers.Count == 0) return;
 
-        int randomNum_partyMembers = Random.Range(0, 4);
-        AudioClip[] voices = partyMemebers[randomNum_partyMembers].Stat.GetBattleVictoryVoices();
+        int randomMemberIdx = Random.Range(0, partyMembers.Count);
+        AudioClip[] voices = partyMembers[randomMemberIdx].Stat.GetBattleVictoryVoices();
 
-        int randomNum_voice = Random.Range(0, 2);
-        Debug.Log($"번호 : {randomNum_partyMembers} , {randomNum_voice}");
-        Managers.Sound.Play(voices[randomNum_voice], Define.Sound.Voice);
+        if (voices != null && voices.Length > 0)
+        {
+            int randomVoiceIdx = Random.Range(0, voices.Length);
+            Managers.Sound.Play(voices[randomVoiceIdx], Define.Sound.Voice);
+        }
     }
 
     async Task CreatePool()
-    {        
+    {
         if (_preloadData.bullet == null) return;
 
-        // [유지] Addressables.LoadAssetAsync 사용 (PoolManager 전달용)
-        AsyncOperationHandle<GameObject> handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.bullet);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
+        if (prefab != null)
         {
-            // PoolManager에 GameObject 원본과 Handle 전달
-            Managers.Pool.CreatePool(handle.Result, handle, 30);
-
-            // 주의: Handle을 씬에서 RegisterHandle 하지 않음 (PoolManager가 관리하므로)
+            Managers.Pool.CreatePool(prefab, 30);
         }
     }
 
     async Task CreateEffectStage()
-    {        
+    {
         if (_preloadData.effectStage == null) return;
 
         GameObject root = new GameObject { name = "@Effect" };
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.effectStage);
 
-        // [변경] InstantiateAsync -> LoadAssetAsync + Instantiate
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.effectStage);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        if (prefab != null)
         {
-            GameObject go = Object.Instantiate(handle.Result, root.transform);
+            GameObject go = Instantiate(prefab, root.transform);
             go.SetActive(true);
-            RegisterHandle(ObjectType.UI, handle);
         }
     }
 
@@ -379,24 +337,22 @@ public class NormalDungeonScene : BaseScene
     }
 
 
-    // 제네릭 핸들 저장 함수
-    private void RegisterHandle(ObjectType type, AsyncOperationHandle handle)
-    {
-        if (!_spawnedHandles.ContainsKey(type))
-            _spawnedHandles[type] = new List<AsyncOperationHandle>();
-        _spawnedHandles[type].Add(handle);
-    }
-
     public override void Clear()
     {
         base.Clear();
+        Managers.Sound.StopAll();
 
-        //// 씬 나갈 때 모든 핸들 해제
-        //foreach (var list in _spawnedHandles.Values)
-        //{
-        //    foreach (var handle in list)
-        //        if (handle.IsValid()) Addressables.Release(handle);
-        //}
-        _spawnedHandles.Clear();
+        // 씬이 강제로 종료될 경우(중도 포기 등)를 대비해 남아있는 몬스터들의 이벤트 구독 해제
+        if (_curMap != null)
+        {
+            MonsterController[] monsters = _curMap.GetComponentsInChildren<MonsterController>(true);
+            foreach (var monster in monsters)
+            {
+                if (monster != null && monster.Stat != null)
+                {
+                    monster.Stat.OnDead -= OnMonsterDead;
+                }
+            }
+        }
     }
 }

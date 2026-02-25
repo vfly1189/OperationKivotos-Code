@@ -22,7 +22,7 @@ public class LoadingScene : BaseScene
         GameObject loadingObj = Managers.Resource.Instantiate("UI/LoadingScene/LoadingCanvas");
         _loadingUI = loadingObj.GetComponent<LoadingSceneController>();
 
-        Managers.SceneEx.SetActiveCover(false);
+        //Managers.SceneEx.SetActiveCover(false);
 
         StartCoroutine(LoadProcess());
     }  
@@ -31,22 +31,24 @@ public class LoadingScene : BaseScene
     {
         // [1] Managers 정리 (딕셔너리만 비움, UnloadUnusedAssets는 안 함)
         Managers.Resource.Clear();
+        Managers.Pool.Clear();
 
-        // [2] 이전 씬(SelectScene)의 Clear()가 완료되고, 
-        //     오브젝트들이 OnDestroy 되고, 
-        //     Addressables 내부 정리가 끝날 때까지 충분히 대기
-        yield return new WaitForSeconds(1.0f); // 1초 대기 (테스트용, 나중에 0.5초로 줄여도 됨)
+        //// [2] 이전 씬(SelectScene)의 Clear()가 완료되고, 
+        ////     오브젝트들이 OnDestroy 되고, 
+        ////     Addressables 내부 정리가 끝날 때까지 충분히 대기
+        //yield return new WaitForSeconds(1.0f); // 1초 대기 (테스트용, 나중에 0.5초로 줄여도 됨)
 
-        // [3] 이제 안전하게 언로드 시도
-        //var unloadOp = Resources.UnloadUnusedAssets();
-        //yield return unloadOp; // 완료 대기
-        System.GC.Collect();
+        //// [3] 이제 안전하게 언로드 시도
+        ////var unloadOp = Resources.UnloadUnusedAssets();
+        ////yield return unloadOp; // 완료 대기
+        //System.GC.Collect();
 
-        // [4]추가 대기 - 번들 언로드가 완전히 마무리될 시간 확보
-        yield return new WaitForSeconds(0.5f); // ← 이게 핵심!
+        //// [4]추가 대기 - 번들 언로드가 완전히 마무리될 시간 확보
+        //yield return new WaitForSeconds(0.5f); // ← 이게 핵심!
+        //yield return null;
+        //yield return null;
+
         yield return null;
-        yield return null;
-
 
         // [5] 씬 데이터 준비
         var sceneData = Managers.SceneEx.NextSceneData;

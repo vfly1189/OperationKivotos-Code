@@ -1,13 +1,14 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Playables;
 
 public class BaseCharacter : MonoBehaviour
 {
     [Header("Base Settings")]
     [SerializeField] protected float _speed = 5.0f;
-    [SerializeField] protected Animator _anim;
     [SerializeField] protected float _attackRate = 0.5f;
-
+    [SerializeField] protected Animator _anim;
+    
     [Header("Skill Settings")]
     [SerializeField] protected PlayableDirector _skillTimeline;
 
@@ -16,10 +17,11 @@ public class BaseCharacter : MonoBehaviour
     [SerializeField] protected Transform _firePoint;
     [SerializeField] protected ParticleSystem _fireEffectParticle;
 
-    // 컴포넌트들
+    // 상태 & 컴포넌트들
     public CharacterStat Stat { get; private set; }
+    public IInteractable CurrentInteractable { get; private set; }
+    public bool IsUsingSkill { get; protected set; }
 
-    // 서브시스템들
     protected CharacterStateMachine _stateMachine;
     protected CharacterMovement _movement;
     protected CharacterCombat _combat;
@@ -27,8 +29,13 @@ public class BaseCharacter : MonoBehaviour
 
     protected GameObject _gameCanvas;
 
-    public IInteractable CurrentInteractable { get; private set; }
-    public bool IsUsingSkill { get; protected set; }
+    // --- 공통 VFX (Static) --- ( 공용으로 쓰는 오라들 )
+    protected static GameObject _healingAuraPrefab;
+    protected GameObject _healingAuraInstance;
+    protected ParticleSystem _healingAuraParticle;
+
+
+    #region 유니티 생명주기
 
     private void Awake()
     {
@@ -41,8 +48,7 @@ public class BaseCharacter : MonoBehaviour
         if (_anim == null) _anim = GetComponent<Animator>();
 
         Stat = GetComponent<CharacterStat>();
-
-        if (Stat != null) Stat.Init();
+        Stat?.Init();
 
         // 서브시스템 초기화
         _stateMachine = new CharacterStateMachine();
@@ -58,6 +64,13 @@ public class BaseCharacter : MonoBehaviour
             _skillTimeline.stopped += OnCutsceneEnded;
             _skillTimeline.Stop();
         }
+
+        // 공통 이펙트 최초 1회 로드
+        if (_healingAuraPrefab == null)
+        {
+            _healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("Healing_Aura").WaitForCompletion();
+            if (_healingAuraPrefab == null) Debug.LogError("Healing_Aura 로드 실패!");
+        }
     }
 
     void Start()
@@ -71,6 +84,7 @@ public class BaseCharacter : MonoBehaviour
 
     void Update()
     {
+        //공격중에는 마우스 따라 공격
         if (_stateMachine.CurrentState == CharacterStateMachine.PlayerState.Attack)
         {
             _movement.RotateToMouse();
@@ -88,7 +102,9 @@ public class BaseCharacter : MonoBehaviour
         if (Stat != null) Stat.OnDead -= HandleDeath;
     }
 
-    // ==================== Public API ====================
+    #endregion
+
+    #region 외부에서 호출될 API
 
     public void Move(Vector2 dir)
     {
@@ -144,6 +160,9 @@ public class BaseCharacter : MonoBehaviour
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Victory);
     }
 
+    #endregion
+
+    #region 콜백 함수들
     // ==================== State Callbacks ====================
 
     private void OnStateChanged(CharacterStateMachine.PlayerState newState)
@@ -198,6 +217,10 @@ public class BaseCharacter : MonoBehaviour
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Death);
     }
 
+    #endregion
+
+    #region 애니메이션 이벤트
+
     // ==================== Animation Events ====================
 
     void ChangeToIdle()
@@ -223,9 +246,6 @@ public class BaseCharacter : MonoBehaviour
         IsUsingSkill = false;
     }
 
-   
-
-
     public void OnAttackEvent(AudioClip sfx)
     {
         if (_stateMachine.CurrentState == CharacterStateMachine.PlayerState.Attack)
@@ -235,12 +255,13 @@ public class BaseCharacter : MonoBehaviour
         }
     }
 
-    
-
     public void OnPlaySoundEvent(AudioClip clip)
     {
         if (clip != null) Managers.Sound.Play(clip, Define.Sound.Effect);
     }
+    #endregion
+
+    #region 가상 함수들 ( override )
 
     // ==================== Virtual Methods ====================
 
@@ -275,18 +296,20 @@ public class BaseCharacter : MonoBehaviour
 
     protected virtual void OnESkillEvent(AudioClip sfx) { }
 
+    #endregion
 
+    #region 충돌 & 상호작용
 
-    // ==================== Collision ====================
     // NPC의 Trigger Collider 영역에 들어갔을 때
     private void OnTriggerEnter(Collider other)
     {
         IInteractable interactable = other.GetComponent<IInteractable>();
         if (interactable != null)
         {
-            Debug.Log($"{other.gameObject.name}");
             CurrentInteractable = interactable;
-            // TODO: 머리 위에 "F키로 상호작용" UI 띄우기
+
+            // 객체 구분 없이 다형성으로 호출 (힐링이든 UI든 해당 객체가 알아서 처리)
+            interactable.OnTargetEnter(this);
         }
     }
 
@@ -296,8 +319,51 @@ public class BaseCharacter : MonoBehaviour
         IInteractable interactable = other.GetComponent<IInteractable>();
         if (interactable != null && CurrentInteractable == interactable)
         {
+            interactable.OnTargetExit(this);
             CurrentInteractable = null;
-            // TODO: "F키로 상호작용" UI 숨기기
         }
     }
+
+    // 힐링 효과 실행 메서드 
+    public virtual void PlayHealingAura()
+    {
+        // 1. 인스턴스가 없다면 지연 생성 
+        if (_healingAuraInstance == null && _healingAuraPrefab != null)
+        {
+            // 캐릭터의 발밑이나 특정 Transform을 부모로 설정하여 생성
+            _healingAuraInstance = Instantiate(_healingAuraPrefab, transform);
+
+            // 로컬 위치/회전 초기화
+            _healingAuraInstance.transform.localPosition = Vector3.zero;
+            _healingAuraInstance.transform.localRotation = Quaternion.identity;
+
+            _healingAuraParticle = _healingAuraInstance.GetComponentInChildren<ParticleSystem>();
+        }
+
+        // 2. 이펙트 재생
+        if (_healingAuraInstance != null)
+        {
+            _healingAuraInstance.SetActive(true);
+            if (_healingAuraParticle != null)
+            {
+                _healingAuraParticle.Stop();
+                _healingAuraParticle.Play();
+            }
+        }
+    }
+
+    // 힐링 효과 중지 메서드
+    public virtual void StopHealingAura()
+    {
+        if (_healingAuraInstance != null && _healingAuraInstance.activeSelf)
+        {
+            if (_healingAuraParticle != null)
+                _healingAuraParticle.Stop();
+
+            // 완전히 끄려면 SetActive(false) 혹은 Particle이 끝나면 자동 소멸되도록 세팅
+            _healingAuraInstance.SetActive(false);
+        }
+    }
+
+    #endregion
 }

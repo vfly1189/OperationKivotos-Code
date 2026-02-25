@@ -69,12 +69,12 @@ public class PlayerController
     {
         if (_currentTarget == null) return;
 
-        // 마을(GameScene)에서는 공격 금지
-        if (Managers.SceneEx.CurrentSceneType == Define.Scene.Game)
-        {
-            _isMousePressed = false;
-            return;
-        }
+        //// 마을(GameScene)에서는 공격 금지
+        //if (Managers.SceneEx.CurrentSceneType == Define.Scene.Game)
+        //{
+        //    _isMousePressed = false;
+        //    return;
+        //}
 
         if (evt == Define.MouseEvent.Press)
         {
@@ -109,7 +109,7 @@ public class PlayerController
         }
     }
 
-    // Update 로직 → Managers.Update에서 호출
+    // Update 로직 -> Managers.Update에서 호출
     public void OnUpdate()
     {
         if (_currentTarget == null || _currentTarget.Stat.IsDead) return;

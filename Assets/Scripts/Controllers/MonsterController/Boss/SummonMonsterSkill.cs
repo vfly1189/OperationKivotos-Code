@@ -20,7 +20,11 @@ public class SummonMonsterSkill : BossSkillBase
             // 1. 생성 시 위치/회전 지정 (이게 제일 안전함)
             GameObject monster = Managers.Resource.Instantiate(_monsterRL, monsterSpawnPoints[i].position, Quaternion.identity);
 
-            monster.GetComponent<MonsterController>().Stat.Init();
+            //monster.GetComponent<MonsterController>().Stat.Init();
+
+            // 몬스터 자체 로직에게 초기화와 Agent 켜기를 위임
+            monster.GetComponent<MonsterController>().InitSpawn();
+
             //// 2. 만약 NavMeshAgent가 있다면 Warp로 강제 이동
             //UnityEngine.AI.NavMeshAgent agent = monster.GetComponent<UnityEngine.AI.NavMeshAgent>();
             //if (agent != null)

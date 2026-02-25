@@ -23,6 +23,7 @@ public class Managers : MonoBehaviour
     UIManager _ui = new UIManager();
     DataManager _data = new DataManager();
     WalletManager _wallet = new WalletManager();
+    SectorManager _sector = new SectorManager();
 
     //public static GameManager Game { get { return Instance._game; } }
     public static InputManager Input { get { return Instance._input; } }
@@ -33,8 +34,8 @@ public class Managers : MonoBehaviour
     public static SoundManager Sound { get { return Instance._sound; } }    
     public static UIManager UI { get { return Instance._ui; } }
     public static DataManager Data { get { return Instance._data; } }
-
     public static WalletManager Wallet { get { return Instance._wallet; } }
+    public static SectorManager Sector { get { return Instance._sector; } }
     #endregion
 
     // Managers.cs - Start()를 코루틴으로 변경

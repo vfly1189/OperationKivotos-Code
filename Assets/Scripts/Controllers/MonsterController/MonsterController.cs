@@ -30,6 +30,7 @@ public class MonsterController : MonoBehaviour
 
     // [상태 관리 변수]
     private int _currentAmmo;
+    private bool _isReady = false;
     private bool _isAttacking = false; // 공격 사이클 진행 중인가?
     private bool _isReloading = false; // 재장전 중인가?
     private bool _isMoving = false;
@@ -40,11 +41,7 @@ public class MonsterController : MonoBehaviour
     private void Awake()
     {
         Stat = GetComponent<MonsterStat>();
-
-        if (Stat != null)
-        {
-            Stat.Init();
-        }
+        Stat?.Init();
 
         if (_anim == null) _anim = GetComponent<Animator>();
         if (_agent == null) _agent = GetComponent<NavMeshAgent>();
@@ -54,6 +51,7 @@ public class MonsterController : MonoBehaviour
             _agent.speed = _moveSpeed;
             _agent.stoppingDistance = _attackRange - 0.5f;
             _agent.updateRotation = true;
+            _agent.enabled = false;
         }
 
         _currentAmmo = _maxAmmo; // 탄창 초기화
@@ -91,6 +89,9 @@ public class MonsterController : MonoBehaviour
             Stat.OnHpChanged += _hpBar.UpdateHpBar;
         }
 
+
+        if(Managers.Party.GetCurrentCharacter() != null)
+            UpdateTarget(Managers.Party.GetCurrentCharacter().gameObject);
         // [수정] PartyManager를 통해 현재 플레이어 타겟 가져오기
         //UpdateTarget(Managers.Party.GetCurrentCharacter().gameObject);
 
@@ -128,27 +129,21 @@ public class MonsterController : MonoBehaviour
     // 풀링 사용 시 OnEnable에서 초기화 필요
     private void OnEnable()
     {
+        _isReady = false; // [추가] 활성화 직후에는 아직 준비 안됨
+
         // 1. 상태 플래그 초기화
         _isDeadProcessed = false;
         _isAttacking = false;
         _isReloading = false;
+        _isMoving = false;
         _currentAmmo = _maxAmmo;
 
         // 2. 스탯 초기화 (죽은 상태 복구)
-        if (Stat != null)
-        {
-            Stat.Init(); // ★ 이 부분이 반드시 필요합니다!
-        }
+        Stat?.Init();
 
         // 3. 컴포넌트 재활성화
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = true; // 죽을 때 껐던 콜라이더 다시 켜기
-
-        if (_agent != null)
-        {
-            _agent.enabled = true;
-            _agent.isStopped = false; // 멈춰있던거 풀기
-        }
 
         // 4. 애니메이션 리셋 (중요: 죽는 모션에서 바로 Idle로)
         if (_anim != null)
@@ -162,11 +157,55 @@ public class MonsterController : MonoBehaviour
             _hpBar.gameObject.SetActive(true);
             _hpBar.UpdateHpBar(Stat.CurrentHp, Stat.MaxHp.Value);
         }
+
+        StartCoroutine(CoEnableAgentDelay());
+    }
+
+    private IEnumerator CoEnableAgentDelay()
+    {
+        yield return null; // 딱 1프레임 대기 (트랜스폼 이동이나 Warp가 끝날 때까지)
+
+        if (_agent != null && !_isDeadProcessed)
+        {
+            _agent.enabled = true;
+            // _agent.isStopped = false; // 필요하다면
+        }
+
+        _isReady = true; // [추가] Agent가 켜진 이후에 비로소 AI 작동 시작!
+    }
+
+    // 풀링에서 꺼내지거나 새로 생성된 직후 외부(Spawner나 Skill)에서 호출해주는 함수
+    public void InitSpawn()
+    {
+        //// 1. 스탯 초기화
+        //Stat.Init();
+
+        //// 2. 물리/이동 컴포넌트 활성화
+        //if (_agent != null)
+        //{
+        //    _agent.enabled = true;
+        //}
+
+        //// 3. 상태 머신(FSM) 초기화 및 Idle/Chase 상태 시작
+        //// ChangeState(MonsterState.Idle);
+    }
+
+    // 풀로 돌아갈 때(OnDisable) 꺼주는 로직 필수!
+    protected void OnDisable()
+    {
+        if (_agent != null && _agent.enabled)
+        {
+            _agent.enabled = false;
+        }
+        StopAllCoroutines();
     }
 
 
     private void Update()
     {
+        // [추가] 몬스터가 아직 준비되지 않았다면 AI 작동 중지
+        if (!_isReady) return;
+
         if (_topNode != null)
             _topNode.Evaluate();
     }

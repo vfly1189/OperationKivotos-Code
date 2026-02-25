@@ -31,18 +31,6 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
 
     void Start()
     {
-        //if (_backgroundSprites.Length == 0)
-        //{
-        //    Debug.LogError("배경 이미지가 없습니다!");
-        //    return;
-        //}
-
-        //if (_backgourndImages.Length != _backgroundCanvasGroups.Length)
-        //{
-        //    Debug.LogError("Image와 CanvasGroup 배열 크기가 다릅니다!");
-        //    return;
-        //}
-
         // RectTransform 배열 초기화
         _rectTransforms = new RectTransform[_backgourndImages.Length];
         _initialPositions = new Vector2[_backgourndImages.Length];

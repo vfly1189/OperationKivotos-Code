@@ -19,7 +19,7 @@ public abstract class BaseScene : MonoBehaviour
         {
             GameObject eventSystem = Managers.Resource.Instantiate("UI/EventSystem");
             eventSystem.name = "@EventSystem";
-            DontDestroyOnLoad(eventSystem); //
+            DontDestroyOnLoad(eventSystem);
         }
     }
 

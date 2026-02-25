@@ -21,4 +21,11 @@ public class GameScenePreloadSO : SceneDataSO
     [Header("메인 브금")]
     //public AudioClip[] mainBGMs;
     public AssetReferenceT<AudioClip>[] mainBGMs;
+
+    [Header("Pooling 오브젝트")]
+    public AssetReferenceGameObject bullet;
+    public AssetReferenceGameObject monsterAR;
+    public AssetReferenceGameObject monsterRL;
+    public AssetReferenceGameObject monsterTank;
+
 }

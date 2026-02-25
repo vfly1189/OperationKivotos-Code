@@ -20,7 +20,7 @@ public class BossMonsterController : MonoBehaviour
     private bool _isDeadProcessed = false;
 
     private Node _topNode;
-    private bool _hasEntered = false; // 입장 했는지 체크
+    //private bool _hasEntered = false; // 입장 했는지 체크
     private bool _isActionRunning = false; // 현재 어떤 행동(애니메이션 등)이 진행 중인가?
     private bool _entraceFinish = false;
     private Animator _anim;
@@ -30,7 +30,7 @@ public class BossMonsterController : MonoBehaviour
     public event Action OnDead;
 
     // 공격 상태용
-    private int _skillIndex = -1;
+    //private int _skillIndex = -1;
     private bool _isSkillFiring = false; // 현재 스킬 로직이 진행 중인지 체크
     private void Awake()
     {

@@ -7,20 +7,6 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class BossDungeonScene : BaseScene
 {
-    private enum ObjectType
-    {
-        Map,
-        Monster,
-        UI,
-        BGM,
-        Pool
-    }
-
-    // 핸들 관리 (모델 포함)
-    private Dictionary<ObjectType, List<AsyncOperationHandle>> _spawnedHandles
-    = new Dictionary<ObjectType, List<AsyncOperationHandle>>();
-
-
     [SerializeField] private BossDungeonScenePreloadSO _preloadData;
     [SerializeField] private GameObject _loadingCover;
 
@@ -45,8 +31,6 @@ public class BossDungeonScene : BaseScene
         base.Init();
         _sceneType = Define.Scene.BossDungeon;
 
- 
-
         // 로딩하는거 가려줄 화면
         if (_loadingCover != null)
         {
@@ -58,27 +42,6 @@ public class BossDungeonScene : BaseScene
         }
 
         await Task.Delay(1000);
-
-        //await CreateMap();
-        //CreateUI();
-        //await PlayBGM();
-        //PlayBattleInVoice();
-        //await CreatePool();
-        //await CreateEffectStage();
-
-        //await CreateBoss();
-        //await CreateBossHPBarUI();
-
-        //await CreateSuccessBGM();
-        //await CreateClearUI();
-        ////Managers.Party.TeleportParty(_spawnPoint.position);
-        ////Camera.main.transform.position = _cameraPoint.position;
-        ////Camera.main.transform.rotation = _cameraPoint.rotation;
-
-        //// [핵심] 바로 이동하지 말고 코루틴으로 한 박자 쉼
-        //StartCoroutine(CoSafeTeleport());
-        //StartCoroutine(FadeInSequence());
-
 
         // 2. 맵 생성 (스폰 포인트 확보를 위해 가장 먼저 필수)
         await CreateMap();
@@ -110,48 +73,30 @@ public class BossDungeonScene : BaseScene
     {
         GameObject root = new GameObject { name = "@Map" };
 
-        //GameObject map = Object.Instantiate(_preloadData.bossDungeon);
-        //map.transform.SetParent(root.transform);
-
-        //map.transform.position = new Vector3(0, 0, 0);
-
-        //_curMap = map;
-
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.bossDungeon);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bossDungeon);
+        if (prefab != null)
         {
-            _curMap = Object.Instantiate(handle.Result, root.transform); // 부모 설정
+            _curMap = Instantiate(prefab, root.transform);
             _curMap.transform.position = Vector3.zero;
 
-            _spawnPoint = _curMap.GetComponent<BossDungeonMap>().GetCharacterSpawnPoint();
-            _cameraPoint = _curMap.GetComponent<BossDungeonMap>().GetCameraPoint();
-            _bossSpawnPoint = _curMap.GetComponent<BossDungeonMap>().GetBossSpawnPoint();
-
-            RegisterHandle(ObjectType.Map, handle);
+            var mapScript = _curMap.GetComponent<BossDungeonMap>();
+            if (mapScript != null)
+            {
+                _spawnPoint = mapScript.GetCharacterSpawnPoint();
+                _cameraPoint = mapScript.GetCameraPoint();
+                _bossSpawnPoint = mapScript.GetBossSpawnPoint();
+            }
         }
     }
 
     async Task CreateSuccessBGM()
     {
         if (_preloadData.successBgm == null) return;
-
-        // [유지] Addressables.LoadAssetAsync 사용
-        var handle = Addressables.LoadAssetAsync<AudioClip>(_preloadData.successBgm);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
-        {
-            _successBGM = handle.Result; // Instantiate 불필요 (AudioClip은 리소스임)
-            RegisterHandle(ObjectType.BGM, handle);
-        }
+        _successBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.successBgm);
     }
     void CreateUI()
     {
-        GameObject mainUI = GameObject.Find("@GameSceneCanvas");
-        //mainUI.name = "@GameSceneCanvas";
-        _mainUI = mainUI;
+        _mainUI = GameObject.Find("@GameSceneCanvas");
     }
 
     async Task SetupBGM()
@@ -159,63 +104,43 @@ public class BossDungeonScene : BaseScene
         if (_preloadData.fightingBgms == null || _preloadData.fightingBgms.Length == 0) return;
 
         int rand = Random.Range(0, _preloadData.fightingBgms.Length);
-        var bgmRef = _preloadData.fightingBgms[rand];
-
-        // [유지] Addressables.LoadAssetAsync 사용
-        var handle = Addressables.LoadAssetAsync<AudioClip>(bgmRef);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
-        {
-            _mainBGM = handle.Result;
-            //Managers.Sound.Play(handle.Result, Define.Sound.Bgm);
-            RegisterHandle(ObjectType.BGM, handle);
-        }
+        _mainBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.fightingBgms[rand]);
     }
 
-    void PlayBGM() { Managers.Sound.Play(_mainBGM, Define.Sound.Bgm); }
+    void PlayBGM()
+    {
+        if (_mainBGM != null)
+            Managers.Sound.Play(_mainBGM, Define.Sound.Bgm);
+    }
 
     void PlayBattleInVoice()
     {
-        List<BaseCharacter> partyMemebers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        if (partyMembers.Count == 0) return;
 
-        int randomNum_partyMembers = Random.Range(0, 4);
-        AudioClip[] voices = partyMemebers[randomNum_partyMembers].Stat.GetBattleInVoice();
+        int randomNum_partyMembers = Random.Range(0, partyMembers.Count);
+        AudioClip[] voices = partyMembers[randomNum_partyMembers].Stat.GetBattleInVoice();
 
-        int randomNum_voice = Random.Range(0, 2);
-        Debug.Log($"번호 : {randomNum_partyMembers} , {randomNum_voice}");
-        Managers.Sound.Play(voices[randomNum_voice], Define.Sound.Voice);
+        if (voices != null && voices.Length > 0)
+        {
+            int randomNum_voice = Random.Range(0, voices.Length);
+            Managers.Sound.Play(voices[randomNum_voice], Define.Sound.Voice);
+        }
     }
 
     async Task CreatePool()
     {
-        ////총알
-        //Managers.Pool.CreatePool(_preloadData.bullet, 60);
-        ////몬스터
-        //Managers.Pool.CreatePool(_preloadData.monsterRL, 10);
-
-
-        // 총알 풀
+        // PoolManager는 이제 원본 GameObject만 받으면 알아서 풀링을 해줍니다.
         if (_preloadData.bullet != null)
         {
-            var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.bullet);
-            await handle.Task;
-            if (handle.Status == AsyncOperationStatus.Succeeded)
-            {
-                Managers.Pool.CreatePool(handle.Result, handle, 30);
-                // PoolManager가 핸들 관리
-            }
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
+            if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
 
-        // 몬스터 풀
         if (_preloadData.monsterRL != null)
         {
-            var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.monsterRL);
-            await handle.Task;
-            if (handle.Status == AsyncOperationStatus.Succeeded)
-            {
-                Managers.Pool.CreatePool(handle.Result, handle, 16);
-            }
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterRL);
+            if (prefab != null) Managers.Pool.CreatePool(prefab, 16);
         }
     }
 
@@ -224,32 +149,24 @@ public class BossDungeonScene : BaseScene
         if (_preloadData.effectStage == null) return;
 
         GameObject root = new GameObject { name = "@Effect" };
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.effectStage);
 
-        // [변경] InstantiateAsync -> LoadAssetAsync + Instantiate
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.effectStage);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        if (prefab != null)
         {
-            GameObject go = Object.Instantiate(handle.Result, root.transform);
+            GameObject go = Instantiate(prefab, root.transform);
             go.SetActive(true);
-            RegisterHandle(ObjectType.UI, handle);
         }
     }
 
     async Task CreateClearUI()
-    { 
+    {
         if (_preloadData.dungeonClearUI == null) return;
 
-        // [변경] InstantiateAsync -> LoadAssetAsync + Instantiate
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.dungeonClearUI);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.dungeonClearUI);
+        if (prefab != null)
         {
-            _clearUI = Object.Instantiate(handle.Result);
+            _clearUI = Instantiate(prefab);
             _clearUI.SetActive(false);
-            RegisterHandle(ObjectType.UI, handle);
         }
     }
 
@@ -276,27 +193,60 @@ public class BossDungeonScene : BaseScene
         //}
 
 
-        if (_bossSpawnPoint == null)
-        {
-            Debug.LogError("Boss Spawn Point is NULL. Cannot create boss.");
-            return;
-        }
+        //if (_bossSpawnPoint == null)
+        //{
+        //    Debug.LogError("Boss Spawn Point is NULL. Cannot create boss.");
+        //    return;
+        //}
 
-        if (_preloadData.boss == null) return;
+        //if (_preloadData.boss == null) return;
+
+        //GameObject root = new GameObject { name = "@BossMonster" };
+        //root.transform.position = _bossSpawnPoint.position; // 위치 설정
+
+        //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.boss);
+        //await handle.Task;
+
+        //if (handle.Status == AsyncOperationStatus.Succeeded)
+        //{
+        //    GameObject boss = Object.Instantiate(handle.Result, root.transform);
+        //    boss.transform.localPosition = Vector3.zero; // 루트 기준 0,0,0
+        //    _boss = boss;
+
+        //    // 이벤트 및 설정
+        //    var ctrl = _boss.GetComponent<BossMonsterController>();
+        //    if (ctrl != null)
+        //    {
+        //        ctrl.OnDead -= OnMonsterDead;
+        //        ctrl.OnDead += OnMonsterDead;
+        //    }
+
+        //    if (_curMap != null)
+        //    {
+        //        var skill = _boss.GetComponent<BossSkillController>();
+        //        var mapScript = _curMap.GetComponent<BossDungeonMap>();
+        //        if (skill != null && mapScript != null)
+        //        {
+        //            skill.SetSpawnPoints(mapScript.GetMonsterSpawnPoints());
+        //            skill.SetLightningPoints(mapScript.GetLightningPoints());
+        //        }
+        //    }
+
+        //    RegisterHandle(ObjectType.Monster, handle);
+        //}
+
+
+        if (_bossSpawnPoint == null || _preloadData.boss == null) return;
 
         GameObject root = new GameObject { name = "@BossMonster" };
-        root.transform.position = _bossSpawnPoint.position; // 위치 설정
+        root.transform.position = _bossSpawnPoint.position;
 
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.boss);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.boss);
+        if (prefab != null)
         {
-            GameObject boss = Object.Instantiate(handle.Result, root.transform);
-            boss.transform.localPosition = Vector3.zero; // 루트 기준 0,0,0
-            _boss = boss;
+            _boss = Instantiate(prefab, root.transform);
+            _boss.transform.localPosition = Vector3.zero;
 
-            // 이벤트 및 설정
             var ctrl = _boss.GetComponent<BossMonsterController>();
             if (ctrl != null)
             {
@@ -314,8 +264,6 @@ public class BossDungeonScene : BaseScene
                     skill.SetLightningPoints(mapScript.GetLightningPoints());
                 }
             }
-
-            RegisterHandle(ObjectType.Monster, handle);
         }
     }
 
@@ -342,50 +290,77 @@ public class BossDungeonScene : BaseScene
         //}
 
 
-        // 보스가 생성될 때까지 대기
+        //// 보스가 생성될 때까지 대기
+        //while (_boss == null) await Task.Yield();
+
+        //if (_preloadData.bossHPBar == null) return;
+
+        //GameObject root = new GameObject { name = "@HPBarUI" };
+
+        //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.bossHPBar);
+        //await handle.Task;
+
+        //if (handle.Status == AsyncOperationStatus.Succeeded)
+        //{
+        //    GameObject hpBar = Object.Instantiate(handle.Result, root.transform);
+        //    _bossHPBar = hpBar;
+
+        //    var hpScript = hpBar.GetComponent<BossHPBar>();
+        //    if (hpScript != null)
+        //        hpScript.SetBoss(_boss);
+
+        //    RegisterHandle(ObjectType.UI, handle);
+        //}
+
+
+        // 보스가 할당될 때까지 안전하게 대기
         while (_boss == null) await Task.Yield();
 
         if (_preloadData.bossHPBar == null) return;
 
         GameObject root = new GameObject { name = "@HPBarUI" };
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bossHPBar);
 
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.bossHPBar);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        if (prefab != null)
         {
-            GameObject hpBar = Object.Instantiate(handle.Result, root.transform);
-            _bossHPBar = hpBar;
-
-            var hpScript = hpBar.GetComponent<BossHPBar>();
+            _bossHPBar = Instantiate(prefab, root.transform);
+            var hpScript = _bossHPBar.GetComponent<BossHPBar>();
             if (hpScript != null)
                 hpScript.SetBoss(_boss);
-
-            RegisterHandle(ObjectType.UI, handle);
         }
     }
 
     void PlayVictoryVoice()
     {
-        List<BaseCharacter> partyMemebers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        if (partyMembers.Count == 0) return;
 
-        int randomNum_partyMembers = Random.Range(0, 4);
-        AudioClip[] voices = partyMemebers[randomNum_partyMembers].Stat.GetBattleVictoryVoices();
+        int randomNum_partyMembers = Random.Range(0, partyMembers.Count);
+        AudioClip[] voices = partyMembers[randomNum_partyMembers].Stat.GetBattleVictoryVoices();
 
-        int randomNum_voice = Random.Range(0, 2);
-        Debug.Log($"번호 : {randomNum_partyMembers} , {randomNum_voice}");
-        Managers.Sound.Play(voices[randomNum_voice], Define.Sound.Voice);
+        if (voices != null && voices.Length > 0)
+        {
+            int randomNum_voice = Random.Range(0, voices.Length);
+            Managers.Sound.Play(voices[randomNum_voice], Define.Sound.Voice);
+        }
     }
 
 
     private void OnMonsterDead()
     {
-        // 1. Party Time BGM 재생 (선택)
-        Managers.Sound.Play(_successBGM, Define.Sound.Bgm); // 실제 BGM 이름이나 AudioClip 필요
+        //// 1. Party Time BGM 재생 (선택)
+        //Managers.Sound.Play(_successBGM, Define.Sound.Bgm); // 실제 BGM 이름이나 AudioClip 필요
 
-        // 2. PartyManager에게 승리 통보 (이게 핵심)
-        Managers.Party.FinishGame(true); // true = Success
-        Managers.Destroy(_bossHPBar);
+        //// 2. PartyManager에게 승리 통보 (이게 핵심)
+        //Managers.Party.FinishGame(true); // true = Success
+        //Managers.Destroy(_bossHPBar);
+        //StartCoroutine(CoVictoryPoze());
+
+        if (_successBGM != null)
+            Managers.Sound.Play(_successBGM, Define.Sound.Bgm);
+
+        Managers.Party.FinishGame(true);
+        Managers.Resource.Destroy(_bossHPBar);
         StartCoroutine(CoVictoryPoze());
     }
 
@@ -520,13 +495,5 @@ public class BossDungeonScene : BaseScene
             }
         }
         Managers.Resource.Destroy(_loadingCoverInstance);
-    }
-
-    // 제네릭 핸들 저장 함수
-    private void RegisterHandle(ObjectType type, AsyncOperationHandle handle)
-    {
-        if (!_spawnedHandles.ContainsKey(type))
-            _spawnedHandles[type] = new List<AsyncOperationHandle>();
-        _spawnedHandles[type].Add(handle);
     }
 }

@@ -15,10 +15,6 @@ public class SelectScene : BaseScene
         Character,
     }
 
-    // 핸들 관리 (모델 포함)
-    private Dictionary<ObjectType, List<AsyncOperationHandle>> _spawnedHandles
-    = new Dictionary<ObjectType, List<AsyncOperationHandle>>();
-
     // 학교별 모델 핸들 리스트 (Key: School Index, Value: List of Handles)
     private Dictionary<int, List<GameObject>> _schoolModels
         = new Dictionary<int, List<GameObject>>();
@@ -151,17 +147,15 @@ public class SelectScene : BaseScene
         {
             if (k >= chars.Length) break;
 
-            // [변경] InstantiateAsync -> LoadAssetAsync + Instantiate
-            var handle = Addressables.LoadAssetAsync<GameObject>(chars[k].selectPrefab);
-            await handle.Task;
+            // [핵심 변경점] Managers.Resource에게 위임! 핸들 신경 X
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(chars[k].selectPrefab);
 
-            if (handle.Status == AsyncOperationStatus.Succeeded)
+            if (prefab != null)
             {
-                // 생성 및 설정
-                GameObject go = Object.Instantiate(handle.Result, spawnPoints[k]);
+                GameObject go = Instantiate(prefab, spawnPoints[k]);
                 go.SetActive(false);
-
                 go.transform.localPosition = Vector3.zero;
+
                 if (_modelCamera != null)
                 {
                     Vector3 dir = _modelCamera.transform.position - go.transform.position;
@@ -170,7 +164,6 @@ public class SelectScene : BaseScene
                 }
 
                 _schoolModels[schoolIdx].Add(go);
-                RegisterHandle(ObjectType.Character, handle);
             }
         }
     }
@@ -178,53 +171,30 @@ public class SelectScene : BaseScene
 
     async System.Threading.Tasks.Task CreateModelCamera()
     {
-        // [변경] InstantiateAsync -> LoadAssetAsync
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.modelCamera);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.modelCamera);
+        if (prefab != null)
         {
-            _modelCamera = Object.Instantiate(handle.Result);
+            _modelCamera = Instantiate(prefab);
             _modelCamera.name = "@ModelCamera";
-            RegisterHandle(ObjectType.Camera, handle);
         }
     }
 
     async System.Threading.Tasks.Task CreateMainUI()
     {
-        // [변경] InstantiateAsync -> LoadAssetAsync
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.mainUI);
-        await handle.Task;
-
-        if (handle.Status == AsyncOperationStatus.Succeeded)
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.mainUI);
+        if (prefab != null)
         {
-            GameObject uiObj = Object.Instantiate(handle.Result);
+            GameObject uiObj = Instantiate(prefab);
             uiObj.name = "@SelectSceneCanvas";
             _uiCanvas = uiObj.GetComponent<SelectSceneCanvas>();
-            RegisterHandle(ObjectType.UI, handle);
         }
     }
 
-    // 제네릭 핸들 저장 함수
-    private void RegisterHandle(ObjectType type, AsyncOperationHandle handle)
-    {
-        if (!_spawnedHandles.ContainsKey(type))
-            _spawnedHandles[type] = new List<AsyncOperationHandle>();
-        _spawnedHandles[type].Add(handle);
-    }
 
     public override void Clear()
     {
         base.Clear();
 
-        //// 씬 나갈 때 모든 핸들 해제
-        //foreach (var list in _spawnedHandles.Values)
-        //{
-        //    foreach (var handle in list)
-        //        if (handle.IsValid()) Addressables.Release(handle);
-        //}
-
-        _spawnedHandles.Clear();
         _schoolModels.Clear();
     }
 
@@ -256,26 +226,6 @@ public class SelectScene : BaseScene
 
     void OnDestroy()
     {
-        Debug.Log("=== SelectScene OnDestroy 시작 ===");
-
-        foreach (var kvp in _spawnedHandles)
-        {
-            Debug.Log($"[핸들 체크] {kvp.Key} 타입: {kvp.Value.Count}개");
-
-            foreach (var handle in kvp.Value)
-            {
-                if (!handle.IsDone)
-                {
-                    Debug.LogError($"[범인 발견!] {kvp.Key} 타입의 핸들이 아직 로딩 중!");
-                    Debug.LogError($"핸들 이름: {handle.DebugName}");
-                }
-                else
-                {
-                    Debug.Log($"{kvp.Key} 핸들은 로딩 완료");
-                }
-            }
-        }
-
-        Debug.Log("=== SelectScene OnDestroy 끝 ===");
+        
     }
 }

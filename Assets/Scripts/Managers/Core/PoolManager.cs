@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AI;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class PoolManager
@@ -28,6 +29,14 @@ public class PoolManager
         Poolable Create()
         {
             GameObject go = Object.Instantiate(Original);
+
+            // 만약 활성화 상태로 생성되었다면, 위치를 잡기 전에 Agent를 꺼버립니다.
+            NavMeshAgent agent = go.GetComponent<NavMeshAgent>();
+            if (agent != null)
+            {
+                agent.enabled = false;
+            }
+
             go.name = Original.name;
             go.transform.position = Vector3.zero;
 
@@ -54,21 +63,29 @@ public class PoolManager
             else
                 poolable = Create();
 
-            // ★ Transform 초기화 (안전장치)
-            // 1. 스케일 리셋 (가장 중요)
+            // 위치 초기화 부분 수정
+            poolable.transform.SetParent(parent ?? Managers.SceneEx.CurrentScene.transform);
             poolable.transform.localScale = Vector3.one;
 
-            // 2. 위치/회전 리셋 (필요하다면)
-            //poolable.transform.localPosition = Vector3.zero;
-            //poolable.transform.localRotation = Quaternion.identity;
+            // NavMeshAgent가 붙어있다면, 위치를 옮기기 전에 반드시 꺼야 합니다.
+            NavMeshAgent agent = poolable.GetComponent<NavMeshAgent>();
+            if (agent != null) agent.enabled = false;
 
-            poolable.IsUsing = true;
+            //// Transform 초기화 (안전장치)
+            //// 1. 스케일 리셋 (가장 중요)
+            //poolable.transform.localScale = Vector3.one;
 
-            // 부모 설정
-            if (parent == null)
-                poolable.transform.SetParent(Managers.SceneEx.CurrentScene.transform);
-            else
-                poolable.transform.SetParent(parent);
+            //// 2. 위치/회전 리셋 (필요하다면)
+            ////poolable.transform.localPosition = Vector3.zero;
+            ////poolable.transform.localRotation = Quaternion.identity;
+
+            //poolable.IsUsing = true;
+
+            //// 부모 설정
+            //if (parent == null)
+            //    poolable.transform.SetParent(Managers.SceneEx.CurrentScene.transform);
+            //else
+            //    poolable.transform.SetParent(parent);
 
             // 활성화는 ResourceManager에서 위치 잡은 뒤에 함
             // poolable.gameObject.SetActive(true); 
@@ -93,6 +110,9 @@ public class PoolManager
             _root = new GameObject { name = "@Pool_Root" }.transform;
             Object.DontDestroyOnLoad(_root);
         }
+
+
+
     }
 
     // 풀 생성 (미리 만들어두기)
