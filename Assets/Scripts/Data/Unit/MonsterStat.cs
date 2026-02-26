@@ -10,18 +10,24 @@ public class MonsterStat : BaseStat, IDamageable
     public float DropExpAmount = 300f;
 
     private bool _isDead = false;
-    public void Init(MonsterDataSO data, int stageLevel)
+
+    public void Init(MonsterData jsonStatData)
     {
         base.Init();
-        // 스테이지 레벨에 따른 스탯 뻥튀기 적용
-        float multiplier = 1 + (stageLevel * 0.1f);
+        _isDead = false;
 
-        MaxHp.SetBaseValue(data.MaxHp * multiplier);
-        Attack.SetBaseValue(data.Attack * multiplier);
-        Defense.SetBaseValue(data.Defense * multiplier);
+        // JSON에서 읽어온 데이터로 스탯 초기화
+        MaxHp.SetBaseValue(jsonStatData.hp);
+        Attack.SetBaseValue(jsonStatData.attack);
+        Defense.SetBaseValue(jsonStatData.defense);
+
+        //DropExpAmount = jsonStatData.dropExpAmount;
 
         CurrentHp = MaxHp.Value;
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
+        ClearDeadEvent();
     }
+
 
     public override void Init()
     {

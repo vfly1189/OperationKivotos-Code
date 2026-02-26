@@ -41,7 +41,6 @@ public class MonsterTankController : MonsterController
         // 기준점 설정
         Vector3 centerPoint = _target.position;
 
-
         // 랜덤 위치 계산
         Vector2 randomCircle = UnityEngine.Random.insideUnitCircle * _randomSpread;
         Vector3 targetPos = centerPoint + new Vector3(randomCircle.x, 0f, randomCircle.y);

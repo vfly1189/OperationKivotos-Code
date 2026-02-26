@@ -6,6 +6,17 @@ using UnityEngine.AI;
 
 public class MonsterController : MonoBehaviour
 {
+    // [추가] 몬스터의 현재 행동 상태를 명확히 정의
+    public enum MonsterState
+    {
+        Spawning,   // 스폰 및 준비 중 (Agent 활성화 전)
+        Idle,       // 대기
+        Moving,     // 이동
+        Attacking,  // 공격 중
+        Reloading,  // 장전 중
+        Dead        // 사망
+    }
+
     [Header("Settings")]
     [SerializeField] private float _detectRange = 10f; // 감지 범위
     [SerializeField] private float _attackRange = 2f;  // 공격 범위
@@ -29,15 +40,12 @@ public class MonsterController : MonoBehaviour
     private Node _topNode;
 
     // [상태 관리 변수]
+    // [핵심] 여러 bool 변수들을 하나의 State로 통합
+    protected MonsterState _state = MonsterState.Spawning;
     private int _currentAmmo;
-    private bool _isReady = false;
-    private bool _isAttacking = false; // 공격 사이클 진행 중인가?
-    private bool _isReloading = false; // 재장전 중인가?
-    private bool _isMoving = false;
-    private bool _isDeadProcessed = false; // 사망 로직이 이미 실행되었는지 확인용
 
     private UI_MonsterHPBar _hpBar;
-    private GameObject _followTarget;
+
     private void Awake()
     {
         Stat = GetComponent<MonsterStat>();
@@ -59,43 +67,22 @@ public class MonsterController : MonoBehaviour
     }
 
     private void Start()
-    {
-        // [핵심] UIManager에게 "내가 들고 있는 이 프리팹으로 만들어줘" 요청
+    {    
         if (_hpBarPrefab != null)
         {
-
             GameObject canvasObj = GameObject.Find("@GameSceneCanvas");
-            Transform uiParent = null;
+            Transform uiParent = canvasObj != null ? canvasObj.transform : null;
 
-            if (canvasObj != null)
-            {
-                uiParent = canvasObj.transform;
-            }
-            else
-            {
-                // 못 찾았으면 최후의 수단으로 Canvas 타입 찾되, "Player" 태그가 아닌 놈을 찾거나 해야 함
-                // 하지만 위에서 이름으로 찾는 게 제일 확실함.
-            }
-
-            // 부모(uiParent)를 명시적으로 넘겨줌
-            // 이제 운빨로 이펙트 캔버스에 붙지 않음!
             _hpBar = Managers.UI.MakeSubItem<UI_MonsterHPBar>(_hpBarPrefab, uiParent);
-
-
-            // 타겟 세팅
             _hpBar.SetTarget(_hpBarTransform, Stat);
 
             Stat.OnHpChanged -= _hpBar.UpdateHpBar;
             Stat.OnHpChanged += _hpBar.UpdateHpBar;
         }
 
-
-        if(Managers.Party.GetCurrentCharacter() != null)
+        if (Managers.Party.GetCurrentCharacter() != null)
             UpdateTarget(Managers.Party.GetCurrentCharacter().gameObject);
-        // [수정] PartyManager를 통해 현재 플레이어 타겟 가져오기
-        //UpdateTarget(Managers.Party.GetCurrentCharacter().gameObject);
 
-        // [핵심] 캐릭터 교체 이벤트 구독
         if (Managers.Party != null)
         {
             Managers.Party.OnActiveCharacterChanged -= OnPlayerCharacterChanged;
@@ -106,50 +93,41 @@ public class MonsterController : MonoBehaviour
 
     private void OnDestroy()
     {
-        // 이벤트 구독 해제 (메모리 누수 방지)
         if (Managers.Party != null)
-        {
             Managers.Party.OnActiveCharacterChanged -= OnPlayerCharacterChanged;
-        }
     }
 
-    // [추가] 타겟 갱신 함수
+    // 타겟 갱신 함수
     private void UpdateTarget(GameObject player)
     {
         if (player != null) _target = player.transform;
     }
 
-    // [추가] 캐릭터 교체 이벤트 핸들러
+    // 캐릭터 교체 이벤트 핸들러
     private void OnPlayerCharacterChanged(GameObject player)
     {
-        //Debug.Log($"Monster: Player switched to character {newIndex}, updating target.");
         UpdateTarget(player);
     }
 
     // 풀링 사용 시 OnEnable에서 초기화 필요
     private void OnEnable()
     {
-        _isReady = false; // [추가] 활성화 직후에는 아직 준비 안됨
+        _state = MonsterState.Spawning; // 시작 상태 초기화
 
-        // 1. 상태 플래그 초기화
-        _isDeadProcessed = false;
-        _isAttacking = false;
-        _isReloading = false;
-        _isMoving = false;
         _currentAmmo = _maxAmmo;
 
-        // 2. 스탯 초기화 (죽은 상태 복구)
+        // 스탯 초기화 (죽은 상태 복구)
         Stat?.Init();
 
-        // 3. 컴포넌트 재활성화
+        // 컴포넌트 재활성화
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = true; // 죽을 때 껐던 콜라이더 다시 켜기
 
-        // 4. 애니메이션 리셋 (중요: 죽는 모션에서 바로 Idle로)
+        // 애니메이션 리셋 (중요: 죽는 모션에서 바로 Idle로)
         if (_anim != null)
         {
             _anim.Rebind(); // 애니메이터 완전 초기화
-            _anim.Play("Appear"); // 혹은 "Idle"
+            _anim.Play("Appear");
         }
 
         if(_hpBar != null)
@@ -163,34 +141,19 @@ public class MonsterController : MonoBehaviour
 
     private IEnumerator CoEnableAgentDelay()
     {
-        yield return null; // 딱 1프레임 대기 (트랜스폼 이동이나 Warp가 끝날 때까지)
+        yield return null;
 
-        if (_agent != null && !_isDeadProcessed)
+        if (_state != MonsterState.Dead && _agent != null)
         {
             _agent.enabled = true;
-            // _agent.isStopped = false; // 필요하다면
         }
 
-        _isReady = true; // [추가] Agent가 켜진 이후에 비로소 AI 작동 시작!
+        // 준비가 끝났으므로 Idle 상태로 전환하여 AI 작동 시작
+        _state = MonsterState.Idle;
     }
 
-    // 풀링에서 꺼내지거나 새로 생성된 직후 외부(Spawner나 Skill)에서 호출해주는 함수
-    public void InitSpawn()
-    {
-        //// 1. 스탯 초기화
-        //Stat.Init();
 
-        //// 2. 물리/이동 컴포넌트 활성화
-        //if (_agent != null)
-        //{
-        //    _agent.enabled = true;
-        //}
-
-        //// 3. 상태 머신(FSM) 초기화 및 Idle/Chase 상태 시작
-        //// ChangeState(MonsterState.Idle);
-    }
-
-    // 풀로 돌아갈 때(OnDisable) 꺼주는 로직 필수!
+    // 풀로 돌아갈 때(OnDisable) 꺼주는 로직 필수
     protected void OnDisable()
     {
         if (_agent != null && _agent.enabled)
@@ -203,11 +166,11 @@ public class MonsterController : MonoBehaviour
 
     private void Update()
     {
-        // [추가] 몬스터가 아직 준비되지 않았다면 AI 작동 중지
-        if (!_isReady) return;
+        // Spawning(준비중)이거나 Dead 상태면 행동 트리 실행 안함
+        if (_state == MonsterState.Spawning || _state == MonsterState.Dead)
+            return;
 
-        if (_topNode != null)
-            _topNode.Evaluate();
+        _topNode?.Evaluate();
     }
 
     private void ConstructBehaviorTree()
@@ -250,8 +213,9 @@ public class MonsterController : MonoBehaviour
 
     private NodeState CheckAttackRange()
     {
-        // [중요] 이미 공격이나 재장전 중이라면, 사거리 벗어나도 행동을 마쳐야 함 -> Success 반환
-        if (_isAttacking || _isReloading) return NodeState.Success;
+        // 공격 중이거나 장전 중이면 거리가 멀어져도 동작을 마칠 수 있도록 유지
+        if (_state == MonsterState.Attacking || _state == MonsterState.Reloading)
+            return NodeState.Success;
 
         if (_target == null) return NodeState.Failure;
         float distance = Vector3.Distance(transform.position, _target.position);
@@ -262,131 +226,85 @@ public class MonsterController : MonoBehaviour
     // 전투 처리 (공격 vs 재장전 분기)
     private NodeState HandleCombat()
     {
-        // 1. 재장전 중이라면? -> 재장전 끝날 때까지 Running
-        if (_isReloading)
+        // 1. 이미 행동 중이면 대기
+        if (_state == MonsterState.Reloading || _state == MonsterState.Attacking)
         {
+            if (_state == MonsterState.Attacking) RotateToTarget();
             return NodeState.Running;
         }
 
-        // 2. 공격 중이라면? -> 공격 끝날 때까지 Running
-        if (_isAttacking)
-        {
-            // (선택) 공격 중에도 타겟 회전
-            RotateToTarget();
-            return NodeState.Running;
-        }
-
-        // 3. 탄알이 없다면? -> 재장전 시작
+        // 2. 탄알이 없다면 장전
         if (_currentAmmo <= 0)
         {
             StartReload();
             return NodeState.Running;
         }
 
-        // 4. 모든 조건 만족 -> 새 공격 시작
+        // 3. 공격 시작
         StartAttack();
-        return NodeState.Running; // 공격 시작했으니 Running 반환
+        return NodeState.Running;
     }
     
     private void StartAttack()
     {
-        _isAttacking = true;
-        _agent.isStopped = true;
-        _isMoving = false;
+        _state = MonsterState.Attacking;
+        if (_agent != null && _agent.enabled) _agent.isStopped = true;
 
-        // 애니메이션 시작 (Start -> Ing -> Delay -> End 순서로 흘러감)
         _anim.CrossFade("Attack_Start", 0.1f);
-
-        // 탄알 차감
         _currentAmmo--;
-        //Debug.Log($"공격 시작! 남은 탄: {_currentAmmo}");
     }
 
     private void StartReload()
     {
-        _isReloading = true;
-        _agent.isStopped = true;
-        _isMoving = false;
+        _state = MonsterState.Reloading;
+        if (_agent != null && _agent.enabled) _agent.isStopped = true;
 
         _anim.CrossFade("Reload", 0.1f);
-        //Debug.Log("재장전 시작...");
     }
 
-    // 조건: HP가 0 이하인가? (Stat.IsDead 활용)
+    // 조건: HP가 0 이하인가? 
     private NodeState CheckIsDead()
     {
-        // Stat에 IsDead 프로퍼티가 있다고 가정 (CurrentHp <= 0)
-        if (Stat.CurrentHp <= 0)
-        {
-            return NodeState.Success; // 죽었음 -> 다음 노드(HandleDeadState)로 진행
-        }
-
-        return NodeState.Failure; // 살았음 -> 다음 가지(공격)로 넘어감
+        return (Stat.CurrentHp <= 0) ? NodeState.Success : NodeState.Failure;
     }
 
     // 행동: 사망 처리 및 대기
     private NodeState HandleDeadState()
     {
-        // 1. 이미 사망 처리가 시작되었다면? -> 계속 Running 유지 (사라질 때까지)
-        if (_isDeadProcessed)
-        {
-            return NodeState.Running;
-        }
+        if (_state == MonsterState.Dead) return NodeState.Running;
 
-        // 2. 사망 처리 최초 진입
-        _isDeadProcessed = true;
-        //Debug.Log("BehaviorTree: Monster Dead Logic Start");
+        _state = MonsterState.Dead; // 사망 상태로 고정
 
-        // 이동 정지 및 콜라이더 해제
         if (_agent != null)
         {
             _agent.isStopped = true;
             _agent.enabled = false;
         }
+
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
 
-        // 애니메이션
         _anim.CrossFade("Death", 0.1f);
 
-        // HP바 삭제
-        if (_hpBar != null)
-        {
-            //Stat.OnHpChanged -= _hpBar.UpdateHpBar;
-            //Managers.Resource.Destroy(_hpBar.gameObject);
-            //_hpBar = null;
-            _hpBar.gameObject.SetActive(false);
-        }
+        if (_hpBar != null) _hpBar.gameObject.SetActive(false);
 
-        // 2초 뒤 삭제 코루틴 시작
         StartCoroutine(CoDespawn());
-
-        return NodeState.Running; // 삭제될 때까지 이 상태를 유지
+        return NodeState.Running;
     }
 
     // ------------------------------------------------------------------------
     // [애니메이션 이벤트] (Animation Clip에 반드시 이벤트를 심어야 함!)
     // ------------------------------------------------------------------------
 
-    // Attack_End 애니메이션의 끝부분에 심으세요.
     public void OnAttackFinished()
     {
-        //Debug.Log("공격 사이클 종료");
-        _isAttacking = false; // 상태 해제 -> 다음 프레임에 트리에서 다시 판단
+        if (_state != MonsterState.Dead) _state = MonsterState.Idle;
     }
 
-    // Reload 애니메이션의 끝부분에 심으세요.
     public void OnReloadFinished()
     {
-        //Debug.Log("재장전 완료");
         _currentAmmo = _maxAmmo; // 탄알 충전
-        _isReloading = false;
-    }
-
-    // Attack_Ing 등의 타이밍에 실제 데미지 판정용
-    public void OnAttackHit()
-    {
-        // 플레이어에게 데미지 주기
+        if (_state != MonsterState.Dead) _state = MonsterState.Idle;
     }
 
     public void OnAttackEvent(AudioClip sfx)
@@ -408,17 +326,20 @@ public class MonsterController : MonoBehaviour
 
     private NodeState TrackTarget()
     {
-        if (_isAttacking || _isReloading) return NodeState.Failure; // 공격 중 이동 불가
+        // 공격이나 장전 중이면 추적 불가
+        if (_state == MonsterState.Attacking || _state == MonsterState.Reloading)
+            return NodeState.Failure;
 
-        _agent.isStopped = false;
-        _agent.SetDestination(_target.position);
-        
-
-        if (!_isMoving)
+        if (_agent != null && _agent.enabled)
         {
-            _isMoving = true; // 이동 상태로 변경
+            _agent.isStopped = false;
+            _agent.SetDestination(_target.position);
+        }
+
+        if (_state != MonsterState.Moving)
+        {
+            _state = MonsterState.Moving;
             _anim.CrossFade("Move", 0.1f);
-            //Debug.Log("무빙 애니메이션 재생 (최초 1회)");
         }
 
         return NodeState.Success;
@@ -426,11 +347,16 @@ public class MonsterController : MonoBehaviour
 
     private NodeState Idle()
     {
-        if (_isAttacking || _isReloading) return NodeState.Running;
+        if (_state == MonsterState.Attacking || _state == MonsterState.Reloading)
+            return NodeState.Running;
 
-        _agent.isStopped = true;
+        if (_agent != null && _agent.enabled) _agent.isStopped = true;
 
-        _anim.CrossFade("Idle", 0.1f);
+        if (_state != MonsterState.Idle)
+        {
+            _state = MonsterState.Idle;
+            _anim.CrossFade("Idle", 0.1f);
+        }
 
         return NodeState.Success;
     }
@@ -446,8 +372,7 @@ public class MonsterController : MonoBehaviour
         }
     }
 
-    
-
+   
     private IEnumerator CoDespawn()
     {
         yield return new WaitForSeconds(2.0f);

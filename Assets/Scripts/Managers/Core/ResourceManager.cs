@@ -57,6 +57,46 @@ public class ResourceManager
         }
     }
 
+    // Label 목록을 받아서 해당하는 모든 에셋을 메모리에 로드(캐싱)하는 함수
+    public async Task LoadDependenciesAsync(IEnumerable<string> labels, System.Action<float> onProgress = null)
+    {
+        // 1. 혹시 모를 로드 리스트 수집
+        var locationsHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
+        await locationsHandle.Task;
+
+        if (locationsHandle.Status == AsyncOperationStatus.Succeeded)
+        {
+            var locations = locationsHandle.Result;
+            int totalCount = locations.Count;
+            int currentCount = 0;
+
+            // 2. 찾아낸 모든 에셋을 하나씩 로드하며 캐싱(_handles)
+            foreach (var location in locations)
+            {
+                string key = location.PrimaryKey;
+
+
+                // 이미 로드된 에셋인지 체크
+                if (!_handles.ContainsKey(key))
+                {
+                    var handle = Addressables.LoadAssetAsync<Object>(location);
+                    _handles.Add(key, handle);
+
+                    await handle.Task;
+                }
+
+                currentCount++;
+                onProgress?.Invoke((float)currentCount / totalCount); // 로딩 UI 게이지 업데이트용
+            }
+        }
+        else
+        {
+            Debug.LogError("Failed to load resource locations by labels.");
+        }
+
+        Addressables.Release(locationsHandle);
+    }
+
     // [기존] 동기 로드 (급할 때 사용)
     public T Load<T>(string path) where T : Object
     {
@@ -101,8 +141,17 @@ public class ResourceManager
 
     public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent = null)
     {
+        // 1. 원본 프리팹의 활성화 상태를 잠시 끄고 복사
+        // (이렇게 하면 생성될 때 Awake는 돌지만 OnEnable과 물리 처리는 돌지 않음)
+        bool wasActive = original.activeSelf;
+        if (wasActive) original.SetActive(false);
         // 1. 생성 (풀링 혹은 인스턴스화)
         GameObject go = Instantiate(original, parent); // 기존 Instantiate(GameObject) 활용
+
+
+        // 원상 복구
+        if (wasActive) original.SetActive(true);
+
 
         // go가 제대로 생성되었을 때만 처리 (안전망)
         if (go != null)
@@ -131,6 +180,29 @@ public class ResourceManager
         }
 
         return go;
+    }
+
+    // [추가] Addressable Key 문자열을 받아 위치/회전까지 맞춰주는 Instantiate 함수
+    public GameObject Instantiate(string key, Vector3 position, Quaternion rotation, Transform parent = null)
+    {
+        // 1. 이미 비동기 로딩을 통해 캐시(_handles)에 올라와 있는지 확인
+        if (_handles.TryGetValue(key, out AsyncOperationHandle handle))
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject original = handle.Result as GameObject;
+                if (original != null)
+                {
+                    // 2. 찾았으면 기존에 잘 짜두신 안전한 Instantiate 함수(Warp 처리 포함)를 호출!
+                    return Instantiate(original, position, rotation, parent);
+                }
+            }
+        }
+
+        // 캐시에 없다면 에러 로그 (스포너가 호출하기 전에 해당 씬에서 프리로딩이 안 되었다는 뜻)
+        Debug.LogError($"[ResourceManager] 에셋이 로드되지 않았거나 찾을 수 없습니다. Key: {key}\n" +
+                       $"미리 LoadAsync로 로딩해두었는지 확인하세요.");
+        return null;
     }
 
     public GameObject Instantiate(GameObject original, Transform parent = null)

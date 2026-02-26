@@ -60,25 +60,47 @@ public class LoadingScene : BaseScene
 
         string nextSceneName = Managers.SceneEx.NextSceneName;
 
-        // [6] 프리로딩 (있다면)
+        //// [6] 프리로딩 (있다면)
+        //if (sceneData.preloadLabels != null && sceneData.preloadLabels.Length > 0)
+        //{
+        //    var downloadHandle = Addressables.DownloadDependenciesAsync(
+        //        new List<string>(sceneData.preloadLabels),
+        //        Addressables.MergeMode.Union,
+        //        false
+        //    );
+
+        //    while (!downloadHandle.IsDone)
+        //    {
+        //        float progress = downloadHandle.PercentComplete * 0.5f;
+        //        _loadingUI.UpdateProgress(progress);
+        //        yield return null;
+        //    }
+
+        //    if (downloadHandle.Status == AsyncOperationStatus.Succeeded)
+        //    {
+        //        Addressables.Release(downloadHandle);
+        //        yield return null;
+        //    }
+        //}
+
         if (sceneData.preloadLabels != null && sceneData.preloadLabels.Length > 0)
         {
-            var downloadHandle = Addressables.DownloadDependenciesAsync(
-                new List<string>(sceneData.preloadLabels),
-                Addressables.MergeMode.Union,
-                false
-            );
+            // 비동기 Task를 코루틴에서 기다리기 위해 IsCompleted 플래그 사용
+            bool isPreloadFinished = false;
 
-            while (!downloadHandle.IsDone)
-            {
-                float progress = downloadHandle.PercentComplete * 0.5f;
-                _loadingUI.UpdateProgress(progress);
-                yield return null;
-            }
+            // ResourceManager의 프리로드 함수 실행 (진척도를 콜백으로 받음)
+            _ = Managers.Resource.LoadDependenciesAsync(
+                sceneData.preloadLabels,
+                progress =>
+                {
+                    // 로딩 씬 게이지의 앞쪽 50%를 리소스 로딩에 사용
+                    _loadingUI.UpdateProgress(progress * 0.5f);
+                }
+            ).ContinueWith(task => isPreloadFinished = true);
 
-            if (downloadHandle.Status == AsyncOperationStatus.Succeeded)
+            // Task가 끝날 때까지 대기
+            while (!isPreloadFinished)
             {
-                Addressables.Release(downloadHandle);
                 yield return null;
             }
         }

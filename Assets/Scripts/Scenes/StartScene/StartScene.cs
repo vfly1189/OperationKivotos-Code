@@ -64,7 +64,7 @@ public class StartScene : BaseScene
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.backgroundSlideShow);
         if (prefab != null)
         {
-            GameObject bgSlideshow = Instantiate(prefab);
+            GameObject bgSlideshow = Managers.Resource.Instantiate(prefab);
             bgSlideshow.name = "@Background_Slideshow";
 
             Canvas canvas = bgSlideshow.GetComponent<Canvas>();
@@ -77,7 +77,7 @@ public class StartScene : BaseScene
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.logo);
         if (prefab != null)
         {
-            GameObject logo = Instantiate(prefab);
+            GameObject logo = Managers.Resource.Instantiate(prefab);
             logo.name = "@Logo";
 
             Canvas canvas = logo.GetComponent<Canvas>();
@@ -90,7 +90,7 @@ public class StartScene : BaseScene
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.soundSettingIcon);
         if (prefab != null)
         {
-            GameObject icon = Instantiate(prefab);
+            GameObject icon = Managers.Resource.Instantiate(prefab);
             icon.name = "@SoundSettingIcon";
 
             Canvas canvas = icon.GetComponent<Canvas>();
@@ -110,7 +110,7 @@ public class StartScene : BaseScene
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.tapToStart);
         if (prefab != null)
         {
-            GameObject tapToStart = Instantiate(prefab);
+            GameObject tapToStart = Managers.Resource.Instantiate(prefab);
             tapToStart.name = "@TapToStartGroup";
 
             Canvas canvas = tapToStart.GetComponent<Canvas>();

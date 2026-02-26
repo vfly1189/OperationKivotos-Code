@@ -43,7 +43,6 @@ public class Managers : MonoBehaviour
     {
         Init();
         yield return StartCoroutine(_data.InitCoroutine());
-        // data 로드 완료 후 추가 초기화 가능
     }
 
     void Update()

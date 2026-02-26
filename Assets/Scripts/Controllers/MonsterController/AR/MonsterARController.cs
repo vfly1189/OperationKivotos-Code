@@ -26,6 +26,9 @@ public class MonsterARController : MonsterController
 
         for (int i = 0; i < _shotCount; i++)
         {
+            // [핵심] 연사 도중 몬스터가 사망하면 즉시 발사 중지
+            if (_state == MonsterState.Dead) yield break;
+
             // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
             GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
 

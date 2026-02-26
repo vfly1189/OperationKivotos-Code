@@ -18,15 +18,11 @@ public class SectorManager
         // 이미 같은 구역이면 무시
         if (_currentActiveSector != null && _currentActiveSector.SectorId == sectorId)
             return;
-
-        // 이전 구역 비활성화 (거리가 멀어졌을 때 몬스터를 되돌리는 로직)
+        // 이전 구역 비활성화
+        // TODO : 거리가 멀어졌을 때 몬스터를 되돌리는 로직? 
         _currentActiveSector?.DeactivateSector();
 
-        //// 새 구역 활성화 (몬스터 스폰)
-        //if (_sectors.TryGetValue(sectorId, out Sector newSector))
-        //{
-        //    _currentActiveSector = newSector;
-        //    _currentActiveSector.ActivateSector();
-        //}
+        _currentActiveSector = _sectors[sectorId];
+        _currentActiveSector?.ActivateSector();
     }
 }

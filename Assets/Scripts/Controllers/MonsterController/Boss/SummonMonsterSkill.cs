@@ -23,7 +23,7 @@ public class SummonMonsterSkill : BossSkillBase
             //monster.GetComponent<MonsterController>().Stat.Init();
 
             // 몬스터 자체 로직에게 초기화와 Agent 켜기를 위임
-            monster.GetComponent<MonsterController>().InitSpawn();
+            //monster.GetComponent<MonsterController>().InitSpawn();
 
             //// 2. 만약 NavMeshAgent가 있다면 Warp로 강제 이동
             //UnityEngine.AI.NavMeshAgent agent = monster.GetComponent<UnityEngine.AI.NavMeshAgent>();

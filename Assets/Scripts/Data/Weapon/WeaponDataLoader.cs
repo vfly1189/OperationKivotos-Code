@@ -4,7 +4,7 @@ using UnityEngine;
 [System.Serializable] // <<<<< 이거 필수!
 public class WeaponData
 {
-    // CSV 순서: ID, Level, AttackBonus, HpBonus, CostGold, CostStone
+    // 순서: ID, Level, AttackBonus, HpBonus, CostGold, CostStone
     public string ID;
     public int Level;
     public float AttackBonus;
