@@ -13,12 +13,11 @@ public class PoolManager
         public Transform Root;
 
         Stack<Poolable> _poolStack = new Stack<Poolable>();
-        private AsyncOperationHandle<GameObject> _handle; //핸들 보관
-
-        public void Init(GameObject original, AsyncOperationHandle<GameObject> handle, int count = 5)
+     
+        public void Init(GameObject original, int count = 5)
         {
             Original = original;
-            _handle = handle; // 핸들 저장
+            //_handle = handle; // 핸들 저장
             Root = new GameObject().transform;
             Root.name = $"{original.name}_Pool_Root";
 
@@ -71,33 +70,18 @@ public class PoolManager
             NavMeshAgent agent = poolable.GetComponent<NavMeshAgent>();
             if (agent != null) agent.enabled = false;
 
-            //// Transform 초기화 (안전장치)
-            //// 1. 스케일 리셋 (가장 중요)
-            //poolable.transform.localScale = Vector3.one;
-
-            //// 2. 위치/회전 리셋 (필요하다면)
-            ////poolable.transform.localPosition = Vector3.zero;
-            ////poolable.transform.localRotation = Quaternion.identity;
-
-            //poolable.IsUsing = true;
-
-            //// 부모 설정
-            //if (parent == null)
-            //    poolable.transform.SetParent(Managers.SceneEx.CurrentScene.transform);
-            //else
-            //    poolable.transform.SetParent(parent);
-
-            // 활성화는 ResourceManager에서 위치 잡은 뒤에 함
-            // poolable.gameObject.SetActive(true); 
+            poolable.IsUsing = true;
             return poolable;
         }
 
 
-        // 풀 정리 시 핸들 Release
-        public void Release()
+        // [수정 2] Addressable Release 삭제 및 유니티 기본 파괴만 수행
+        public void DestroyPool()
         {
-            if (_handle.IsValid())
-                Addressables.Release(_handle);
+            if (Root != null)
+            {
+                Object.Destroy(Root.gameObject); // 하위 자식(풀링된 오브젝트)들까지 싹 다 날아감
+            }
         }
     }
 
@@ -110,33 +94,18 @@ public class PoolManager
             _root = new GameObject { name = "@Pool_Root" }.transform;
             Object.DontDestroyOnLoad(_root);
         }
-
-
-
     }
 
-    // 풀 생성 (미리 만들어두기)
-    public void CreatePool(GameObject original, AsyncOperationHandle<GameObject> handle, int count = 10)
-    {
-        //이미 풀이 존재하면 중복 생성하지 않고 리턴
-        if (_pool.ContainsKey(original.name))
-            return;
-
-        Pool pool = new Pool();
-        pool.Init(original, handle, count);
-        pool.Root.SetParent(_root);
-
-        _pool.Add(original.name, pool);
-    }
+   
 
     public void CreatePool(GameObject original, int count = 10)
     {
-        if (_pool.ContainsKey(original.name))
+ 
+        if (original == null || _pool.ContainsKey(original.name))
             return;
 
         Pool pool = new Pool();
-        // 빈 핸들로 초기화 (일반 프리팹이므로 Release 불필요)
-        pool.Init(original, default(AsyncOperationHandle<GameObject>), count);
+        pool.Init(original, count);
         pool.Root.SetParent(_root);
 
         _pool.Add(original.name, pool);
@@ -180,12 +149,11 @@ public class PoolManager
     // 씬 이동 시 풀 초기화 필요하면 사용
     public void Clear()
     {
+
         foreach (var pool in _pool.Values)
-            pool.Release(); // 핸들 해제
-
-        foreach (Transform child in _root)
-            Object.Destroy(child.gameObject);
-
+        {
+            pool.DestroyPool(); // 생성해둔 인스턴스들 물리적 파괴
+        }
         _pool.Clear();
     }
 

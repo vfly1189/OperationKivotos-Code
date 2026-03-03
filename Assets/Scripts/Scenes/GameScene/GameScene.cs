@@ -25,7 +25,7 @@ public class GameScene : BaseScene
 
         if (_loadingCover != null)
         {
-            _loadingCoverInstance = Managers.Resource.Instantiate(_loadingCover);
+            _loadingCoverInstance = Instantiate(_loadingCover);
             _loadingCover.SetActive(true);
             if (_loadingCoverInstance.GetComponent<CanvasGroup>() == null)
                 _loadingCoverInstance.AddComponent<CanvasGroup>().alpha = 1f;
@@ -33,34 +33,33 @@ public class GameScene : BaseScene
         }
 
         // [핵심 변경 2] UniTask.Delay 사용
-        await UniTask.Delay(500);
+        //await UniTask.Delay(500);
 
-        await CreatePool();
-
-        // [핵심 변경 3] Task.WhenAll 대신 UniTask.WhenAll
+        var poolTask = CreatePool();
         var mapTask = CreateMainVillage();
-        await UniTask.WhenAll(mapTask);
+        var bgmTask = LoadMainBGM(); // [추가] BGM 비동기 로드 분리
+
+        // [핵심 변경 3] 병렬 로딩 최적화
+        await UniTask.WhenAll(poolTask, mapTask, bgmTask);
 
         await CreateCharacters();
         await SetupUI();
         await CreateShopMaster();
 
         SetupCamera();
-        SetupMainBGM();
         PlayMainBGM();
 
-        StartCoroutine(FadeInSequence());
+        FadeInSequence().Forget(); // [변경] 코루틴 대신 UniTask 사용
 
         Debug.Log("GameScene Init Complete");
     }
 
-    // [핵심 변경 4] Task<GameObject> -> UniTask<GameObject>
+    // [핵심 변경 4] 공통 로드/스폰 함수: ResourceManager 활용
     private async UniTask<GameObject> LoadAndSpawnAsync(AssetReferenceGameObject refObj, Transform parent = null)
     {
         if (refObj == null) return null;
 
-        var handle = Addressables.LoadAssetAsync<GameObject>(refObj);
-        GameObject prefab = await handle.ToUniTask();
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(refObj);
 
         if (prefab != null)
         {
@@ -75,7 +74,7 @@ public class GameScene : BaseScene
             Managers.Sound.Play(_mainBGM, Define.Sound.Bgm);
     }
 
-    // [핵심 변경 5] Task -> UniTask
+    // [핵심 변경 5] Addressables 직접 로드 제거
     private async UniTask SetupUI()
     {
         var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
@@ -86,12 +85,11 @@ public class GameScene : BaseScene
             return;
         }
 
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.gameSceneCanvas);
-        await handle.ToUniTask(); // .ToUniTask() 사용
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.gameSceneCanvas, true);
 
-        if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+        if (prefab != null)
         {
-            GameObject ui = Instantiate(handle.Result);
+            GameObject ui = Instantiate(prefab);
             ui.name = "@GameSceneCanvas";
             DontDestroyOnLoad(ui);
             ui.GetComponent<GameSceneCanvas>()?.SetPartyManager();
@@ -102,29 +100,25 @@ public class GameScene : BaseScene
     {
         if (_preloadData.bullet != null)
         {
-            var h = Addressables.LoadAssetAsync<GameObject>(_preloadData.bullet);
-            GameObject prefab = await h.ToUniTask();
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
 
         if (_preloadData.monsterAR != null)
         {
-            var h = Addressables.LoadAssetAsync<GameObject>(_preloadData.monsterAR);
-            GameObject prefab = await h.ToUniTask();
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterAR);
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
 
         if (_preloadData.monsterRL != null)
         {
-            var h = Addressables.LoadAssetAsync<GameObject>(_preloadData.monsterRL);
-            GameObject prefab = await h.ToUniTask();
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterRL);
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
 
         if (_preloadData.monsterTank != null)
         {
-            var h = Addressables.LoadAssetAsync<GameObject>(_preloadData.monsterTank);
-            GameObject prefab = await h.ToUniTask();
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterTank);
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
     }
@@ -160,14 +154,14 @@ public class GameScene : BaseScene
         Managers.Party.Init(partyMembers, spawnPoint);
     }
 
+    // [핵심 변경 6] 캐릭터 로드도 ResourceManager.LoadAsync 활용
     private async UniTask LoadCharacterSequential(CharacterDataSO data, Transform parent, List<BaseCharacter> list, Transform spawnPoint)
     {
-        var handle = Addressables.LoadAssetAsync<GameObject>(data.inGamePrefab);
-        await handle.ToUniTask();
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(data.inGamePrefab);
 
-        if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+        if (prefab != null)
         {
-            GameObject prefab = handle.Result;
+            // 위치/회전 처리용 Instantiate 함수 호출
             GameObject characterGO = Managers.Resource.Instantiate(prefab, spawnPoint.position, spawnPoint.rotation, parent);
 
             BaseCharacter character = characterGO.GetComponent<BaseCharacter>();
@@ -193,12 +187,13 @@ public class GameScene : BaseScene
         }
     }
 
-    public void SetupMainBGM()
+    // [핵심 변경 7] 동기 로드 함수(GetLoadedAsset) 완전 제거 및 비동기 LoadAsync 사용
+    private async UniTask LoadMainBGM()
     {
         if (_preloadData.mainBGMs == null || _preloadData.mainBGMs.Length == 0) return;
 
         int rand = Random.Range(0, _preloadData.mainBGMs.Length);
-        _mainBGM = Managers.Resource.GetLoadedAsset<AudioClip>(_preloadData.mainBGMs[rand]);
+        _mainBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.mainBGMs[rand]);
     }
 
     void SetupCamera()
@@ -219,16 +214,16 @@ public class GameScene : BaseScene
         Managers.Sector.Clear();
     }
 
-    IEnumerator FadeInSequence()
+    // [핵심 변경 8] 코루틴(IEnumerator)에서 UniTaskVoid로 변경
+    private async UniTaskVoid FadeInSequence()
     {
-        // ... 기존 코루틴 로직 동일 ...
-        if (_loadingCoverInstance == null) yield break;
+        if (_loadingCoverInstance == null) return;
 
         CanvasGroup coverCG = _loadingCoverInstance.GetComponent<CanvasGroup>();
         if (coverCG == null)
         {
-            Managers.Resource.Destroy(_loadingCoverInstance);
-            yield break;
+            Destroy(_loadingCoverInstance); // 자체 인스턴스화했으므로 일반 Destroy 사용
+            return;
         }
 
         float timer = 0f;
@@ -238,9 +233,10 @@ public class GameScene : BaseScene
         {
             timer += Time.deltaTime;
             coverCG.alpha = Mathf.Lerp(1f, 0f, timer / duration);
-            yield return null;
+            await UniTask.Yield(); // 1프레임 대기
         }
-        Managers.Resource.Destroy(_loadingCoverInstance);
+
+        Destroy(_loadingCoverInstance);
     }
 
     private void HandleEscape()

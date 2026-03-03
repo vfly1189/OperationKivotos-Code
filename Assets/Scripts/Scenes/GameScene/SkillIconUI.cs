@@ -20,6 +20,7 @@ public class SkillIconUI : MonoBehaviour
         _coolTimeText.text = text;
     }
 
+
     // --- [Update용] 매 프레임 호출: 쿨타임 표시 ---
     public void UpdateCooldown(float currentCool, float maxCool)
     {
@@ -27,9 +28,8 @@ public class SkillIconUI : MonoBehaviour
         {
             if (!_coolTimeText.gameObject.activeSelf) _coolTimeText.gameObject.SetActive(true);
 
-            // 텍스트 최적화: 내용이 바뀔 때만 대입 (String Allocation 최소화)
-            // (0.1초 단위 표시라 가정)
-            _coolTimeText.text = currentCool.ToString("0.0");
+            // [핵심 4] ToString() 대신 TMP의 SetText 포맷팅 사용 (가비지 0 또는 극소화)
+            _coolTimeText.SetText("{0:0.0}", currentCool);
             _coolTimeRing.fillAmount = currentCool / maxCool;
         }
         else

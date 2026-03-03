@@ -8,7 +8,13 @@ public class SectorManager
 
     public void RegisterSector(Sector sector)
     {
-        _sectors[sector.SectorId] = sector;
+        // 이미 같은 ID의 섹터가 등록되어 있다면 덮어쓰거나 경고 (안전장치)
+        if (_sectors.ContainsKey(sector._sectorID))
+        {
+            Debug.LogWarning($"[SectorManager] 중복된 SectorId({sector._sectorID})가 등록되었습니다.");
+        }
+
+        _sectors[sector._sectorID] = sector;
     }
 
     // 플레이어가 특정 구역에 진입했을 때 호출
@@ -19,7 +25,7 @@ public class SectorManager
 
         Debug.Log($"{_sectors[sectorId].gameObject.name}에 진입");
 
-        if (_currentActiveSector != null && _currentActiveSector.SectorId == sectorId)
+        if (_currentActiveSector != null && _currentActiveSector._sectorID == sectorId)
             return;
 
         // Unity 객체는 null 체크 시 == null 외에 내부 생존 여부도 확인해야 할 수 있음.

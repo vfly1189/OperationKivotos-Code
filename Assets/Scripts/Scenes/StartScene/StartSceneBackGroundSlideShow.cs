@@ -1,6 +1,8 @@
+using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
 using System.Collections;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,7 +19,6 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
 
     private int _currentSpriteIndex = 0; // 현재 표시 중인 스프라이트 인덱스
     private int _currentLayerIndex = 0; // 현재 활성 레이어 인덱스 (0~6)
-    //private int _nextLayerIndex = 1; // 다음에 사용할 레이어 인덱스
 
     private RectTransform[] _rectTransforms;
     private Vector2[] _initialPositions;
@@ -46,7 +47,7 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
 
 
         // 슬라이드쇼 시작
-        StartCoroutine(SlideshowRoutine());
+        SlideshowRoutineAsync(this.GetCancellationTokenOnDestroy()).Forget();
     }
     
 
@@ -57,11 +58,32 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
         ApplyPanEffect(_currentLayerIndex);
     }
 
-    private IEnumerator SlideshowRoutine()
+    private async UniTaskVoid SlideshowRoutineAsync(CancellationToken token)
     {
-        while (true)
+        //while (true)
+        //{
+        //    yield return new WaitForSeconds(_displayDuration);
+
+        //    // 이전 레이어 숨기기
+        //    _backGroundImages[_currentLayerIndex].GetComponent<CanvasGroup>().alpha = 0f;
+
+        //    // 다음 인덱스 계산
+        //    _currentSpriteIndex = (_currentSpriteIndex + 1) % _backGroundImages.Length;
+        //    _currentLayerIndex = (_currentLayerIndex + 1) % _backGroundImages.Length;
+
+        //    // 새 이미지 설정 및 표시
+        //    _rectTransforms[_currentLayerIndex].anchoredPosition = _initialPositions[_currentLayerIndex];
+        //    _backGroundImages[_currentLayerIndex].GetComponent<CanvasGroup>().alpha = 1f;
+        //}
+
+        // 무한 루프지만 토큰이 취소되면 안전하게 빠져나옴
+        while (!token.IsCancellationRequested)
         {
-            yield return new WaitForSeconds(_displayDuration);
+            // [핵심 변경] 코루틴 대신 UniTask.Delay 사용. 취소 시 에러 없이 부드럽게 종료되게 Suppress 사용
+            bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(_displayDuration), cancellationToken: token).SuppressCancellationThrow();
+
+            // 대기 도중 씬 이동으로 오브젝트 파괴 시 루프 탈출
+            if (isCanceled) return;
 
             // 이전 레이어 숨기기
             _backGroundImages[_currentLayerIndex].GetComponent<CanvasGroup>().alpha = 0f;
@@ -89,10 +111,5 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
         );
 
         _rectTransforms[layerIndex].anchoredPosition = _initialPositions[layerIndex] + offset;
-    }
-
-    private void OnDestroy()
-    {
-        StopAllCoroutines();
     }
 }

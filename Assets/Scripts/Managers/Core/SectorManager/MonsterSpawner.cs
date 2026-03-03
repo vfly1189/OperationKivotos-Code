@@ -1,106 +1,107 @@
-using System.Collections;
 using System.Collections.Generic;
+using System.Threading; // [추가] CancellationToken 용
 using UnityEngine;
+using Cysharp.Threading.Tasks; // [추가] UniTask
 
 public class MonsterSpawner : MonoBehaviour
 {
     [Header("Spawner Info")]
     [SerializeField] private int _spawnerId;
 
-    // 각 포인트별로 코루틴(리스폰 타이머)을 관리하기 위한 배열
-    private Coroutine[] _respawnCoroutines;
-    // 각 포인트별로 현재 살아있는 몬스터를 추적하기 위한 배열 (죽었는지 살았는지 확인용)
+    // [변경 1] Coroutine 배열 대신 CancellationTokenSource(CTS) 배열 사용
+    private CancellationTokenSource[] _respawnCts;
     private MonsterController[] _spawnedMonsters;
-
     private List<Transform> _spawnPoints = new List<Transform>();
-
-    // 현재 이 스포너가 관리중인 활성 몬스터 리스트
     private List<MonsterController> _activeMonsters = new List<MonsterController>();
+
+    private Dictionary<MonsterController, int> _monsterToPointIndex = new Dictionary<MonsterController, int>();
+    private Dictionary<MonsterController, SpawnInfo> _monsterToSpawnInfo = new Dictionary<MonsterController, SpawnInfo>();
 
     private void Awake()
     {
-        // 리스트 초기화
         _spawnPoints.Clear();
-
         foreach (Transform child in transform)
-        {
             _spawnPoints.Add(child);
-        }
 
-        // 스폰 포인트 개수만큼 배열 초기화
         int count = _spawnPoints.Count;
-        _respawnCoroutines = new Coroutine[count];
+        _respawnCts = new CancellationTokenSource[count];
         _spawnedMonsters = new MonsterController[count];
     }
 
     public void SpawnMonsters()
     {
         SpawnerData data = Managers.Data.GetSpawnerData(_spawnerId);
+        if (data == null || data.spawnList == null || data.spawnList.Count == 0) return;
 
-        if (data == null || data.spawnList == null || data.spawnList.Count == 0)
-        {
-            Debug.LogWarning($"Spawner [{_spawnerId}]에 등록된 스폰 데이터가 없습니다.");
-            return;
-        }
-
-        // 각 SpawnInfo(각 포인트의 몬스터 데이터)마다 독립적인 초기 스폰 시작
         foreach (var info in data.spawnList)
         {
             if (info.pointIndex >= _spawnPoints.Count) continue;
 
-            // 이미 해당 포인트에 몬스터가 살아있거나 리스폰 대기 중이면 무시
-            if (_spawnedMonsters[info.pointIndex] != null || _respawnCoroutines[info.pointIndex] != null)
-            {
-                Debug.Log("이거");
-                continue;
-            }
+            // 이미 살아있거나 스폰 대기 중이면 무시
+            if (_spawnedMonsters[info.pointIndex] != null || _respawnCts[info.pointIndex] != null) continue;
 
-            // 각 포인트별로 독립적인 스폰/리스폰 사이클 코루틴 시작
-            _respawnCoroutines[info.pointIndex] = StartCoroutine(CoSpawnPointRoutine(info));
+            // [변경 2] 새로운 CTS를 생성하고 UniTaskVoid 호출 (Fire and Forget)
+            _respawnCts[info.pointIndex] = new CancellationTokenSource();
+            SpawnPointRoutineAsync(info, _respawnCts[info.pointIndex].Token).Forget();
         }
     }
 
     public void DespawnMonsters()
     {
         if (this == null || !gameObject.activeInHierarchy) return;
-        // 모든 코루틴(리스폰 대기 등) 중지
-        StopAllCoroutines();
+
+        // [변경 3] 진행 중인 모든 스폰 타이머(UniTask)를 즉시 안전하게 취소!
+        CancelAllSpawnTasks();
 
         foreach (var monster in _activeMonsters)
         {
             if (monster != null)
             {
+                MonsterStat stat = monster.GetComponent<MonsterStat>();
+                if (stat != null) stat.OnDead -= HandleMonsterDead;
+
                 Managers.Resource.Destroy(monster.gameObject);
             }
         }
+
         _activeMonsters.Clear();
+        _monsterToPointIndex.Clear();
+        _monsterToSpawnInfo.Clear();
 
-        // 3. 상태 추적 배열 초기화 (null로 덮어씌우기)
-        for (int i = 0; i < _respawnCoroutines.Length; i++)
-        {
-            _respawnCoroutines[i] = null;
-        }
+        for (int i = 0; i < _spawnedMonsters.Length; i++) _spawnedMonsters[i] = null;
+    }
 
-        for (int i = 0; i < _spawnedMonsters.Length; i++)
+    // [추가] 모든 스폰 작업을 취소하는 헬퍼 함수
+    private void CancelAllSpawnTasks()
+    {
+        for (int i = 0; i < _respawnCts.Length; i++)
         {
-            _spawnedMonsters[i] = null;
+            if (_respawnCts[i] != null)
+            {
+                _respawnCts[i].Cancel();
+                _respawnCts[i].Dispose();
+                _respawnCts[i] = null;
+            }
         }
     }
 
-    // 특정 "스폰 포인트 하나"를 전담하는 코루틴
-    private IEnumerator CoSpawnPointRoutine(SpawnInfo info)
+    // [변경 4] IEnumerator -> async UniTaskVoid 로 변경
+    private async UniTaskVoid SpawnPointRoutineAsync(SpawnInfo info, CancellationToken token)
     {
         int pointIdx = info.pointIndex;
         Transform spawnPoint = _spawnPoints[pointIdx];
 
         MonsterData monsterData = Managers.Data.GetMonsterDataById(info.monsterId);
-        if (monsterData == null) yield break;
+        if (monsterData == null) return;
 
-        // 설정된 delay만큼 대기 후 소환
+        // [핵심] CancellationToken을 넘겨주어 대기 도중 스포너가 비활성화/파괴되면 즉시 중단되게 함
         if (info.delay > 0)
-            yield return new WaitForSeconds(info.delay);
+        {
+            // 이 구문이 끝나기 전에 token.Cancel()이 호출되면 이 아래 로직은 아예 실행되지 않음 (안전함!)
+            bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(info.delay), cancellationToken: token).SuppressCancellationThrow();
+            if (isCanceled) return; // 취소되었다면 소환 안 하고 함수 종료
+        }
 
-        // 몬스터 소환
         GameObject monsterObj = Managers.Resource.Instantiate(monsterData.addressableKey, spawnPoint.position, spawnPoint.rotation);
 
         if (monsterObj != null)
@@ -108,46 +109,67 @@ public class MonsterSpawner : MonoBehaviour
             MonsterController monsterCtrl = monsterObj.GetComponent<MonsterController>();
             MonsterStat monsterStat = monsterObj.GetComponent<MonsterStat>();
 
-            if (monsterStat != null)
+            if (monsterStat != null && monsterCtrl != null)
             {
                 monsterStat.Init(monsterData);
 
-                monsterStat.OnDead -= () => OnMonsterDead(monsterCtrl, pointIdx, info);
-                monsterStat.OnDead += () => OnMonsterDead(monsterCtrl, pointIdx, info);
-            }
+                _monsterToPointIndex[monsterCtrl] = pointIdx;
+                _monsterToSpawnInfo[monsterCtrl] = info;
 
-            if (monsterCtrl != null)
-            {
+                monsterStat.OnDead -= HandleMonsterDead;
+                monsterStat.OnDead += HandleMonsterDead;
+
                 _spawnedMonsters[pointIdx] = monsterCtrl;
                 _activeMonsters.Add(monsterCtrl);
             }
         }
 
-        // 소환 완료했으므로 코루틴 참조는 비워둠
-        _respawnCoroutines[pointIdx] = null;
+        // 스폰이 완료되었으므로 CTS 정리
+        if (_respawnCts[pointIdx] != null)
+        {
+            _respawnCts[pointIdx].Dispose();
+            _respawnCts[pointIdx] = null;
+        }
     }
 
-    // 몬스터가 죽었을 때 호출되는 콜백
-    private void OnMonsterDead(MonsterController deadMonster, int pointIdx, SpawnInfo info)
+    private void HandleMonsterDead()
     {
-        // 리스트에서 제거
-        if (_activeMonsters.Contains(deadMonster))
-            _activeMonsters.Remove(deadMonster);
+        MonsterController deadMonster = null;
+        foreach (var activeMonster in _activeMonsters)
+        {
+            if (activeMonster != null && activeMonster.GetComponent<MonsterStat>().CurrentHp <= 0)
+            {
+                deadMonster = activeMonster;
+                break;
+            }
+        }
 
+        if (deadMonster == null) return;
+
+        int pointIdx = _monsterToPointIndex[deadMonster];
+        SpawnInfo info = _monsterToSpawnInfo[deadMonster];
+
+        if (_activeMonsters.Contains(deadMonster)) _activeMonsters.Remove(deadMonster);
         _spawnedMonsters[pointIdx] = null;
 
-        // 이벤트 구독 해제
-        MonsterStat stat = deadMonster.GetComponent<MonsterStat>();
-        if (stat != null)
-        {
-            stat.OnDead -= () => OnMonsterDead(deadMonster, pointIdx, info);
-        }
+        _monsterToPointIndex.Remove(deadMonster);
+        _monsterToSpawnInfo.Remove(deadMonster);
 
-        // 죽었으므로 해당 자리에 딜레이(쿨타임) 후 다시 스폰하는 코루틴 재시작
-        if (gameObject.activeInHierarchy) // 스포너가 켜져 있을 때만 <- (이 스크립트 붙어 있는 오브젝트가 켜져있다면)
+        MonsterStat stat = deadMonster.GetComponent<MonsterStat>();
+        if (stat != null) stat.OnDead -= HandleMonsterDead;
+
+        // [변경 5] 다시 스폰 시작 (새로운 UniTask 실행)
+        if (gameObject.activeInHierarchy)
         {
-            _respawnCoroutines[pointIdx] = StartCoroutine(CoSpawnPointRoutine(info));
+            _respawnCts[pointIdx] = new CancellationTokenSource();
+            SpawnPointRoutineAsync(info, _respawnCts[pointIdx].Token).Forget();
         }
+    }
+
+    private void OnDestroy()
+    {
+        // 스포너 자체가 파괴될 때 메모리 릭을 방지하기 위해 모든 태스크 강제 종료
+        CancelAllSpawnTasks();
     }
 
 #if UNITY_EDITOR

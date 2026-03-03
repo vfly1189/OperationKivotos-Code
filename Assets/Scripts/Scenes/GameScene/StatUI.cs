@@ -25,13 +25,13 @@ public class StatUI : MonoBehaviour
     public void SetHp(float cur, float max)
     {
         _hpBar.value = (max > 0) ? cur / max : 0;
-        _hpText.text = $"{cur:F0} / {max:F0}"; // 소수점 제거 포맷팅
+        _hpText.SetText("{0:0} / {1:0}", cur, max);
     }
 
     public void SetExp(float cur, float max)
     {
         _expBar.value = (max > 0) ? cur / max : 0;
-        _expText.text = $"{cur:F0} / {max:F0}";
+        _expText.SetText("{0:0} / {1:0}", cur, max);
     }
 
     public void SetLevel(float level)

@@ -13,16 +13,13 @@ public class LoadingScene : BaseScene
     // 다운로드 핸들 저장용 (필요시 취소하거나 확인용)
     private AsyncOperationHandle _downloadHandle;
 
-    private LoadingSceneController _loadingUI;
+    [SerializeField] private LoadingSceneController _loadingUI;
 
     // [핵심 1] 코루틴 대신 async UniTaskVoid로 선언
     protected override void Init()
     {
         base.Init();
         _sceneType = Define.Scene.Loading;
-
-        GameObject loadingObj = Managers.Resource.Instantiate("UI/LoadingScene/LoadingCanvas");
-        _loadingUI = loadingObj.GetComponent<LoadingSceneController>();
 
         // 코루틴 실행이 아니라 UniTask 함수를 바로 호출 (잊혀짐 방지를 위해 Forget 사용 권장)
         LoadProcessAsync().Forget();
@@ -31,59 +28,6 @@ public class LoadingScene : BaseScene
     // [핵심 2] IEnumerator -> async UniTask
     private async UniTaskVoid LoadProcessAsync()
     {
-        //// WaitForSeconds 대신 UniTask.Delay 사용
-        //await UniTask.Delay(100);
-
-        //Managers.Resource.Clear();
-        //Managers.Pool.Clear();
-
-        //// [핵심 3] UnloadUnusedAssets도 UniTask로 깔끔하게 대기 가능!
-        //AsyncOperation unloadOp = Resources.UnloadUnusedAssets();
-        //await unloadOp.ToUniTask();
-
-        //var sceneData = Managers.SceneEx.NextSceneData;
-        //if (sceneData == null)
-        //{
-        //    Debug.LogError("NextSceneData가 설정되지 않았습니다!");
-        //    return;
-        //}
-
-        //string nextSceneName = Managers.SceneEx.NextSceneName;
-
-        //if (sceneData.preloadLabels != null && sceneData.preloadLabels.Length > 0)
-        //{
-        //    // [핵심 4] 우리가 잘 만들어둔 UniTask 버전을 편안하게 await!
-        //    await Managers.Resource.LoadDependenciesAsync(
-        //        sceneData.preloadLabels,
-        //        false,
-        //        (fileName, progress) =>
-        //        {
-        //            _loadingUI.UpdateProgress(progress * 1.0f, fileName);
-        //        }
-        //    );
-        //}
-
-        //// [7] 씬 로드
-        //var sceneHandle = Addressables.LoadSceneAsync(nextSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single, false);
-
-        //// 씬 로딩 퍼센트 처리 (Yield 활용)
-        //while (!sceneHandle.IsDone)
-        //{
-        //    float sceneProgress = sceneHandle.PercentComplete;
-        //    _loadingUI.UpdateProgress(sceneProgress);
-
-        //    if (sceneProgress >= 0.9f)
-        //    {
-        //        _loadingUI.UpdateProgress(1f);
-
-        //        await UniTask.Delay(500); // 0.5초 대기
-        //        await sceneHandle.Result.ActivateAsync().ToUniTask();
-        //        return;
-        //    }
-
-        //    await UniTask.Yield(PlayerLoopTiming.Update);
-        //}
-
         // 1. 씬 전환 직후의 엔진 불안정 상태를 방지하기 위해 0.1초 대기
         await UniTask.Delay(100);
 

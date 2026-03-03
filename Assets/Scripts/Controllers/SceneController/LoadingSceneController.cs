@@ -1,15 +1,15 @@
-using System.Collections;
 using System.IO;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Cysharp.Threading.Tasks; // [추가]
+using System.Threading; // [추가]
 
 public class LoadingSceneController : BaseScene
 {
     [Header("Random Images")]
-    [SerializeField] private Sprite[] _randomSprites; // 10개 이미지 배열
-    [SerializeField]private Image _randomImage;
+    [SerializeField] private Sprite[] _randomSprites;
+    [SerializeField] private Image _randomImage;
 
     [Header("Loading Bar")]
     [SerializeField] private Slider _barFill;
@@ -18,79 +18,32 @@ public class LoadingSceneController : BaseScene
     [SerializeField] private TextMeshProUGUI _loadingText;
     [SerializeField] private float _dotAnimSpeed = 0.5f;
 
-    // [추가] 퍼센트와 파일명을 띄울 UI 요소를 추가하세요. 
-    // (인스펙터에서 안 넣으면 _loadingText 하나에 다 출력하도록 안전장치 해둠)
     [Header("Details (Optional)")]
-    [SerializeField] private TextMeshProUGUI _percentText;     // 0% ~ 100% 표시용
-    [SerializeField] private TextMeshProUGUI _resourceNameText;// 어떤 파일 로딩중인지 표시용
+    [SerializeField] private TextMeshProUGUI _percentText;
+    [SerializeField] private TextMeshProUGUI _resourceNameText;
 
-    private Coroutine _dotCoroutine;
     private float _startValue = 0f;
 
-    //public float SliderValue
-    //{
-    //    get { return _barFill.fillAmount; }
-    //    set { _barFill.fillAmount = value; }
-    //}
+    // [추가] 점(.) 애니메이션 취소 관리를 위한 전역 토큰 소스
+    private CancellationTokenSource _dotAnimCts;
 
-    //private void Start()
-    //{
-    //    // 랜덤 이미지 설정
-    //    SetRandomImage();
-
-    //    // 로딩바 초기화
-    //    _barFill.fillAmount = 0f;
-
-    //    // 점 애니메이션 시작
-    //    StartCoroutine(AnimateLoadingDots());
-    //}
-
-    //private void SetRandomImage()
-    //{
-    //    if (_randomSprites.Length == 0)
-    //    {
-    //        Debug.LogError("Random sprites not assigned!");
-    //        return;
-    //    }
-
-    //    int randomIndex = Random.Range(0, _randomSprites.Length);
-    //    _randomImage.sprite = _randomSprites[randomIndex];
-    //}
-
-    //// 외부에서 진행률 업데이트
-    //public void UpdateProgress(float progress)
-    //{
-    //    _barFill.fillAmount = Mathf.Clamp01(progress);
-    //}
-
-    //private IEnumerator AnimateLoadingDots()
-    //{
-    //    string baseText = "Now Loading";
-    //    int dotCount = 0;
-
-    //    while (true)
-    //    {
-    //        dotCount = (dotCount + 1) % 4; // 0, 1, 2, 3 반복
-    //        _loadingText.text = baseText + new string('.', dotCount);
-    //        yield return new WaitForSeconds(_dotAnimSpeed);
-    //    }
-    //}
-
-    //public override void Clear()
-    //{
-
-    //}
+    // [최적화] 가비지 생성 방지를 위해 점 문자열을 미리 캐싱
+    private readonly string[] _loadingDotStrings = new string[]
+    {
+        "Now Loading",
+        "Now Loading.",
+        "Now Loading..",
+        "Now Loading..."
+    };
 
     private void Start()
     {
         SetRandomImage();
+        _barFill.value = _startValue != 0 ? _startValue : 0f;
 
-        if (_startValue != 0)
-            _barFill.value = _startValue;
-        else
-            _barFill.value = 0f;
-
-        _dotCoroutine = StartCoroutine(AnimateLoadingDots());
+        // [핵심 1] CancellationTokenSource 초기화 및 애니메이션 시작
+        _dotAnimCts = new CancellationTokenSource();
+        AnimateLoadingDotsAsync(_dotAnimCts.Token).Forget();
     }
 
     private void SetRandomImage()
@@ -100,54 +53,83 @@ public class LoadingSceneController : BaseScene
         _randomImage.sprite = _randomSprites[randomIndex];
     }
 
-    // [수정] 외부(ResourceManager)에서 진행률과 파일명을 받아 업데이트
     public void UpdateProgress(float progress, string fileName = "")
     {
-        // 1. 게이지바 채우기
         _barFill.value = Mathf.Clamp01(progress);
-
-        // 2. 0~100% 수치화
         int percent = Mathf.FloorToInt(progress * 100f);
 
-        // UI 텍스트 업데이트
         if (_percentText != null)
         {
-            _percentText.text = $"{percent}%";
+            _percentText.SetText("{0}%", percent); // SetText 활용
         }
+
         if (_resourceNameText != null)
         {
-            _resourceNameText.text = string.IsNullOrEmpty(fileName) ? "Loading..." : $"Loading: {fileName}";
+            if (string.IsNullOrEmpty(fileName))
+                _resourceNameText.text = "Loading...";
+            else
+                _resourceNameText.text = $"Loading: {fileName}"; // 파일명은 가변적이므로 보류
         }
 
-        // 만약 퍼센트/파일명 전용 TextMeshPro가 안 달려있으면 기존 _loadingText에 합쳐서 출력
         if (_percentText == null && _resourceNameText == null)
         {
-            if (_dotCoroutine != null)
+            // [핵심 2] 점 찍기 애니메이션 강제 중단
+            if (_dotAnimCts != null)
             {
-                StopCoroutine(_dotCoroutine); // 기존 점 찍기 중단
-                _dotCoroutine = null;
+                _dotAnimCts.Cancel();
+                _dotAnimCts.Dispose();
+                _dotAnimCts = null;
             }
-            _loadingText.text = $"{fileName} ({percent}%)";
+
+            // [최적화] SetText와 서식 지정자를 사용하여 가비지 감소
+            if (string.IsNullOrEmpty(fileName))
+                _loadingText.SetText("Loading... ({0}%)", percent);
+            else
+                _loadingText.text = $"{fileName} ({percent}%)";
         }
     }
 
-    private IEnumerator AnimateLoadingDots()
+    // [핵심 3] 코루틴(IEnumerator)을 UniTaskVoid로 변경
+    private async UniTaskVoid AnimateLoadingDotsAsync(CancellationToken token)
     {
-        string baseText = "Now Loading";
         int dotCount = 0;
-        while (true)
+
+        while (!token.IsCancellationRequested)
         {
             dotCount = (dotCount + 1) % 4;
-            _loadingText.text = baseText + new string('.', dotCount);
-            yield return new WaitForSeconds(_dotAnimSpeed);
+
+            // 캐싱된 문자열을 사용하여 가비지 0 할당
+            _loadingText.text = _loadingDotStrings[dotCount];
+
+            // 딜레이 중에 취소 요청이 들어오면 에러 없이 조용히 종료
+            bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(_dotAnimSpeed), cancellationToken: token).SuppressCancellationThrow();
+            if (isCanceled) return;
         }
     }
 
-    //각 씬들에서 먼저 보여질 커버의 value를 그냥 1로 설정해놓고 로딩이 안된 것처럼 보이는 fake 화면용
     public void SetValue(float value)
     {
         _startValue = value;
     }
 
-    public override void Clear() { }
+    public override void Clear()
+    {
+        // 씬 전환 시 남아있는 토큰이 있다면 확실하게 파괴
+        if (_dotAnimCts != null)
+        {
+            _dotAnimCts.Cancel();
+            _dotAnimCts.Dispose();
+            _dotAnimCts = null;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_dotAnimCts != null)
+        {
+            _dotAnimCts.Cancel();
+            _dotAnimCts.Dispose();
+            _dotAnimCts = null;
+        }
+    }
 }

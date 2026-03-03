@@ -1,10 +1,11 @@
+// [추가] UniTask 네임스페이스
+using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
-// [추가] UniTask 네임스페이스
-using Cysharp.Threading.Tasks;
 
 public class StartScene : BaseScene
 {
@@ -15,13 +16,21 @@ public class StartScene : BaseScene
     [SerializeField] private GameObject _tapToStartGroup; // (시작 시 비활성화 상태)
     [SerializeField] private Button _startButton;
 
-    float _voiceDelay = 1.5f;
+    float _voiceDelay = 0.5f;
 
     // [핵심 1] 유니티 생명주기에 맞추기 위해 async UniTaskVoid를 사용
     protected override async void Init()
     {
         base.Init();
         _sceneType = Define.Scene.Start;
+
+        // 씬에 올려둔 EventSystem을 찾아서 파괴되지 않게 설정
+        EventSystem eventSystem = FindAnyObjectByType<EventSystem>();
+        if (eventSystem != null)
+        {
+            DontDestroyOnLoad(eventSystem.gameObject);
+        }
+
 
         _startButton.onClick.AddListener(OnClick);
 
@@ -71,12 +80,12 @@ public class StartScene : BaseScene
     {
         if (_preloadData.mainTitleBgm != null && _preloadData.mainTitleBgm.RuntimeKeyIsValid())
         {
-            // [핵심 5] LoadAssetAsync의 반환 핸들을 ToUniTask()로 대기
-            var handle = Addressables.LoadAssetAsync<AudioClip>(_preloadData.mainTitleBgm);
-            AudioClip bgm = await handle.ToUniTask();
+            AudioClip bgm = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.mainTitleBgm, false);
 
             if (bgm != null)
+            {
                 Managers.Sound.Play(bgm, Define.Sound.Bgm);
+            }
         }
     }
 
@@ -90,8 +99,8 @@ public class StartScene : BaseScene
         if (length > 0)
         {
             int voiceNum = Random.Range(0, length);
-            var handle = Addressables.LoadAssetAsync<AudioClip>(_preloadData.titleVoices[voiceNum]);
-            AudioClip voice = await handle.ToUniTask();
+
+            AudioClip voice = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.titleVoices[voiceNum], false);
 
             if (voice != null)
                 Managers.Sound.Play(voice, Define.Sound.Voice);
@@ -102,17 +111,16 @@ public class StartScene : BaseScene
     {
         if (_preloadData.exitPopup != null && _preloadData.exitPopup.RuntimeKeyIsValid())
         {
-            // 결과물이 필요 없어도 핸들 완료까지 안전하게 대기
-            var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
-            await handle.ToUniTask();
+            // 팝업 프리팹은 게임 내내 쓰이므로 글로벌 속성(isGlobal = true)으로 로드
+            await Managers.Resource.LoadAsync<GameObject>(_preloadData.exitPopup, true);
         }
     }
 
     // 버튼 클릭 등의 이벤트에서 비동기를 띄울 때는 async UniTaskVoid 사용
     private async UniTaskVoid ShowExitPopup()
     {
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
-        GameObject popupPrefab = await handle.ToUniTask();
+        //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
+        GameObject popupPrefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.exitPopup, true);
 
         if (popupPrefab != null)
         {

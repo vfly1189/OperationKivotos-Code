@@ -9,28 +9,49 @@ public class PartySlotUI : MonoBehaviour
     [SerializeField] private Image _emblemImage;
     [SerializeField] private Slider _hpBar;
     [SerializeField] private GameObject _ultimateReadyObj;
-    //[SerializeField] private UI_RotatingLight _rotatingLight;
 
-    // 외부에서 접근하기 위한 프로퍼티 (필요시)
-    //public UI_RotatingLight RotatingLight => _rotatingLight;
+    private BaseCharacter _connectedCharacter;
 
     // 데이터 갱신 메서드들을 이곳으로 이동
     public void SetCharacterName(string name) => _nameText.text = name;
     public void SetEmblem(Sprite sprite) => _emblemImage.sprite = sprite;
 
-    // [이벤트용] HP 갱신
-    public void UpdateHP(float current, float max)
+
+    // [핵심 3] 슬롯 스스로가 캐릭터를 기억하고 이벤트를 안전하게 구독/해제함
+    public void SubscribeToCharacter(BaseCharacter character)
+    {
+        // 기존 연결 해제
+        if (_connectedCharacter != null && _connectedCharacter.Stat != null)
+        {
+            _connectedCharacter.Stat.OnHpChanged -= UpdateHP;
+            _connectedCharacter.Stat.OnUltimateStateChanged -= SetUltimateReady;
+        }
+
+        _connectedCharacter = character;
+
+        if (_connectedCharacter != null && _connectedCharacter.Stat != null)
+        {
+            _connectedCharacter.Stat.OnHpChanged += UpdateHP;
+            _connectedCharacter.Stat.OnUltimateStateChanged += SetUltimateReady;
+
+            // 초기화
+            UpdateHP(_connectedCharacter.Stat.CurrentHp, _connectedCharacter.Stat.MaxHp.Value);
+            bool isReady = (_connectedCharacter.Stat.CurrentQSkillCoolTime <= 0) &&
+                           (_connectedCharacter.Stat.CurrentEnergy >= _connectedCharacter.Stat.MaxEnergy.Value);
+            SetUltimateReady(isReady);
+        }
+    }
+
+    // 람다 대신 쓸 정식 이벤트 핸들러들
+    private void UpdateHP(float current, float max)
     {
         if (_hpBar != null && max > 0)
             _hpBar.value = current / max;
     }
 
-    // [이벤트용] 궁극기 준비 효과 On/Off
-    public void SetUltimateReady(bool isReady)
+    private void SetUltimateReady(bool isReady)
     {
         if (_ultimateReadyObj != null && _ultimateReadyObj.activeSelf != isReady)
-        {
             _ultimateReadyObj.SetActive(isReady);
-        }
     }
 }

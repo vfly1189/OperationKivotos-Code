@@ -42,7 +42,7 @@ public class NormalDungeonScene : BaseScene
             _loadingCoverInstance.GetComponent<LoadingSceneController>().SetValue(1f);
         }
 
-        await UniTask.Delay(500); // Task.Delay -> UniTask.Delay
+        //await UniTask.Delay(500); // Task.Delay -> UniTask.Delay
 
         CreateUI();
 
@@ -53,11 +53,11 @@ public class NormalDungeonScene : BaseScene
         var successBgm = CreateSuccessBGM();
         var victoryVoice = LoadVictoryVoice();
         var battleInVoice = LoadBattleInVoice();
+        var mainBgmTask = LoadMainBgm();
 
         // UniTask.WhenAll 로 병렬 대기
         await UniTask.WhenAll(mapTask, poolTask, effectStageTask, clearUI, successBgm, victoryVoice, battleInVoice);
 
-        SetupBGM();
         PlayBGM();
         PlayBattleInVoice();
 
@@ -78,8 +78,9 @@ public class NormalDungeonScene : BaseScene
 
         if (mapPrefabRef != null)
         {
-            var handle = Addressables.LoadAssetAsync<GameObject>(mapPrefabRef);
-            GameObject mapPrefab = await handle.ToUniTask();
+            // Managers.Resource.LoadAsync 위임
+            GameObject mapPrefab = await Managers.Resource.LoadAsync<GameObject>(mapPrefabRef);
+
             if (mapPrefab != null)
             {
                 _curMap = Instantiate(mapPrefab, root.transform);
@@ -94,15 +95,13 @@ public class NormalDungeonScene : BaseScene
     async UniTask CreateSuccessBGM()
     {
         if (_preloadData.successBgm == null) return;
-        var handle = Addressables.LoadAssetAsync<AudioClip>(_preloadData.successBgm);
-        _successBGM = await handle.ToUniTask();
+        _successBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.successBgm);
     }
 
     async UniTask CreateClearUI()
     {
         if (_preloadData.dungeonClearUI == null) return;
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.dungeonClearUI);
-        GameObject prefab = await handle.ToUniTask();
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.dungeonClearUI);
         if (prefab != null)
         {
             _clearUI = Instantiate(prefab);
@@ -110,11 +109,12 @@ public class NormalDungeonScene : BaseScene
         }
     }
 
-    public void SetupBGM()
+    async UniTask LoadMainBgm()
     {
         if (_preloadData.fightingBgms == null || _preloadData.fightingBgms.Length == 0) return;
         int rand = Random.Range(0, _preloadData.fightingBgms.Length);
-        _mainBGM = Managers.Resource.GetLoadedAsset<AudioClip>(_preloadData.fightingBgms[rand]);
+
+        _mainBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.fightingBgms[rand]);
     }
 
     void PlayBGM()
@@ -145,8 +145,7 @@ public class NormalDungeonScene : BaseScene
             var voiceRef = voices[Random.Range(0, voices.Length)];
             if (voiceRef != null && voiceRef.RuntimeKeyIsValid())
             {
-                var handle = Addressables.LoadAssetAsync<AudioClip>(voiceRef);
-                _battleInVoice = await handle.ToUniTask();
+                _battleInVoice = await Managers.Resource.LoadAsync<AudioClip>(voiceRef);
             }
         }
     }
@@ -164,8 +163,7 @@ public class NormalDungeonScene : BaseScene
             var voiceRef = voices[Random.Range(0, voices.Length)];
             if (voiceRef != null && voiceRef.RuntimeKeyIsValid())
             {
-                var handle = Addressables.LoadAssetAsync<AudioClip>(voiceRef);
-                _victoryVoice = await handle.ToUniTask();
+                _victoryVoice = await Managers.Resource.LoadAsync<AudioClip>(voiceRef);
             }
         }
     }
@@ -173,8 +171,7 @@ public class NormalDungeonScene : BaseScene
     async UniTask CreatePool()
     {
         if (_preloadData.bullet == null) return;
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.bullet);
-        GameObject prefab = await handle.ToUniTask();
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
         if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
     }
 
@@ -182,8 +179,7 @@ public class NormalDungeonScene : BaseScene
     {
         if (_preloadData.effectStage == null) return;
         GameObject root = new GameObject { name = "@Effect" };
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.effectStage);
-        GameObject prefab = await handle.ToUniTask();
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.effectStage);
 
         if (prefab != null)
         {
@@ -247,7 +243,9 @@ public class NormalDungeonScene : BaseScene
                 if (camObj != null)
                 {
                     camObj.SetActive(true);
-                    CoCameraZoomEffect(camObj.transform).Forget();
+                    // [핵심 변경] 카메라 오브젝트가 파괴될 때 발동하는 Token을 뽑아서 넘겨줌!
+                    var token = camObj.GetCancellationTokenOnDestroy();
+                    CoCameraZoomEffect(camObj.transform, token).Forget();
                 }
 
                 Transform[] endingPositions = mapScript.GetTransforms();
@@ -284,7 +282,7 @@ public class NormalDungeonScene : BaseScene
         }
     }
 
-    private async UniTaskVoid CoCameraZoomEffect(Transform camTr)
+    private async UniTaskVoid CoCameraZoomEffect(Transform camTr, System.Threading.CancellationToken cancellationToken)
     {
         float duration = 4.0f;
         float timer = 0f;
@@ -293,12 +291,19 @@ public class NormalDungeonScene : BaseScene
 
         while (timer < duration)
         {
+            // [방어 코드] 혹시라도 토큰이 취소되기 직전에 파괴된 경우를 대비한 null 체크
+            if (camTr == null) return;
+
             timer += Time.deltaTime;
             float t = timer / duration;
             float easeT = (t < 0.5f) ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) / 2f;
 
             camTr.position = Vector3.Lerp(startPos, targetPos, easeT);
-            await UniTask.Yield();
+
+            // [핵심 변경] 대기할 때 cancellationToken을 넘겨주어, 파괴 시 루프를 탈출하게 만듦
+            // SuppressCancellationThrow를 쓰면 취소 시 에러 로그 없이 조용히 종료됩니다.
+            bool isCanceled = await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken).SuppressCancellationThrow();
+            if (isCanceled) return; // 씬이 넘어가서 카메라가 파괴되면 쿨하게 연출 종료!
         }
         camTr.position = targetPos;
     }

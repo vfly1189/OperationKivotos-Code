@@ -1,19 +1,16 @@
-using System.Collections;
 using UnityEngine;
+// [추가] UniTask
+using Cysharp.Threading.Tasks;
 
 public class Managers : MonoBehaviour
 {
-    static Managers s_instance; // 유일성 보장된다.
-    static Managers Instance { get { Init(); return s_instance; } } // 유일성 보장된다.
+    static Managers s_instance;
+    static Managers Instance { get { Init(); return s_instance; } }
 
     private CurrentGameDataSO _currentGameContext = null;
-    public static CurrentGameDataSO Context
-    {
-        get { return Instance._currentGameContext; }
-    }
+    public static CurrentGameDataSO Context { get { return Instance._currentGameContext; } }
 
     #region Core Manager
-    //GameManager _game = new GameManager();
     InputManager _input = new InputManager();
     PartyManager _party;
     PoolManager _pool = new PoolManager();
@@ -25,31 +22,41 @@ public class Managers : MonoBehaviour
     WalletManager _wallet = new WalletManager();
     SectorManager _sector = new SectorManager();
 
-    //public static GameManager Game { get { return Instance._game; } }
     public static InputManager Input { get { return Instance._input; } }
     public static PartyManager Party { get { return Instance._party; } }
-    public static PoolManager Pool { get { return Instance._pool; } }   
+    public static PoolManager Pool { get { return Instance._pool; } }
     public static ResourceManager Resource { get { return Instance._resource; } }
     public static SceneManagerEx SceneEx { get { return Instance._scene; } }
-    public static SoundManager Sound { get { return Instance._sound; } }    
+    public static SoundManager Sound { get { return Instance._sound; } }
     public static UIManager UI { get { return Instance._ui; } }
     public static DataManager Data { get { return Instance._data; } }
     public static WalletManager Wallet { get { return Instance._wallet; } }
     public static SectorManager Sector { get { return Instance._sector; } }
     #endregion
 
-    // Managers.cs - Start()를 코루틴으로 변경
-    IEnumerator Start()
+    // [핵심 1] 코루틴 Start 대신 일반 Start에서 Fire-and-forget 비동기 실행
+    void Start()
     {
         Init();
-        yield return StartCoroutine(_data.InitCoroutine());
+        InitializeAsync().Forget();
+    }
+
+    // 데이터 비동기 초기화
+    private async UniTaskVoid InitializeAsync()
+    {
+        // 씬 테이블 로드와 데이터 로드를 병렬로 동시에 처리하여 속도 최적화
+        await UniTask.WhenAll(
+            _scene.InitAsync(),
+            _data.InitAsync()
+        );
+
+        Debug.Log("All Managers Async Initialization Complete");
     }
 
     void Update()
     {
         _input.OnUpdate();
 
-        // PlayerController의 Update 로직 호출
         if (_party != null && _party.PlayerController != null)
         {
             _party.PlayerController.OnUpdate();
@@ -58,7 +65,6 @@ public class Managers : MonoBehaviour
 
     static void Init()
     {
-        // Initialize
         if (s_instance == null)
         {
             GameObject go = GameObject.Find("@Managers");
@@ -80,35 +86,24 @@ public class Managers : MonoBehaviour
             }
             else
             {
-                // 로드 성공 시 초기화 (선택사항)
                 s_instance._currentGameContext.Clear();
             }
 
-            s_instance._party = new PartyManager(s_instance);
-            s_instance._scene.Init();
+            s_instance._party = new PartyManager(s_instance.transform);
             s_instance._pool.Init();
             s_instance._sound.Init();
-            //s_instance._data.Init();
-            //s_instance._wallet.Init();
+            s_instance._wallet.Init();
 
-            Application.targetFrameRate = 144; // 60프레임 고정
+            Application.targetFrameRate = 144;
         }
     }
-
 
     void OnDestroy()
     {
-        // PartyManager 정리
-        if (_party != null)
-        {
-            _party.Dispose();
-        }
+        if (_party != null) _party.Dispose();
     }
 
-    public static void Start_Coroutine(System.Collections.IEnumerator routine)
-    {
-        Instance.StartCoroutine(routine);
-    }
+    // [핵심 2] Start_Coroutine 삭제! 더 이상 코루틴 브릿지가 필요 없습니다.
 
     public static void Clear()
     {

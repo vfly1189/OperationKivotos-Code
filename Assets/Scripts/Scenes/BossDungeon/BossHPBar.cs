@@ -34,7 +34,7 @@ public class BossHPBar : MonoBehaviour
     {
         Debug.Log($"{cur} , {max}");
         _slider.value = cur / max;
-        _text.text = $"{cur} / {max}";
+        _text.text = $"{cur.ToString("N0")} / {max.ToString("N0")}";
     }
 
     private void OnDestroy()

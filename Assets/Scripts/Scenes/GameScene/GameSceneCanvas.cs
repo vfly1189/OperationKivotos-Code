@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -6,9 +7,6 @@ using UnityEngine.UI;
 
 public class GameSceneCanvas : MonoBehaviour
 {
-    //private static GameSceneCanvas _instance;
-
-
     [SerializeField] private CurrentGameDataSO _currentGameContext; // 인스펙터 연결
 
     [Header("Data Source")]
@@ -34,28 +32,25 @@ public class GameSceneCanvas : MonoBehaviour
 
     public void SetPartyManager()
     {
+        // 중복 구독 방지를 위해 확실히 먼저 해제
         if (Managers.Party != null)
         {
             Managers.Party.OnActiveCharacterChanged -= UpdateActiveCharacterUI;
             Managers.Party.OnGameFinished -= HandleGameFinished;
-        }
 
-        // 파티 슬롯 이벤트 재연결
-        ConnectPermanentPartyEvents();
-
-        // 파티 매니저 이벤트 재연결
-        if (Managers.Party != null)
-        {
             Managers.Party.OnActiveCharacterChanged += UpdateActiveCharacterUI;
             Managers.Party.OnGameFinished += HandleGameFinished;
         }
 
-        // UI 갱신
+        ConnectPermanentPartyEvents();
+
         BaseCharacter currentChar = Managers.Party?.GetCurrentCharacter();
         if (currentChar != null)
         {
             UpdateActiveCharacterUI(currentChar.gameObject);
         }
+
+
     }
 
     void Start()
@@ -98,10 +93,7 @@ public class GameSceneCanvas : MonoBehaviour
     void UpdateActiveCharacterUI(GameObject currentCharacter)
     {
         // [추가] null 체크
-        if (currentCharacter == null)
-        {
-            return;
-        }
+        if (currentCharacter == null) return;
 
         // --- 1. 기존 캐릭터 구독 해제 ---
         if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
@@ -112,38 +104,19 @@ public class GameSceneCanvas : MonoBehaviour
         // --- 2. 새 캐릭터 가져오기 ---
         BaseCharacter newChar = currentCharacter.GetComponent<BaseCharacter>();
 
-        if (newChar == null)
-        { 
-            return;
-        }
+        if (newChar == null) return;
+        if (newChar.Stat == null) return;
 
-        if (newChar.Stat == null)
-        {
-            return;
-        }
 
         CharacterDataSO charData = newChar.Stat.GetData();
+        if (charData == null) return;
 
-        if (charData == null)
-        {
-            return;
-        }
 
         _cachedActiveCharacter = newChar;
 
-        // [핵심 수정] 정적 데이터 먼저 교체
         if (_activeCharacterHUD != null)
         {
             _activeCharacterHUD.ChangeStaticData(charData);
-        }
-        else
-        {
-            return;
-        }
-
-        // --- 3. 새 캐릭터 구독 및 초기화 ---
-        if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
-        {
             _activeCharacterHUD.SubscribeEvent(_cachedActiveCharacter);
         }
     }
@@ -172,61 +145,50 @@ public class GameSceneCanvas : MonoBehaviour
     // 게임 종료 핸들러
     private void HandleGameFinished(bool isSuccess)
     {
-        Debug.Log("HandleGameFinished 호출됐음!!");
         if (_isShowingResult) return;
         _isShowingResult = true;
 
-        Debug.Log("_isShowingResult false 였음!!");
-
-        if (isSuccess)
+        if (isSuccess && _sucessImageFont != null)
         {
-            if (_sucessImageFont != null)
-            {
-                gameObject.SetActive(true);
-                StartCoroutine(CoShowResultEffect(_sucessImageFont));
-            }
+            gameObject.SetActive(true);
+            ShowResultEffectAsync(_sucessImageFont, this.GetCancellationTokenOnDestroy()).Forget();
         }
-        else
+        else if (!isSuccess && _failedImageFont != null)
         {
-            if (_failedImageFont != null)
-            {
-                gameObject.SetActive(true);
-                StartCoroutine(CoShowResultEffect(_failedImageFont));
-            }
+            gameObject.SetActive(true);
+            ShowResultEffectAsync(_failedImageFont, this.GetCancellationTokenOnDestroy()).Forget();
         }
     }
 
-    // [추가] 점점 커지는 연출 코루틴
-    private IEnumerator CoShowResultEffect(Image targetImage)
+
+    // [핵심 1] 코루틴 -> UniTask 변경 및 토큰 적용
+    private async UniTaskVoid ShowResultEffectAsync(Image targetImage, System.Threading.CancellationToken token)
     {
         targetImage.gameObject.SetActive(true);
-        targetImage.transform.localScale = Vector3.zero; // 0에서 시작
+        targetImage.transform.localScale = Vector3.zero;
 
-        float duration = 0.5f; // 0.5초 동안 커짐
+        float duration = 0.5f;
         float timer = 0f;
-
-        // 약간 튕기는 듯한 연출을 위한 Overshoot 커브 (선택사항)
-        // AnimationCurve.EaseInOut(0,0,1,1) 등을 써도 됨
 
         while (timer < duration)
         {
             timer += Time.deltaTime;
             float t = timer / duration;
-
-            // 부드러운 보간 (Lerp)
-            // t * (2 - t)는 EaseOut 효과 (빠르게 시작해서 천천히 도착)
             float scale = Mathf.Lerp(0f, 1f, t * (2 - t));
 
             targetImage.transform.localScale = Vector3.one * scale;
-            yield return null;
+
+            bool isCanceled = await UniTask.Yield(PlayerLoopTiming.Update, token).SuppressCancellationThrow();
+            if (isCanceled) return; // 씬 전환 등으로 파괴 시 안전 종료
         }
 
         targetImage.transform.localScale = Vector3.one;
 
-        yield return new WaitForSeconds(2.0f);
-        targetImage.gameObject.SetActive(false);
+        bool isWaitCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(2.0f), cancellationToken: token).SuppressCancellationThrow();
+        if (isWaitCanceled) return;
 
-        _isShowingResult = false; // 플래그 리셋
+        targetImage.gameObject.SetActive(false);
+        _isShowingResult = false;
         gameObject.SetActive(false);
     }
 }

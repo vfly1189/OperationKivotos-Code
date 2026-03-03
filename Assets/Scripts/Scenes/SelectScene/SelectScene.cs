@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -10,7 +9,7 @@ public class SelectScene : BaseScene
     private Dictionary<int, List<GameObject>> _schoolModels
         = new Dictionary<int, List<GameObject>>();
 
-    [SerializeField] private GameObject _loadingCover;
+    [SerializeField] private GameObject _loadingCover; // 일반 프리팹 (Addressable이 아닌 Inspector 연결)
     [SerializeField] private SelectScenePreloadSO _preloadData;
     [SerializeField] private SchoolDataSO[] _schoolDatas;
 
@@ -25,9 +24,10 @@ public class SelectScene : BaseScene
         base.Init();
         _sceneType = Define.Scene.Select;
 
+        // [수정점 1] 동기 Instantiate 대신 유니티 기본 Instantiate 사용
         if (_loadingCover != null)
         {
-            _loadingCoverInstance = Managers.Resource.Instantiate(_loadingCover);
+            _loadingCoverInstance = Instantiate(_loadingCover);
             _loadingCoverInstance.SetActive(true);
             if (_loadingCoverInstance.GetComponent<CanvasGroup>() == null)
                 _loadingCoverInstance.AddComponent<CanvasGroup>().alpha = 1f;
@@ -35,7 +35,7 @@ public class SelectScene : BaseScene
         }
 
         // [핵심 변경 2] UniTask.Delay 사용 (에디터 멈춤 방지)
-        await UniTask.Delay(500);
+        //await UniTask.Delay(500);
 
         // 비동기 작업들 대기 (await)
         await CreateModelCamera();
@@ -48,7 +48,8 @@ public class SelectScene : BaseScene
             SelectSchool(0);
         }
 
-        StartCoroutine(FadeInSequence());
+        // [수정점 2] 코루틴 제거 -> UniTaskVoid 호출 (Fire and Forget)
+        FadeInSequence().Forget();
     }
 
     public void SelectSchool(int index)
@@ -96,9 +97,8 @@ public class SelectScene : BaseScene
 
                 if (voiceRef != null && voiceRef.RuntimeKeyIsValid())
                 {
-                    // ToUniTask() 사용
-                    var handle = Addressables.LoadAssetAsync<AudioClip>(voiceRef);
-                    AudioClip clip = await handle.ToUniTask();
+                    // [수정점 3] Addressables 직접 로드 제거 -> ResourceManager 위임
+                    AudioClip clip = await Managers.Resource.LoadAsync<AudioClip>(voiceRef);
 
                     if (clip != null) Managers.Sound.Play(clip, Define.Sound.Effect);
                 }
@@ -137,8 +137,8 @@ public class SelectScene : BaseScene
         {
             if (k >= chars.Length) break;
 
-            var handle = Addressables.LoadAssetAsync<GameObject>(chars[k].selectPrefab);
-            GameObject prefab = await handle.ToUniTask();
+            // [수정점 4] ResourceManager로 위임하여 씬 단위 메모리 관리 보장
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(chars[k].selectPrefab);
 
             if (prefab != null)
             {
@@ -160,8 +160,8 @@ public class SelectScene : BaseScene
 
     private async UniTask CreateModelCamera()
     {
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.modelCamera);
-        GameObject prefab = await handle.ToUniTask();
+        // [수정점 5] Handle 로직 제거
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.modelCamera);
 
         if (prefab != null)
         {
@@ -172,8 +172,8 @@ public class SelectScene : BaseScene
 
     private async UniTask CreateMainUI()
     {
-        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.mainUI);
-        GameObject prefab = await handle.ToUniTask();
+        // [수정점 6] Handle 로직 제거
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.mainUI);
 
         if (prefab != null)
         {
@@ -189,15 +189,16 @@ public class SelectScene : BaseScene
         _schoolModels.Clear();
     }
 
-    IEnumerator FadeInSequence()
+    // [수정점 7] IEnumerator 코루틴을 UniTaskVoid로 변경
+    private async UniTaskVoid FadeInSequence()
     {
-        if (_loadingCoverInstance == null) yield break;
+        if (_loadingCoverInstance == null) return;
 
         CanvasGroup coverCG = _loadingCoverInstance.GetComponent<CanvasGroup>();
         if (coverCG == null)
         {
-            Managers.Resource.Destroy(_loadingCoverInstance);
-            yield break;
+            Destroy(_loadingCoverInstance); // 자체 인스턴스화이므로 일반 Destroy 사용
+            return;
         }
 
         float timer = 0f;
@@ -207,9 +208,9 @@ public class SelectScene : BaseScene
         {
             timer += Time.deltaTime;
             coverCG.alpha = Mathf.Lerp(1f, 0f, timer / duration);
-            yield return null;
+            await UniTask.Yield(); // yield return null 대체
         }
 
-        Managers.Resource.Destroy(_loadingCoverInstance);
+        Destroy(_loadingCoverInstance);
     }
 }

@@ -5,7 +5,6 @@ public class SoundManager
 {
     AudioSource[] _audioSources = new AudioSource[(int)Define.Sound.MaxCount];
 
-    Dictionary<string, AudioClip> _audioClips = new Dictionary<string, AudioClip>();
 
     // MP3 player     -> AudioSource
     // MP3 음원       -> AudioClip
@@ -70,13 +69,13 @@ public class SoundManager
 
     public void SetVoiceVolume(float volume)
     {
-        _sfxVolume = Mathf.Clamp01(volume);
+        _voiceVolume = Mathf.Clamp01(volume);
 
         // SFX는 PlayOneShot으로 재생되므로 AudioSource의 볼륨 자체를 미리 바꿔둠
-        AudioSource sfxSource = _audioSources[(int)Define.Sound.Voice];
-        if (sfxSource != null)
+        AudioSource voiceSource = _audioSources[(int)Define.Sound.Voice];
+        if (voiceSource != null)
         {
-            sfxSource.volume = _sfxVolume;
+            voiceSource.volume = _voiceVolume;
         }
     }
 
@@ -87,7 +86,6 @@ public class SoundManager
             audioSource.clip = null;
             audioSource.Stop();
         }
-        _audioClips.Clear();
     }
 
     public void Play(AudioClip audioClip, Define.Sound type = Define.Sound.Effect, float pitch = 1.0f)
