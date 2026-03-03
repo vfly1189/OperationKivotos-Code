@@ -62,6 +62,7 @@ public class MonsterSpawner : MonoBehaviour
 
     public void DespawnMonsters()
     {
+        if (this == null || !gameObject.activeInHierarchy) return;
         // 모든 코루틴(리스폰 대기 등) 중지
         StopAllCoroutines();
 

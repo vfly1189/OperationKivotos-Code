@@ -160,6 +160,34 @@ public class BaseCharacter : MonoBehaviour
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Victory);
     }
 
+    public void ResetCharacterState(Vector3 pos, Quaternion rot)
+    {
+        // 2. 위치/회전 강제 덮어쓰기
+        transform.position = pos;
+        transform.rotation = rot;
+
+        // 5. 스탯 복구 (체력 풀피, 사망 상태 해제 등)
+        if (Stat != null)
+        {
+            Stat.ResetState();
+            // Stat 쪽에 RestoreHealth() 같은 게 있다면 호출 (아래 팁 참고)
+            // Stat.RestoreAll(); 
+        }
+
+        // 3. 상태 머신 초기화 (무조건 Idle로)
+        IsUsingSkill = false;
+        if (_stateMachine != null)
+        {
+            _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);
+        }
+
+        // 4. 애니메이터 완전 리셋 (이전 씬에서의 죽음, 스킬 모션 등 강제 해제)
+        if (_anim != null)
+        {
+            _anim.Rebind();
+        }        
+    }
+
     #endregion
 
     #region 콜백 함수들

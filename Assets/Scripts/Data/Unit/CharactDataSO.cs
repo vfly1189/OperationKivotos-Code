@@ -37,9 +37,9 @@ public class CharacterDataSO : ScriptableObject
     public GameObject bulletPrefab;
 
     [Header("Voices")]
-    public AudioClip[] formationInVoices; // "Formation_In_1", "Formation_In_2" µî
-    public AudioClip[] battleInVoices;
-    public AudioClip[] battleVictoryVocies;
+    public AssetReferenceT<AudioClip>[] formationInVoices; // "Formation_In_1", "Formation_In_2" µî
+    public AssetReferenceT<AudioClip>[] battleInVoices;
+    public AssetReferenceT<AudioClip>[] battleVictoryVocies;
 
 
     [Header("SkillIcon")]

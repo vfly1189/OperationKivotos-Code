@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 
 public class CharacterStat : BaseStat, IDamageable
@@ -75,6 +76,23 @@ public class CharacterStat : BaseStat, IDamageable
     }
 
     public CharacterDataSO GetData() { return _data; }
+
+    public void ResetState()
+    {
+        IsDead = false;
+
+        CurrentHp = MaxHp.Value;
+        CurrentEnergy = 0;
+        CurrentQSkillCoolTime = QSkillCoolTime.Value;
+        CurrentESkillCoolTime = 0;
+
+        // Collider 비활성화 (추가 피격 방지)
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = true;
+
+        Rigidbody rigid = GetComponent<Rigidbody>();
+        if (rigid != null) rigid.isKinematic = false;
+    }
 
     //테스트용
     private void Update()
@@ -207,12 +225,12 @@ public class CharacterStat : BaseStat, IDamageable
         Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp, WeaponLevel);
     }
 
-    public AudioClip[] GetBattleInVoice()
+    public AssetReferenceT<AudioClip>[] GetBattleInVoice()
     {
         return _data.battleInVoices;
     }
 
-    public AudioClip[] GetBattleVictoryVoices()
+    public AssetReferenceT<AudioClip>[] GetBattleVictoryVoices()
     {
         return _data.battleVictoryVocies;
     }
@@ -248,12 +266,12 @@ public class CharacterStat : BaseStat, IDamageable
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
 
-        // Rigidbody 정지 (시체가 밀려나지 않게)
-        Rigidbody rb = GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.isKinematic = true;
-        }
+        //// Rigidbody 정지 (시체가 밀려나지 않게)
+        //Rigidbody rb = GetComponent<Rigidbody>();
+        //if (rb != null)
+        //{
+        //    rb.isKinematic = true;
+        //}
 
         CallOnDead();
     }

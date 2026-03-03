@@ -1,128 +1,119 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.InputSystem;
-using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.UI;
+// [추가] UniTask 네임스페이스
+using Cysharp.Threading.Tasks;
 
 public class StartScene : BaseScene
 {
     [Header("PreloadData")]
     [SerializeField] private StartScenePreloadSO _preloadData;
 
+    [SerializeField] private TextMeshProUGUI _loadingText; // "데이터를 준비중입니다..."
+    [SerializeField] private GameObject _tapToStartGroup; // (시작 시 비활성화 상태)
+    [SerializeField] private Button _startButton;
+
     float _voiceDelay = 1.5f;
- 
+
+    // [핵심 1] 유니티 생명주기에 맞추기 위해 async UniTaskVoid를 사용
     protected override async void Init()
     {
         base.Init();
         _sceneType = Define.Scene.Start;
 
-        // 비동기 로딩 태스크들을 병렬로 실행하여 로딩 속도 최적화
-        var bgTask = CreateBackgroundSlideShow();
-        var logoTask = CreateLogo();
-        var tapTask = CreateTapToStart();
-        var soundIconTask = CreateSoundSettingIcon();
+        _startButton.onClick.AddListener(OnClick);
 
-        // BGM과 Voice 로딩 및 재생
-        var bgmTask = PlayMainTitle();
+        // 1. 초기 UI 상태 세팅
+        _loadingText.gameObject.SetActive(true);
+        if (_tapToStartGroup != null) _tapToStartGroup.SetActive(false);
+        _startButton.interactable = false;
 
-        // 모든 필수 시각적 요소가 로드될 때까지 대기
-        await Task.WhenAll(bgTask, logoTask, tapTask, soundIconTask, bgmTask);
+        // 2. 비동기 로딩 병렬 실행 (UniTask 기반)
+        var audioTask = PlayMainTitle();
+        var popupTask = PreloadPopups();
 
-        // 보이스는 조금 있다가 재생
-        Invoke(nameof(PlayTitleVoice), _voiceDelay);
+        // [핵심 2] ResourceManager의 UniTask 버전 LoadDependenciesAsync 호출
+        var globalAssetTask = Managers.Resource.LoadDependenciesAsync(
+            new[] { "Global" },
+            true,
+            (fileName, progress) =>
+            {
+                UpdateText(progress);
+            }
+        );
+
+        // [핵심 3] Task.WhenAll 대신 UniTask.WhenAll을 사용하여 스레드 데드락 방지
+        await UniTask.WhenAll(audioTask, popupTask, globalAssetTask);
+
+        // 4. 로딩 완료!
+        _startButton.interactable = true;
+
+        // 보이스 재생 (Invoke 대신 딜레이를 직접 주거나 UniTask.Delay 사용 가능)
+        // 여기서는 안전하게 Fire-and-forget 방식(UniTaskVoid)으로 백그라운드 재생
+        PlayTitleVoiceWithDelay(_voiceDelay).Forget();
+
+        // 5. 로딩 완료 처리 (유저 조작 허용)
+        _loadingText.gameObject.SetActive(false);
+        if (_tapToStartGroup != null) _tapToStartGroup.SetActive(true);
 
         Managers.Input.OnEscapePressed += HandleEscape;
     }
 
+    public void UpdateText(float progress)
+    {
+        _loadingText.text = $"Loading ... 진행률 : {progress * 100.0f}%";
+    }
 
-    private async Task PlayMainTitle()
+    // [핵심 4] Task -> UniTask로 반환형 변경
+    private async UniTask PlayMainTitle()
     {
         if (_preloadData.mainTitleBgm != null && _preloadData.mainTitleBgm.RuntimeKeyIsValid())
         {
-            AudioClip bgm = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.mainTitleBgm);
+            // [핵심 5] LoadAssetAsync의 반환 핸들을 ToUniTask()로 대기
+            var handle = Addressables.LoadAssetAsync<AudioClip>(_preloadData.mainTitleBgm);
+            AudioClip bgm = await handle.ToUniTask();
+
             if (bgm != null)
                 Managers.Sound.Play(bgm, Define.Sound.Bgm);
         }
     }
 
-    private async void PlayTitleVoice()
+    // 딜레이를 주고 백그라운드에서 실행할 수 있도록 UniTaskVoid로 분리
+    private async UniTaskVoid PlayTitleVoiceWithDelay(float delay)
     {
+        // Invoke를 대체하는 UniTask의 강력한 시간 대기 (타임스케일 영향 받음)
+        await UniTask.Delay(System.TimeSpan.FromSeconds(delay));
+
         int length = _preloadData.titleVoices.Length;
         if (length > 0)
         {
             int voiceNum = Random.Range(0, length);
-            AudioClip voice = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.titleVoices[voiceNum]);
+            var handle = Addressables.LoadAssetAsync<AudioClip>(_preloadData.titleVoices[voiceNum]);
+            AudioClip voice = await handle.ToUniTask();
+
             if (voice != null)
                 Managers.Sound.Play(voice, Define.Sound.Voice);
         }
     }
-    private async Task CreateBackgroundSlideShow()
-    {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.backgroundSlideShow);
-        if (prefab != null)
-        {
-            GameObject bgSlideshow = Managers.Resource.Instantiate(prefab);
-            bgSlideshow.name = "@Background_Slideshow";
 
-            Canvas canvas = bgSlideshow.GetComponent<Canvas>();
-            if (canvas != null) canvas.sortingOrder = -10;
+    private async UniTask PreloadPopups()
+    {
+        if (_preloadData.exitPopup != null && _preloadData.exitPopup.RuntimeKeyIsValid())
+        {
+            // 결과물이 필요 없어도 핸들 완료까지 안전하게 대기
+            var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
+            await handle.ToUniTask();
         }
     }
 
-    private async Task CreateLogo()
+    // 버튼 클릭 등의 이벤트에서 비동기를 띄울 때는 async UniTaskVoid 사용
+    private async UniTaskVoid ShowExitPopup()
     {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.logo);
-        if (prefab != null)
-        {
-            GameObject logo = Managers.Resource.Instantiate(prefab);
-            logo.name = "@Logo";
+        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
+        GameObject popupPrefab = await handle.ToUniTask();
 
-            Canvas canvas = logo.GetComponent<Canvas>();
-            if (canvas != null) canvas.sortingOrder = -9;
-        }
-    }
-
-    private async Task CreateSoundSettingIcon()
-    {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.soundSettingIcon);
-        if (prefab != null)
-        {
-            GameObject icon = Managers.Resource.Instantiate(prefab);
-            icon.name = "@SoundSettingIcon";
-
-            Canvas canvas = icon.GetComponent<Canvas>();
-            if (canvas == null) canvas = icon.AddComponent<Canvas>();
-
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = -7;
-
-            SoundButton soundBtn = icon.GetComponent<SoundButton>();
-            // 팝업 프리팹은 클릭 시 로드하도록 하거나, SO에 레퍼런스로 들고 있게 수정
-            soundBtn.SetPopupPrefab(await Managers.Resource.LoadAsync<GameObject>(_preloadData.soundSettingPopup));
-        }
-    }
-
-    private async Task CreateTapToStart()
-    {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.tapToStart);
-        if (prefab != null)
-        {
-            GameObject tapToStart = Managers.Resource.Instantiate(prefab);
-            tapToStart.name = "@TapToStartGroup";
-
-            Canvas canvas = tapToStart.GetComponent<Canvas>();
-            if (canvas != null) canvas.sortingOrder = -8;
-        }
-    }
-
-
-    private async void ShowExitPopup()
-    {
-        // 팝업 역시 띄울 때 비동기로 로드해서 보여줌
-        GameObject popupPrefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.exitPopup);
         if (popupPrefab != null)
         {
             UI_ExitPopUp popup = Managers.UI.ShowPopupUI<UI_ExitPopUp>(popupPrefab);
@@ -133,6 +124,12 @@ public class StartScene : BaseScene
         }
     }
 
+    void OnClick()
+    {
+        Managers.SceneEx.LoadScene(Define.Scene.Select);
+        Managers.Sound.StopBgm();
+    }
+
     private void HandleEscape()
     {
         if (Managers.UI.IsPopupOpen)
@@ -141,15 +138,13 @@ public class StartScene : BaseScene
         }
         else
         {
-            ShowExitPopup();
+            ShowExitPopup().Forget();
         }
     }
 
     public override void Clear()
     {
         base.Clear();
-        CancelInvoke(); // Invoke 취소
-
         Managers.Input.OnEscapePressed -= HandleEscape;
         Managers.Sound.Stop(Define.Sound.Bgm);
     }

@@ -203,6 +203,47 @@ public class PartyManager
             _coroutineRunner.StartCoroutine(CoGameOverSequence());
         }
     }
+
+
+    /// <summary>
+    /// 씬(마을, 던전 등)에 처음 진입하거나 전멸 후 부활할 때 
+    /// 파티원 전체의 위치와 상태를 뽀송뽀송하게 초기화합니다.
+    /// </summary>
+    public void ResetPartyForNewScene(Transform spawnPoint)
+    {
+        if (_registry.Members == null || _registry.Members.Count == 0) return;
+
+       
+        // 2. 파티원 전원 리셋
+        for (int i = 0; i < _registry.Members.Count; i++)
+        {
+            var member = _registry.Members[i];
+            if (member == null) continue;
+
+            // 상태 초기화 및 텔레포트
+            member.ResetCharacterState(spawnPoint.position, spawnPoint.rotation);
+
+            //// 3. 리더(0번)만 활성화, 나머지는 대기 상태로 숨김
+            //if (i == 0)
+            //{
+            //    _activator.ActivateCharacter(i, spawnPoint.position, spawnPoint.rotation);
+            //}
+            //else
+            //{
+                _activator.DeactivateCharacter(i);
+            
+        }
+
+        // 4. 카메라 강제 갱신
+        OnActiveCharacterChanged?.Invoke(_registry.GetCurrent().gameObject);
+
+        _activator.ActivateCharacter(0, spawnPoint.position, spawnPoint.rotation);
+        Debug.Log($"PartyManager : {spawnPoint.position.x}, {spawnPoint.position.y},{spawnPoint.position.z},");
+        // 1. 현재 조작 캐릭터를 무조건 0번(리더)으로 리셋
+        _swapController.TrySwap(0);
+        _isGameEnding = false; // 혹시 남아있을 종료 플래그 초기화
+    }
+
     #endregion
 
 

@@ -21,8 +21,6 @@ public class BaseStat : MonoBehaviour, IDamageable
         MaxHp = new Stat();
         Attack = new Stat();
         Defense = new Stat();
-
-
     }
     protected virtual void HandleDeath(GameObject shooter)
     {

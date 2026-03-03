@@ -1,125 +1,114 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
+// [추가] UniTask 네임스페이스
+using Cysharp.Threading.Tasks;
 
 public class SelectScene : BaseScene
 {
-    private enum ObjectType
-    {
-        Camera,
-        UI,
-        Character,
-    }
-
-    // 학교별 모델 핸들 리스트 (Key: School Index, Value: List of Handles)
     private Dictionary<int, List<GameObject>> _schoolModels
         = new Dictionary<int, List<GameObject>>();
 
     [SerializeField] private GameObject _loadingCover;
     [SerializeField] private SelectScenePreloadSO _preloadData;
-    [SerializeField] private SchoolDataSO[] _schoolDatas; // 학교 데이터 여기로 이동
+    [SerializeField] private SchoolDataSO[] _schoolDatas;
 
     private GameObject _modelCamera;
     private SelectSceneCanvas _uiCanvas;
     private int _currentSchoolIdx = -1;
     private GameObject _loadingCoverInstance;
 
+    // [핵심 변경 1] async UniTaskVoid로 선언 (유니티 생명주기에 맞춤)
     protected override async void Init()
     {
         base.Init();
         _sceneType = Define.Scene.Select;
 
-        // 로딩하는거 가려줄 화면
         if (_loadingCover != null)
         {
-            _loadingCoverInstance = Object.Instantiate(_loadingCover);
-            _loadingCover.SetActive(true);
-            // 커버에도 CanvasGroup이 있어야 페이드 아웃 가능 (없으면 추가)
+            _loadingCoverInstance = Managers.Resource.Instantiate(_loadingCover);
+            _loadingCoverInstance.SetActive(true);
             if (_loadingCoverInstance.GetComponent<CanvasGroup>() == null)
                 _loadingCoverInstance.AddComponent<CanvasGroup>().alpha = 1f;
+            _loadingCoverInstance.GetComponent<LoadingSceneController>().SetValue(1f);
         }
 
-        await Task.Delay(1000);
+        // [핵심 변경 2] UniTask.Delay 사용 (에디터 멈춤 방지)
+        await UniTask.Delay(500);
 
+        // 비동기 작업들 대기 (await)
         await CreateModelCamera();
         await CreateMainUI();
-     
         await LoadAllSchoolModels();
 
-        // 3. UI 초기화 및 이벤트 연결
         if (_uiCanvas != null)
         {
-            _uiCanvas.Init(this); // Scene 참조 전달
-            SelectSchool(0);      // 첫 학교 선택
+            _uiCanvas.Init(this);
+            SelectSchool(0);
         }
 
         StartCoroutine(FadeInSequence());
     }
 
-
-    // 외부(Canvas)에서 호출할 함수
     public void SelectSchool(int index)
     {
         if (_currentSchoolIdx == index) return;
 
-        // 이전 학교 끄기
         if (_currentSchoolIdx != -1 && _schoolModels.ContainsKey(_currentSchoolIdx))
         {
             foreach (var go in _schoolModels[_currentSchoolIdx])
                 if (go != null) go.SetActive(false);
         }
 
-        // 새 학교 켜기
         if (_schoolModels.ContainsKey(index))
         {
             foreach (var go in _schoolModels[index])
                 if (go != null) go.SetActive(true);
         }
 
-        PlaySchoolSound(index);
+        // 비동기 사운드 재생 (Fire and Forget)
+        PlaySchoolSoundAsync(index).Forget();
 
         _currentSchoolIdx = index;
-
-        // Context 업데이트
         Managers.Context.SchoolIdx = index;
         Managers.Context.SelectedSchool = _schoolDatas[index];
 
-        // UI 갱신 요청
         _uiCanvas.UpdateUIState(index, _schoolDatas[index]);
     }
 
-    void PlaySchoolSound(int schoolIndex)
+    // [핵심 변경 3] async void -> async UniTaskVoid 로 변경
+    private async UniTaskVoid PlaySchoolSoundAsync(int schoolIndex)
     {
         Managers.Sound.StopAll();
-
         SchoolDataSO data = _schoolDatas[schoolIndex];
 
-        // 테마곡
         if (data.themeBGM != null)
             Managers.Sound.Play(data.themeBGM, Define.Sound.Bgm);
 
-        // 랜덤 보이스
         if (data.characters.Length > 0)
         {
             var character = data.characters[Random.Range(0, data.characters.Length)];
+
             if (character.formationInVoices != null && character.formationInVoices.Length > 0)
             {
-                var clip = character.formationInVoices[Random.Range(0, character.formationInVoices.Length)];
-                Managers.Sound.Play(clip, Define.Sound.Voice);
+                var voiceRef = character.formationInVoices[Random.Range(0, character.formationInVoices.Length)];
+
+                if (voiceRef != null && voiceRef.RuntimeKeyIsValid())
+                {
+                    // ToUniTask() 사용
+                    var handle = Addressables.LoadAssetAsync<AudioClip>(voiceRef);
+                    AudioClip clip = await handle.ToUniTask();
+
+                    if (clip != null) Managers.Sound.Play(clip, Define.Sound.Effect);
+                }
             }
         }
     }
 
-    // ========================================================================
-    // [리소스 로딩 로직]
-    // ========================================================================
-    async Task LoadAllSchoolModels()
+    // [핵심 변경 4] Task -> UniTask 로 반환형 변경
+    private async UniTask LoadAllSchoolModels()
     {
-        // 스폰 포인트 찾기
         string[] spawnPointNames = { "SpawnPoint1", "SpawnPoint2", "SpawnPoint3", "SpawnPoint4" };
         Transform[] points = new Transform[4];
         if (_modelCamera != null)
@@ -128,17 +117,18 @@ public class SelectScene : BaseScene
                 points[i] = _modelCamera.transform.Find(spawnPointNames[i]);
         }
 
-        List<Task> loadingTasks = new List<Task>();
+        // UniTask.WhenAll 사용
+        var loadingTasks = new List<UniTask>();
 
         for (int i = 0; i < _schoolDatas.Length; i++)
         {
             loadingTasks.Add(LoadSingleSchoolModels(i, points));
         }
 
-        await Task.WhenAll(loadingTasks);
+        await UniTask.WhenAll(loadingTasks);
     }
 
-    async Task LoadSingleSchoolModels(int schoolIdx, Transform[] spawnPoints)
+    private async UniTask LoadSingleSchoolModels(int schoolIdx, Transform[] spawnPoints)
     {
         _schoolModels[schoolIdx] = new List<GameObject>();
         var chars = _schoolDatas[schoolIdx].characters;
@@ -147,8 +137,8 @@ public class SelectScene : BaseScene
         {
             if (k >= chars.Length) break;
 
-            // [핵심 변경점] Managers.Resource에게 위임! 핸들 신경 X
-            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(chars[k].selectPrefab);
+            var handle = Addressables.LoadAssetAsync<GameObject>(chars[k].selectPrefab);
+            GameObject prefab = await handle.ToUniTask();
 
             if (prefab != null)
             {
@@ -168,10 +158,11 @@ public class SelectScene : BaseScene
         }
     }
 
-
-    async System.Threading.Tasks.Task CreateModelCamera()
+    private async UniTask CreateModelCamera()
     {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.modelCamera);
+        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.modelCamera);
+        GameObject prefab = await handle.ToUniTask();
+
         if (prefab != null)
         {
             _modelCamera = Instantiate(prefab);
@@ -179,9 +170,11 @@ public class SelectScene : BaseScene
         }
     }
 
-    async System.Threading.Tasks.Task CreateMainUI()
+    private async UniTask CreateMainUI()
     {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.mainUI);
+        var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.mainUI);
+        GameObject prefab = await handle.ToUniTask();
+
         if (prefab != null)
         {
             GameObject uiObj = Instantiate(prefab);
@@ -190,11 +183,9 @@ public class SelectScene : BaseScene
         }
     }
 
-
     public override void Clear()
     {
         base.Clear();
-
         _schoolModels.Clear();
     }
 
@@ -210,22 +201,15 @@ public class SelectScene : BaseScene
         }
 
         float timer = 0f;
-        float duration = 0.5f; // 0.5초 동안 사라짐
+        float duration = 0.5f;
 
         while (timer < duration)
         {
             timer += Time.deltaTime;
-            // 1(불투명) -> 0(투명)으로 감소
             coverCG.alpha = Mathf.Lerp(1f, 0f, timer / duration);
             yield return null;
         }
 
-        // 완전히 사라지면 삭제
         Managers.Resource.Destroy(_loadingCoverInstance);
-    }
-
-    void OnDestroy()
-    {
-        
     }
 }
