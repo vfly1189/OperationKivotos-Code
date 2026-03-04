@@ -1,3 +1,4 @@
+using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Playables;
@@ -34,6 +35,8 @@ public class BaseCharacter : MonoBehaviour
     protected GameObject _healingAuraInstance;
     protected ParticleSystem _healingAuraParticle;
 
+    // [추가] 캐릭터의 현재 행동(공격 등)을 취소하기 위한 토큰
+    protected CancellationTokenSource _actionCts;
 
     #region 유니티 생명주기
 
@@ -65,12 +68,12 @@ public class BaseCharacter : MonoBehaviour
             _skillTimeline.Stop();
         }
 
-        // 공통 이펙트 최초 1회 로드
-        if (_healingAuraPrefab == null)
-        {
-            _healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("Healing_Aura").WaitForCompletion();
-            if (_healingAuraPrefab == null) Debug.LogError("Healing_Aura 로드 실패!");
-        }
+        //// 공통 이펙트 최초 1회 로드
+        //if (_healingAuraPrefab == null)
+        //{
+        //    _healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("Healing_Aura").WaitForCompletion();
+        //    if (_healingAuraPrefab == null) Debug.LogError("Healing_Aura 로드 실패!");
+        //}
     }
 
     void Start()
@@ -100,6 +103,7 @@ public class BaseCharacter : MonoBehaviour
     protected virtual void OnDisable()
     {
         if (Stat != null) Stat.OnDead -= HandleDeath;
+        CancelCurrentAction(); // 파괴되거나 비활성화될 때도 취소
     }
 
     #endregion
@@ -195,6 +199,10 @@ public class BaseCharacter : MonoBehaviour
 
     private void OnStateChanged(CharacterStateMachine.PlayerState newState)
     {
+        // [추가] 상태가 바뀔 때마다 기존에 진행 중이던 행동(ex: 연사) 취소!
+        CancelCurrentAction();
+        _actionCts = new CancellationTokenSource(); // 새 토큰 발급
+
         // 무적 처리
         Stat.IsInvincible = (newState == CharacterStateMachine.PlayerState.Q_Skill_CutScene ||
                             newState == CharacterStateMachine.PlayerState.Q_Skill ||
@@ -207,6 +215,17 @@ public class BaseCharacter : MonoBehaviour
         if (newState == CharacterStateMachine.PlayerState.Q_Skill_CutScene)
         {
             OnSkillEnter();
+        }
+    }
+
+    // 행동 강제 취소 함수
+    protected void CancelCurrentAction()
+    {
+        if (_actionCts != null)
+        {
+            _actionCts.Cancel();
+            _actionCts.Dispose();
+            _actionCts = null;
         }
     }
 
@@ -356,12 +375,17 @@ public class BaseCharacter : MonoBehaviour
     public virtual void PlayHealingAura()
     {
         // 1. 인스턴스가 없다면 지연 생성 
-        if (_healingAuraInstance == null && _healingAuraPrefab != null)
+        if (_healingAuraInstance == null)
         {
-            // 캐릭터의 발밑이나 특정 Transform을 부모로 설정하여 생성
-            _healingAuraInstance = Instantiate(_healingAuraPrefab, transform);
+            // [최적화 핵심] 프리팹을 따로 멤버 변수에 저장할 필요가 없습니다.
+            // 이미 GameScene 로딩 때 라벨로 올라온 메모리 캐시에서 ResourceManager가 알아서 빼옵니다!
+            // 생성과 동시에 부모(transform), 위치, 회전 세팅까지 한 번에 처리합니다.
+            _healingAuraInstance = Managers.Resource.Instantiate("Healing_Aura", transform.position, Quaternion.identity, transform);
 
-            // 로컬 위치/회전 초기화
+            // 만약 못 찾았다면 (로드 실패 등) 에러 방지
+            if (_healingAuraInstance == null) return;
+
+            // 로컬 위치/회전 강제 초기화 (안전장치)
             _healingAuraInstance.transform.localPosition = Vector3.zero;
             _healingAuraInstance.transform.localRotation = Quaternion.identity;
 
@@ -374,8 +398,9 @@ public class BaseCharacter : MonoBehaviour
             _healingAuraInstance.SetActive(true);
             if (_healingAuraParticle != null)
             {
-                _healingAuraParticle.Stop();
-                _healingAuraParticle.Play();
+                // Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear) 를 쓰면 기존 잔상이 깔끔히 지워집니다.
+                _healingAuraParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                _healingAuraParticle.Play(true);
             }
         }
     }

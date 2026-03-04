@@ -21,6 +21,7 @@ public class Managers : MonoBehaviour
     DataManager _data = new DataManager();
     WalletManager _wallet = new WalletManager();
     SectorManager _sector = new SectorManager();
+    InventoryManager _inventory = new InventoryManager();
 
     public static InputManager Input { get { return Instance._input; } }
     public static PartyManager Party { get { return Instance._party; } }
@@ -32,6 +33,7 @@ public class Managers : MonoBehaviour
     public static DataManager Data { get { return Instance._data; } }
     public static WalletManager Wallet { get { return Instance._wallet; } }
     public static SectorManager Sector { get { return Instance._sector; } }
+    public static InventoryManager Inventory { get { return Instance._inventory; } }
     #endregion
 
     // [핵심 1] 코루틴 Start 대신 일반 Start에서 Fire-and-forget 비동기 실행

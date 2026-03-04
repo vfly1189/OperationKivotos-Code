@@ -67,6 +67,8 @@ public class PlayerController
     // 마우스 입력 처리 (공격)
     private void HandleMouse(Define.MouseEvent evt)
     {
+        if (Managers.UI.IsPopupOpen) return;
+
         if (_currentTarget == null) return;
 
         //// 마을(GameScene)에서는 공격 금지

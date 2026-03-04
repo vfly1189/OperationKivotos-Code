@@ -11,7 +11,9 @@ public class WeaponDataSO : ItemDataSO
         // ¿¹: "Weapon_Hoshino_1"
         string key = $"{itemID}_{level}";
 
-        if (Managers.Data.WeaponDict.TryGetValue(key, out WeaponData data))
+        WeaponData data = Managers.Data.GetData<string, WeaponData>(key);
+
+        if (data != null)
         {
             return data;
         }

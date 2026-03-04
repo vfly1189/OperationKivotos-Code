@@ -30,7 +30,10 @@ public class MonsterSpawner : MonoBehaviour
 
     public void SpawnMonsters()
     {
-        SpawnerData data = Managers.Data.GetSpawnerData(_spawnerId);
+        //SpawnerData data = Managers.Data.GetSpawnerData(_spawnerId);
+
+        SpawnerData data = Managers.Data.GetData<int, SpawnerData>(_spawnerId);
+
         if (data == null || data.spawnList == null || data.spawnList.Count == 0) return;
 
         foreach (var info in data.spawnList)
@@ -91,7 +94,8 @@ public class MonsterSpawner : MonoBehaviour
         int pointIdx = info.pointIndex;
         Transform spawnPoint = _spawnPoints[pointIdx];
 
-        MonsterData monsterData = Managers.Data.GetMonsterDataById(info.monsterId);
+        //MonsterData monsterData = Managers.Data.GetMonsterDataById(info.monsterId);
+        MonsterData monsterData = Managers.Data.GetData<int, MonsterData>(info.monsterId);
         if (monsterData == null) return;
 
         // [핵심] CancellationToken을 넘겨주어 대기 도중 스포너가 비활성화/파괴되면 즉시 중단되게 함

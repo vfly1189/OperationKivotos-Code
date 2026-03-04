@@ -19,7 +19,12 @@ public class WeaponUpgradeService
 
         // 2. 다음 레벨 비용 데이터 가져오기
         string key = $"{target.Stat._weaponData.itemID}_{currentLevel + 1}";
-        if (!Managers.Data.WeaponDict.TryGetValue(key, out WeaponData nextData))
+
+        //if (!Managers.Data.WeaponDict.TryGetValue(key, out WeaponData nextData))
+        //    return UpgradeResult.AlreadyMaxLevel;
+
+        WeaponData nextData = Managers.Data.GetData<string, WeaponData>(key);
+        if (nextData == null)
             return UpgradeResult.AlreadyMaxLevel;
 
         // 3. 재화 소모 시도
@@ -29,8 +34,9 @@ public class WeaponUpgradeService
         );
         if (!consumed) return UpgradeResult.NotEnoughCurrency;
 
+        EnhancementRateData rateData = Managers.Data.GetData<int, EnhancementRateData>(currentLevel);
         // 4. 확률 판정
-        if (Managers.Data.EnhanceRateDict.TryGetValue(currentLevel, out EnhancementRateData rateData))
+        if (rateData != null)
         {
             if (UnityEngine.Random.value <= rateData.successRate)
             {

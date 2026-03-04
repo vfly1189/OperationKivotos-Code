@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -201,10 +202,7 @@ public class BossMonsterController : MonoBehaviour
     // [추가] 사망 처리 로직
     private NodeState HandleDeadState()
     {
-        if (_isDeadProcessed)
-        {
-            return NodeState.Running; // 사라질 때까지 계속 Running
-        }
+        if (_isDeadProcessed) return NodeState.Running; // 사라질 때까지 계속 Running
 
         _isDeadProcessed = true;
         // Debug.Log("Boss Dead Logic Start");
@@ -221,26 +219,29 @@ public class BossMonsterController : MonoBehaviour
 
         // 3. 사망 애니메이션 재생
         _anim.CrossFade("Death", 0.0f);
-        // 또는 타임라인으로 사망 연출을 하려면: _director.Play(_deathTimeline);
-
-        // 4. HP바 제거 (연결되어 있다면)
-        // BossDungeonScene에서 관리한다면 거기서 처리되겠지만, 여기서 직접 끊어도 됨
-        // if (_hpBar != null) Managers.Resource.Destroy(_hpBar.gameObject);
-
-        // 5. 보스 클리어 처리 (게임 매니저에게 알림)
-        // Managers.Game.StageClear(); // 예시
 
         // 6. 3초 뒤 오브젝트 삭제 (연출 시간 확보)
-        StartCoroutine(CoDespawn());
+        DespawnAsync(this.GetCancellationTokenOnDestroy()).Forget();
 
         return NodeState.Running;
     }
 
-    private IEnumerator CoDespawn()
-    {
-        yield return new WaitForSeconds(5.0f); // 보스는 죽는 연출이 기니까 좀 길게
+    //private IEnumerator CoDespawn()
+    //{
+    //    yield return new WaitForSeconds(5.0f); // 보스는 죽는 연출이 기니까 좀 길게
 
-        // 보스전 종료 처리 (UI 띄우기 등)
+    //    // 보스전 종료 처리 (UI 띄우기 등)
+    //    Debug.Log("보스 사망 연출 종료 -> 던전 클리어");
+    //    Managers.Resource.Destroy(gameObject);
+    //    OnDead?.Invoke();
+    //}
+
+    private async UniTaskVoid DespawnAsync(System.Threading.CancellationToken token)
+    {
+        // 보스는 죽는 연출이 기니까 좀 길게 (취소 시 조용히 넘김)
+        bool isCanceled = await UniTask.Delay(TimeSpan.FromSeconds(5.0f), cancellationToken: token).SuppressCancellationThrow();
+        if (isCanceled) return;
+
         Debug.Log("보스 사망 연출 종료 -> 던전 클리어");
         Managers.Resource.Destroy(gameObject);
         OnDead?.Invoke();

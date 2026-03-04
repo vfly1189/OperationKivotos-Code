@@ -1,5 +1,7 @@
+using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
@@ -45,6 +47,13 @@ public class MonsterController : MonoBehaviour
     private int _currentAmmo;
 
     private UI_MonsterHPBar _hpBar;
+
+    // [최적화용] SetDestination 과호출 방지를 위한 캐싱 변수
+    private Vector3 _lastDestPosition = Vector3.zero;
+
+    // [추가] 행동 취소/초기화를 위한 몬스터 전역 토큰
+    protected CancellationTokenSource _monsterCts;
+
 
     private void Awake()
     {
@@ -112,10 +121,12 @@ public class MonsterController : MonoBehaviour
     // 풀링 사용 시 OnEnable에서 초기화 필요
     private void OnEnable()
     {
+        // 이전 태스크 찌꺼기 정리 및 새 토큰 발급
+        CancelMonsterTasks();
+        _monsterCts = new CancellationTokenSource();
+
         _state = MonsterState.Spawning; // 시작 상태 초기화
-
         _currentAmmo = _maxAmmo;
-
         // 스탯 초기화 (죽은 상태 복구)
         Stat?.Init();
 
@@ -136,19 +147,31 @@ public class MonsterController : MonoBehaviour
             _hpBar.UpdateHpBar(Stat.CurrentHp, Stat.MaxHp.Value);
         }
 
-        StartCoroutine(CoEnableAgentDelay());
+        EnableAgentDelayAsync(_monsterCts.Token).Forget();
     }
 
-    private IEnumerator CoEnableAgentDelay()
+    private void CancelMonsterTasks()
     {
-        yield return null;
+        if (_monsterCts != null)
+        {
+            _monsterCts.Cancel();
+            _monsterCts.Dispose();
+            _monsterCts = null;
+        }
+    }
+
+    // [변경 2] 코루틴을 비동기 함수로 변경
+    private async UniTaskVoid EnableAgentDelayAsync(CancellationToken token)
+    {
+        // 1프레임 대기 (파괴/비활성화 시 즉시 취소되도록 토큰 연동)
+        bool isCanceled = await UniTask.Yield(PlayerLoopTiming.Update, token).SuppressCancellationThrow();
+        if (isCanceled) return;
 
         if (_state != MonsterState.Dead && _agent != null)
         {
             _agent.enabled = true;
         }
 
-        // 준비가 끝났으므로 Idle 상태로 전환하여 AI 작동 시작
         _state = MonsterState.Idle;
     }
 
@@ -160,7 +183,7 @@ public class MonsterController : MonoBehaviour
         {
             _agent.enabled = false;
         }
-        StopAllCoroutines();
+        CancelMonsterTasks(); // [핵심] 비활성화 시 모든 UniTask 대기 즉시 취
     }
 
 
@@ -288,7 +311,9 @@ public class MonsterController : MonoBehaviour
 
         if (_hpBar != null) _hpBar.gameObject.SetActive(false);
 
-        StartCoroutine(CoDespawn());
+        // [변경 3] 사망 코루틴 -> UniTask
+        DespawnAsync(_monsterCts.Token).Forget();
+
         return NodeState.Running;
     }
 
@@ -333,7 +358,13 @@ public class MonsterController : MonoBehaviour
         if (_agent != null && _agent.enabled)
         {
             _agent.isStopped = false;
-            _agent.SetDestination(_target.position);
+
+            // [최적화 핵심] 타겟의 위치가 이전 위치와 0.5f 이상 차이 날 때만 길찾기 연산 수행!
+            if (Vector3.SqrMagnitude(_target.position - _lastDestPosition) > 0.25f)
+            {
+                _lastDestPosition = _target.position;
+                _agent.SetDestination(_target.position);
+            }
         }
 
         if (_state != MonsterState.Moving)
@@ -372,10 +403,13 @@ public class MonsterController : MonoBehaviour
         }
     }
 
-   
-    private IEnumerator CoDespawn()
+
+    // [변경 4] 삭제 딜레이 UniTask (토큰 연동으로 씬 전환 릭 방지)
+    private async UniTaskVoid DespawnAsync(CancellationToken token)
     {
-        yield return new WaitForSeconds(2.0f);
-        Managers.Resource.Destroy(gameObject);
+        bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(2.0f), cancellationToken: token).SuppressCancellationThrow();
+        if (isCanceled) return;
+
+        Managers.Resource.Destroy(gameObject); // 풀로 돌아감
     }
 }

@@ -84,16 +84,4 @@ public class BossSkillController : MonoBehaviour
             skillObj.GetComponent<ParticleSystem>().Play();
         }
     }
-
-    //public void StopAllSkills()
-    //{
-    //    foreach (var skill in _activeSkills.Values)
-    //    {
-    //        if (skill.gameObject.activeInHierarchy)
-    //        {
-    //            skill.StopAllCoroutines();
-    //            skill.gameObject.SetActive(false); // 혹은 이펙트 정리 로직 호출
-    //        }
-    //    }
-    //}
 }

@@ -136,7 +136,8 @@ public class UI_UpgradePopUp : UI_PopUp
         }
 
         string key = $"{selected.Stat._weaponData.itemID}_{weaponLevel + 1}";
-        if (!Managers.Data.WeaponDict.TryGetValue(key, out WeaponData nextData))
+        WeaponData nextData = Managers.Data.GetData<string, WeaponData>(key);
+        if (nextData == null)
         {
             SetMaxLevelUI();
             return;
@@ -165,7 +166,8 @@ public class UI_UpgradePopUp : UI_PopUp
 
     private void RefreshRateInfo(int weaponLevel)
     {
-        if (!Managers.Data.EnhanceRateDict.TryGetValue(weaponLevel, out EnhancementRateData rateData))
+        EnhancementRateData rateData = Managers.Data.GetData<int, EnhancementRateData>(weaponLevel);
+        if (rateData == null)
         {
             _enhancementRateText.text = "¼º°ø È®·ü: -";
             _enhancementRateText.color = Color.white;

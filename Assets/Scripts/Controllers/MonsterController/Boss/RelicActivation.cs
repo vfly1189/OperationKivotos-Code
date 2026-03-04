@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System.Collections;
 using UnityEngine;
 
@@ -22,18 +23,31 @@ public class RelicActivation : BossSkillBase
             _currentIsRed = _relicController.ActivateRandomRelic();
         }
 
-        StartCoroutine(ProcessSkillRoutine(context._boss));
+        //StartCoroutine(ProcessSkillRoutine(context._boss));
+        ProcessSkillRoutineAsync(context._boss).Forget();
     }
 
-    private IEnumerator ProcessSkillRoutine(GameObject boss)
+    //private IEnumerator ProcessSkillRoutine(GameObject boss)
+    //{
+    //    Vector3 skillPos = boss.transform.position + boss.transform.forward * 5.0f;
+
+    //    GameObject warningZone = Managers.Resource.Instantiate(_yellowWarning, skillPos, Quaternion.identity);
+
+    //    warningZone.GetComponent<ParticleSystem>().Play();
+
+    //    yield return new WaitForSeconds(3.0f);
+    //    Managers.Destroy(warningZone);
+    //}
+
+    private async UniTaskVoid ProcessSkillRoutineAsync(GameObject boss)
     {
         Vector3 skillPos = boss.transform.position + boss.transform.forward * 5.0f;
-
         GameObject warningZone = Managers.Resource.Instantiate(_yellowWarning, skillPos, Quaternion.identity);
-
         warningZone.GetComponent<ParticleSystem>().Play();
 
-        yield return new WaitForSeconds(3.0f);
-        Managers.Destroy(warningZone);
+        bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(3.0f), cancellationToken: warningZone.GetCancellationTokenOnDestroy()).SuppressCancellationThrow();
+        if (isCanceled) return;
+
+        Managers.Resource.Destroy(warningZone);
     }
 }

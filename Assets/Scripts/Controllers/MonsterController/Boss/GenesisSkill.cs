@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System.Collections;
 using UnityEngine;
 
@@ -10,17 +11,18 @@ public class GenesisSkill : BossSkillBase
     public override void Cast(BossSkillContext context)
     {
         // 프리팹이 활성화될 때 코루틴 시작
-        StartCoroutine(ProcessSkillRoutine(context._targetPosition));
+        ProcessSkillRoutineAsync(context._targetPosition).Forget();
     }
 
-    private IEnumerator ProcessSkillRoutine(Vector3 centerPos)
+    private async UniTask ProcessSkillRoutineAsync(Vector3 centerPos)
     {
-        GameObject go = Object.Instantiate(_genesisEffect, centerPos, Quaternion.identity);
-
+        //GameObject go = Object.Instantiate(_genesisEffect, centerPos, Quaternion.identity);
+        GameObject go = Managers.Resource.Instantiate(_genesisEffect, centerPos, Quaternion.identity);
         go.transform.position = centerPos;
         go.GetComponent<ParticleSystem>().Play();
 
-        yield return new WaitForSeconds(5.0f);
+        bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(5.0f), cancellationToken: go.GetCancellationTokenOnDestroy()).SuppressCancellationThrow();
+        if (isCanceled) return;
         Managers.Destroy(go);
     }
 }

@@ -14,5 +14,4 @@ public abstract class BossSkillBase : MonoBehaviour
 {
     // 스킬이 실행될 때 호출되는 함수
     public abstract void Cast(BossSkillContext context);
-    //public virtual void Cast(Transform[] monsterSpawnPoints) { }
 }
