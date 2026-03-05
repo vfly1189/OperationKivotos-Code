@@ -33,7 +33,7 @@ public class SoundButton : MonoBehaviour
         }
 
         // Prefab을 직접 전달
-        Managers.UI.ShowPopupUI<UI_SoundSetting>(_soundSettingPopupPrefab);
+       // Managers.UI.ShowPopupUI<UI_SoundSetting>(_soundSettingPopupPrefab);
     }
 
     private void OnDestroy()

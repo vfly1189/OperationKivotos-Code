@@ -77,6 +77,26 @@ public class GameScene : BaseScene
     // [핵심 변경 5] Addressables 직접 로드 제거
     private async UniTask SetupUI()
     {
+        //var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
+        //if (existingUI != null)
+        //{
+        //    existingUI.gameObject.SetActive(true);
+        //    existingUI.SetPartyManager();
+        //    return;
+        //}
+
+        //GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.gameSceneCanvas, true);
+
+        //if (prefab != null)
+        //{
+        //    GameObject ui = Instantiate(prefab);
+        //    ui.name = "@GameSceneCanvas";
+        //    DontDestroyOnLoad(ui);
+        //    ui.GetComponent<GameSceneCanvas>()?.SetPartyManager();
+        //}
+
+        // 1. 혹시 모를 씬 내에 이미 떠있는 UI가 있다면 UIManager 캐싱 및 활성화만 진행 (보통 던전에서 마을로 돌아올 때)
+        // (단, 완벽한 프레임워크라면 씬에 UI를 수동으로 두지 않아야 함)
         var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
         if (existingUI != null)
         {
@@ -85,14 +105,18 @@ public class GameScene : BaseScene
             return;
         }
 
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.gameSceneCanvas, true);
+        // 2. 어드레서블에서 UI 프리팹을 메모리에 비동기 로드
+        // ShowSceneUI가 동기 Instantiate를 하기 때문에 로드가 선행되어야 합니다.
+        await Managers.Resource.LoadAsync<GameObject>(_preloadData.gameSceneCanvas);
 
-        if (prefab != null)
+        // 3. UIManager를 통해 Scene UI 생성
+        // @Canvas_Scene 하위로 자동 배치 및 SetCanvas 됨
+        GameSceneCanvas ui = Managers.UI.ShowSceneUI<GameSceneCanvas>("GameSceneCanvas_New");
+
+        // 4. Party Manager 연동
+        if (ui != null)
         {
-            GameObject ui = Instantiate(prefab);
-            ui.name = "@GameSceneCanvas";
-            DontDestroyOnLoad(ui);
-            ui.GetComponent<GameSceneCanvas>()?.SetPartyManager();
+            ui.SetPartyManager();
         }
     }
 

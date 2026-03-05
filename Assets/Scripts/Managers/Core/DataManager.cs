@@ -133,7 +133,20 @@ public class DataManager
         return null; // 못 찾으면 null
     }
 
-
+    public BaseItemData GetItemData(int itemID, ItemCategory category)
+    {
+        switch (category)
+        {
+            case ItemCategory.Equipment:
+                return GetData<int, EquipmentData>(itemID);
+            case ItemCategory.Consumable:
+                return GetData<int, ConsumableData>(itemID);
+            case ItemCategory.Material:
+                return GetData<int, MaterialData>(itemID);
+            default:
+                return null;
+        }
+    }
 
 
     //// ==========================================================

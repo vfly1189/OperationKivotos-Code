@@ -7,7 +7,7 @@ public class NoahController : MonoBehaviour, IInteractable
 
     private UI_UnitName _nameUIl;
 
-    public void Start()
+    public async void Start()
     {
         //머리위에 이름 태그
         if (_nameUIPrefab != null)
@@ -20,7 +20,7 @@ public class NoahController : MonoBehaviour, IInteractable
                 uiParent = canvasObj.transform;
             }
 
-            _nameUIl = Managers.UI.MakeSubItem<UI_UnitName>(_nameUIPrefab, uiParent);
+            _nameUIl = await Managers.UI.MakeSubItemAsync<UI_UnitName>("UnitName", uiParent);
             // 타겟 세팅
             _nameUIl.SetTarget(_nameTextTr, "노아");
         }     

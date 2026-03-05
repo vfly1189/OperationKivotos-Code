@@ -4,6 +4,7 @@ using System.IO;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Collections.Generic;
+using System;
 
 public class ExcelImporter : EditorWindow
 {
@@ -21,7 +22,6 @@ public class ExcelImporter : EditorWindow
         {
             IWorkbook book = new XSSFWorkbook(stream);
 
-            // 파싱된 데이터를 담을 리스트 준비
             List<EquipmentData> equipList = new List<EquipmentData>();
             List<ConsumableData> consumeList = new List<ConsumableData>();
             List<MaterialData> matList = new List<MaterialData>();
@@ -37,16 +37,20 @@ public class ExcelImporter : EditorWindow
                         continue;
 
                     EquipmentData data = new EquipmentData();
+                    // --- BaseItemData 상속 속성 ---
                     data.ID = (int)row.GetCell(0).NumericCellValue;
-                    data.IconKey = row.GetCell(1).StringCellValue ?? "";
-                    data.Name = row.GetCell(2)?.StringCellValue ?? "";
-                    data.EquipPart = row.GetCell(3)?.StringCellValue ?? "";
-                    data.Tier = (int)(row.GetCell(4)?.NumericCellValue ?? 0);
-                    data.MaxHP = (float)(row.GetCell(5)?.NumericCellValue ?? 0f);
-                    data.Attack = (float)(row.GetCell(6)?.NumericCellValue ?? 0f);
-                    data.Defense = (float)(row.GetCell(7)?.NumericCellValue ?? 0f);
-                    data.MoveSpeed = (float)(row.GetCell(8)?.NumericCellValue ?? 0f);
-                    data.Description = row.GetCell(9)?.StringCellValue ?? "";
+                    data.IconKey = row.GetCell(1)?.StringCellValue ?? "";
+                    data.Grade = ParseGrade(row.GetCell(2)?.StringCellValue);
+                    data.Name = row.GetCell(3)?.StringCellValue ?? "";
+                    data.Description = row.GetCell(10)?.StringCellValue ?? ""; // 설명이 10번에 있음
+
+                    // --- Equipment 전용 속성 ---
+                    data.EquipPart = row.GetCell(4)?.StringCellValue ?? "";
+                    data.Tier = (int)(row.GetCell(5)?.NumericCellValue ?? 0);
+                    data.MaxHP = (float)(row.GetCell(6)?.NumericCellValue ?? 0f);
+                    data.Attack = (float)(row.GetCell(7)?.NumericCellValue ?? 0f);
+                    data.Defense = (float)(row.GetCell(8)?.NumericCellValue ?? 0f);
+                    data.MoveSpeed = (float)(row.GetCell(9)?.NumericCellValue ?? 0f);
 
                     equipList.Add(data);
                 }
@@ -63,13 +67,17 @@ public class ExcelImporter : EditorWindow
                         continue;
 
                     ConsumableData data = new ConsumableData();
+                    // --- BaseItemData 상속 속성 ---
                     data.ID = (int)row.GetCell(0).NumericCellValue;
-                    data.IconKey = row.GetCell(1).StringCellValue ?? "";
-                    data.Name = row.GetCell(2)?.StringCellValue ?? "";
-                    data.EffectValue = (float)(row.GetCell(3)?.NumericCellValue ?? 0f);
-                    data.Duration = (float)(row.GetCell(4)?.NumericCellValue ?? 0f);
-                    data.MaxStack = (int)(row.GetCell(5)?.NumericCellValue ?? 1);
-                    data.Description = row.GetCell(6)?.StringCellValue ?? "";
+                    data.IconKey = row.GetCell(1)?.StringCellValue ?? "";
+                    data.Grade = ParseGrade(row.GetCell(2)?.StringCellValue);
+                    data.Name = row.GetCell(3)?.StringCellValue ?? "";
+                    data.Description = row.GetCell(7)?.StringCellValue ?? ""; // 설명이 7번에 있음
+
+                    // --- Consumable 전용 속성 ---
+                    data.EffectValue = (float)(row.GetCell(4)?.NumericCellValue ?? 0f);
+                    data.Duration = (float)(row.GetCell(5)?.NumericCellValue ?? 0f);
+                    data.MaxStack = (int)(row.GetCell(6)?.NumericCellValue ?? 1);
 
                     consumeList.Add(data);
                 }
@@ -86,28 +94,47 @@ public class ExcelImporter : EditorWindow
                         continue;
 
                     MaterialData data = new MaterialData();
+                    // --- BaseItemData 상속 속성 ---
                     data.ID = (int)row.GetCell(0).NumericCellValue;
-                    data.IconKey = row.GetCell(1).StringCellValue ?? "";
-                    data.Name = row.GetCell(2)?.StringCellValue ?? "";
-                    data.Tier = (int)(row.GetCell(3)?.NumericCellValue ?? 0);
-                    data.MaxStack = (int)(row.GetCell(4)?.NumericCellValue ?? 9999);
-                    data.Description = row.GetCell(5)?.StringCellValue ?? "";
+                    data.IconKey = row.GetCell(1)?.StringCellValue ?? "";
+                    data.Grade = ParseGrade(row.GetCell(2)?.StringCellValue);
+                    data.Name = row.GetCell(3)?.StringCellValue ?? "";
+                    data.Description = row.GetCell(6)?.StringCellValue ?? ""; // 설명이 6번에 있음
+
+                    // --- Material 전용 속성 ---
+                    data.Tier = (int)(row.GetCell(4)?.NumericCellValue ?? 0);
+                    data.MaxStack = (int)(row.GetCell(5)?.NumericCellValue ?? 9999);
 
                     matList.Add(data);
                 }
             }
 
-            // SO에 저장
             SaveToScriptableObject(equipList, consumeList, matList);
         }
     }
 
+    // [추가] 엑셀의 문자열을 ItemGrade Enum으로 안전하게 변환하는 헬퍼 함수
+    private static ItemGrade ParseGrade(string gradeStr)
+    {
+        if (string.IsNullOrEmpty(gradeStr))
+            return ItemGrade.Common; // 기본값
+
+        // 대소문자 무시하고 Enum 파싱 시도 (예: "common", "Epic" 모두 매핑)
+        if (Enum.TryParse(gradeStr, true, out ItemGrade parsedGrade))
+        {
+            return parsedGrade;
+        }
+
+        Debug.LogWarning($"[ExcelImporter] 알 수 없는 등급입니다: {gradeStr}. Common으로 설정합니다.");
+        return ItemGrade.Common;
+    }
+
     private static void SaveToScriptableObject(List<EquipmentData> equips, List<ConsumableData> consumes, List<MaterialData> mats)
     {
-        string assetPath = "Assets/Resources/Data/ItemDatabase.asset";
-        if (!Directory.Exists(Application.dataPath + "/Resources/Data"))
+        string assetPath = "Assets/Resources_moved/Data/ItemDatabase.asset"; // 경로 확인 필요
+        if (!Directory.Exists(Application.dataPath + "/Resources_moved/Data"))
         {
-            Directory.CreateDirectory(Application.dataPath + "/Resources/Data");
+            Directory.CreateDirectory(Application.dataPath + "/Resources_moved/Data");
         }
 
         ItemDatabaseSO database = AssetDatabase.LoadAssetAtPath<ItemDatabaseSO>(assetPath);
@@ -117,7 +144,6 @@ public class ExcelImporter : EditorWindow
             AssetDatabase.CreateAsset(database, assetPath);
         }
 
-        // 각각의 리스트에 데이터 덮어씌우기
         database.Equipments = equips;
         database.Consumables = consumes;
         database.Materials = mats;

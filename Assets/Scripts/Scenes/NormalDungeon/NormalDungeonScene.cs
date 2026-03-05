@@ -13,7 +13,7 @@ public class NormalDungeonScene : BaseScene
     private int _remainingMonsters = 0;
 
     private GameObject _curMap;
-    private GameObject _mainUI;
+    private GameSceneCanvas _mainUI;
     private GameObject _loadingCoverInstance;
     private GameObject _clearUI;
 
@@ -44,8 +44,9 @@ public class NormalDungeonScene : BaseScene
 
         //await UniTask.Delay(500); // Task.Delay -> UniTask.Delay
 
-        CreateUI();
+        //CreateUI();
 
+        var mainUI = SetupUI();
         var mapTask = CreateMap();
         var poolTask = CreatePool();
         var effectStageTask = CreateEffectStage();
@@ -56,7 +57,7 @@ public class NormalDungeonScene : BaseScene
         var mainBgmTask = LoadMainBgm();
 
         // UniTask.WhenAll 로 병렬 대기
-        await UniTask.WhenAll(mapTask, poolTask, effectStageTask, clearUI, successBgm, victoryVoice, battleInVoice);
+        await UniTask.WhenAll(mainUI, mapTask, poolTask, effectStageTask, clearUI, successBgm, victoryVoice, battleInVoice);
 
         PlayBGM();
         PlayBattleInVoice();
@@ -90,7 +91,22 @@ public class NormalDungeonScene : BaseScene
         }
     }
 
-    void CreateUI() => _mainUI = GameObject.Find("@GameSceneCanvas");
+    //void CreateUI() => _mainUI = GameObject.Find("@GameSceneCanvas");
+
+    private async UniTask SetupUI()
+    {
+        await Managers.Resource.LoadAsync<GameObject>("GameSceneCanvas_New");
+        // 3. UIManager를 통해 Scene UI 생성
+        // @Canvas_Scene 하위로 자동 배치 및 SetCanvas 됨
+        GameSceneCanvas ui = Managers.UI.ShowSceneUI<GameSceneCanvas>("GameSceneCanvas_New");
+        _mainUI = ui;
+        // 4. Party Manager 연동
+        if (ui != null)
+        {
+            ui.SetPartyManager();
+        }
+    }
+
 
     async UniTask CreateSuccessBGM()
     {
@@ -231,7 +247,7 @@ public class NormalDungeonScene : BaseScene
 
         PlayVictoryVoice();
 
-        if (_mainUI != null) _mainUI.SetActive(false);
+        if (_mainUI != null) _mainUI.gameObject.SetActive(false);
         if (_clearUI != null) _clearUI.SetActive(true);
 
         if (_curMap != null)

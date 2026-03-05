@@ -95,6 +95,7 @@ public class Managers : MonoBehaviour
             s_instance._pool.Init();
             s_instance._sound.Init();
             s_instance._wallet.Init();
+            s_instance._inventory.Init();
 
             Application.targetFrameRate = 144;
         }
@@ -110,5 +111,6 @@ public class Managers : MonoBehaviour
     public static void Clear()
     {
         SceneEx.Clear();
+
     }
 }

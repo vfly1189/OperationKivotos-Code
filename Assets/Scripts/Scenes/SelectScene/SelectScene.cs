@@ -42,12 +42,16 @@ public class SelectScene : BaseScene
         await CreateMainUI();
         await LoadAllSchoolModels();
 
-        if (_uiCanvas != null)
-        {
-            _uiCanvas.Init(this);
-            SelectSchool(0);
-        }
+        //if (_uiCanvas == null)
+        //{
+        //    //_uiCanvas.Init(this);
+        //    SelectSceneCanvas canvas = Managers.UI.ShowSceneUI<SelectSceneCanvas>("SelectSceneCanvas_New");
+        //    canvas.Setup(this);
+        //    SelectSchool(0);
+        //}
 
+        // [추가] 3D 모델과 UI 로딩이 완벽히 끝난 후, 초기 학교(0번)를 선택 상태로 만듦
+        SelectSchool(0);
         // [수정점 2] 코루틴 제거 -> UniTaskVoid 호출 (Fire and Forget)
         FadeInSequence().Forget();
     }
@@ -172,14 +176,30 @@ public class SelectScene : BaseScene
 
     private async UniTask CreateMainUI()
     {
-        // [수정점 6] Handle 로직 제거
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.mainUI);
+        //// [수정점 6] Handle 로직 제거
+        //GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.mainUI);
 
-        if (prefab != null)
+
+        //if (prefab != null)
+        //{
+        //    GameObject uiObj = Instantiate(prefab);
+        //    uiObj.name = "@SelectSceneCanvas";
+        //    _uiCanvas = uiObj.GetComponent<SelectSceneCanvas>();
+        //}
+
+        // 1. 리소스 매니저를 통해 UI 프리팹을 메모리에 비동기 로드
+        // (ShowSceneUI의 동기 Instantiate가 실패하지 않도록 보장)
+        await Managers.Resource.LoadAsync<GameObject>(_preloadData.mainUI);
+
+        // 2. UIManager를 통해 SceneUI 생성 
+        // 클래스명("SelectSceneCanvas")과 Addressable Key가 같다면 인자 생략 가능.
+        // 만약 Key가 다르다면 ShowSceneUI<SelectSceneCanvas>("SelectSceneCanvas_New") 처럼 문자열을 넣으세요.
+        _uiCanvas = Managers.UI.ShowSceneUI<SelectSceneCanvas>("SelectSceneCanvas_New");
+
+        // 3. 생성된 UI에 Scene 객체 주입 및 이벤트 바인딩
+        if (_uiCanvas != null)
         {
-            GameObject uiObj = Instantiate(prefab);
-            uiObj.name = "@SelectSceneCanvas";
-            _uiCanvas = uiObj.GetComponent<SelectSceneCanvas>();
+            _uiCanvas.Setup(this);
         }
     }
 

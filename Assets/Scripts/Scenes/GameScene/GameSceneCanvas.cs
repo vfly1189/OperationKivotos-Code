@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameSceneCanvas : MonoBehaviour
+public class GameSceneCanvas : UI_Scene
 {
     [SerializeField] private CurrentGameDataSO _currentGameContext; // 인스펙터 연결
 
@@ -23,15 +23,36 @@ public class GameSceneCanvas : MonoBehaviour
     [SerializeField] private Image _failedImageFont;
     [SerializeField] private Image _sucessImageFont;
 
-
     //private PartyManager _partyManager;
     private BaseCharacter _cachedActiveCharacter; // 현재 UI가 구독 중인 캐릭터
     int _schoolIdx;
     private bool _isShowingResult = false; // [추가] 중복 실행 방지
 
+    private bool _isInit = false;
+    public override void Init()
+    {
+        if (_isInit) return;
+        base.Init(); 
+
+        _schoolIdx = Managers.Context.SchoolIdx;
+
+        // 1. UI 기본 정보 세팅 (이름, 초상화)
+        if (_schoolDatas != null && _schoolDatas.Length > _schoolIdx)
+        {
+            _partyHUD.Init(_schoolDatas[_schoolIdx]);
+        }
+
+        // 시작할 때 이미지는 꺼두기
+        if (_failedImageFont) _failedImageFont.gameObject.SetActive(false);
+        if (_sucessImageFont) _sucessImageFont.gameObject.SetActive(false);
+
+        _isInit = true;
+    }
 
     public void SetPartyManager()
     {
+        Init(); // [핵심] 외부(GameScene 등)에서 SetPartyManager를 Start보다 먼저 부를 경우를 대비해 확실히 초기화 보장
+
         // 중복 구독 방지를 위해 확실히 먼저 해제
         if (Managers.Party != null)
         {
@@ -53,17 +74,19 @@ public class GameSceneCanvas : MonoBehaviour
 
     }
 
-    void Start()
-    {
-        _schoolIdx = Managers.Context.SchoolIdx;
+    //void Start()
+    //{
+    //    _schoolIdx = Managers.Context.SchoolIdx;
 
-        // 1. UI 기본 정보 세팅 (이름, 초상화)
-        _partyHUD.Init(_schoolDatas[_schoolIdx]);
+    //    // 1. UI 기본 정보 세팅 (이름, 초상화)
+    //    _partyHUD.Init(_schoolDatas[_schoolIdx]);
 
-        // 시작할 때 이미지는 꺼두기
-        if (_failedImageFont) _failedImageFont.gameObject.SetActive(false);
-        if (_sucessImageFont) _sucessImageFont.gameObject.SetActive(false);
-    }
+    //    // 시작할 때 이미지는 꺼두기
+    //    if (_failedImageFont) _failedImageFont.gameObject.SetActive(false);
+    //    if (_sucessImageFont) _sucessImageFont.gameObject.SetActive(false);
+    //}
+
+    
 
     void Update()
     {

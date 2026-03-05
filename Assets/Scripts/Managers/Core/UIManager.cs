@@ -1,27 +1,24 @@
+using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Unity.VisualScripting;
+using Unity.VisualScripting.ReorderableList.Element_Adder_Menu;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.UI;
 
 public class UIManager
 {
     int _order = 10;
 
     private GameObject _root = null;
-
     Stack<UI_PopUp> _popupStack = new Stack<UI_PopUp>();
     UI_Scene _sceneUI = null;
 
-    //팝업 열림 여부 확인
+
+    private Canvas _canvasScene;    // 씬마다 고정으로 뜨는 UI들
+    private Canvas _canvasPopup;    // popup들
+    private Canvas _canvasSystem;   // order 100 이상의 절대로 먼저 보여져야 되는것들...
+
+
     public bool IsPopupOpen => _popupStack.Count > 0;
-
-
-    // Addressables 프리팹 로드 시 생성된 Handle을 저장해둘 딕셔너리 (메모리 해제용)
-    private Dictionary<UI_PopUp, AsyncOperationHandle<GameObject>> _popupHandles = 
-        new Dictionary<UI_PopUp, AsyncOperationHandle<GameObject>>();
 
     public GameObject Root
     {
@@ -40,87 +37,166 @@ public class UIManager
         }
     }
 
-    public void SetCanvas(GameObject go, bool sort = true)
+    // =========================================================
+    // 역할별 캔버스를 자동으로 찾아오거나 생성하는 프로퍼티
+    // =========================================================
+    public Canvas CanvasScene => GetOrMakeCanvas(ref _canvasScene, "@Canvas_Scene", 0);
+    public Canvas CanvasPopup => GetOrMakeCanvas(ref _canvasPopup, "@Canvas_Popup", 10);
+    public Canvas CanvasSystem => GetOrMakeCanvas(ref _canvasSystem, "@Canvas_System", 100);
+
+    private Canvas GetOrMakeCanvas(ref Canvas canvasField, string name, int sortOrder)
     {
-        Canvas canvas = Util.GetOrAddComponent<Canvas>(go);
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.overrideSorting = true;
+        if (canvasField != null) return canvasField;
 
-        if (sort)
+        GameObject go = GameObject.Find(name);
+        if (go == null)
         {
-            canvas.sortingOrder = _order;
-            _order++;
-        }
-        else
-        {
-            canvas.sortingOrder = 0;
+            go = new GameObject { name = name };
+            go.transform.SetParent(Root.transform, false);
         }
 
+        canvasField = Util.GetOrAddComponent<Canvas>(go);
+        canvasField.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvasField.overrideSorting = true;
+        canvasField.sortingOrder = sortOrder;
+
+
+        CanvasScaler scaler = Util.GetOrAddComponent<CanvasScaler>(go);
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080); // 프로젝트 해상도에 맞게 수정
+
+        Util.GetOrAddComponent<GraphicRaycaster>(go);
+
+        return canvasField;
     }
 
 
-    public T MakeSubItem<T>(GameObject prefab, Transform parent = null) where T : UI_Base
+
+    // =========================================================
+    // Canvas 세팅 (개별 팝업/씬 UI용 Nested Canvas)
+    // =========================================================
+    public void SetCanvas(GameObject go, bool sort = true)
     {
-        // 1. 프리팹 인스턴스화
-        GameObject go = Object.Instantiate(prefab);
+        Canvas canvas = Util.GetOrAddComponent<Canvas>(go);
 
-        // 2. 부모 설정
-        if (parent != null)
-        {
-            go.transform.SetParent(parent);
-        }
-        else
-        {
-            // 부모가 없으면 보통 SceneUI(전체화면 캔버스) 밑으로 가야 함.
-            // 만약 현재 _sceneUI가 있다면 그리로, 없다면 Root나 임시 캔버스 찾기
-            if (_sceneUI != null)
-                go.transform.SetParent(_sceneUI.transform);
-            else
-            {
-                // 씬에 있는 캔버스 찾아서 붙이기 (안전장치)
-                Canvas canvas = Object.FindAnyObjectByType<Canvas>();
-                if (canvas != null) go.transform.SetParent(canvas.transform);
-            }
-        }
+        // 중첩 Canvas는 부모의 RenderMode를 상속받으므로 여기서 수정하면 에러발생
+        // canvas.renderMode = RenderMode.ScreenSpaceOverlay; <- 제거됨
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = sort ? _order++ : 0;
 
-        // 3. 스케일 초기화 (필수)
+        // 클릭 이벤트를 받기 위해 필수
+        Util.GetOrAddComponent<GraphicRaycaster>(go);
+    }
+
+    // =========================================================
+    // SubItem 생성 (인벤토리 슬롯 등, 팝업이 아닌 UI 요소)
+    // ResourceManager에게 로드를 위임
+    // =========================================================
+    //public async UniTask<T> MakeSubItemAsync<T>(string addressableKey, Transform parent = null) where T : UI_Base
+    //{
+    //    // ResourceManager에게 로드 위임 (씬 핸들로 관리)
+    //    GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
+    //    if (prefab == null)
+    //    {
+    //        Debug.LogError($"[UIManager] SubItem 로드 실패: {addressableKey}");
+    //        return null;
+    //    }
+
+    //    GameObject go = Managers.Resource.Instantiate(prefab, parent);
+    //    go.transform.localScale = Vector3.one;
+    //    go.transform.localPosition = Vector3.zero;
+
+    //    return Util.GetOrAddComponent<T>(go);
+    //}
+
+    public async UniTask<T> MakeSubItemAsync<T>(string addressableKey, Transform parent = null) where T : UI_Base
+    {
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
+        if (prefab == null) return null;
+
+        GameObject go = Managers.Resource.Instantiate(prefab, parent);
         go.transform.localScale = Vector3.one;
         go.transform.localPosition = Vector3.zero;
 
         return Util.GetOrAddComponent<T>(go);
     }
 
-    public T ShowPopupUI<T>(GameObject prefab) where T : UI_PopUp
+
+
+
+
+    // =========================================================
+    // [핵심] 팝업 열기
+    // Addressable Key를 받아 ResourceManager에게 로드 위임
+    // =========================================================
+    //public async UniTask<T> ShowPopupUIAsync<T>(string addressableKey = null) where T : UI_PopUp
+    //{
+    //    // 키가 없으면 클래스 이름을 키로 사용 (예: UI_Inventory)
+    //    if (string.IsNullOrEmpty(addressableKey))
+    //        addressableKey = typeof(T).Name;
+
+    //    // 1. ResourceManager에게 로드 위임 (글로벌 캐싱 - 팝업은 자주 열리므로)
+    //    GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, isGlobal: true);
+    //    if (prefab == null)
+    //    {
+    //        Debug.LogError($"[UIManager] 팝업 로드 실패: {addressableKey}");
+    //        return null;
+    //    }
+
+    //    // 2. 인스턴스화 및 Root 아래에 배치
+    //    GameObject canvasObj = GameObject.Find("@GameSceneCanvas");
+    //    GameObject go = Managers.Resource.Instantiate(prefab, canvasObj.transform);
+    //    //핵심: false를 넘겨서 부모 기준 로컬 좌표로 붙이기
+    //    go.transform.SetParent(canvasObj.transform, false);
+
+    //    // RectTransform 완전 초기화 (혹시 모를 잔여값 제거)
+    //    RectTransform rect = go.GetComponent<RectTransform>();
+    //    rect.anchoredPosition = Vector2.zero;
+    //    rect.localScale = Vector3.one;
+
+    //    T popup = Util.GetOrAddComponent<T>(go);
+    //    _popupStack.Push(popup);
+    //    //SetCanvas(go);
+
+    //    return popup;
+    //}
+
+    public async UniTask<T> ShowPopupUIAsync<T>(string addressableKey = null) where T : UI_PopUp
     {
-        // 1. 프리팹 인스턴스화
-        GameObject go = Object.Instantiate(prefab);
+        if (string.IsNullOrEmpty(addressableKey))
+            addressableKey = typeof(T).Name;
 
-        // 2. 이름 정리 (선택 사항, (Clone) 제거)
-        // go.name = prefab.name; 
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, isGlobal: true);
+        if (prefab == null) return null;
 
-        // 3. UI 컴포넌트 가져오기 / 붙이기
+        // [수정] 하드코딩된 @GameSceneCanvas 대신 CanvasPopup 아래에 배치
+        GameObject go = Managers.Resource.Instantiate(prefab, CanvasPopup.transform);
+        go.transform.SetParent(CanvasPopup.transform, false);
+
+        RectTransform rect = go.GetComponent<RectTransform>();
+        rect.anchoredPosition = Vector2.zero;
+        rect.localScale = Vector3.one;
+
         T popup = Util.GetOrAddComponent<T>(go);
         _popupStack.Push(popup);
 
-        // 4. 부모 설정
-        go.transform.SetParent(Root.transform);
-
-        // 5. 스케일 초기화 (UI가 캔버스 밑으로 들어갈 때 가끔 꼬이는 경우 방지)
-        go.transform.localScale = Vector3.one;
-        go.transform.localPosition = Vector3.zero;
+        // [수정] 주석 해제. 팝업 정렬(Z-Order) 관리를 위해 호출
+        SetCanvas(go, true);
 
         return popup;
     }
 
-    
+
+    // =========================================================
+    // 팝업 닫기
+    // =========================================================
     public void ClosePopupUI(UI_PopUp popup)
     {
-        if (_popupStack.Count == 0)
-            return;
+        if (_popupStack.Count == 0) return;
 
         if (_popupStack.Peek() != popup)
         {
-            Debug.Log("Close Popup Failed!");
+            Debug.LogWarning("[UIManager] ClosePopupUI 실패 - 가장 위에 있는 팝업이 아닙니다.");
             return;
         }
 
@@ -129,20 +205,13 @@ public class UIManager
 
     public void ClosePopupUI()
     {
-        if (_popupStack.Count == 0)
-            return;
+        if (_popupStack.Count == 0) return;
 
         UI_PopUp popup = _popupStack.Pop();
+
+        // ResourceManager.Destroy로 위임 (풀링 여부 자동 처리)
         Managers.Resource.Destroy(popup.gameObject);
 
-        // 2. Addressable Handle이 있다면 메모리 해제
-        if (_popupHandles.TryGetValue(popup, out AsyncOperationHandle<GameObject> handle))
-        {
-            Addressables.Release(handle);
-            _popupHandles.Remove(popup);
-        }
-
-        popup = null;
         _order--;
     }
 
@@ -152,57 +221,52 @@ public class UIManager
             ClosePopupUI();
     }
 
-    public void Clear()
+    // =========================================================
+    // SceneUI 세팅 (씬마다 고정으로 떠있는 UI, 예: UI_GameScene)
+    // =========================================================
+    public T ShowSceneUI<T>(string addressableKey = null) where T : UI_Scene
     {
-        CloseAllPopupUI();
-        _sceneUI = null;
-        _root = null;
-    }
-
-
-    // [추가] Addressable 키(이름)로 팝업 띄우기 (비동기)
-    public async Task<T> ShowPopupUIAsync<T>(string addressableKey = null) where T : UI_PopUp
-    {
-        // 키가 안 주어지면 클래스 이름(예: "UI_WeaponUpgrade")을 키로 사용
         if (string.IsNullOrEmpty(addressableKey))
             addressableKey = typeof(T).Name;
 
-        // 1. 프리팹 비동기 로드
-        var handle = Addressables.LoadAssetAsync<GameObject>(addressableKey);
-        await handle.Task;
+        Debug.Log($"SelectScene : {addressableKey}");
+        // [수정] Root가 아니라 CanvasScene 아래에 배치해야 함
+        GameObject go = Managers.Resource.Instantiate(addressableKey, Vector3.zero, Quaternion.identity, CanvasScene.transform);
+        if (go == null) return null;
 
-        if (handle.Status == AsyncOperationStatus.Succeeded)
-        {
-            GameObject prefab = handle.Result;
+        RectTransform rect = go.GetComponent<RectTransform>();
+        // 앵커를 Stretch-Stretch(화면 꽉 채우기)로 강제 고정
+        //rect.anchorMin = Vector2.zero;
+        //rect.anchorMax = Vector2.one;
+        //rect.offsetMin = Vector2.zero; // Left, Bottom
+        //rect.offsetMax = Vector2.zero; // Right, Top
+        //rect.pivot = new Vector2(0.5f, 0.5f);
+        //rect.localScale = Vector3.one;
 
-            // 2. 기존 로직을 재활용하여 인스턴스화 및 셋업
-            // (동기 ShowPopupUI의 1~5번 로직을 그대로 수행하는 내부 함수 호출)
-            T popup = SetupPopupPrefab<T>(prefab);
+        rect.anchoredPosition = Vector2.zero;
+        rect.localScale = Vector3.one;
 
-            // 3. 나중에 창을 닫을 때 메모리(Handle)를 해제하기 위해 딕셔너리에 저장
-            _popupHandles.Add(popup, handle);
+        _sceneUI = Util.GetOrAddComponent<T>(go);
+        SetCanvas(go, sort: false); // SceneUI는 팝업 뒤에 있어야 하므로 고정 order(0)
 
-            return popup;
-        }
-        else
-        {
-            Debug.LogError($"[UIManager] Failed to load Addressable UI: {addressableKey}");
-            return null;
-        }
+        return _sceneUI as T;
     }
 
-    // 기존 ShowPopupUI와 코드가 겹치므로 공통 로직을 빼낸 헬퍼 함수
-    private T SetupPopupPrefab<T>(GameObject prefab) where T : UI_PopUp
+    // =========================================================
+    // 정리
+    // =========================================================
+    public void Clear()
     {
-        GameObject go = Object.Instantiate(prefab);
-        T popup = Util.GetOrAddComponent<T>(go);
-        _popupStack.Push(popup);
+        CloseAllPopupUI();
 
-        go.transform.SetParent(Root.transform);
-        go.transform.localScale = Vector3.one;
-        go.transform.localPosition = Vector3.zero;
+        // [수정] 씬 전환 시 SceneUI 파괴 처리 추가
+        if (_sceneUI != null)
+        {
+            Managers.Resource.Destroy(_sceneUI.gameObject);
+            _sceneUI = null;
+        }
 
-        return popup;
+        // [수정] _root = null 삭제. DDOL이므로 Root와 Canvas들은 유지되어야 함
+        _order = 10;
     }
-
 }

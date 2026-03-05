@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 using Button = UnityEngine.UI.Button;
 using Image = UnityEngine.UI.Image;
 
-public class SelectSceneCanvas : MonoBehaviour
+public class SelectSceneCanvas : UI_Scene
 {
     // ========================================================================
     // [2] UI 요소 그룹화 (버튼 및 표시부)
@@ -18,8 +18,8 @@ public class SelectSceneCanvas : MonoBehaviour
     [System.Serializable]
     public class SchoolUIElements
     {
-        public Button textButton;  
-        public Button imageButton; 
+        public Button textButton;
+        public Button imageButton;
     }
 
     [Header("UI Controls")]
@@ -30,30 +30,49 @@ public class SelectSceneCanvas : MonoBehaviour
     [SerializeField] private Image _schoolIcon;
     [SerializeField] private Image _schoolName;
 
-
     private SelectScene _scene; // Scene 참조
+    private bool _isInit = false; // 중복 초기화 방지 플래그
 
-    public void Init(SelectScene scene)
+    // 2. UI_Base의 추상 메서드이자 UI_Scene의 Init을 오버라이드
+    public override void Init()
     {
-        _scene = scene;
+        if (_isInit) return; // Start()와 수동 호출이 겹치지 않게 방지
 
-        // 버튼 리스너 연결
+        base.Init(); // 부모(UI_Scene)의 Init 호출 (SetCanvas 등)
+
+        // 버튼 리스너 연결 (Awake/Start 타이밍에 1번만 실행됨)
         for (int i = 0; i < _schoolUIElements.Length; i++)
         {
-            int idx = i;
-            _schoolUIElements[i].imageButton.onClick.AddListener(() => _scene.SelectSchool(idx));
-            _schoolUIElements[i].textButton.onClick.AddListener(() => _scene.SelectSchool(idx));
+            int idx = i; // 클로저 이슈 방지를 위한 지역 변수 복사
+            _schoolUIElements[i].imageButton.onClick.AddListener(() => OnClickSchool(idx));
+            _schoolUIElements[i].textButton.onClick.AddListener(() => OnClickSchool(idx));
         }
 
-        _gameStartButton.onClick.AddListener(() =>
-        {
-            //Managers.SceneEx.SetActiveCover(true);
+        _gameStartButton.onClick.AddListener(OnClickGameStart);
 
-            Managers.Sound.StopAll();
-            Managers.SceneEx.LoadScene(Define.Scene.Game);
-        });
+        _isInit = true;
     }
 
+    // 3. 기존의 Init(SelectScene scene)을 Setup(데이터 주입용)으로 변경
+    public void Setup(SelectScene scene)
+    {
+        _scene = scene;
+    }
+
+    private void OnClickSchool(int idx)
+    {
+        if (_scene != null)
+            _scene.SelectSchool(idx);
+    }
+
+    private void OnClickGameStart()
+    {
+        // Managers.SceneEx.SetActiveCover(true);
+        Managers.Sound.StopAll();
+        Managers.SceneEx.LoadScene(Define.Scene.Game);
+    }
+
+    // 4. UpdateUIState는 기존 로직 그대로 유지
     public void UpdateUIState(int index, SchoolDataSO data)
     {
         // 1. 아이콘 변경

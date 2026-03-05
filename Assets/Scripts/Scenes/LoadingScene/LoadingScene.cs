@@ -21,6 +21,8 @@ public class LoadingScene : BaseScene
         base.Init();
         _sceneType = Define.Scene.Loading;
 
+        
+
         // 코루틴 실행이 아니라 UniTask 함수를 바로 호출 (잊혀짐 방지를 위해 Forget 사용 권장)
         LoadProcessAsync().Forget();
     }
@@ -33,6 +35,7 @@ public class LoadingScene : BaseScene
 
         Managers.Resource.Clear();
         Managers.Pool.Clear();
+        Managers.UI.Clear();
 
         // 2. 안 쓰는 에셋 메모리에서 해제 (UniTask로 대기)
         AsyncOperation unloadOp = Resources.UnloadUnusedAssets();

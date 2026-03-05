@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class NormalDungeonPortal : BasePortal
 {
-    protected override void ShowDungeonEntranceUI()
+    protected override async void ShowDungeonEntranceUI()
     {
-        UI_NormalDungeonEntrancePopUp popup = Managers.UI.ShowPopupUI<UI_NormalDungeonEntrancePopUp>(_entranceUI);
+        UI_NormalDungeonEntrancePopUp popup = await Managers.UI.ShowPopupUIAsync<UI_NormalDungeonEntrancePopUp>("NormalDungeonEntranceUI_New");
     }
 }

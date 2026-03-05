@@ -124,7 +124,7 @@ public class StartScene : BaseScene
 
         if (popupPrefab != null)
         {
-            UI_ExitPopUp popup = Managers.UI.ShowPopupUI<UI_ExitPopUp>(popupPrefab);
+            UI_ExitPopUp popup = await Managers.UI.ShowPopupUIAsync<UI_ExitPopUp>("UI_ExitPopUp");
             popup.SetCallbacks(
                 onConfirm: () => Debug.Log("æ€ ¡æ∑·"),
                 onCancel: () => Debug.Log("√Îº“µ ")

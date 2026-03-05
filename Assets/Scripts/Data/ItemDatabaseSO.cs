@@ -1,45 +1,58 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 1. 장비 전용 클래스 (Equipment 시트와 일치)
 [System.Serializable]
-public class EquipmentData
+public class BaseItemData
 {
     public int ID;
-    public string IconKey;
     public string Name;
+    public string IconKey;
+    public ItemGrade Grade;
+    public string Description;
+}
+
+// 1. 장비 전용 클래스 (Equipment 시트와 일치)
+[System.Serializable]
+public class EquipmentData : BaseItemData
+{
+    //public int ID;
+    //public string IconKey;
+    //public string Grade;
+    //public string Name;
     public string EquipPart;
     public int Tier;
     public float MaxHP;
     public float Attack;
     public float Defense;
     public float MoveSpeed;
-    public string Description;
+    //public string Description;
 }
 
 // 2. 소모품 전용 클래스 (Consumable 시트와 일치)
 [System.Serializable]
-public class ConsumableData
+public class ConsumableData : BaseItemData
 {
-    public int ID;
-    public string IconKey;
-    public string Name;
+    //public int ID;
+    //public string IconKey;
+    //public string Grade;
+    //public string Name;
     public float EffectValue;
     public float Duration;
     public int MaxStack;
-    public string Description;
+    //public string Description;
 }
 
 // 3. 재료 전용 클래스 (Material 시트와 일치)
 [System.Serializable]
-public class MaterialData
+public class MaterialData : BaseItemData
 {
-    public int ID;
-    public string IconKey;
-    public string Name;
+    //public int ID;
+    //public string IconKey;
+    //public string Grade;
+    //public string Name;
     public int Tier;
     public int MaxStack;
-    public string Description;
+    //public string Description;
 }
 
 // 데이터베이스 통합 SO

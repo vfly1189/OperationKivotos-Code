@@ -3,6 +3,16 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum ItemGrade
+{
+    Common,     // 회색
+    Uncommon,   // 녹색
+    Rare,       // 파란색
+    Epic,       // 보라색
+    Legendary,  // 주황색
+    Mythic      // 빨간색
+}
+
 public enum ItemCategory
 {
     Equipment,
@@ -33,6 +43,8 @@ public class InventoryManager
             { ItemCategory.Consumable, new List<InventorySlot>()},
             { ItemCategory.Material, new List<InventorySlot>()}
         };
+
+        AddItem(10002, ItemCategory.Equipment, 1);
     }
 
     // 1. DataManager에서 카테고리에 맞는 MaxStack을 안전하게 가져오는 헬퍼 함수

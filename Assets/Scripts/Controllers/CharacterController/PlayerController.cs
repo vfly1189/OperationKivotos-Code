@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class PlayerController
@@ -27,6 +28,7 @@ public class PlayerController
         Managers.Input.MouseAction -= HandleMouse;
         Managers.Input.MouseAction += HandleMouse;
 
+        Managers.Input.RegisterAction("Inventory", HandleInventory);
         Managers.Input.RegisterAction("Q_Skill", HandleSkill_Q);
         Managers.Input.RegisterAction("E_Skill", HandleSkill_E);
         Managers.Input.RegisterAction("Interact", HandleInteract);
@@ -109,6 +111,11 @@ public class PlayerController
             // 상호작용 실행! (NoahController.Interact 호출됨)
             _currentTarget.CurrentInteractable.Interact();
         }
+    }
+    
+    private async void HandleInventory()
+    {
+        UI_Inventory inventory = await Managers.UI.ShowPopupUIAsync<UI_Inventory>("UI_Inventory");
     }
 
     // Update 로직 -> Managers.Update에서 호출

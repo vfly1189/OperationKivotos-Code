@@ -75,14 +75,14 @@ public class MonsterController : MonoBehaviour
         ConstructBehaviorTree();
     }
 
-    private void Start()
+    private async void Start()
     {    
         if (_hpBarPrefab != null)
         {
             GameObject canvasObj = GameObject.Find("@GameSceneCanvas");
             Transform uiParent = canvasObj != null ? canvasObj.transform : null;
 
-            _hpBar = Managers.UI.MakeSubItem<UI_MonsterHPBar>(_hpBarPrefab, uiParent);
+            _hpBar = await Managers.UI.MakeSubItemAsync<UI_MonsterHPBar>("MonsterHPBar", uiParent);
             _hpBar.SetTarget(_hpBarTransform, Stat);
 
             Stat.OnHpChanged -= _hpBar.UpdateHpBar;
