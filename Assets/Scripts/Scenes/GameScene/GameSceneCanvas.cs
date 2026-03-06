@@ -1,13 +1,10 @@
 using Cysharp.Threading.Tasks;
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GameSceneCanvas : UI_Scene
 {
-    [SerializeField] private CurrentGameDataSO _currentGameContext; // 인스펙터 연결
+    [SerializeField] private CurrentGameDataSO _currentGameContext;
 
     [Header("Data Source")]
     [SerializeField] private SchoolDataSO[] _schoolDatas;
@@ -16,156 +13,128 @@ public class GameSceneCanvas : UI_Scene
     [SerializeField] private PartyHUD _partyHUD;
 
     [Header("스킬아이콘 및 체력경험치 HUD")]
-    [SerializeField] 
-    private ActiveCharacterHUD _activeCharacterHUD;
+    [SerializeField] private ActiveCharacterHUD _activeCharacterHUD;
 
     [Header("Failed or Success")]
     [SerializeField] private Image _failedImageFont;
     [SerializeField] private Image _sucessImageFont;
 
-    //private PartyManager _partyManager;
-    private BaseCharacter _cachedActiveCharacter; // 현재 UI가 구독 중인 캐릭터
-    int _schoolIdx;
-    private bool _isShowingResult = false; // [추가] 중복 실행 방지
-
+    private BaseCharacter _cachedActiveCharacter;
+    private int _schoolIdx;
+    private bool _isShowingResult = false;
     private bool _isInit = false;
+
     public override void Init()
     {
         if (_isInit) return;
-        base.Init(); 
+        base.Init(); // UI_Scene의 Init 호출
 
         _schoolIdx = Managers.Context.SchoolIdx;
 
-        // 1. UI 기본 정보 세팅 (이름, 초상화)
-        if (_schoolDatas != null && _schoolDatas.Length > _schoolIdx)
-        {
-            _partyHUD.Init(_schoolDatas[_schoolIdx]);
-        }
-
-        // 시작할 때 이미지는 꺼두기
         if (_failedImageFont) _failedImageFont.gameObject.SetActive(false);
         if (_sucessImageFont) _sucessImageFont.gameObject.SetActive(false);
 
         _isInit = true;
+
+        // 2. 비동기 로딩 작업을 Fire & Forget으로 던져놓음
+        InitAsync().Forget();
+    }
+
+    // 3. 실제 비동기 로딩을 담당하는 내부 함수
+    private async UniTaskVoid InitAsync()
+    {
+        // UI 기본 정보 세팅 (비동기 대기)
+        if (_schoolDatas != null && _schoolDatas.Length > _schoolIdx)
+        {
+            await _partyHUD.Init(_schoolDatas[_schoolIdx]);
+        }
     }
 
     public void SetPartyManager()
     {
-        Init(); // [핵심] 외부(GameScene 등)에서 SetPartyManager를 Start보다 먼저 부를 경우를 대비해 확실히 초기화 보장
+        // Init()이 안 불렸다면 여기서 호출
+        if (!_isInit)
+        {
+            Init();
+        }
 
-        // 중복 구독 방지를 위해 확실히 먼저 해제
+        // 이벤트 중복 방지
         if (Managers.Party != null)
         {
-            Managers.Party.OnActiveCharacterChanged -= UpdateActiveCharacterUI;
+            Managers.Party.OnActiveCharacterChanged -= OnActiveCharacterChanged;
             Managers.Party.OnGameFinished -= HandleGameFinished;
 
-            Managers.Party.OnActiveCharacterChanged += UpdateActiveCharacterUI;
+            Managers.Party.OnActiveCharacterChanged += OnActiveCharacterChanged;
             Managers.Party.OnGameFinished += HandleGameFinished;
+
+            ConnectPermanentPartyEvents();
+
+            BaseCharacter currentChar = Managers.Party.GetCurrentCharacter();
+            if (currentChar != null)
+            {
+                OnActiveCharacterChanged(currentChar.gameObject);
+            }
         }
-
-        ConnectPermanentPartyEvents();
-
-        BaseCharacter currentChar = Managers.Party?.GetCurrentCharacter();
-        if (currentChar != null)
-        {
-            UpdateActiveCharacterUI(currentChar.gameObject);
-        }
-
-
     }
-
-    //void Start()
-    //{
-    //    _schoolIdx = Managers.Context.SchoolIdx;
-
-    //    // 1. UI 기본 정보 세팅 (이름, 초상화)
-    //    _partyHUD.Init(_schoolDatas[_schoolIdx]);
-
-    //    // 시작할 때 이미지는 꺼두기
-    //    if (_failedImageFont) _failedImageFont.gameObject.SetActive(false);
-    //    if (_sucessImageFont) _sucessImageFont.gameObject.SetActive(false);
-    //}
-
-    
 
     void Update()
     {
-        // [최적화] 매 프레임 도는 것은 오직 '쿨타임' 뿐
         if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
         {
             _activeCharacterHUD.UpdateCooldowns(_cachedActiveCharacter.Stat);
         }
     }
 
-    // ========================================================================
-    // [1] 파티 슬롯 (우측) - 한 번 연결하면 끝 (캐릭터가 파티에서 빠지지 않는 한)
-    // ========================================================================
-
-
     void ConnectPermanentPartyEvents()
     {
-        if (Managers.Party == null || Managers.Party.GetMemeber() == null)
-            return;
-
+        if (Managers.Party == null || Managers.Party.GetMemeber() == null) return;
         _partyHUD.ConnectPartyEvents(Managers.Party.GetMemeber());
     }
 
-    // ========================================================================
-    // [2] 활성 캐릭터 (메인 UI) - 교체될 때마다 갈아끼우기
-    // ========================================================================
-    void UpdateActiveCharacterUI(GameObject currentCharacter)
+    // 델리게이트와 시그니처를 맞추기 위한 동기 래퍼 함수
+    private void OnActiveCharacterChanged(GameObject currentCharacter)
     {
-        // [추가] null 체크
+        UpdateActiveCharacterUIAsync(currentCharacter).Forget();
+    }
+
+    private async UniTaskVoid UpdateActiveCharacterUIAsync(GameObject currentCharacter)
+    {
         if (currentCharacter == null) return;
 
-        // --- 1. 기존 캐릭터 구독 해제 ---
         if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
         {
             _activeCharacterHUD.UnSubscribeEvent(_cachedActiveCharacter);
         }
 
-        // --- 2. 새 캐릭터 가져오기 ---
         BaseCharacter newChar = currentCharacter.GetComponent<BaseCharacter>();
-
-        if (newChar == null) return;
-        if (newChar.Stat == null) return;
-
+        if (newChar == null || newChar.Stat == null) return;
 
         CharacterDataSO charData = newChar.Stat.GetData();
         if (charData == null) return;
-
 
         _cachedActiveCharacter = newChar;
 
         if (_activeCharacterHUD != null)
         {
-            _activeCharacterHUD.ChangeStaticData(charData);
+            await _activeCharacterHUD.ChangeStaticDataAsync(charData);
             _activeCharacterHUD.SubscribeEvent(_cachedActiveCharacter);
         }
     }
 
-
-    // ========================================================================
-    // [3] 매 프레임 업데이트 (Update)
-    // ========================================================================
-
     void OnDestroy()
     {
-        // 1. PartyManager 이벤트 해제
         if (Managers.Party != null)
         {
-            Managers.Party.OnActiveCharacterChanged -= UpdateActiveCharacterUI;
+            Managers.Party.OnActiveCharacterChanged -= OnActiveCharacterChanged;
             Managers.Party.OnGameFinished -= HandleGameFinished;
         }
 
-        // 2. [핵심] 현재 보고 있던 캐릭터의 스탯 이벤트 해제 (이게 빠져서 문제였음)
         if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
         {
             _activeCharacterHUD.UnSubscribeEvent(_cachedActiveCharacter);
         }
     }
 
-    // 게임 종료 핸들러
     private void HandleGameFinished(bool isSuccess)
     {
         if (_isShowingResult) return;
@@ -183,8 +152,6 @@ public class GameSceneCanvas : UI_Scene
         }
     }
 
-
-    // [핵심 1] 코루틴 -> UniTask 변경 및 토큰 적용
     private async UniTaskVoid ShowResultEffectAsync(Image targetImage, System.Threading.CancellationToken token)
     {
         targetImage.gameObject.SetActive(true);
@@ -202,7 +169,7 @@ public class GameSceneCanvas : UI_Scene
             targetImage.transform.localScale = Vector3.one * scale;
 
             bool isCanceled = await UniTask.Yield(PlayerLoopTiming.Update, token).SuppressCancellationThrow();
-            if (isCanceled) return; // 씬 전환 등으로 파괴 시 안전 종료
+            if (isCanceled) return;
         }
 
         targetImage.transform.localScale = Vector3.one;

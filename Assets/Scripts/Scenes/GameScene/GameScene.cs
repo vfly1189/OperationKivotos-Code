@@ -51,6 +51,20 @@ public class GameScene : BaseScene
 
         FadeInSequence().Forget(); // [변경] 코루틴 대신 UniTask 사용
 
+
+        Managers.Inventory.AddItem(10002, ItemCategory.Equipment, 1);
+        Managers.Inventory.AddItem(10010, ItemCategory.Equipment, 1);
+        Managers.Inventory.AddItem(10015, ItemCategory.Equipment, 1);
+        Managers.Inventory.AddItem(10016, ItemCategory.Equipment, 1);
+        Managers.Inventory.AddItem(10018, ItemCategory.Equipment, 1);
+        Managers.Inventory.AddItem(10019, ItemCategory.Equipment, 1);
+
+        ////Managers.Inventory.AddItem(20000, ItemCategory.Consumable, 10);
+        Managers.Inventory.AddItem(30000, ItemCategory.Material, 10);
+        Managers.Inventory.AddItem(30001, ItemCategory.Material, 9989);
+        Managers.Inventory.AddItem(30001, ItemCategory.Material, 39);
+
+        Managers.Inventory.AddItem(30002, ItemCategory.Material, 50);
         Debug.Log("GameScene Init Complete");
     }
 

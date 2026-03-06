@@ -45,6 +45,7 @@ public class SkillIconUI : MonoBehaviour
     // --- [이벤트용] 에너지 변경 시 호출 ---
     public void UpdateEnergy(float currentEnergy, float maxEnergy)
     {
+        //Debug.Log($"에너지 변동 : {currentEnergy} , {maxEnergy}");
         if (_energyFill != null && maxEnergy > 0)
         {
             _energyFill.fillAmount = currentEnergy / maxEnergy;

@@ -32,12 +32,12 @@ public class NoahController : MonoBehaviour, IInteractable
         if (Managers.UI.IsPopupOpen) return;
 
         // 1. UIManager의 비동기 함수로 팝업 호출 (앞서 만든 ShowPopupUIAsync)
-        UI_UpgradePopUp popup = await Managers.UI.ShowPopupUIAsync<UI_UpgradePopUp>("UpgradePanel");
+        UI_UpgradePopUp popup = await Managers.UI.ShowPopupUIAsync<UI_UpgradePopUp>("UpgradePanel_New");
 
         if (popup != null)
         {
             // 현재 조작 중인 캐릭터의 정보를 팝업에 전달
-            int leaderID = Managers.Party.GetCurrentCharacter().Stat.GetData().id;
+            int leaderID = Managers.Party.GetCurrentCharacter().Stat.GetID();
         }
     }
 

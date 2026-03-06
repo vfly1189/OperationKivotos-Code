@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Cysharp.Threading.Tasks;
 
 public class UI_UpgradePopUp : UI_PopUp
 {
@@ -28,7 +28,6 @@ public class UI_UpgradePopUp : UI_PopUp
     [Header("무기 이미지")]
     [SerializeField] public Image _weaponImage;
 
-    // 장비강화 로직은 서비스에게 위임
     private WeaponUpgradeService _upgradeService;
 
     public override void Init()
@@ -40,10 +39,8 @@ public class UI_UpgradePopUp : UI_PopUp
         RegisterPartyButtons();
         RegisterUpgradeButton();
 
-        RefreshUI();
+        RefreshUIAsync().Forget();
     }
-
-    // ==================== 버튼 리스너 등록 ====================
 
     private void RegisterPartyButtons()
     {
@@ -61,21 +58,21 @@ public class UI_UpgradePopUp : UI_PopUp
         _upgradeButton.onClick.AddListener(OnClickUpgradeButton);
     }
 
-    // ==================== 버튼 클릭 핸들러 ====================
-
     private void OnClickPartyButton(int index)
     {
         Managers.Party.TrySwap(index);
-        RefreshUI();
+        RefreshUIAsync().Forget();
     }
 
     private void OnClickUpgradeButton()
     {
         BaseCharacter selected = GetSelectedCharacter();
-        WeaponUpgradeService.UpgradeResult result = _upgradeService.TryUpgrade(selected);
+        int prevLevel = selected.Stat.WeaponLevel;
 
-        HandleUpgradeResult(result, selected.Stat.WeaponLevel);
-        RefreshUI();
+        var result = _upgradeService.TryUpgrade(selected);
+
+        HandleUpgradeResult(result, prevLevel);
+        RefreshUIAsync().Forget();
     }
 
     private void HandleUpgradeResult(WeaponUpgradeService.UpgradeResult result, int prevLevel)
@@ -84,46 +81,66 @@ public class UI_UpgradePopUp : UI_PopUp
         {
             case WeaponUpgradeService.UpgradeResult.Success:
                 Debug.Log($"강화 성공! Lv.{prevLevel} → Lv.{prevLevel + 1}");
-                // TODO: 성공 이펙트
                 break;
             case WeaponUpgradeService.UpgradeResult.Fail:
                 Debug.Log($"강화 실패... Lv.{prevLevel} 유지");
-                // TODO: 실패 이펙트
                 break;
             case WeaponUpgradeService.UpgradeResult.NotEnoughCurrency:
                 Debug.Log("재화가 부족합니다.");
-                // TODO: 부족 팝업
                 break;
         }
     }
 
-    // ==================== UI 갱신 ====================
-
-    public void RefreshUI()
+    private async UniTaskVoid RefreshUIAsync()
     {
-        RefreshPartyButtons();
-        RefreshWeaponInfo();
+        await RefreshPartyButtons();
+        await RefreshWeaponInfoAsync();
     }
 
-    private void RefreshPartyButtons()
+    private async UniTask RefreshPartyButtons()
     {
         int currentIndex = Managers.Party.GetCurrentCharacterIndex();
         List<BaseCharacter> characters = Managers.Party.GetMemeber();
 
-        for (int i = 0; i < characters.Count; i++)
+        for (int i = 0; i < characters.Count && i < _partyButtons.Length; i++)
         {
-            _partyButtons[i].image.sprite = characters[i].Stat.GetData().Portrait;
+            _partyButtons[i].image.sprite = await Managers.Resource.LoadAsync<Sprite>(characters[i].Stat.GetPortrait());
             _partyButtons[i].interactable = (i != currentIndex);
         }
     }
 
-    private void RefreshWeaponInfo()
+    private async UniTask RefreshWeaponInfoAsync()
     {
         BaseCharacter selected = GetSelectedCharacter();
-        int weaponLevel = selected.Stat.WeaponLevel;
-        bool isMaxLevel = weaponLevel >= 5;
+        var weaponData = selected.Stat.WeaponData;
 
-        _weaponImage.sprite = selected.Stat._weaponData.icon;
+        if (weaponData == null)
+        {
+            SetMaxLevelUI();
+            _currentWeaponLevelText.text = "무기 데이터 없음";
+            _nextWeaponLevelText.text = "-";
+            return;
+        }
+
+        int weaponLevel = selected.Stat.WeaponLevel;
+        int maxWeaponLevel = weaponData.levelStats != null && weaponData.levelStats.Length > 0
+            ? weaponData.levelStats.Length
+            : 25;
+
+        bool isMaxLevel = weaponLevel >= maxWeaponLevel;
+
+        // 아이콘 로드 (AssetReferenceSprite)
+        if (_weaponImage != null)
+        {
+            Sprite icon = null;
+
+            if (weaponData.weaponIcon != null)
+                icon = await Managers.Resource.LoadAsync<Sprite>(weaponData.weaponIcon);
+
+            _weaponImage.sprite = icon;
+            _weaponImage.enabled = (icon != null);
+        }
+
         _currentWeaponLevelText.text = isMaxLevel
             ? "현재 레벨 : MAX"
             : $"현재 레벨 : Lv. {weaponLevel}";
@@ -135,38 +152,43 @@ public class UI_UpgradePopUp : UI_PopUp
             return;
         }
 
-        string key = $"{selected.Stat._weaponData.itemID}_{weaponLevel + 1}";
-        WeaponData nextData = Managers.Data.GetData<string, WeaponData>(key);
-        if (nextData == null)
+        int targetLevel = weaponLevel + 1;
+
+        // 비용 테이블에서 다음 레벨 비용 가져오기
+        WeaponEnhanceCost cost = Managers.Data.GetData<int, WeaponEnhanceCost>(targetLevel);
+        if (cost == null)
         {
             SetMaxLevelUI();
             return;
         }
 
-        RefreshCurrencyInfo(nextData);
-        RefreshRateInfo(weaponLevel);
+        RefreshCurrencyInfo(cost);
+        RefreshRateInfo(targetLevel); // 테이블 키 정책에 따라 weaponLevel로 바꿔도 됨
     }
 
-    private void RefreshCurrencyInfo(WeaponData nextData)
+    private void RefreshCurrencyInfo(WeaponEnhanceCost cost)
     {
         int haveGold = Managers.Wallet.GetCurrency(CurrencyType.Credit);
-        int haveStone = Managers.Wallet.GetCurrency(CurrencyType.EnhanceStone);
 
-        _requireCreditText.text = nextData.CostGold.ToString("N0");
-        _requrieStoneText.text = nextData.CostStones.ToString("N0");
+        // “재료 3개” UI가 아직 1개만 있으니 우선 Material1을 강화석으로 표시
+        //int haveStone = Managers.Wallet.GetItemCount(cost.Material1ID); // 없으면 인벤토리 매니저 함수로 교체하세요
+        int haveStone = 100;
+
+        _requireCreditText.text = cost.RequireGold.ToString("N0");
+        _requrieStoneText.text = cost.Material1Count.ToString("N0");
         _havingCreditText.text = haveGold.ToString("N0");
         _havingStoneText.text = haveStone.ToString("N0");
 
-        _requireCreditText.color = haveGold >= nextData.CostGold ? Color.white : Color.red;
-        _requrieStoneText.color = haveStone >= nextData.CostStones ? Color.white : Color.red;
+        _requireCreditText.color = haveGold >= cost.RequireGold ? Color.white : Color.red;
+        _requrieStoneText.color = haveStone >= cost.Material1Count ? Color.white : Color.red;
 
-        bool canUpgrade = haveGold >= nextData.CostGold && haveStone >= nextData.CostStones;
+        bool canUpgrade = haveGold >= cost.RequireGold && haveStone >= cost.Material1Count;
         _upgradeButton.interactable = canUpgrade;
     }
 
-    private void RefreshRateInfo(int weaponLevel)
+    private void RefreshRateInfo(int targetLevel)
     {
-        EnhancementRateData rateData = Managers.Data.GetData<int, EnhancementRateData>(weaponLevel);
+        EnhancementRateData rateData = Managers.Data.GetData<int, EnhancementRateData>(targetLevel);
         if (rateData == null)
         {
             _enhancementRateText.text = "성공 확률: -";
@@ -174,8 +196,8 @@ public class UI_UpgradePopUp : UI_PopUp
             return;
         }
 
-        float successPercent = rateData.successRate * 100;
-        _enhancementRateText.text = $"성공 확률: {successPercent}%";
+        float successPercent = rateData.successRate * 100f;
+        _enhancementRateText.text = $"성공 확률: {successPercent:0.#}%";
         _enhancementRateText.color = successPercent >= 80 ? Color.white
                                    : successPercent >= 50 ? Color.yellow
                                    : Color.red;
@@ -185,16 +207,17 @@ public class UI_UpgradePopUp : UI_PopUp
     {
         _requireCreditText.text = "-";
         _requrieStoneText.text = "-";
+        _havingCreditText.text = "-";
+        _havingStoneText.text = "-";
         _enhancementRateText.text = "-";
         _enhancementRateText.color = Color.white;
         _upgradeButton.interactable = false;
     }
 
-    
-    // ==================== 헬퍼 ====================
     private BaseCharacter GetSelectedCharacter()
     {
         int currentIndex = Managers.Party.GetCurrentCharacterIndex();
         return Managers.Party.GetMemeber()[currentIndex];
     }
 }
+

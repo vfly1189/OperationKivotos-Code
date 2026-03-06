@@ -18,7 +18,7 @@ public class StatUI : MonoBehaviour
     {
         SetLevel(stat.CurLevel);
         SetHp(stat.CurrentHp, stat.MaxHp.Value);
-        SetExp(stat.CurrentExp, stat.MaxExp.Value);
+        SetExp(stat.CurrentExp, stat.MaxExp);
     }
 
     // [2] 부분 갱신 (이벤트 연결용)

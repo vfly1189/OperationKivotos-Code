@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -57,7 +58,7 @@ public class MaterialData : BaseItemData
 
 // 데이터베이스 통합 SO
 [CreateAssetMenu(fileName = "ItemDatabase", menuName = "Data/ItemDatabase")]
-public class ItemDatabaseSO : ScriptableObject
+public class ItemDatabaseSO : ScriptableObject, IDataCacheable
 {
     public List<EquipmentData> Equipments = new List<EquipmentData>();
     public List<ConsumableData> Consumables = new List<ConsumableData>();
@@ -83,5 +84,13 @@ public class ItemDatabaseSO : ScriptableObject
         Dictionary<int, MaterialData> dict = new Dictionary<int, MaterialData>();
         foreach (var item in Materials) dict[item.ID] = item;
         return dict;
+    }
+
+    // IDataCacheable 구현부: DataManager가 이 함수를 호출해줌
+    public void CacheData(Dictionary<Type, object> dataDicts)
+    {
+        dataDicts[typeof(EquipmentData)] = MakeEquipDict();
+        dataDicts[typeof(ConsumableData)] = MakeConsumableDict();
+        dataDicts[typeof(MaterialData)] = MakeMaterialDict();
     }
 }

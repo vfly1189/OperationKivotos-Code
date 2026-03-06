@@ -1,31 +1,47 @@
-using NUnit.Framework.Constraints;
+using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 public class PartyHUD : MonoBehaviour
 {
     [SerializeField] private PartySlotUI[] _slots;
 
-    public void Init(SchoolDataSO schoolData)
+    public async UniTask Init(SchoolDataSO schoolData)
     {
+        var loadTasks = new List<UniTask>();
+
         for (int i = 0; i < 4; i++)
         {
+            if (i >= schoolData.characters.Length) break;
+
             CharacterDataSO charDataSO = schoolData.characters[i];
             _slots[i].SetCharacterName(charDataSO.nameKR);
-            _slots[i].SetEmblem(charDataSO.Emblem);
+
+            if (charDataSO.Emblem != null && charDataSO.Emblem.RuntimeKeyIsValid())
+            {
+                int index = i; // 클로저 캡처
+                loadTasks.Add(LoadEmblemAsync(charDataSO.Emblem, index));
+            }
+        }
+
+        await UniTask.WhenAll(loadTasks);
+    }
+
+    private async UniTask LoadEmblemAsync(AssetReferenceSprite emblemRef, int index)
+    {
+        Sprite loadedSprite = await Managers.Resource.LoadAsync<Sprite>(emblemRef);
+        if (loadedSprite != null)
+        {
+            _slots[index].SetEmblem(loadedSprite);
         }
     }
 
-    //연결해줘야되는 이벤트들
-    //체력 변경, 궁극기 차징 여부
     public void ConnectPartyEvents(List<BaseCharacter> members)
     {
         for (int i = 0; i < members.Count; i++)
         {
             if (i >= _slots.Length) break;
-
-            // [핵심 2] 이벤트 구독 처리를 슬롯 내부 함수로 위임하여 람다 제거
             _slots[i].SubscribeToCharacter(members[i]);
         }
     }

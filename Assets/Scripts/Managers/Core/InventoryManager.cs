@@ -25,26 +25,47 @@ public class InventorySlot
 {
     public int itemID;
     public int Amount;
+
+    public bool IsEmpty => itemID == 0 || Amount <= 0;
+    public void Clear()
+    {
+        itemID = 0;
+        Amount = 0;
+    }
 }
 
 public class InventoryManager
 {
-    public Dictionary<ItemCategory, List<InventorySlot>> Inventory { get; private set; }
+    public int _maxSlotCount = 30;
 
+
+    //public Dictionary<ItemCategory, List<InventorySlot>> Inventory { get; private set; }
+    public Dictionary<ItemCategory, InventorySlot[]> Inventory { get; private set; }
 
     // UI 갱신용 이벤트 (어떤 탭이 업데이트 되었는지 매개변수로 전달)
     public event Action<ItemCategory> OnInventoryUpdated;
 
     public void Init()
     {
-        Inventory = new Dictionary<ItemCategory, List<InventorySlot>>()
-        {
-            { ItemCategory.Equipment, new List<InventorySlot>()},
-            { ItemCategory.Consumable, new List<InventorySlot>()},
-            { ItemCategory.Material, new List<InventorySlot>()}
-        };
+        //Inventory = new Dictionary<ItemCategory, List<InventorySlot>>()
+        //{
+        //    { ItemCategory.Equipment, new List<InventorySlot>()},
+        //    { ItemCategory.Consumable, new List<InventorySlot>()},
+        //    { ItemCategory.Material, new List<InventorySlot>()}
+        //};
 
-        AddItem(10002, ItemCategory.Equipment, 1);
+        Inventory = new Dictionary<ItemCategory, InventorySlot[]>();
+
+        foreach (ItemCategory category in Enum.GetValues(typeof(ItemCategory)))
+        {
+            InventorySlot[] slots = new InventorySlot[_maxSlotCount];
+            for(int i=0; i < slots.Length; i++)
+            {
+                slots[i] = new InventorySlot();
+            }
+            Inventory[category] = slots;
+        }
+
     }
 
     // 1. DataManager에서 카테고리에 맞는 MaxStack을 안전하게 가져오는 헬퍼 함수
@@ -67,39 +88,34 @@ public class InventoryManager
                 return 1;
         }
     }
-
-
     // 2. 완벽한 Stack 분할 로직이 적용된 AddItem
     public void AddItem(int itemID, ItemCategory category, int amount = 1)
     {
         if (amount <= 0) return;
 
-        List<InventorySlot> targetList = Inventory[category];
+        InventorySlot[] targetArray = Inventory[category];
         int maxStack = GetMaxStack(itemID, category);
 
         // 추가해야 할 남은 수량
         int remainingAmount = amount;
 
-        // 소모품이나 재료라면, 기존에 덜 채워진(MaxStack 미만) 슬롯들을 찾아 채워넣습니다.
+        // 1. 소모품이나 재료라면, 기존에 덜 채워진(MaxStack 미만) 슬롯들을 찾아 채워넣습니다.
         if (category != ItemCategory.Equipment)
         {
-            foreach (var slot in targetList)
+            foreach (var slot in targetArray)
             {
                 if (slot.itemID == itemID && slot.Amount < maxStack)
                 {
-                    // 현재 슬롯에 추가할 수 있는 여유 공간
                     int spaceLeft = maxStack - slot.Amount;
 
                     if (remainingAmount <= spaceLeft)
                     {
-                        // 남은 수량이 여유 공간보다 작거나 같으면 전부 넣고 끝!
                         slot.Amount += remainingAmount;
                         remainingAmount = 0;
-                        break; // 루프 탈출
+                        break;
                     }
                     else
                     {
-                        // 남은 수량이 더 많으면, 일단 이 슬롯을 가득(Max) 채우고 남은 건 다음 슬롯으로 넘김
                         slot.Amount = maxStack;
                         remainingAmount -= spaceLeft;
                     }
@@ -107,19 +123,137 @@ public class InventoryManager
             }
         }
 
-        // 기존 슬롯들을 다 채우고도(혹은 장비라서) 남은 아이템이 있다면, 새로운 슬롯을 생성해야 함
+        // 2. 남은 아이템이 있다면, 앞에서부터 빈 슬롯(IsEmpty)을 찾아 채워넣습니다.
         while (remainingAmount > 0)
         {
-            // 한 번에 만들 새 슬롯에 들어갈 개수 (최대 MaxStack만큼)
             int addAmount = Mathf.Min(remainingAmount, maxStack);
 
-            // TODO: 여기서 인벤토리 최대 칸수(Max Slots) 제한 체크를 할 수도 있습니다.
+            // 빈 슬롯 찾기
+            int emptyIndex = -1;
+            for (int i = 0; i < targetArray.Length; i++)
+            {
+                if (targetArray[i].IsEmpty)
+                {
+                    emptyIndex = i;
+                    break;
+                }
+            }
 
-            targetList.Add(new InventorySlot { itemID = itemID, Amount = addAmount });
+            // 빈 슬롯이 없는 경우 (인벤토리가 가득 참)
+            if (emptyIndex == -1)
+            {
+                Debug.LogWarning($"[{category}] 인벤토리가 가득 차서 더 이상 획득할 수 없습니다. (남은 수량: {remainingAmount})");
+                // TODO: 남은 수량만큼 바닥에 드랍하거나 우편함으로 보내는 로직 추가 필요
+                break;
+            }
+
+            // 찾은 빈 슬롯에 아이템 할당
+            targetArray[emptyIndex].itemID = itemID;
+            targetArray[emptyIndex].Amount = addAmount;
+
             remainingAmount -= addAmount;
         }
 
         // 처리가 모두 끝나면 UI 갱신 이벤트 호출
+        OnInventoryUpdated?.Invoke(category);
+    }
+
+    //// 2. 완벽한 Stack 분할 로직이 적용된 AddItem
+    //public void AddItem(int itemID, ItemCategory category, int amount = 1)
+    //{
+    //    if (amount <= 0) return;
+
+    //    //List<InventorySlot> targetList = Inventory[category];
+    //    InventorySlot[] targetArray = Inventory[category];
+    //    int maxStack = GetMaxStack(itemID, category);
+
+    //    // 추가해야 할 남은 수량
+    //    int remainingAmount = amount;
+
+    //    // 소모품이나 재료라면, 기존에 덜 채워진(MaxStack 미만) 슬롯들을 찾아 채워넣습니다.
+    //    if (category != ItemCategory.Equipment)
+    //    {
+    //        foreach (var slot in targetArray)
+    //        {
+    //            if (slot.itemID == itemID && slot.Amount < maxStack)
+    //            {
+    //                // 현재 슬롯에 추가할 수 있는 여유 공간
+    //                int spaceLeft = maxStack - slot.Amount;
+
+    //                if (remainingAmount <= spaceLeft)
+    //                {
+    //                    // 남은 수량이 여유 공간보다 작거나 같으면 전부 넣고 끝!
+    //                    slot.Amount += remainingAmount;
+    //                    remainingAmount = 0;
+    //                    break; // 루프 탈출
+    //                }
+    //                else
+    //                {
+    //                    // 남은 수량이 더 많으면, 일단 이 슬롯을 가득(Max) 채우고 남은 건 다음 슬롯으로 넘김
+    //                    slot.Amount = maxStack;
+    //                    remainingAmount -= spaceLeft;
+    //                }
+    //            }
+    //        }
+    //    }
+
+    //    // 기존 슬롯들을 다 채우고도(혹은 장비라서) 남은 아이템이 있다면, 새로운 슬롯을 생성해야 함
+    //    while (remainingAmount > 0)
+    //    {
+    //        // 한 번에 만들 새 슬롯에 들어갈 개수 (최대 MaxStack만큼)
+    //        int addAmount = Mathf.Min(remainingAmount, maxStack);
+
+    //        // TODO: 여기서 인벤토리 최대 칸수(Max Slots) 제한 체크를 할 수도 있습니다.
+
+    //        //targetList.Add(new InventorySlot { itemID = itemID, Amount = addAmount });
+
+
+    //        remainingAmount -= addAmount;
+    //    }
+
+    //    // 처리가 모두 끝나면 UI 갱신 이벤트 호출
+    //    OnInventoryUpdated?.Invoke(category);
+    //}
+
+    // 아이템 위치를 스왑(Swap)하거나 병합(Merge)하는 함수
+    public void SwapItems(ItemCategory category, int indexA, int indexB)
+    {
+        Debug.Log($"Index : {indexA} , {indexB}");
+
+        if (indexA == indexB) return;
+
+        InventorySlot slotA = Inventory[category][indexA];
+        InventorySlot slotB = Inventory[category][indexB];
+
+        // 같은 아이템이라면 병합 로직 (선택 사항)
+        if (!slotA.IsEmpty && !slotB.IsEmpty && slotA.itemID == slotB.itemID && category != ItemCategory.Equipment)
+        {
+            int maxStack = GetMaxStack(slotA.itemID, category);
+            int spaceLeft = maxStack - slotB.Amount;
+
+            if (spaceLeft > 0)
+            {
+                int moveAmount = Mathf.Min(slotA.Amount, spaceLeft);
+                slotB.Amount += moveAmount;
+                slotA.Amount -= moveAmount;
+
+                if (slotA.Amount <= 0) slotA.Clear();
+
+                OnInventoryUpdated?.Invoke(category);
+                return;
+            }
+        }
+
+        // 단순 스왑 (Swap)
+        int tempID = slotA.itemID;
+        int tempAmount = slotA.Amount;
+
+        slotA.itemID = slotB.itemID;
+        slotA.Amount = slotB.Amount;
+
+        slotB.itemID = tempID;
+        slotB.Amount = tempAmount;
+
         OnInventoryUpdated?.Invoke(category);
     }
 }

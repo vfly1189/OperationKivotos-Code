@@ -1,3 +1,4 @@
+using NPOI.SS.UserModel.Charts;
 using System;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -9,20 +10,29 @@ public class CharacterStat : BaseStat, IDamageable
     [SerializeField] private CharacterDataSO _data; // 초기 데이터
 
     [Header("Equipment")]
-    [SerializeField] public WeaponDataSO _weaponData; // 인스펙터에서 캐릭터별로 할당
-
-    public int WeaponLevel { get; private set; } = 1;
+    [SerializeField] private WeaponDataSO _weaponData; // 인스펙터에서 캐릭터별로 할당
+    public WeaponDataSO WeaponData => _weaponData;
+   
 
     // 계산된 스탯들
+
+
     public Stat MaxEnergy;
-    public Stat MaxExp;
+    public Stat CritRate;
+    public Stat CritDamage;
+    public Stat MoveSpeed;
+
     public Stat QSkillCoolTime;
     public Stat ESkillCoolTime;
 
     // 실시간 변동 스탯들
-    public float CurLevel {  get; private set; }
-    public float CurrentEnergy { get; private set; }
+    public int CurLevel { get; private set; } = 1;
+    public int WeaponLevel { get; private set; } = 1;
     public float CurrentExp { get; private set; }
+    public float MaxExp { get; private set; }
+
+
+    public float CurrentEnergy { get; private set; }
     public float CurrentQSkillCoolTime { get; private set; }
     public float CurrentESkillCoolTime { get; private set; }
 
@@ -31,7 +41,6 @@ public class CharacterStat : BaseStat, IDamageable
     private bool _isUltimateReady = false;
 
     // 액션들 (UI 갱신용)
-    //public event Action<float, float> OnHpChanged;      // cur, max
     public event Action<float, float> OnExpChanged;     // cur, max
     public event Action<int> OnLevelChanged;            // level
     public event Action<float, float> OnEnergyChanged;  // cur, max
@@ -43,7 +52,10 @@ public class CharacterStat : BaseStat, IDamageable
 
         // 초기화
         MaxEnergy = new Stat();
-        MaxExp = new Stat();
+        CritRate = new Stat();
+        CritDamage = new Stat();
+        MoveSpeed = new Stat();
+
         QSkillCoolTime = new Stat();
         ESkillCoolTime = new Stat();
 
@@ -57,25 +69,43 @@ public class CharacterStat : BaseStat, IDamageable
     }
     public void SetCharacterData(CharacterDataSO data)
     {
-        _data = data;
-        // 기본값 세팅
-        MaxHp.SetBaseValue(data.MaxHp);
-        Attack.SetBaseValue(data.Attack);
-        Defense.SetBaseValue(data.Defense);
-        MaxEnergy.SetBaseValue(data.MaxEnergy);
-        MaxExp.SetBaseValue(data.MaxExp);
+        _data = data; 
+        CurLevel = 1;
+
+        // 1레벨 기준 스탯 셋팅
+        UpdateBaseStatsByLevel();
+
+        // 고정 스탯 세팅
+        MaxEnergy.SetBaseValue(data.maxEnergy);
+        CritRate.SetBaseValue(data.baseCritRate);
+        CritDamage.SetBaseValue(data.baseCritDamage);
+        MoveSpeed.SetBaseValue(data.baseMoveSpeed);
+
         QSkillCoolTime.SetBaseValue(data.QSkillCoolTime);
         ESkillCoolTime.SetBaseValue(data.ESkillCoolTime);
 
-        CurLevel = 1;
-        CurrentHp = MaxHp.Value; // 체력 풀로 채우기
+        // 실시간 수치 풀충전
+        CurrentHp = MaxHp.Value; 
         CurrentEnergy = 0;
         CurrentQSkillCoolTime = QSkillCoolTime.Value;
         CurrentESkillCoolTime = 0;
         CurrentExp = 0;
+
+        MaxExp = Managers.Data.GetData<int, LevelExpData>(CurLevel).RequireExp;
     }
 
+    // 현재 레벨에 맞춰 기본 스탯(BaseValue)을 갱신하는 함수
+    private void UpdateBaseStatsByLevel()
+    {
+        MaxHp.SetBaseValue(_data.GetLevelHp(CurLevel));
+        Attack.SetBaseValue(_data.GetLevelAttack(CurLevel));
+        Defense.SetBaseValue(_data.GetLevelDefense(CurLevel));
+    }
+
+
     public CharacterDataSO GetData() { return _data; }
+    public AssetReferenceSprite GetPortrait() { return _data.Portrait; }
+    public int GetID() { return _data.id; }
 
     public void ResetState()
     {
@@ -148,16 +178,16 @@ public class CharacterStat : BaseStat, IDamageable
 
         // 2. 레벨업 체크 (한 번에 많은 경험치를 얻어 여러 번 레벨업 할 수도 있으므로 while 사용)
         // MaxExp.Value가 0이면 무한루프 돌 수 있으니 안전장치 추가 (> 0)
-        while (MaxExp.Value > 0 && CurrentExp >= MaxExp.Value)
+        while (MaxExp > 0 && CurrentExp >= MaxExp)
         {
-            CurrentExp -= MaxExp.Value; // 남은 경험치 이월
+            CurrentExp -= MaxExp; // 남은 경험치 이월
             LevelUp();                  // 레벨업 (여기서 MaxExp.Value가 커짐)
         }
 
         // 3. UI 갱신 (레벨업 후 남은 경험치 or 단순히 오른 경험치 반영)
-        OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
+        OnExpChanged?.Invoke(CurrentExp, MaxExp);
 
-        Debug.Log($"[Exp] Added {amount}. Current: {CurrentExp}/{MaxExp.Value}, Level: {CurLevel}");
+        Debug.Log($"[Exp] Added {amount}. Current: {CurrentExp}/{MaxExp}, Level: {CurLevel}");
         Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp, WeaponLevel);
     }
 
@@ -196,19 +226,10 @@ public class CharacterStat : BaseStat, IDamageable
     {
         CurLevel++;
 
-        // 1. 새로운 기초 스탯 계산 (공식: 1레벨 스탯 + (성장치 * (현재레벨 - 1)))
-        // 1레벨일 때는 성장치가 0번 적용, 2레벨일 때는 1번 적용되는 식입니다.
-        float newMaxHpBase = _data.MaxHp + (_data.MaxHpGrowth * (CurLevel - 1));
-        float newAttackBase = _data.Attack + (_data.AttackGrowth * (CurLevel - 1));
-        float newDefenseBase = _data.Defense + (_data.DefenseGrowth * (CurLevel - 1));
-        float newMaxExpBase = _data.MaxExp + (_data.ExpGrowth * (CurLevel - 1));
+        UpdateBaseStatsByLevel();
 
-        // 2. Stat 클래스의 BaseValue 업데이트
-        // (이 함수를 호출하면 Stat 내부의 _isDirty가 true가 되어 다음 Value 호출 시 재계산됨)
-        MaxHp.SetBaseValue(newMaxHpBase);
-        Attack.SetBaseValue(newAttackBase);
-        Defense.SetBaseValue(newDefenseBase);
-        MaxExp.SetBaseValue(newMaxExpBase);
+        if (CurLevel <= 30)
+            MaxExp = Managers.Data.GetData<int, LevelExpData>(CurLevel).RequireExp;
 
         // 레벨업 시 풀 회복
         CurrentHp = MaxHp.Value;
@@ -219,7 +240,7 @@ public class CharacterStat : BaseStat, IDamageable
         // 4. UI 갱신 알림
         OnLevelChanged?.Invoke((int)CurLevel);
         CallOnHpChanged(CurrentHp, MaxHp.Value);
-        OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
+        OnExpChanged?.Invoke(CurrentExp, MaxExp);
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
 
         Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp, WeaponLevel);
@@ -266,13 +287,6 @@ public class CharacterStat : BaseStat, IDamageable
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
 
-        //// Rigidbody 정지 (시체가 밀려나지 않게)
-        //Rigidbody rb = GetComponent<Rigidbody>();
-        //if (rb != null)
-        //{
-        //    rb.isKinematic = true;
-        //}
-
         CallOnDead();
     }
 
@@ -312,7 +326,7 @@ public class CharacterStat : BaseStat, IDamageable
 
         // 4. UI 및 데이터 갱신을 여기서 한 번만 수행
         OnLevelChanged?.Invoke((int)CurLevel);
-        OnExpChanged?.Invoke(CurrentExp, MaxExp.Value);
+        OnExpChanged?.Invoke(CurrentExp, MaxExp);
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
         CallOnHpChanged(CurrentHp, MaxHp.Value);
 
@@ -320,23 +334,27 @@ public class CharacterStat : BaseStat, IDamageable
 
     private void ApplyWeaponStats()
     {
-        // 기존 무기 보정치 초기화
-        Attack.ClearModifier();
-        MaxHp.ClearModifier();
-
         if (_weaponData == null) return;
 
-        WeaponData w = _weaponData.GetLevelData(WeaponLevel);
-        if (w == null) return;
+        // 1. 기존에 적용된 무기 보정치 초기화
+        Attack.ClearModifier();
+        MaxHp.ClearModifier();
+        CritRate.ClearModifier();
+        CritDamage.ClearModifier();
 
-        Attack.AddModifier(w.AttackBonus);
-        MaxHp.AddModifier(w.HpBonus);
+        WeaponLevelStat wStat = _weaponData.GetStatByLevel(WeaponLevel);
+
+        // 3. Stat 클래스에 합연산(Flat)으로 더해줌
+        Attack.AddModifier(new StatModifier(wStat.Attack, StatModType.Flat));
+        MaxHp.AddModifier(new StatModifier(wStat.HP, StatModType.Flat));
+        CritRate.AddModifier(new StatModifier(wStat.CritRate, StatModType.Flat));
+        CritDamage.AddModifier(new StatModifier(wStat.CritDmg, StatModType.Flat));
+
+        Debug.Log($"[{_data.nameKR}] 무기({_weaponData.weaponName}) Lv.{WeaponLevel} 스탯 적용 완료");
 
         // HP가 MaxHp를 초과하지 않도록 보정
-        CurrentHp = Mathf.Min(CurrentHp, MaxHp.Value);
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
-
-        Debug.Log($"[{_data?.nameKR}] 무기 Lv{WeaponLevel} 적용 → ATK+{w.AttackBonus}, HP+{w.HpBonus}");
+        //CurrentHp = Mathf.Min(CurrentHp, MaxHp.Value);
+        //CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 
     public void WeaponLevelUp()

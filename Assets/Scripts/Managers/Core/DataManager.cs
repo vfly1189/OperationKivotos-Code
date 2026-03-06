@@ -25,17 +25,21 @@ public class DataManager
         var tasks = new List<UniTask>();
 
         // [리팩토링] 데이터 추가 시 여기에 한 줄만 쓰면 끝!
-        tasks.Add(LoadAndCacheJsonAsync<WeaponDataLoader, string, WeaponData>("Character_Weapon_Data"));
+        //tasks.Add(LoadAndCacheJsonAsync<WeaponDataLoader, string, WeaponData>("Character_Weapon_Data"));
         tasks.Add(LoadAndCacheJsonAsync<WeaponEnhanceMentDataLoader, int, EnhancementRateData>("Weapon_Enhancement_Rate_Data"));
         tasks.Add(LoadAndCacheJsonAsync<SpawnerDataLoader, int, SpawnerData>("SpawnerData"));
         tasks.Add(LoadAndCacheJsonAsync<MonsterDataLoader, int, MonsterData>("MonsterData"));
         // 아이템 SO를 로드하고 싶다면?
-        tasks.Add(LoadAndCacheSOAsync("ItemDatabase"));
+        tasks.Add(LoadAndCacheSOAsync<ItemDatabaseSO>("ItemDatabase"));
+        tasks.Add(LoadAndCacheSOAsync<CharacterExpTableSO>("CharacterExpTable"));
+
+        tasks.Add(LoadAndCacheSOAsync<WeaponEnhanceCostTableSO>("WeaponEnhanceCostTable"));
 
         // 병렬로 한 방에 다운로드 및 파싱
         await UniTask.WhenAll(tasks);
 
         Debug.Log($"DataManager Init Complete: 총 {_dataDicts.Count}개의 데이터 테이블 로드 완료.");
+
 
         //// Task들을 정의만 해둡니다.
         //var weaponTask = LoadJsonAsync<WeaponDataLoader, string, WeaponData>("Character_Weapon_Data");
@@ -80,21 +84,18 @@ public class DataManager
     // =========================================================
     // SO 파일을 Addressables로 로드하고 딕셔너리로 분해하여 바구니에 담는 함수
     // =========================================================
-    private async UniTask LoadAndCacheSOAsync(string addressableKey)
+    private async UniTask LoadAndCacheSOAsync<T>(string addressableKey) where T : ScriptableObject, IDataCacheable
     {
-        // ScriptableObject를 로드합니다. (캐싱 여부는 프로젝트 설정에 맞게)
-        var itemDatabase = await Managers.Resource.LoadAsync<ItemDatabaseSO>(addressableKey);
+        T soData = await Managers.Resource.LoadAsync<T>(addressableKey);
 
-        if (itemDatabase != null)
+        if (soData != null)
         {
-            // SO 안에 있는 3개의 List를 각각 Dictionary로 변환하여 바구니에 담습니다.
-            _dataDicts.Add(typeof(EquipmentData), itemDatabase.MakeEquipDict());
-            _dataDicts.Add(typeof(ConsumableData), itemDatabase.MakeConsumableDict());
-            _dataDicts.Add(typeof(MaterialData), itemDatabase.MakeMaterialDict());
+            // 인터페이스 함수를 호출하여 각 SO가 알아서 바구니에 담도록 지시
+            soData.CacheData(_dataDicts);
         }
         else
         {
-            Debug.LogError($"[DataManager] SO 로드 실패: {addressableKey}");
+            Debug.LogError($"[DataManager] SO 로드 실패: {addressableKey} (Type: {typeof(T).Name})");
         }
     }
 
@@ -147,20 +148,4 @@ public class DataManager
                 return null;
         }
     }
-
-
-    //// ==========================================================
-    //public MonsterData GetMonsterDataById(int monsterId)
-    //{
-    //    if (MonsterDict.TryGetValue(monsterId, out MonsterData data)) return data;
-    //    Debug.LogError($"ID [{monsterId}]에 해당하는 몬스터 데이터가 없습니다!");
-    //    return null;
-    //}
-
-    //public SpawnerData GetSpawnerData(int spawnerId)
-    //{
-    //    if (SpawnerDict.TryGetValue(spawnerId, out SpawnerData data)) return data;
-    //    Debug.LogError($"ID [{spawnerId}]에 해당하는 스포너 데이터가 없습니다!");
-    //    return null;
-    //}
 }

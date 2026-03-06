@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class ActiveCharacterHUD : MonoBehaviour
@@ -7,55 +7,58 @@ public class ActiveCharacterHUD : MonoBehaviour
     [SerializeField] public SkillIconUI _eSkill;
     [SerializeField] public StatUI _statUI;
 
-
     public void UnSubscribeEvent(BaseCharacter character)
     {
-        if (character == null || character.Stat == null) return; // 안전장치 추가
+        if (character == null || character.Stat == null) return;
 
         CharacterStat stat = character.Stat;
 
         stat.OnHpChanged -= _statUI.SetHp;
         stat.OnExpChanged -= _statUI.SetExp;
-        stat.OnLevelChanged -= HandleLevelChanged; // 래퍼 함수 해제
+        stat.OnLevelChanged -= HandleLevelChanged;
 
-        // 스킬 UI 이벤트 해제
         stat.OnEnergyChanged -= HandleActiveSkillEnergy;
         stat.OnUltimateStateChanged -= HandleActiveSkillReady;
     }
 
     public void SubscribeEvent(BaseCharacter character)
     {
-        if (character == null || character.Stat == null) return; // 안전장치 추가
+        if (character == null || character.Stat == null) return;
 
         CharacterStat stat = character.Stat;
-        
-        // (A) StatUI 초기화 & 구독
+
         _statUI.Initialize(stat);
         stat.OnHpChanged += _statUI.SetHp;
         stat.OnExpChanged += _statUI.SetExp;
         stat.OnLevelChanged += HandleLevelChanged;
 
-        // (B) Skill UI (에너지 & 준비상태) 초기화 & 구독
         _qSkill.UpdateEnergy(stat.CurrentEnergy, stat.MaxEnergy.Value);
-
-        // Ready 상태 초기화
         bool isReady = (stat.CurrentQSkillCoolTime <= 0) && (stat.CurrentEnergy >= stat.MaxEnergy.Value);
         _qSkill.SetUltimateReady(isReady);
 
-        // 이벤트 연결
         stat.OnEnergyChanged += HandleActiveSkillEnergy;
         stat.OnUltimateStateChanged += HandleActiveSkillReady;
     }
 
-    //정적인 데이터들 교체
-    //Q스킬 아이콘, 에너지 채우는 색상, 에너지 꽉차면 빛나는 색상
-    //E스킬 아이콘
-    public void ChangeStaticData(CharacterDataSO data)
+    // 비동기 스킬 아이콘 갱신 함수
+    public async UniTask ChangeStaticDataAsync(CharacterDataSO charData)
     {
-        _qSkill.SetIcon(data.qSkillIcon);
-        _qSkill.SetEnergyFillColor(data.energyFillColor);
-        _qSkill.SetReadyGlowColor(data.ultimateGlowColor);
-        _eSkill.SetIcon(data.eSkillIcon);
+        if (charData == null) return;
+
+        _qSkill.SetEnergyFillColor(charData.energyFillColor);
+        _qSkill.SetReadyGlowColor(charData.ultimateGlowColor);
+
+        if (charData.qSkillIcon != null && charData.qSkillIcon.RuntimeKeyIsValid())
+        {
+            Sprite qIcon = await Managers.Resource.LoadAsync<Sprite>(charData.qSkillIcon);
+            _qSkill.SetIcon(qIcon);
+        }
+
+        if (charData.eSkillIcon != null && charData.eSkillIcon.RuntimeKeyIsValid())
+        {
+            Sprite eIcon = await Managers.Resource.LoadAsync<Sprite>(charData.eSkillIcon);
+            _eSkill.SetIcon(eIcon);
+        }
     }
 
     public void UpdateCooldowns(CharacterStat stat)
@@ -64,8 +67,7 @@ public class ActiveCharacterHUD : MonoBehaviour
         _eSkill.UpdateCooldown(stat.CurrentESkillCoolTime, stat.ESkillCoolTime.Value);
     }
 
-
-    // --- 이벤트 핸들러 래퍼 (구독/해제를 명확히 하기 위함) ---
+    // 래퍼 함수들
     private void HandleLevelChanged(int level) => _statUI.SetLevel(level);
     private void HandleActiveSkillEnergy(float cur, float max) => _qSkill.UpdateEnergy(cur, max);
     private void HandleActiveSkillReady(bool isReady) => _qSkill.SetUltimateReady(isReady);

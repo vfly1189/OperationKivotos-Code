@@ -1,31 +1,50 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
-[CreateAssetMenu(fileName = "NewWeaponData", menuName = "Data/ItemData/Weapon")]
-public class WeaponDataSO : ItemDataSO
+[System.Serializable] // <<<<< 이거 필수!
+public class WeaponLevelStat
 {
+    public int Level;
+    public float Attack;
+    public float HP;
+    public float CritRate;
+    public float CritDmg;
+}
 
-    // [추가] 특정 레벨의 데이터를 가져오는 함수
-    public WeaponData GetLevelData(int level)
+
+[CreateAssetMenu(fileName = "NewWeaponData", menuName = "Data/WeaponData")]
+public class WeaponDataSO : ScriptableObject
+{
+    [Header("Excel Data - Info")]
+    public int id;              // 2000
+    public string key;          // wpn_Hoshino
+    public string weaponName;   // 호루스의 눈
+    public int ownerCharID;     // 1000
+
+    [Header("Assets - Visuals & Prefabs")]
+    public AssetReferenceSprite weaponIcon;
+
+    [Header("Excel Data - Stats Array (Lv.1 ~ Max)")]
+    // 엑셀 파싱 시점에 Base 스탯 + Growth 스탯을 미리 계산해서 25개 칸에 꽉 채워넣습니다.
+    // 인덱스 0 = 1레벨, 인덱스 1 = 2레벨 ...
+    public WeaponLevelStat[] levelStats;
+
+    // ==========================================
+    // 런타임에서 특정 레벨 스탯 빼오기용 함수
+    // ==========================================
+    public WeaponLevelStat GetStatByLevel(int level)
     {
-        // DataManager에 "WeaponID_Level" 키로 요청
-        // 예: "Weapon_Hoshino_1"
-        string key = $"{itemID}_{level}";
+        // 배열 인덱스는 0부터 시작하므로 (level - 1)
+        int index = level - 1;
 
-        WeaponData data = Managers.Data.GetData<string, WeaponData>(key);
-
-        if (data != null)
+        if (levelStats != null && index >= 0 && index < levelStats.Length)
         {
-            return data;
+            return levelStats[index];
         }
 
-        Debug.LogError($"Weapon Data Not Found! Key: {key}");
-        return null;
-    }
-
-    // 현재 레벨의 공격력 보너스만 바로 가져오기
-    public float GetAttackBonus(int level)
-    {
-        var data = GetLevelData(level);
-        return data != null ? data.AttackBonus : 0f;
+        Debug.LogError($"[{weaponName}] {level} 레벨의 스탯 데이터가 없습니다.");
+        return default;
     }
 }
