@@ -157,65 +157,6 @@ public class InventoryManager
         // 처리가 모두 끝나면 UI 갱신 이벤트 호출
         OnInventoryUpdated?.Invoke(category);
     }
-
-    //// 2. 완벽한 Stack 분할 로직이 적용된 AddItem
-    //public void AddItem(int itemID, ItemCategory category, int amount = 1)
-    //{
-    //    if (amount <= 0) return;
-
-    //    //List<InventorySlot> targetList = Inventory[category];
-    //    InventorySlot[] targetArray = Inventory[category];
-    //    int maxStack = GetMaxStack(itemID, category);
-
-    //    // 추가해야 할 남은 수량
-    //    int remainingAmount = amount;
-
-    //    // 소모품이나 재료라면, 기존에 덜 채워진(MaxStack 미만) 슬롯들을 찾아 채워넣습니다.
-    //    if (category != ItemCategory.Equipment)
-    //    {
-    //        foreach (var slot in targetArray)
-    //        {
-    //            if (slot.itemID == itemID && slot.Amount < maxStack)
-    //            {
-    //                // 현재 슬롯에 추가할 수 있는 여유 공간
-    //                int spaceLeft = maxStack - slot.Amount;
-
-    //                if (remainingAmount <= spaceLeft)
-    //                {
-    //                    // 남은 수량이 여유 공간보다 작거나 같으면 전부 넣고 끝!
-    //                    slot.Amount += remainingAmount;
-    //                    remainingAmount = 0;
-    //                    break; // 루프 탈출
-    //                }
-    //                else
-    //                {
-    //                    // 남은 수량이 더 많으면, 일단 이 슬롯을 가득(Max) 채우고 남은 건 다음 슬롯으로 넘김
-    //                    slot.Amount = maxStack;
-    //                    remainingAmount -= spaceLeft;
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //    // 기존 슬롯들을 다 채우고도(혹은 장비라서) 남은 아이템이 있다면, 새로운 슬롯을 생성해야 함
-    //    while (remainingAmount > 0)
-    //    {
-    //        // 한 번에 만들 새 슬롯에 들어갈 개수 (최대 MaxStack만큼)
-    //        int addAmount = Mathf.Min(remainingAmount, maxStack);
-
-    //        // TODO: 여기서 인벤토리 최대 칸수(Max Slots) 제한 체크를 할 수도 있습니다.
-
-    //        //targetList.Add(new InventorySlot { itemID = itemID, Amount = addAmount });
-
-
-    //        remainingAmount -= addAmount;
-    //    }
-
-    //    // 처리가 모두 끝나면 UI 갱신 이벤트 호출
-    //    OnInventoryUpdated?.Invoke(category);
-    //}
-
-    // 아이템 위치를 스왑(Swap)하거나 병합(Merge)하는 함수
     public void SwapItems(ItemCategory category, int indexA, int indexB)
     {
         Debug.Log($"Index : {indexA} , {indexB}");
@@ -255,5 +196,57 @@ public class InventoryManager
         slotB.Amount = tempAmount;
 
         OnInventoryUpdated?.Invoke(category);
+    }
+
+
+
+    //외부에서 호출할 편의 함수들
+
+    //아이템 갯수를 리턴해주는 함수
+    // 아이템 갯수를 리턴해주는 함수 (가독성 정리)
+    public int GetItemCount(ItemCategory category, int itemID)
+    {
+        int count = 0;
+        foreach (var slot in Inventory[category])
+        {
+            if (!slot.IsEmpty && slot.itemID == itemID)
+            {
+                count += slot.Amount;
+            }
+        }
+        return count;
+    }
+
+    // 아이템 소모 함수 (초과 소모 버그 수정)
+    public bool ConsumeMaterial(int itemID, int amount)
+    {
+        // 애초에 총량이 부족하면 false
+        if (GetItemCount(ItemCategory.Material, itemID) < amount)
+            return false;
+
+        int remainAmount = amount;
+
+        foreach (var slot in Inventory[ItemCategory.Material])
+        {
+            if (!slot.IsEmpty && slot.itemID == itemID)
+            {
+                if (slot.Amount <= remainAmount)
+                {
+                    remainAmount -= slot.Amount;
+                    slot.Clear();
+                }
+                else
+                {
+                    slot.Amount -= remainAmount;
+                    remainAmount = 0; // [수정됨] 깎고 나서 남은 요구량을 0으로 처리
+                }
+            }
+
+            // 다 깎았다면 더 이상 반복문 돌 필요 없이 즉시 탈출
+            if (remainAmount <= 0) break;
+        }
+
+        OnInventoryUpdated?.Invoke(ItemCategory.Material);
+        return true;
     }
 }

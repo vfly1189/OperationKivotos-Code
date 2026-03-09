@@ -28,6 +28,7 @@ public class PlayerController
         Managers.Input.MouseAction -= HandleMouse;
         Managers.Input.MouseAction += HandleMouse;
 
+        Managers.Input.RegisterAction("Info", HandleInfo);
         Managers.Input.RegisterAction("Inventory", HandleInventory);
         Managers.Input.RegisterAction("Q_Skill", HandleSkill_Q);
         Managers.Input.RegisterAction("E_Skill", HandleSkill_E);
@@ -116,6 +117,11 @@ public class PlayerController
     private async void HandleInventory()
     {
         UI_Inventory inventory = await Managers.UI.ShowPopupUIAsync<UI_Inventory>("UI_Inventory");
+    }
+
+    private async void HandleInfo()
+    {
+        UI_Info info = await Managers.UI.ShowPopupUIAsync<UI_Info>("UI_Info");
     }
 
     // Update 로직 -> Managers.Update에서 호출

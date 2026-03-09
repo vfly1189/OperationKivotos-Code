@@ -39,41 +39,6 @@ public class UI_Inventory : UI_PopUp
 
     private async void RefreshUI(ItemCategory category)
     {
-        //// 현재 보고 있는 탭이 아니면 무시 (백그라운드에서 인벤토리 아이템을 먹었을 때 대비)
-        //if (_currentCategory != category) return;
-
-        //// 1. 인벤토리 데이터 가져오기
-        //var invenList = Managers.Inventory.Inventory[category];
-
-        //if (invenList == null) return;
-        // 2. 슬롯 갯수 맞추기 (오브젝트 풀링/재사용 개념)
-        // 부족하면 새로 만들고, 남으면 꺼둡니다. 매번 파괴(Destroy)하지 않습니다.
-
-        //// 부족한 만큼 생성
-        //while (_activeSlots.Count < invenList.Count)
-        //{
-        //    // UIManager의 SubItem 생성 기능 활용 (Addressable Key 사용)
-        //    UI_ItemSlot slot = await Managers.UI.MakeSubItemAsync<UI_ItemSlot>("UI_ItemSlot", _contentParent);
-        //    _activeSlots.Add(slot);
-        //}
-
-        //// 3. 데이터 매핑 및 활성화/비활성화 처리
-        //for (int i = 0; i < _activeSlots.Count; i++)
-        //{
-        //    if (i < invenList.Count)
-        //    {
-        //        _activeSlots[i].gameObject.SetActive(true);
-        //        _activeSlots[i].SetInfo(invenList[i], category); // 데이터 주입
-        //    }
-        //    else
-        //    {
-        //        _activeSlots[i].gameObject.SetActive(false); // 남는 슬롯 숨기기
-        //    }
-        //}
-
-
-
-
         if (_currentCategory != category) return;
 
         var invenArray = Managers.Inventory.Inventory[category];

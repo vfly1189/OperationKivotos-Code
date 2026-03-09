@@ -21,6 +21,7 @@ public class CharacterStat : BaseStat, IDamageable
     public Stat CritRate;
     public Stat CritDamage;
     public Stat MoveSpeed;
+    public Stat EnergyRecharge;
 
     public Stat QSkillCoolTime;
     public Stat ESkillCoolTime;
@@ -30,8 +31,6 @@ public class CharacterStat : BaseStat, IDamageable
     public int WeaponLevel { get; private set; } = 1;
     public float CurrentExp { get; private set; }
     public float MaxExp { get; private set; }
-
-
     public float CurrentEnergy { get; private set; }
     public float CurrentQSkillCoolTime { get; private set; }
     public float CurrentESkillCoolTime { get; private set; }
@@ -55,6 +54,7 @@ public class CharacterStat : BaseStat, IDamageable
         CritRate = new Stat();
         CritDamage = new Stat();
         MoveSpeed = new Stat();
+        EnergyRecharge = new Stat();    
 
         QSkillCoolTime = new Stat();
         ESkillCoolTime = new Stat();
@@ -80,6 +80,7 @@ public class CharacterStat : BaseStat, IDamageable
         CritRate.SetBaseValue(data.baseCritRate);
         CritDamage.SetBaseValue(data.baseCritDamage);
         MoveSpeed.SetBaseValue(data.baseMoveSpeed);
+        EnergyRecharge.SetBaseValue(data.baseEnergyRecharge);
 
         QSkillCoolTime.SetBaseValue(data.QSkillCoolTime);
         ESkillCoolTime.SetBaseValue(data.ESkillCoolTime);
@@ -105,6 +106,9 @@ public class CharacterStat : BaseStat, IDamageable
 
     public CharacterDataSO GetData() { return _data; }
     public AssetReferenceSprite GetPortrait() { return _data.Portrait; }
+
+    public AssetReferenceGameObject GetSelectModel() { return _data.selectPrefab; }
+
     public int GetID() { return _data.id; }
 
     public void ResetState()
@@ -329,7 +333,6 @@ public class CharacterStat : BaseStat, IDamageable
         OnExpChanged?.Invoke(CurrentExp, MaxExp);
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
         CallOnHpChanged(CurrentHp, MaxHp.Value);
-
     }
 
     private void ApplyWeaponStats()
@@ -350,11 +353,10 @@ public class CharacterStat : BaseStat, IDamageable
         CritRate.AddModifier(new StatModifier(wStat.CritRate, StatModType.Flat));
         CritDamage.AddModifier(new StatModifier(wStat.CritDmg, StatModType.Flat));
 
-        Debug.Log($"[{_data.nameKR}] 무기({_weaponData.weaponName}) Lv.{WeaponLevel} 스탯 적용 완료");
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
 
-        // HP가 MaxHp를 초과하지 않도록 보정
-        //CurrentHp = Mathf.Min(CurrentHp, MaxHp.Value);
-        //CallOnHpChanged(CurrentHp, MaxHp.Value);
+
+        Debug.Log($"[{_data.nameKR}] 무기({_weaponData.weaponName}) Lv.{WeaponLevel} 스탯 적용 완료");
     }
 
     public void WeaponLevelUp()

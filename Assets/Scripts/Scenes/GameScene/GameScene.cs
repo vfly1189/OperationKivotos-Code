@@ -13,6 +13,10 @@ public class GameScene : BaseScene
     private GameObject _loadingCoverInstance;
     private GameObject _map;
     private AudioClip _mainBGM;
+    private GameObject _modelCamera;
+
+    private int _prevIndex = -1;
+    private List<GameObject> _infoModels = new List<GameObject>();
 
     // [핵심 변경 1] async void 사용
     protected override async void Init()
@@ -46,11 +50,16 @@ public class GameScene : BaseScene
         await SetupUI();
         await CreateShopMaster();
 
+
+        await CreateModelCamera();
+        await LoadAllSchoolModels();
+
         SetupCamera();
         PlayMainBGM();
 
         FadeInSequence().Forget(); // [변경] 코루틴 대신 UniTask 사용
 
+        Managers.Input.RegisterAction("Info", HandleInfo);
 
         Managers.Inventory.AddItem(10002, ItemCategory.Equipment, 1);
         Managers.Inventory.AddItem(10010, ItemCategory.Equipment, 1);
@@ -60,11 +69,11 @@ public class GameScene : BaseScene
         Managers.Inventory.AddItem(10019, ItemCategory.Equipment, 1);
 
         ////Managers.Inventory.AddItem(20000, ItemCategory.Consumable, 10);
-        Managers.Inventory.AddItem(30000, ItemCategory.Material, 10);
-        Managers.Inventory.AddItem(30001, ItemCategory.Material, 9989);
-        Managers.Inventory.AddItem(30001, ItemCategory.Material, 39);
-
-        Managers.Inventory.AddItem(30002, ItemCategory.Material, 50);
+        Managers.Inventory.AddItem(30000, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30001, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30002, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30000, ItemCategory.Material, 500);
+        //Managers.Inventory.AddItem(30002, ItemCategory.Material, 50);
         Debug.Log("GameScene Init Complete");
     }
 
@@ -91,24 +100,6 @@ public class GameScene : BaseScene
     // [핵심 변경 5] Addressables 직접 로드 제거
     private async UniTask SetupUI()
     {
-        //var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
-        //if (existingUI != null)
-        //{
-        //    existingUI.gameObject.SetActive(true);
-        //    existingUI.SetPartyManager();
-        //    return;
-        //}
-
-        //GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.gameSceneCanvas, true);
-
-        //if (prefab != null)
-        //{
-        //    GameObject ui = Instantiate(prefab);
-        //    ui.name = "@GameSceneCanvas";
-        //    DontDestroyOnLoad(ui);
-        //    ui.GetComponent<GameSceneCanvas>()?.SetPartyManager();
-        //}
-
         // 1. 혹시 모를 씬 내에 이미 떠있는 UI가 있다면 UIManager 캐싱 및 활성화만 진행 (보통 던전에서 마을로 돌아올 때)
         // (단, 완벽한 프레임워크라면 씬에 UI를 수동으로 두지 않아야 함)
         var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
@@ -283,5 +274,76 @@ public class GameScene : BaseScene
         {
             Managers.UI.ClosePopupUI();
         }
+    }
+
+
+    // [핵심 변경 4] Task -> UniTask 로 반환형 변경
+    private async UniTask LoadAllSchoolModels()
+    {
+        string[] spawnPointNames = { "SpawnPoint1" };
+        Transform point = null;
+        if (_modelCamera != null)
+        {
+            point = _modelCamera.transform.Find(spawnPointNames[0]);
+        }
+
+        // UniTask.WhenAll 사용
+        var loadingTasks = new List<UniTask>();
+
+        List<BaseCharacter> characters = Managers.Party.GetMemeber();
+
+        for (int i = 0; i < 4; i++)
+        {
+            await LoadSingleSchoolModel(characters[i].Stat.GetSelectModel(), point);
+        }
+
+        //await UniTask.WhenAll(loadingTasks);
+    }
+
+    private async UniTask LoadSingleSchoolModel(AssetReferenceGameObject selectPrefab, Transform spawnPoint)
+    {
+        // [수정점 4] ResourceManager로 위임하여 씬 단위 메모리 관리 보장
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(selectPrefab);
+
+        if (prefab != null)
+        {
+            GameObject go = Instantiate(prefab, spawnPoint);
+            _infoModels.Add(go);
+            go.SetActive(false);
+            go.transform.localPosition = Vector3.zero;
+
+            if (_modelCamera != null)
+            {
+                Vector3 dir = _modelCamera.transform.position - go.transform.position;
+                dir.y = 0;
+                if (dir != Vector3.zero) go.transform.rotation = Quaternion.LookRotation(dir);
+            }
+        }
+    }
+
+    private async UniTask CreateModelCamera()
+    {
+        // [수정점 5] Handle 로직 제거
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.modelCamera);
+
+        if (prefab != null)
+        {
+            _modelCamera = Instantiate(prefab);
+            _modelCamera.transform.position = new Vector3(1000f, 1000f, 1000f);
+            _modelCamera.name = "@ModelCamera";
+        }
+    }
+
+
+    private void HandleInfo()
+    {
+        int index = Managers.Party.GetCurrentCharacterIndex();
+
+        if(_prevIndex != index && _prevIndex != -1) 
+            _infoModels[_prevIndex].SetActive(false);
+
+        _infoModels[index].SetActive(true);
+
+        _prevIndex = index;
     }
 }

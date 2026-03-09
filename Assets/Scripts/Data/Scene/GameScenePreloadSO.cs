@@ -28,4 +28,6 @@ public class GameScenePreloadSO : SceneDataSO
     public AssetReferenceGameObject monsterRL;
     public AssetReferenceGameObject monsterTank;
 
+    [Header("¸ðµ¨µé ÂïÀ» Ä«¸Þ¶ó")]
+    public AssetReferenceGameObject modelCamera;
 }

@@ -4,6 +4,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
 
+public enum UpgradeStone_ID
+{
+    Common = 30000,
+    Uncommon,
+    Rare
+}
+
+
 public class UI_UpgradePopUp : UI_PopUp
 {
     [Header("Button")]
@@ -16,11 +24,11 @@ public class UI_UpgradePopUp : UI_PopUp
 
     [Header("강화 비용 텍스트")]
     [SerializeField] public TextMeshProUGUI _requireCreditText;
-    [SerializeField] public TextMeshProUGUI _requrieStoneText;
+    [SerializeField] public TextMeshProUGUI[] _requrieStoneTexts;
 
     [Header("보유 재화 텍스트")]
     [SerializeField] public TextMeshProUGUI _havingCreditText;
-    [SerializeField] public TextMeshProUGUI _havingStoneText;
+    [SerializeField] public TextMeshProUGUI[] _havingStoneTexts;
 
     [Header("강화 확률 텍스트")]
     [SerializeField] public TextMeshProUGUI _enhancementRateText;
@@ -163,26 +171,38 @@ public class UI_UpgradePopUp : UI_PopUp
         }
 
         RefreshCurrencyInfo(cost);
-        RefreshRateInfo(targetLevel); // 테이블 키 정책에 따라 weaponLevel로 바꿔도 됨
+        RefreshRateInfo(weaponLevel); // 테이블 키 정책에 따라 weaponLevel로 바꿔도 됨
     }
 
     private void RefreshCurrencyInfo(WeaponEnhanceCost cost)
     {
+        // 1. 골드 UI 갱신
         int haveGold = Managers.Wallet.GetCurrency(CurrencyType.Credit);
-
-        // “재료 3개” UI가 아직 1개만 있으니 우선 Material1을 강화석으로 표시
-        //int haveStone = Managers.Wallet.GetItemCount(cost.Material1ID); // 없으면 인벤토리 매니저 함수로 교체하세요
-        int haveStone = 100;
-
         _requireCreditText.text = cost.RequireGold.ToString("N0");
-        _requrieStoneText.text = cost.Material1Count.ToString("N0");
         _havingCreditText.text = haveGold.ToString("N0");
-        _havingStoneText.text = haveStone.ToString("N0");
-
         _requireCreditText.color = haveGold >= cost.RequireGold ? Color.white : Color.red;
-        _requrieStoneText.color = haveStone >= cost.Material1Count ? Color.white : Color.red;
 
-        bool canUpgrade = haveGold >= cost.RequireGold && haveStone >= cost.Material1Count;
+        bool canUpgrade = haveGold >= cost.RequireGold;
+
+        // 2. 재료 UI 갱신 (배열 활용)
+        int[] reqMats = { cost.Material1Count, cost.Material2Count, cost.Material3Count };
+        int[] matIDs = { (int)UpgradeStone_ID.Common, (int)UpgradeStone_ID.Uncommon, (int)UpgradeStone_ID.Rare };
+
+        for (int i = 0; i < 3; i++)
+        {
+            int reqCount = reqMats[i];
+            int haveCount = Managers.Inventory.GetItemCount(ItemCategory.Material, matIDs[i]);
+
+            _requrieStoneTexts[i].text = reqCount.ToString("N0");
+            _havingStoneTexts[i].text = haveCount.ToString("N0");
+            _requrieStoneTexts[i].color = haveCount >= reqCount ? Color.white : Color.red;
+
+            // 하나라도 부족하면 강화 불가 처리
+            if (haveCount < reqCount)
+                canUpgrade = false;
+        }
+
+        // 3. 버튼 활성화 상태 적용
         _upgradeButton.interactable = canUpgrade;
     }
 
@@ -206,9 +226,17 @@ public class UI_UpgradePopUp : UI_PopUp
     private void SetMaxLevelUI()
     {
         _requireCreditText.text = "-";
-        _requrieStoneText.text = "-";
+
+        _requrieStoneTexts[0].text = "-";
+        _requrieStoneTexts[1].text = "-";
+        _requrieStoneTexts[2].text = "-";
+
         _havingCreditText.text = "-";
-        _havingStoneText.text = "-";
+
+        _havingStoneTexts[0].text = "-";
+        _havingStoneTexts[1].text = "-";
+        _havingStoneTexts[2].text = "-";
+
         _enhancementRateText.text = "-";
         _enhancementRateText.color = Color.white;
         _upgradeButton.interactable = false;

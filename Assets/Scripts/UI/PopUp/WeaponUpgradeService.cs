@@ -1,51 +1,67 @@
+using NPOI.Util;
 using UnityEngine;
 
 public class WeaponUpgradeService
 {
+    const int MAX_WEPAON_LEVEL = 25;
+
     public enum UpgradeResult
     {
-        Success,
-        Fail,
-        NotEnoughCurrency,
-        AlreadyMaxLevel
+        Success, Fail, NotEnoughCurrency, AlreadyMaxLevel
     }
 
     public UpgradeResult TryUpgrade(BaseCharacter target)
     {
-        //int currentLevel = target.Stat.WeaponLevel;
+        int currentLevel = target.Stat.WeaponLevel;
+        if (currentLevel >= MAX_WEPAON_LEVEL) return UpgradeResult.AlreadyMaxLevel;
 
-        //// 1. 만렙 체크
-        //if (currentLevel >= 5) return UpgradeResult.AlreadyMaxLevel;
+        int targetLevel = currentLevel + 1;
 
-        //// 2. 다음 레벨 비용 데이터 가져오기
-        //string key = $"{target.Stat._weaponData.itemID}_{currentLevel + 1}";
+        // 1. 데이터 로드
+        EnhancementRateData rateData = Managers.Data.GetData<int, EnhancementRateData>(currentLevel);
+        WeaponEnhanceCost costData = Managers.Data.GetData<int, WeaponEnhanceCost>(targetLevel);
 
-        ////if (!Managers.Data.WeaponDict.TryGetValue(key, out WeaponData nextData))
-        ////    return UpgradeResult.AlreadyMaxLevel;
+        if (rateData == null || costData == null)
+            return UpgradeResult.AlreadyMaxLevel;
 
-        //WeaponData nextData = Managers.Data.GetData<string, WeaponData>(key);
-        //if (nextData == null)
-        //    return UpgradeResult.AlreadyMaxLevel;
+        // 2. 재화 소모 시도
+        if (!TryConsume(costData))
+            return UpgradeResult.NotEnoughCurrency;
 
-        //// 3. 재화 소모 시도
-        //bool consumed = Managers.Wallet.TryConsumeMultiple(
-        //    CurrencyType.Credit, nextData.CostGold,
-        //    CurrencyType.EnhanceStone, nextData.CostStones
-        //);
-        //if (!consumed) return UpgradeResult.NotEnoughCurrency;
+        // 3. 확률 판정
+        if (UnityEngine.Random.value <= rateData.successRate)
+        {
+            target.Stat.WeaponLevelUp();
+            return UpgradeResult.Success;
+        }
 
-        //EnhancementRateData rateData = Managers.Data.GetData<int, EnhancementRateData>(currentLevel);
-        //// 4. 확률 판정
-        //if (rateData != null)
-        //{
-        //    if (UnityEngine.Random.value <= rateData.successRate)
-        //    {
-        //        target.Stat.WeaponLevelUp();
-        //        return UpgradeResult.Success;
-        //    }
-        //}
-
-        //return UpgradeResult.Fail;
         return UpgradeResult.Fail;
+    }
+
+    private bool TryConsume(WeaponEnhanceCost cost)
+    {
+        int reqGold = cost.RequireGold;
+        int[] reqMats = { cost.Material1Count, cost.Material2Count, cost.Material3Count };
+        int[] matIDs = { (int)UpgradeStone_ID.Common, (int)UpgradeStone_ID.Uncommon, (int)UpgradeStone_ID.Rare };
+
+        // 1. 보유량 확인 (부족하면 즉시 false)
+        if (Managers.Wallet.GetCurrency(CurrencyType.Credit) < reqGold) return false;
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (reqMats[i] > 0 && Managers.Inventory.GetItemCount(ItemCategory.Material, matIDs[i]) < reqMats[i])
+                return false;
+        }
+
+        // 2. 실제 재화 소모
+        Managers.Wallet.ConsumeCurrency(CurrencyType.Credit, reqGold);
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (reqMats[i] > 0)
+                Managers.Inventory.ConsumeMaterial(matIDs[i], reqMats[i]);
+        }
+
+        return true;
     }
 }

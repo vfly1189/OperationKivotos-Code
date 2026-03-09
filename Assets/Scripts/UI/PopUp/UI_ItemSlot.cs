@@ -1,5 +1,4 @@
 using TMPro;
-using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -84,7 +83,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler, IDragHandler, IEndDragHan
     {
         // 등급에 맞는 Addressable Key 문자열 조합 (예: "Common_Gray", "Rare_Blue")
         string gradeKey = $"GradeBg_{grade.ToString()}"; // 예시
-
+        Debug.Log($"GradeKey : {gradeKey}");
         Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey);
         if (bgSprite != null && _itemGradeBackGround != null)
         {
