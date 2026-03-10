@@ -76,17 +76,34 @@ public class MonsterController : MonoBehaviour
     }
 
     private async void Start()
-    {    
+    {
+        //if (_hpBarPrefab != null)
+        //{
+        //    GameObject canvasObj = GameObject.Find("@GameSceneCanvas_New");
+        //    Transform uiParent = canvasObj != null ? canvasObj.transform : null;
+
+        //    _hpBar = await Managers.UI.MakeSubItemAsync<UI_MonsterHPBar>("MonsterHPBar", uiParent);
+
+        //    _hpBar.SetTarget(_hpBarTransform, Stat);
+
+        //    Stat.OnHpChanged -= _hpBar.UpdateHpBar;
+        //    Stat.OnHpChanged += _hpBar.UpdateHpBar;
+        //}
+
         if (_hpBarPrefab != null)
         {
-            GameObject canvasObj = GameObject.Find("@GameSceneCanvas");
-            Transform uiParent = canvasObj != null ? canvasObj.transform : null;
+            //[수정] GameObject.Find 제거하고, UIManager의 CanvasWorld를 부모로 지정!
+            Transform uiParent = Managers.UI.CanvasWorld.transform;
 
             _hpBar = await Managers.UI.MakeSubItemAsync<UI_MonsterHPBar>("MonsterHPBar", uiParent);
-            _hpBar.SetTarget(_hpBarTransform, Stat);
 
-            Stat.OnHpChanged -= _hpBar.UpdateHpBar;
-            Stat.OnHpChanged += _hpBar.UpdateHpBar;
+            if (_hpBar != null)
+            {
+                _hpBar.SetTarget(_hpBarTransform, Stat);
+
+                Stat.OnHpChanged -= _hpBar.UpdateHpBar;
+                Stat.OnHpChanged += _hpBar.UpdateHpBar;
+            }
         }
 
         if (Managers.Party.GetCurrentCharacter() != null)

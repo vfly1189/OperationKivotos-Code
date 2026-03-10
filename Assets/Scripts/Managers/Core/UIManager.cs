@@ -15,7 +15,7 @@ public class UIManager
     private Canvas _canvasScene;    // 씬마다 고정으로 뜨는 UI들
     private Canvas _canvasPopup;    // popup들
     private Canvas _canvasSystem;   // order 100 이상의 절대로 먼저 보여져야 되는것들...
-
+    private Canvas _canvasWorld;
 
     public bool IsPopupOpen => _popupStack.Count > 0;
 
@@ -40,6 +40,7 @@ public class UIManager
     // 역할별 캔버스를 자동으로 찾아오거나 생성하는 프로퍼티
     // =========================================================
     public Canvas CanvasScene => GetOrMakeCanvas(ref _canvasScene, "@Canvas_Scene", 0);
+    public Canvas CanvasWorld => GetOrMakeCanvas(ref _canvasWorld, "@Canvas_World", 5);
     public Canvas CanvasPopup => GetOrMakeCanvas(ref _canvasPopup, "@Canvas_Popup", 10);
     public Canvas CanvasSystem => GetOrMakeCanvas(ref _canvasSystem, "@Canvas_System", 100);
 

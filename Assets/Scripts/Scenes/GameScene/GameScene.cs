@@ -112,7 +112,7 @@ public class GameScene : BaseScene
 
         // 2. 어드레서블에서 UI 프리팹을 메모리에 비동기 로드
         // ShowSceneUI가 동기 Instantiate를 하기 때문에 로드가 선행되어야 합니다.
-        await Managers.Resource.LoadAsync<GameObject>(_preloadData.gameSceneCanvas);
+        await Managers.Resource.LoadAsync<GameObject>("GameSceneCanvas_New");
 
         // 3. UIManager를 통해 Scene UI 생성
         // @Canvas_Scene 하위로 자동 배치 및 SetCanvas 됨
@@ -135,19 +135,19 @@ public class GameScene : BaseScene
 
         if (_preloadData.monsterAR != null)
         {
-            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterAR);
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("MonsterAR");
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
 
         if (_preloadData.monsterRL != null)
         {
-            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterRL);
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("MonsterRL");
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
 
         if (_preloadData.monsterTank != null)
         {
-            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterTank);
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("MonsterTank");
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
     }
@@ -240,6 +240,8 @@ public class GameScene : BaseScene
         base.Clear();
         Managers.Sound.StopAll();
         Managers.Input.OnEscapePressed -= HandleEscape;
+
+        Managers.Input.UnregisterAction("Info", HandleInfo);
         Managers.Sector.Clear();
     }
 

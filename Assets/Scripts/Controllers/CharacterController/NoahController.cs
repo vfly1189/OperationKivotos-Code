@@ -12,13 +12,10 @@ public class NoahController : MonoBehaviour, IInteractable
         //머리위에 이름 태그
         if (_nameUIPrefab != null)
         {
-            GameObject canvasObj = GameObject.Find("@GameSceneCanvas");
-            Transform uiParent = null;
+           // GameObject canvasObj = GameObject.Find("@GameSceneCanvas");
+            Transform uiParent = Managers.UI.CanvasWorld.transform;
 
-            if (canvasObj != null)
-            {
-                uiParent = canvasObj.transform;
-            }
+          
 
             _nameUIl = await Managers.UI.MakeSubItemAsync<UI_UnitName>("UnitName", uiParent);
             // 타겟 세팅

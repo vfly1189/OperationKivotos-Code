@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -372,33 +373,32 @@ public class BaseCharacter : MonoBehaviour
     }
 
     // 힐링 효과 실행 메서드 
-    public virtual void PlayHealingAura()
+    public virtual async UniTaskVoid PlayHealingAura()
     {
-        // 1. 인스턴스가 없다면 지연 생성 
         if (_healingAuraInstance == null)
         {
-            // [최적화 핵심] 프리팹을 따로 멤버 변수에 저장할 필요가 없습니다.
-            // 이미 GameScene 로딩 때 라벨로 올라온 메모리 캐시에서 ResourceManager가 알아서 빼옵니다!
-            // 생성과 동시에 부모(transform), 위치, 회전 세팅까지 한 번에 처리합니다.
-            _healingAuraInstance = Managers.Resource.Instantiate("Healing_Aura", transform.position, Quaternion.identity, transform);
+            // [핵심 수정] Instantiate 하기 전에 무조건 LoadAsync를 먼저 호출해서 딕셔너리에 GameObject 타입으로 등록시킵니다.
+            // 프리로드 해두었으므로 0프레임 만에 끝납니다!
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura");
 
-            // 만약 못 찾았다면 (로드 실패 등) 에러 방지
-            if (_healingAuraInstance == null) return;
+            if (prefab == null) return;
 
-            // 로컬 위치/회전 강제 초기화 (안전장치)
+            // 이제 딕셔너리에 확실히 존재하므로 기존 리소스 매니저 Instantiate도 써도 되고,
+            // 아래처럼 유니티 기본 Instantiate를 써도 됩니다. (이게 더 직관적입니다)
+            _healingAuraInstance = Managers.Resource.Instantiate(prefab, transform);
+
+            // 위치 초기화
             _healingAuraInstance.transform.localPosition = Vector3.zero;
             _healingAuraInstance.transform.localRotation = Quaternion.identity;
 
             _healingAuraParticle = _healingAuraInstance.GetComponentInChildren<ParticleSystem>();
         }
 
-        // 2. 이펙트 재생
         if (_healingAuraInstance != null)
         {
             _healingAuraInstance.SetActive(true);
             if (_healingAuraParticle != null)
             {
-                // Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear) 를 쓰면 기존 잔상이 깔끔히 지워집니다.
                 _healingAuraParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 _healingAuraParticle.Play(true);
             }

@@ -189,7 +189,7 @@ public class SelectScene : BaseScene
 
         // 1. 리소스 매니저를 통해 UI 프리팹을 메모리에 비동기 로드
         // (ShowSceneUI의 동기 Instantiate가 실패하지 않도록 보장)
-        await Managers.Resource.LoadAsync<GameObject>(_preloadData.mainUI);
+        await Managers.Resource.LoadAsync<GameObject>("SelectSceneCanvas_New");
 
         // 2. UIManager를 통해 SceneUI 생성 
         // 클래스명("SelectSceneCanvas")과 Addressable Key가 같다면 인자 생략 가능.

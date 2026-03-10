@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class UI_ItemSlot : UI_Base, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+public class UI_ItemSlot : UI_Base, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler
 {
     [SerializeField] private Image _defaultBackGround;
     [SerializeField] private Image _itemGradeBackGround;
@@ -11,6 +11,8 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler, IDragHandler, IEndDragHan
     [SerializeField] private TextMeshProUGUI _stackText;
 
     private int _slotIndex;
+
+    public ItemCategory CurrentCategory => _currentCategory;
     private ItemCategory _currentCategory; // 카테고리도 기억해두면 좋음
     private InventorySlot _currentSlotData;
 
@@ -155,5 +157,17 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler, IDragHandler, IEndDragHan
         }
     }
 
-    // SetStackText, SetItemIcon, SetGradeBackGround 함수는 기존과 동일
+    // 더블 클릭 시 장착 로직
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.clickCount == 2)
+        {
+            // 장비 탭이고 빈 슬롯이 아닐 때만 장착 시도
+            if (_currentCategory == ItemCategory.Equipment && _currentSlotData != null && !_currentSlotData.IsEmpty)
+            {
+                Managers.Equipment.Equip(_slotIndex);
+            }
+        }
+    }
+
 }

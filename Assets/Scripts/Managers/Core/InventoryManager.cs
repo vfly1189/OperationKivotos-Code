@@ -36,7 +36,7 @@ public class InventorySlot
 
 public class InventoryManager
 {
-    public int _maxSlotCount = 30;
+    public int _maxSlotCount = 100;
 
 
     //public Dictionary<ItemCategory, List<InventorySlot>> Inventory { get; private set; }
@@ -47,13 +47,6 @@ public class InventoryManager
 
     public void Init()
     {
-        //Inventory = new Dictionary<ItemCategory, List<InventorySlot>>()
-        //{
-        //    { ItemCategory.Equipment, new List<InventorySlot>()},
-        //    { ItemCategory.Consumable, new List<InventorySlot>()},
-        //    { ItemCategory.Material, new List<InventorySlot>()}
-        //};
-
         Inventory = new Dictionary<ItemCategory, InventorySlot[]>();
 
         foreach (ItemCategory category in Enum.GetValues(typeof(ItemCategory)))
@@ -66,6 +59,13 @@ public class InventoryManager
             Inventory[category] = slots;
         }
 
+        Managers.Equipment.OnInventoryChanged -= RefreshUI;
+        Managers.Equipment.OnInventoryChanged += RefreshUI;
+    }
+
+    void RefreshUI(ItemCategory category)
+    {
+        OnInventoryUpdated?.Invoke(category);
     }
 
     // 1. DataManager에서 카테고리에 맞는 MaxStack을 안전하게 가져오는 헬퍼 함수
