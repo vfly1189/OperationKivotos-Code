@@ -61,12 +61,18 @@ public class GameScene : BaseScene
 
         Managers.Input.RegisterAction("Info", HandleInfo);
 
-        Managers.Inventory.AddItem(10002, ItemCategory.Equipment, 1);
-        Managers.Inventory.AddItem(10010, ItemCategory.Equipment, 1);
-        Managers.Inventory.AddItem(10015, ItemCategory.Equipment, 1);
-        Managers.Inventory.AddItem(10016, ItemCategory.Equipment, 1);
-        Managers.Inventory.AddItem(10018, ItemCategory.Equipment, 1);
-        Managers.Inventory.AddItem(10019, ItemCategory.Equipment, 1);
+        //Managers.Inventory.DropEquipment(10002);
+        //Managers.Inventory.DropEquipment(10010);
+        //Managers.Inventory.DropEquipment(10015);
+        //Managers.Inventory.DropEquipment(10016);
+        //Managers.Inventory.DropEquipment(10018);
+        //Managers.Inventory.DropEquipment(10019);
+
+        for(int i=0; i<10; i++)
+        {
+            int randNum = Random.Range(10000, 10090);
+            Managers.Inventory.DropEquipment(randNum);
+        }
 
         ////Managers.Inventory.AddItem(20000, ItemCategory.Consumable, 10);
         Managers.Inventory.AddItem(30000, ItemCategory.Material, 9999);

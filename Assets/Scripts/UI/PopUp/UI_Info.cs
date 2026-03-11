@@ -24,6 +24,8 @@ public class UI_Info : UI_PopUp
     {
         base.Init();
 
+        Managers.UI.PreloadTooltip().Forget();
+
 
         // 초기 화면 그리기
         RefreshUI();

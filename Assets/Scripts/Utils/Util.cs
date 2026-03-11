@@ -61,3 +61,20 @@ public class Util
         }
     }
 }
+
+public static class ColorDict
+{
+    public static Color GetGradeColor(ItemGrade grade)
+    {
+        switch (grade)
+        {
+            case ItemGrade.Common: return new Color(0.80f, 0.80f, 0.80f);
+            case ItemGrade.Uncommon: return new Color(0.66f, 0.89f, 0.63f);
+            case ItemGrade.Rare: return new Color(0.60f, 0.66f, 0.91f);
+            case ItemGrade.Epic: return new Color(0.82f, 0.60f, 0.90f);
+            case ItemGrade.Legendary: return new Color(0.97f, 0.73f, 0.52f);
+            case ItemGrade.Mythic: return new Color(0.92f, 0.60f, 0.65f);
+            default: return Color.white;
+        }
+    }
+}

@@ -1,6 +1,8 @@
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class UIManager
@@ -16,6 +18,9 @@ public class UIManager
     private Canvas _canvasPopup;    // popup들
     private Canvas _canvasSystem;   // order 100 이상의 절대로 먼저 보여져야 되는것들...
     private Canvas _canvasWorld;
+
+    private UI_ItemInfo _currentTooltip = null;
+    private bool _isLoadingTooltip = false;
 
     public bool IsPopupOpen => _popupStack.Count > 0;
 
@@ -88,27 +93,6 @@ public class UIManager
         Util.GetOrAddComponent<GraphicRaycaster>(go);
     }
 
-    // =========================================================
-    // SubItem 생성 (인벤토리 슬롯 등, 팝업이 아닌 UI 요소)
-    // ResourceManager에게 로드를 위임
-    // =========================================================
-    //public async UniTask<T> MakeSubItemAsync<T>(string addressableKey, Transform parent = null) where T : UI_Base
-    //{
-    //    // ResourceManager에게 로드 위임 (씬 핸들로 관리)
-    //    GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
-    //    if (prefab == null)
-    //    {
-    //        Debug.LogError($"[UIManager] SubItem 로드 실패: {addressableKey}");
-    //        return null;
-    //    }
-
-    //    GameObject go = Managers.Resource.Instantiate(prefab, parent);
-    //    go.transform.localScale = Vector3.one;
-    //    go.transform.localPosition = Vector3.zero;
-
-    //    return Util.GetOrAddComponent<T>(go);
-    //}
-
     public async UniTask<T> MakeSubItemAsync<T>(string addressableKey, Transform parent = null) where T : UI_Base
     {
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
@@ -120,47 +104,6 @@ public class UIManager
 
         return Util.GetOrAddComponent<T>(go);
     }
-
-
-
-
-
-    // =========================================================
-    // [핵심] 팝업 열기
-    // Addressable Key를 받아 ResourceManager에게 로드 위임
-    // =========================================================
-    //public async UniTask<T> ShowPopupUIAsync<T>(string addressableKey = null) where T : UI_PopUp
-    //{
-    //    // 키가 없으면 클래스 이름을 키로 사용 (예: UI_Inventory)
-    //    if (string.IsNullOrEmpty(addressableKey))
-    //        addressableKey = typeof(T).Name;
-
-    //    // 1. ResourceManager에게 로드 위임 (글로벌 캐싱 - 팝업은 자주 열리므로)
-    //    GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, isGlobal: true);
-    //    if (prefab == null)
-    //    {
-    //        Debug.LogError($"[UIManager] 팝업 로드 실패: {addressableKey}");
-    //        return null;
-    //    }
-
-    //    // 2. 인스턴스화 및 Root 아래에 배치
-    //    GameObject canvasObj = GameObject.Find("@GameSceneCanvas");
-    //    GameObject go = Managers.Resource.Instantiate(prefab, canvasObj.transform);
-    //    //핵심: false를 넘겨서 부모 기준 로컬 좌표로 붙이기
-    //    go.transform.SetParent(canvasObj.transform, false);
-
-    //    // RectTransform 완전 초기화 (혹시 모를 잔여값 제거)
-    //    RectTransform rect = go.GetComponent<RectTransform>();
-    //    rect.anchoredPosition = Vector2.zero;
-    //    rect.localScale = Vector3.one;
-
-    //    T popup = Util.GetOrAddComponent<T>(go);
-    //    _popupStack.Push(popup);
-    //    //SetCanvas(go);
-
-    //    return popup;
-    //}
-
     public async UniTask<T> ShowPopupUIAsync<T>(string addressableKey = null) where T : UI_PopUp
     {
         if (string.IsNullOrEmpty(addressableKey))
@@ -235,13 +178,6 @@ public class UIManager
         if (go == null) return null;
 
         RectTransform rect = go.GetComponent<RectTransform>();
-        // 앵커를 Stretch-Stretch(화면 꽉 채우기)로 강제 고정
-        //rect.anchorMin = Vector2.zero;
-        //rect.anchorMax = Vector2.one;
-        //rect.offsetMin = Vector2.zero; // Left, Bottom
-        //rect.offsetMax = Vector2.zero; // Right, Top
-        //rect.pivot = new Vector2(0.5f, 0.5f);
-        //rect.localScale = Vector3.one;
 
         rect.anchoredPosition = Vector2.zero;
         rect.localScale = Vector3.one;
@@ -250,6 +186,117 @@ public class UIManager
         SetCanvas(go, sort: false); // SceneUI는 팝업 뒤에 있어야 하므로 고정 order(0)
 
         return _sceneUI as T;
+    }
+
+    public async void ShowItemTooltip(InventorySlot slot, Vector2 screenPos)
+    {
+        // 1. 데이터가 비어있으면 띄우지 않음
+        if (slot == null || slot.IsEmpty || _isLoadingTooltip) return;
+
+        // 2. 툴팁 UI가 아직 없다면 비동기로 로드하여 CanvasPopup(또는 CanvasSystem) 최상단에 생성
+        if (_currentTooltip == null)
+        {
+            _isLoadingTooltip = true; // 로딩 시작
+
+            // CanvasSystem을 쓰면 다른 모든 팝업들보다 무조건 위에 그려집니다.
+            _currentTooltip = await MakeSubItemAsync<UI_ItemInfo>("UI_ItemInfo", CanvasSystem.transform);
+
+            // 툴팁은 클릭 이벤트를 받을 필요가 없으므로 Raycast Target을 꺼주는 것이 좋습니다.
+            // (UI_ItemInfo 내부의 Init()에서 처리해도 됨)
+
+            _isLoadingTooltip = false; // 로딩 완료
+
+            // 로딩 중에 창이 닫혔거나 게임이 꺼진 경우를 위한 방어 코드
+            if (_currentTooltip == null) return;
+        }
+
+        // 3. UI 활성화 및 정보 셋팅
+        _currentTooltip.gameObject.SetActive(true);
+        _currentTooltip.SetInfo(slot);
+
+        // 4. 위치 조정 (마우스 위치로 이동)
+        // RectTransformUtility를 사용하여 스크린 좌표(마우스)를 Canvas의 로컬 좌표로 변환합니다 [web:28, web:31].
+        RectTransform tooltipRect = _currentTooltip.GetComponent<RectTransform>();
+        RectTransform canvasRect = CanvasSystem.GetComponent<RectTransform>();
+
+        // 화면 Space-Overlay일 경우 Camera는 null을 전달 [web:29].
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPos, null, out Vector2 localPoint))
+        {
+            // 마우스 커서에 정확히 겹치면 클릭을 방해할 수 있으므로, 우측 하단으로 약간 오프셋을 줍니다.
+            localPoint += new Vector2(350f, 0);
+            //localPoint += Vector2.zero;
+
+            tooltipRect.localPosition = localPoint;
+        }
+    }
+
+    public void HideItemTooltip()
+    {
+        if (_currentTooltip != null && _currentTooltip.gameObject.activeSelf)
+        {
+            _currentTooltip.gameObject.SetActive(false);
+        }
+    }
+
+    public async UniTask PreloadTooltip()
+    {
+        if (_currentTooltip == null)
+        {
+            _isLoadingTooltip = true;
+            _currentTooltip = await MakeSubItemAsync<UI_ItemInfo>("UI_ItemInfo", CanvasSystem.transform);
+            _currentTooltip.gameObject.SetActive(false); // 일단 꺼둠
+            _isLoadingTooltip = false;
+        }
+    }
+
+    // UIManager.cs 안에 추가
+    public void RefreshItemTooltip()
+    {
+        // 툴팁이 켜져있지 않다면 무시
+        if (_currentTooltip == null || !_currentTooltip.gameObject.activeSelf) return;
+
+        // 방금 아이템이 교체/소모되어 빈 슬롯이 되었을 수 있으므로 
+        // 일단 무조건 툴팁을 끕니다.
+        HideItemTooltip();
+
+        // 끄고 난 뒤, 유니티의 EventSystem을 이용해 현재 마우스(포인터) 아래에 
+        // 어떤 UI가 있는지 검사하여 다시 OnPointerEnter 이벤트를 발생시킵니다.
+        // (마우스가 여전히 아이템 슬롯 위에 있다면 툴팁이 즉시 다시 켜짐)
+
+        // 3. New Input System의 마우스 연결 상태를 체크합니다.
+        if (Mouse.current == null) return;
+
+        // 4. 최신 Input System의 마우스 좌표를 가져옵니다. (Vector2 반환)
+        Vector2 mousePos = Mouse.current.position.ReadValue();
+
+        // 5. 마우스 위치를 기반으로 UI Raycast를 쏩니다.
+        PointerEventData pointerData = new PointerEventData(EventSystem.current)
+        {
+            position = mousePos // <- 여기서 Input.mousePosition 대신 최신 좌표를 넣습니다.
+        };
+
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        if (results.Count > 0)
+        {
+            // 마우스 아래에 있는 첫 번째 UI 오브젝트를 가져옴
+            GameObject hoveredObject = results[0].gameObject;
+
+            // 그 오브젝트(또는 부모)에 UI_ItemSlot 컴포넌트가 있다면 Enter 이벤트를 수동 호출
+            UI_ItemSlot slot = hoveredObject.GetComponentInParent<UI_ItemSlot>();
+            if (slot != null)
+            {
+                slot.OnPointerEnter(pointerData);
+            }
+
+            // [추가] UI_EquipSlot 위에서 더블클릭으로 해제했을 때를 대비해 EquipSlot도 체크
+            UI_EquipSlot equipSlot = hoveredObject.GetComponentInParent<UI_EquipSlot>();
+            if (equipSlot != null)
+            {
+                equipSlot.OnPointerEnter(pointerData);
+            }
+        }
     }
 
     // =========================================================

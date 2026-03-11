@@ -12,16 +12,15 @@ public class CharacterStat : BaseStat, IDamageable
     [Header("Equipment")]
     [SerializeField] private WeaponDataSO _weaponData; // 인스펙터에서 캐릭터별로 할당
     public WeaponDataSO WeaponData => _weaponData;
-   
+
 
     // 계산된 스탯들
-
-
-    public Stat MaxEnergy;
-    public Stat CritRate;
-    public Stat CritDamage;
-    public Stat MoveSpeed;
-    public Stat EnergyRecharge;
+    // 기존에 있던 프로퍼티들은 딕셔너리 접근용으로만 둡니다.
+    public Stat MaxEnergy; // (예시로 매핑)
+    public Stat CritRate => GetStat(EStatType.CritRate);
+    public Stat CritDamage => GetStat(EStatType.CritDamage);
+    public Stat MoveSpeed => GetStat(EStatType.MoveSpeed);
+    public Stat EnergyRecharge => GetStat(EStatType.EnergyRegen);
 
     public Stat QSkillCoolTime;
     public Stat ESkillCoolTime;
@@ -51,10 +50,12 @@ public class CharacterStat : BaseStat, IDamageable
 
         // 초기화
         MaxEnergy = new Stat();
-        CritRate = new Stat();
-        CritDamage = new Stat();
-        MoveSpeed = new Stat();
-        EnergyRecharge = new Stat();    
+
+        // 자식만의 고유 스탯들을 딕셔너리에 추가
+        _stats[EStatType.EnergyRegen] = new Stat();
+        _stats[EStatType.CritRate] = new Stat();
+        _stats[EStatType.CritDamage] = new Stat();
+        _stats[EStatType.MoveSpeed] = new Stat();
 
         QSkillCoolTime = new Stat();
         ESkillCoolTime = new Stat();

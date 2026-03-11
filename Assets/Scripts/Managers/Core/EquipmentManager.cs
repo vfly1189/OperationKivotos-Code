@@ -1,3 +1,4 @@
+using NPOI.SS.Formula.PTG;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -61,29 +62,12 @@ public class EquipmentManager
             return;
         }
 
-        //// 해당 부위에 이미 장착된 장비가 있다면 벗어서 인벤토리에 넣기
-        //// 서로 교체하는 방식이 낫지 않나?
-        //if (_equippedItem.ContainsKey(type) && _equippedItem[type] != null && !_equippedItem[type].IsEmpty)
-        //{
-        //    UnEquip(type);
-        //}
-
-        //// 새 장비를 _equippedItem 딕셔너리에 등록 (값 복사)
-        //InventorySlot newEquip = new InventorySlot { itemID = invenSlot.itemID, Amount = 1 };
-        //_equippedItem[type] = newEquip;
-
-        //// 3. 인벤토리에서 해당 슬롯 비우기
-        //invenSlot.Clear();
-
-        ////인벤에서 UI 갱신해야됨
-        ////전체를 갱신할 필요가있나? -> 해당 슬롯들만 갱신하면되는거아닌가?
-        //OnInventoryChanged?.Invoke(ItemCategory.Equipment); // 인벤토리 탭 갱신
-
-        ////UI 갱신 및 스탯 재계산 이벤트 호출
-        //OnEquipmentChanged?.Invoke(type, newEquip, null);
-
-        // 새 장비의 데이터를 미리 복사해두고 인벤토리 슬롯을 먼저 비웁니다. (공간 확보)
-        InventorySlot newEquip = new InventorySlot { itemID = invenSlot.itemID, Amount = 1 };
+        InventorySlot newEquip = new InventorySlot
+        {
+            itemID = invenSlot.itemID,
+            Amount = 1,
+            EquipInstance = invenSlot.EquipInstance // 이 줄 추가!
+        };
         invenSlot.Clear();
 
         // 그 다음 기존 장비를 벗깁니다. (확보된 빈 공간으로 안전하게 들어감)
@@ -94,6 +78,8 @@ public class EquipmentManager
 
         // 3. 새 장비 장착 적용
         _equippedItem[type] = newEquip;
+
+
 
         // 4. UI 갱신 이벤트 호출
         OnInventoryChanged?.Invoke(ItemCategory.Equipment);
@@ -112,15 +98,30 @@ public class EquipmentManager
         InventorySlot unequippedItem = _equippedItem[type];
 
         // 1. 벗은 장비를 인벤토리에 다시 추가
-        Managers.Inventory.AddItem(unequippedItem.itemID, ItemCategory.Equipment, 1);
+        Managers.Inventory.AddEquipmentSlot(unequippedItem);
 
         // 2. 장착 슬롯 비우기
         _equippedItem[type] = null;
-
-
 
         //UI 갱신 및 스탯 재계산 이벤트 호출
         OnEquipmentChanged?.Invoke(type, null, unequippedItem);
     }
 
+    // EquipmentManager.cs 내부의 편의 함수
+    private void ApplyStatOption(CharacterStat playerStat, StatOption option)
+    {
+        // 1. GetStat이 알아서 퍼센트와 플랫을 같은 Stat 객체(MaxHp, Attack 등)로 연결해줍니다.
+        Stat targetStat = playerStat.GetStat(option.StatType);
+
+        if (targetStat != null)
+        {
+            // 2. Enum 이름에 "Percent"가 있으면 비율(곱연산)로, 아니면 고정값(합연산)으로 타입 결정
+            StatModType modType = option.StatType.ToString().Contains("Percent")
+                ? StatModType.PercentAdd
+                : StatModType.Flat;
+
+            // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
+            targetStat.AddModifier(new StatModifier(option.Value, modType));
+        }
+    }
 }

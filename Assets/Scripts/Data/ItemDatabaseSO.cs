@@ -2,6 +2,43 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+#region StatPool
+public enum EStatType
+{
+    MaxHP_Flat,
+    Attack_Flat,
+    Defense_Flat,
+    MaxHP_Percent,
+    Attack_Percent,
+    Defense_Percent,
+    MoveSpeed,
+    CritRate,
+    CritDamage,
+    EnergyRegen
+}
+
+[System.Serializable]
+public class StatPoolEntry
+{
+    public EStatType StatType;  // 어떤 스탯인가?
+    public int Weight;          // 뽑힐 확률 가중치
+    public float BaseValue;     // 기본 수치
+    public float UpgradeValue;  // 강화당 증가 수치
+}
+
+[System.Serializable]
+public class StatPoolData
+{
+    public int PoolID;          // 예: 1101, 2101
+    public string Note;         // 에디터 확인용 메모 
+
+    // 이 PoolID에 속하는 모든 스탯 옵션들의 리스트
+    public List<StatPoolEntry> Entries = new List<StatPoolEntry>();
+}
+#endregion
+
+
+
 [System.Serializable]
 public class BaseItemData
 {
@@ -16,45 +53,31 @@ public class BaseItemData
 [System.Serializable]
 public class EquipmentData : BaseItemData
 {
-    //public int ID;
-    //public string IconKey;
-    //public string Grade;
-    //public string Name;
     public string EquipPart;
     public int Tier;
-    public float MaxHP;
-    public float Attack;
-    public float Defense;
-    public float MoveSpeed;
-    //public string Description;
+
+    public int MainStatPoolID;
+    public int SubStatPoolID;
 }
 
 // 2. 소모품 전용 클래스 (Consumable 시트와 일치)
 [System.Serializable]
 public class ConsumableData : BaseItemData
 {
-    //public int ID;
-    //public string IconKey;
-    //public string Grade;
-    //public string Name;
     public float EffectValue;
     public float Duration;
     public int MaxStack;
-    //public string Description;
 }
 
 // 3. 재료 전용 클래스 (Material 시트와 일치)
 [System.Serializable]
 public class MaterialData : BaseItemData
 {
-    //public int ID;
-    //public string IconKey;
-    //public string Grade;
-    //public string Name;
     public int Tier;
     public int MaxStack;
-    //public string Description;
 }
+
+
 
 // 데이터베이스 통합 SO
 [CreateAssetMenu(fileName = "ItemDatabase", menuName = "Data/ItemDatabase")]
@@ -63,6 +86,7 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
     public List<EquipmentData> Equipments = new List<EquipmentData>();
     public List<ConsumableData> Consumables = new List<ConsumableData>();
     public List<MaterialData> Materials = new List<MaterialData>();
+    public List<StatPoolData> StatPools = new List<StatPoolData>();
 
     // List를 Dictionary로 변환해서 넘겨주는 헬퍼 함수들
     public Dictionary<int, EquipmentData> MakeEquipDict()
@@ -86,11 +110,19 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
         return dict;
     }
 
+    public Dictionary<int, StatPoolData> MakeStatPoolDict()
+    {
+        Dictionary<int, StatPoolData> dict = new Dictionary<int, StatPoolData>();
+        foreach (var pool in StatPools) dict[pool.PoolID] = pool;
+        return dict;
+    }
+
     // IDataCacheable 구현부: DataManager가 이 함수를 호출해줌
     public void CacheData(Dictionary<Type, object> dataDicts)
     {
         dataDicts[typeof(EquipmentData)] = MakeEquipDict();
         dataDicts[typeof(ConsumableData)] = MakeConsumableDict();
         dataDicts[typeof(MaterialData)] = MakeMaterialDict();
+        dataDicts[typeof(StatPoolData)] = MakeStatPoolDict();
     }
 }

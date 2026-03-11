@@ -32,7 +32,6 @@ public class DataManager
         // 아이템 SO를 로드하고 싶다면?
         tasks.Add(LoadAndCacheSOAsync<ItemDatabaseSO>("ItemDatabase"));
         tasks.Add(LoadAndCacheSOAsync<CharacterExpTableSO>("CharacterExpTable"));
-
         tasks.Add(LoadAndCacheSOAsync<WeaponEnhanceCostTableSO>("WeaponEnhanceCostTable"));
 
         // 병렬로 한 방에 다운로드 및 파싱

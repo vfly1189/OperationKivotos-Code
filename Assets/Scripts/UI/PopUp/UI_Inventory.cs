@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,6 +25,8 @@ public class UI_Inventory : UI_PopUp
         // 2. InventoryManager의 갱신 이벤트 구독
         Managers.Inventory.OnInventoryUpdated -= RefreshUI;
         Managers.Inventory.OnInventoryUpdated += RefreshUI;
+
+        Managers.UI.PreloadTooltip().Forget();
 
         // 초기 화면 그리기
         RefreshUI(_currentCategory);

@@ -89,16 +89,15 @@ public class Stat
 
     private float CalculateFinalValue()
     {
-        float finalValue = _baseValue;
+        float sumFlat = 0f;
         float sumPercentAdd = 0f;
 
-        // 리스트를 순회하며 계산
-        // 정렬해두었기 때문에 Flat(합연산)이 모두 먼저 처리되고, 그 다음 PercentAdd가 묶여서 처리됨
+        // 리스트를 순회하며 부위별 합연산 수치와 곱연산 수치를 각각 따로 더해둡니다.
         foreach (StatModifier mod in _modifiers)
         {
             if (mod.Type == StatModType.Flat)
             {
-                finalValue += mod.Value;
+                sumFlat += mod.Value;
             }
             else if (mod.Type == StatModType.PercentAdd)
             {
@@ -106,10 +105,10 @@ public class Stat
             }
         }
 
-        // 마지막으로 퍼센트 수치 적용 (예: 0.1 이면 10% 증가)
-        finalValue *= (1.0f + sumPercentAdd);
+        // [핵심 공식 수정] 기본값에 퍼센트를 먼저 곱하고, 그 뒤에 플랫(합연산) 값을 더합니다.
+        float finalValue = (_baseValue * (1.0f + sumPercentAdd)) + sumFlat;
 
-        // 소수점 4자리 반올림 처리 (부동소수점 오류 방지)
+        // 소수점 4자리 반올림 처리
         return (float)Math.Round(finalValue, 4);
     }
 

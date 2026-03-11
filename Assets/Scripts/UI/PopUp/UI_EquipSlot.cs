@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 
-public class UI_EquipSlot : UI_Base, IPointerClickHandler
+public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private Image _defaultBackGround;
     [SerializeField] private Image _itemGradeBackGround;
@@ -82,4 +82,24 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler
             }
         }
     }
+
+    // 인벤토리 슬롯 (UI_ItemSlot) 내부의 이벤트
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        Debug.Log($"OnPointerEnter 시작");
+        if (_currentSlotData != null && !_currentSlotData.IsEmpty)
+        {
+            Debug.Log($"OnPointerEnter 툴팁 시작");
+            // 툴팁 활성화 및 정보 셋팅
+            Managers.UI.ShowItemTooltip(_currentSlotData, eventData.position);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        Managers.UI.HideItemTooltip();
+    }
+
+
+
 }
