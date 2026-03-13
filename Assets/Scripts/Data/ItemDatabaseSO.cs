@@ -56,6 +56,7 @@ public class EquipmentData : BaseItemData
     public string EquipPart;
     public int Tier;
 
+
     public int MainStatPoolID;
     public int SubStatPoolID;
 }
@@ -77,7 +78,34 @@ public class MaterialData : BaseItemData
     public int MaxStack;
 }
 
+// [엑셀 EquipmentDecomposition 시트용]
+[System.Serializable]
+public class EquipmentDecompositionData
+{
+    public int Tier;
+    public int Mat1_ID;     // 소형 재료 ID (30003)
+    public int Mat1_Count;
+    public int Mat2_ID;     // 중형 재료 ID (30004)
+    public int Mat2_Count;
+    public int Mat3_ID;     // 대형 재료 ID (30005)
+    public int Mat3_Count;
+}
 
+// [엑셀 EquipmentUpgradeBookExp 시트용] - 따로 만드는 게 맞습니다!
+[System.Serializable]
+public class EquipmentUpgradeBookExpData
+{
+    public int Mat_ID;  // 재료 ID (30003, 30004, 30005)
+    public int ExpValue;    // 이 재료 1개가 주는 EXP (200, 600, 1800)
+}
+
+// [엑셀 EquipmentUpgradeBookExp 시트용] - 따로 만드는 게 맞습니다!
+[System.Serializable]
+public class EquipmentLevelExpData
+{
+    public int Level;  // 재료 ID (30003, 30004, 30005)
+    public int RequireExp;
+}
 
 // 데이터베이스 통합 SO
 [CreateAssetMenu(fileName = "ItemDatabase", menuName = "Data/ItemDatabase")]
@@ -87,6 +115,10 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
     public List<ConsumableData> Consumables = new List<ConsumableData>();
     public List<MaterialData> Materials = new List<MaterialData>();
     public List<StatPoolData> StatPools = new List<StatPoolData>();
+    public List<EquipmentDecompositionData> DecompositionData = new List<EquipmentDecompositionData>();
+    public List<EquipmentUpgradeBookExpData> UpgradeBookExpData = new List<EquipmentUpgradeBookExpData>();
+    public List<EquipmentLevelExpData> EquipmentLevelExpData = new List<EquipmentLevelExpData>();
+
 
     // List를 Dictionary로 변환해서 넘겨주는 헬퍼 함수들
     public Dictionary<int, EquipmentData> MakeEquipDict()
@@ -117,6 +149,26 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
         return dict;
     }
 
+    public Dictionary<int, EquipmentDecompositionData> MakeDecompDict()
+    {
+        Dictionary<int, EquipmentDecompositionData> dict = new Dictionary<int, EquipmentDecompositionData>();
+        foreach (var item in DecompositionData) dict[item.Tier] = item;
+        return dict;
+    }
+    public Dictionary<int, EquipmentUpgradeBookExpData> MakeBookExpDict() 
+    {
+        Dictionary<int, EquipmentUpgradeBookExpData> dict = new Dictionary<int, EquipmentUpgradeBookExpData>();
+        foreach (var item in UpgradeBookExpData) dict[item.Mat_ID] = item;
+        return dict;
+    }
+
+    public Dictionary<int, EquipmentLevelExpData> MakeEquipmentLevelExpDict()
+    {
+        Dictionary<int, EquipmentLevelExpData> dict = new Dictionary<int, EquipmentLevelExpData>();
+        foreach (var item in EquipmentLevelExpData) dict[item.Level] = item;
+        return dict;
+    }
+
     // IDataCacheable 구현부: DataManager가 이 함수를 호출해줌
     public void CacheData(Dictionary<Type, object> dataDicts)
     {
@@ -124,5 +176,8 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
         dataDicts[typeof(ConsumableData)] = MakeConsumableDict();
         dataDicts[typeof(MaterialData)] = MakeMaterialDict();
         dataDicts[typeof(StatPoolData)] = MakeStatPoolDict();
+        dataDicts[typeof(EquipmentDecompositionData)] = MakeDecompDict();
+        dataDicts[typeof(EquipmentUpgradeBookExpData)] = MakeBookExpDict();
+        dataDicts[typeof(EquipmentLevelExpData)] = MakeEquipmentLevelExpDict();
     }
 }

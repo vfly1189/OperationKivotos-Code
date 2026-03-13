@@ -71,13 +71,16 @@ public class GameScene : BaseScene
         for(int i=0; i<10; i++)
         {
             int randNum = Random.Range(10000, 10090);
-            Managers.Inventory.DropEquipment(randNum);
+            Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(randNum));
         }
 
         ////Managers.Inventory.AddItem(20000, ItemCategory.Consumable, 10);
         Managers.Inventory.AddItem(30000, ItemCategory.Material, 9999);
         Managers.Inventory.AddItem(30001, ItemCategory.Material, 9999);
         Managers.Inventory.AddItem(30002, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30003, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30004, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30005, ItemCategory.Material, 9999);
         Managers.Inventory.AddItem(30000, ItemCategory.Material, 500);
         //Managers.Inventory.AddItem(30002, ItemCategory.Material, 50);
         Debug.Log("GameScene Init Complete");

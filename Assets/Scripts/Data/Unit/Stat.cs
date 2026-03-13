@@ -18,15 +18,17 @@ public class StatModifier
     public float Value;
     public StatModType Type;
 
-    // 생성자
-    public StatModifier(float value, StatModType type)
+    // 이 스탯 변경치의 출처 (장비 객체, 버프 스킬 객체 등)
+    public object Source;
+
+    // 생성자에 Source 추가
+    public StatModifier(float value, StatModType type, object source = null)
     {
         Value = value;
         Type = type;
+        Source = source;
     }
 }
-
-
 
 public class Stat
 {
@@ -112,6 +114,28 @@ public class Stat
         return (float)Math.Round(finalValue, 4);
     }
 
+    // 출처(Source)를 기반으로 Modifier들을 모두 찾아 삭제하는 함수
+    public bool RemoveAllModifiersFromSource(object source)
+    {
+        bool didRemove = false;
+
+        // 리스트를 역순으로 돌면서 source가 같은 것을 삭제
+        for (int i = _modifiers.Count - 1; i >= 0; i--)
+        {
+            if (_modifiers[i].Source == source)
+            {
+                _modifiers.RemoveAt(i);
+                didRemove = true;
+            }
+        }
+
+        if (didRemove)
+        {
+            _isDirty = true;
+        }
+
+        return didRemove;
+    }
 
     public void ClearModifier()
     {

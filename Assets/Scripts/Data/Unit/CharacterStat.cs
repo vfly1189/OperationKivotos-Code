@@ -356,7 +356,6 @@ public class CharacterStat : BaseStat, IDamageable
 
         CallOnHpChanged(CurrentHp, MaxHp.Value);
 
-
         Debug.Log($"[{_data.nameKR}] 무기({_weaponData.weaponName}) Lv.{WeaponLevel} 스탯 적용 완료");
     }
 
@@ -366,5 +365,15 @@ public class CharacterStat : BaseStat, IDamageable
 
         ApplyWeaponStats();
         Managers.Context.SaveCharacterStat(_data.id, (int)CurLevel, CurrentExp, WeaponLevel);
+    }
+
+    // 외부(EquipmentManager 등)에서는 이 public 함수만 호출합니다.
+    public void RefreshStatsUI()
+    {
+        // 1. 필요한 내부 로직 처리 (최대 체력이 변했을 수 있으니 현재 체력 보정)
+        CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+
+        // 2. 내부에서 안전하게 protected 함수를 호출하여 이벤트를 발생시킴
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 }

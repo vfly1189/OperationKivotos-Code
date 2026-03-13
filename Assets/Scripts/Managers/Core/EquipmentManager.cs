@@ -80,6 +80,17 @@ public class EquipmentManager
         _equippedItem[type] = newEquip;
 
 
+        // [핵심 변경점] 현재 파티원 4명 모두에게 스탯을 적용합니다.
+        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        foreach (BaseCharacter member in partyMembers)
+        {
+            if (member != null && member.Stat != null)
+            {
+                ApplyEquipment(member.Stat, newEquip);
+
+                member.Stat.RefreshStatsUI();
+            }
+        }
 
         // 4. UI 갱신 이벤트 호출
         OnInventoryChanged?.Invoke(ItemCategory.Equipment);
@@ -93,9 +104,18 @@ public class EquipmentManager
         if (!_equippedItem.ContainsKey(type) || _equippedItem[type] == null || _equippedItem[type].IsEmpty)
             return;
 
-        Debug.Log("너리너ㅏㅣ런이렁");
-
         InventorySlot unequippedItem = _equippedItem[type];
+
+        // [핵심 변경점] 현재 파티원 4명 모두에게서 스탯을 제거합니다.
+        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        foreach (BaseCharacter member in partyMembers)
+        {
+            if (member != null && member.Stat != null)
+            {
+                ReleaseEquipment(member.Stat, unequippedItem);
+                member.Stat.RefreshStatsUI();
+            }
+        }
 
         // 1. 벗은 장비를 인벤토리에 다시 추가
         Managers.Inventory.AddEquipmentSlot(unequippedItem);
@@ -107,21 +127,66 @@ public class EquipmentManager
         OnEquipmentChanged?.Invoke(type, null, unequippedItem);
     }
 
-    // EquipmentManager.cs 내부의 편의 함수
-    private void ApplyStatOption(CharacterStat playerStat, StatOption option)
+    private void ApplyEquipment(CharacterStat playerStat, InventorySlot equipment)
     {
-        // 1. GetStat이 알아서 퍼센트와 플랫을 같은 Stat 객체(MaxHp, Attack 등)로 연결해줍니다.
-        Stat targetStat = playerStat.GetStat(option.StatType);
-
-        if (targetStat != null)
+        //메인스탯
+        List<StatOption> mainStats = equipment.EquipInstance.MainStats;
+        foreach (StatOption statOption in mainStats)
         {
-            // 2. Enum 이름에 "Percent"가 있으면 비율(곱연산)로, 아니면 고정값(합연산)으로 타입 결정
-            StatModType modType = option.StatType.ToString().Contains("Percent")
+            Stat targetStat = playerStat.GetStat(statOption.StatType);
+
+            StatModType modType = statOption.StatType.ToString().Contains("Percent")
                 ? StatModType.PercentAdd
                 : StatModType.Flat;
 
             // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
-            targetStat.AddModifier(new StatModifier(option.Value, modType));
+            targetStat.AddModifier(new StatModifier(statOption.Value, modType, equipment));
+        }
+
+        //서브스탯
+        List<StatOption> subStats = equipment.EquipInstance.SubStats;
+        foreach (StatOption statOption in subStats)
+        {
+            Stat targetStat = playerStat.GetStat(statOption.StatType);
+
+            StatModType modType = statOption.StatType.ToString().Contains("Percent")
+                ? StatModType.PercentAdd
+                : StatModType.Flat;
+
+            // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
+            targetStat.AddModifier(new StatModifier(statOption.Value, modType, equipment));
         }
     }
+
+    public void ReleaseEquipment(CharacterStat playerStat, InventorySlot equipment)
+    {
+        //메인스탯
+        List<StatOption> mainStats = equipment.EquipInstance.MainStats;
+        foreach (StatOption statOption in mainStats)
+        {
+            Stat targetStat = playerStat.GetStat(statOption.StatType);
+
+            StatModType modType = statOption.StatType.ToString().Contains("Percent")
+                ? StatModType.PercentAdd
+                : StatModType.Flat;
+
+            // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
+            targetStat.RemoveAllModifiersFromSource(equipment);
+        }
+
+        //서브스탯
+        List<StatOption> subStats = equipment.EquipInstance.SubStats;
+        foreach (StatOption statOption in subStats)
+        {
+            Stat targetStat = playerStat.GetStat(statOption.StatType);
+
+            StatModType modType = statOption.StatType.ToString().Contains("Percent")
+                ? StatModType.PercentAdd
+                : StatModType.Flat;
+
+            // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
+            targetStat.RemoveAllModifiersFromSource(equipment);
+        }
+    }
+
 }

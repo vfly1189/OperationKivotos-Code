@@ -28,7 +28,8 @@ public class BaseStat : MonoBehaviour, IDamageable
         _stats[EStatType.Attack_Flat] = new Stat();
         _stats[EStatType.Defense_Flat] = new Stat();
     }
-    //스탯 매핑 라우팅
+
+    //스탯 매핑
     public Stat GetStat(EStatType type)
     {
         EStatType targetKey = type;

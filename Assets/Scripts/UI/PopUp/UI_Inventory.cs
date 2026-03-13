@@ -60,8 +60,26 @@ public class UI_Inventory : UI_PopUp
         for (int i = 0; i < Managers.Inventory._maxSlotCount; i++)
         {
             _activeSlots[i].gameObject.SetActive(true);
-            // 슬롯의 인덱스(i)도 함께 넘겨줍니다
             _activeSlots[i].SetInfo(invenArray[i], category, i);
+
+            _activeSlots[i].SetCallback(
+                onDoubleClick: (clickedSlot) =>
+                {
+                    if (clickedSlot.CurrentCategory == ItemCategory.Equipment)
+                    {
+                        // 클로저 문제 해결: clickedSlot 자신이 가진 인덱스를 활용
+                        Managers.Equipment.Equip(clickedSlot.SlotIndex);
+                        Managers.UI.RefreshItemTooltip();
+                    }
+                },
+                onDrop: (draggedSlot, targetSlot) =>
+                {
+                    if (draggedSlot.CurrentCategory == targetSlot.CurrentCategory)
+                    {
+                        Managers.Inventory.SwapItems(category, draggedSlot.SlotIndex, targetSlot.SlotIndex);
+                    }
+                }
+            );
         }
     }
 
@@ -71,6 +89,19 @@ public class UI_Inventory : UI_PopUp
         if (Managers.Inventory != null)
         {
             Managers.Inventory.OnInventoryUpdated -= RefreshUI;
+        }
+        // 2. 풀링되는 슬롯들의 콜백 초기화 (메모리 누수 및 오작동 방지)
+        if (_activeSlots != null)
+        {
+            foreach (UI_ItemSlot slot in _activeSlots)
+            {
+                if (slot != null)
+                {
+                    // 콜백을 null로 밀어줍니다.
+                    slot.SetCallback(null, null);
+                }
+                Managers.Resource.Destroy(slot.gameObject);
+            }
         }
     }
 }

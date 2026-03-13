@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -15,7 +16,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
 
     public ItemCategory CurrentCategory => _currentCategory;
     private ItemCategory _currentCategory; // 카테고리도 기억해두면 좋음
-    private InventorySlot _currentSlotData;
+    public InventorySlot CurrentSlotData { get; private set; }
 
     public static UI_ItemSlot DraggingSlot = null;
 
@@ -23,6 +24,13 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     private static GameObject _dragGhost;
     private static Image _dragGhostImage;
 
+    // 외부에서 주입해줄 클릭/더블클릭/드롭 콜백 이벤트
+    public Action<UI_ItemSlot> OnDoubleClickAction;
+    public Action<UI_ItemSlot, UI_ItemSlot> OnDropAction;
+
+    // _slotIndex의 getter를 만들어 외부에서 읽을 수 있게 합니다.
+    public int SlotIndex => _slotIndex;
+    //public InventorySlot CurrentSlotData => _currentSlotData; // 필요하다면 데이터도 노출
 
     public override void Init()
     {
@@ -31,7 +39,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
 
     public void SetInfo(InventorySlot slotData, ItemCategory category, int index)
     {
-        _currentSlotData = slotData;
+        CurrentSlotData = slotData;
         _currentCategory = category;
         _slotIndex = index;
 
@@ -94,12 +102,21 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
             _itemGradeBackGround.sprite = bgSprite;
         }
     }
+
+    // SetInfo 혹은 별도의 함수로 콜백 세팅
+    public void SetCallback(Action<UI_ItemSlot> onDoubleClick, Action<UI_ItemSlot, UI_ItemSlot> onDrop = null)
+    {
+        OnDoubleClickAction = onDoubleClick;
+        OnDropAction = onDrop;
+    }
+
+
     // --- Drag & Drop 구현부 ---
 
     public void OnBeginDrag(PointerEventData eventData)
     {
         // 빈칸이면 드래그 불가
-        if (_currentSlotData == null || _currentSlotData.IsEmpty) return;
+        if (CurrentSlotData == null || CurrentSlotData.IsEmpty) return;
 
         DraggingSlot = this;
 
@@ -148,13 +165,29 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        // 내 위에 무언가 떨어졌을 때
+        //// 내 위에 무언가 떨어졌을 때
+        //if (DraggingSlot != null && DraggingSlot != this)
+        //{
+        //    // 같은 카테고리(탭) 탭 안에서만 작동하도록 방어
+        //    if (this._currentCategory == DraggingSlot._currentCategory)
+        //    {
+        //        Managers.Inventory.SwapItems(_currentCategory, DraggingSlot._slotIndex, this._slotIndex);
+        //    }
+        //}
+
         if (DraggingSlot != null && DraggingSlot != this)
         {
-            // 같은 카테고리(탭) 탭 안에서만 작동하도록 방어
-            if (this._currentCategory == DraggingSlot._currentCategory)
+            // 외부 로직 우선 실행
+            if (OnDropAction != null)
             {
-                Managers.Inventory.SwapItems(_currentCategory, DraggingSlot._slotIndex, this._slotIndex);
+                OnDropAction.Invoke(DraggingSlot, this);
+            }
+            else // 기본 동작
+            {
+                //if (this._currentCategory == DraggingSlot._currentCategory)
+                //{
+                //    Managers.Inventory.SwapItems(_currentCategory, DraggingSlot._slotIndex, this._slotIndex);
+                //}
             }
         }
     }
@@ -162,14 +195,35 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     // 더블 클릭 시 장착 로직
     public void OnPointerClick(PointerEventData eventData)
     {
+        //if (eventData.clickCount == 2)
+        //{
+        //    // 장비 탭이고 빈 슬롯이 아닐 때만 장착 시도
+        //    if (_currentCategory == ItemCategory.Equipment && _currentSlotData != null && !_currentSlotData.IsEmpty)
+        //    {
+        //        Managers.Equipment.Equip(_slotIndex);
+        //        // 장착 직후 툴팁 갱신
+        //        Managers.UI.RefreshItemTooltip();
+        //    }
+        //}
+
         if (eventData.clickCount == 2)
         {
-            // 장비 탭이고 빈 슬롯이 아닐 때만 장착 시도
-            if (_currentCategory == ItemCategory.Equipment && _currentSlotData != null && !_currentSlotData.IsEmpty)
+            if (CurrentSlotData != null && !CurrentSlotData.IsEmpty)
             {
-                Managers.Equipment.Equip(_slotIndex);
-                // 장착 직후 툴팁 갱신
-                Managers.UI.RefreshItemTooltip();
+                // 외부에서 주입된 로직이 있다면 그걸 실행 (장착이든 강화 재료 등록이든)
+                if (OnDoubleClickAction != null)
+                {
+                    OnDoubleClickAction.Invoke(this);
+                }
+                else
+                {
+                    //// 아무것도 주입 안 되었을 때의 기본 동작 (기존 인벤토리 동작)
+                    //if (_currentCategory == ItemCategory.Equipment)
+                    //{
+                    //    Managers.Equipment.Equip(_slotIndex);
+                    //    Managers.UI.RefreshItemTooltip();
+                    //}
+                }
             }
         }
     }
@@ -178,11 +232,11 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     public void OnPointerEnter(PointerEventData eventData)
     {
         Debug.Log($"OnPointerEnter 시작");
-        if (_currentSlotData != null && !_currentSlotData.IsEmpty)
+        if (CurrentSlotData != null && !CurrentSlotData.IsEmpty)
         {
             Debug.Log($"OnPointerEnter 툴팁 시작");
             // 툴팁 활성화 및 정보 셋팅
-            Managers.UI.ShowItemTooltip(_currentSlotData, eventData.position);
+            Managers.UI.ShowItemTooltip(CurrentSlotData, eventData.position);
         }
     }
 

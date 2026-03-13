@@ -99,7 +99,6 @@ public class UI_Info : UI_PopUp
 
     private void RefreshUI()
     {
-
         //Ä³½Ì ÇØ³ö¼­ ¼ø¼­ Áß¿ä
         SetStat();
         SetWeaponInfo().Forget();

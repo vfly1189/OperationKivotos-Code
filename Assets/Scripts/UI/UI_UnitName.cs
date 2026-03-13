@@ -15,7 +15,7 @@ public class UI_UnitName : UI_Base
         _mainCamera = Camera.main;
     }
 
-    // 몬스터 쪽에서 생성 직후 호출해줘야 함
+    
     public void SetTarget(Transform target, string name)
     {
         _target = target;

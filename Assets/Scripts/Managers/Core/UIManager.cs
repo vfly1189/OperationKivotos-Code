@@ -152,6 +152,9 @@ public class UIManager
 
         UI_PopUp popup = _popupStack.Pop();
 
+        // 팝업이 닫힐 때 혹시 열려있을지 모르는 툴팁을 무조건 함께 끕니다.
+        HideItemTooltip();
+
         // ResourceManager.Destroy로 위임 (풀링 여부 자동 처리)
         Managers.Resource.Destroy(popup.gameObject);
 
@@ -162,6 +165,9 @@ public class UIManager
     {
         while (_popupStack.Count > 0)
             ClosePopupUI();
+
+        // 팝업이 닫힐 때 혹시 열려있을지 모르는 툴팁을 무조건 함께 끕니다.
+        HideItemTooltip();
     }
 
     // =========================================================

@@ -27,25 +27,49 @@ public class UI_ItemInfo : UI_Base
     public void SetInfo(InventorySlot slotData)
     {
         if(slotData.IsEquipment)
-            SetEquipmentInfo(slotData);    
+            SetEquipmentInfo(slotData);
+        else
+            SetMaterialInfo(slotData);
     }
 
     public void SetEquipmentInfo(InventorySlot inventorySlot)
     {
-        SetIcon(inventorySlot.itemID).Forget();
+        SetIcon(inventorySlot.itemID, ItemCategory.Equipment).Forget();
         SetMainStat(inventorySlot.EquipInstance).Forget();
         SetSubStat(inventorySlot.EquipInstance).Forget();
 
-        SetItemName(inventorySlot.itemID);
-        SetDescription(inventorySlot.itemID);
+        SetItemName(inventorySlot.itemID, ItemCategory.Equipment);
+        SetDescription(inventorySlot.itemID, ItemCategory.Equipment);
         SetUpgradeLevel(inventorySlot.EquipInstance.UpgradeLevel);
-        SetGrade(inventorySlot.itemID);
-        SetTier(inventorySlot.itemID);
+        SetGrade(inventorySlot.itemID, ItemCategory.Equipment);
+        SetTier(inventorySlot.itemID, ItemCategory.Equipment);
     }
 
-    public async UniTask SetIcon(int itemID)
+    public void SetMaterialInfo(InventorySlot inventorySlot)
     {
-        Sprite icon = await Managers.Resource.LoadAsync<Sprite>(Managers.Data.GetItemData(itemID, ItemCategory.Equipment).IconKey);
+        SetIcon(inventorySlot.itemID, ItemCategory.Material).Forget();
+
+        SetItemName(inventorySlot.itemID, ItemCategory.Material);
+        SetDescription(inventorySlot.itemID, ItemCategory.Material);
+        SetGrade(inventorySlot.itemID, ItemCategory.Material);
+        SetTier(inventorySlot.itemID, ItemCategory.Material);
+
+
+        _itemUpgradeLevel.text = "";
+        foreach (Transform child in _subStatParent)
+        {
+            Managers.Resource.Destroy(child.gameObject);
+        }
+
+        foreach (Transform child in _mainStatParent)
+        {
+            Managers.Resource.Destroy(child.gameObject);
+        }
+    }
+
+    public async UniTask SetIcon(int itemID, ItemCategory category)
+    {
+        Sprite icon = await Managers.Resource.LoadAsync<Sprite>(Managers.Data.GetItemData(itemID, category).IconKey);
         
         if (this == null || gameObject == null || !gameObject.activeInHierarchy)
             return;
@@ -53,14 +77,14 @@ public class UI_ItemInfo : UI_Base
         _itemIcon.sprite = icon;
     }
 
-    public void SetItemName(int itemID)
+    public void SetItemName(int itemID, ItemCategory category)
     {
-        _itemName.text = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Name;
+        _itemName.text = Managers.Data.GetItemData(itemID, category).Name;
     }
 
-    public void SetDescription(int itemID)
+    public void SetDescription(int itemID, ItemCategory category)
     {
-        _itemDescription.text = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Description;
+        _itemDescription.text = Managers.Data.GetItemData(itemID, category).Description;
     }
 
     public void SetUpgradeLevel(int upgradeLevel)
@@ -114,21 +138,29 @@ public class UI_ItemInfo : UI_Base
         }
     }
     
-    public void SetGrade(int itemID)
+    public void SetGrade(int itemID, ItemCategory category)
     {
-        ItemGrade grade = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Grade;
+        ItemGrade grade = Managers.Data.GetItemData(itemID, category).Grade;
 
         _itemGrade.text = grade.ToString();
         _itemGrade.color = ColorDict.GetGradeColor(grade);
     }
     
-    public void SetTier(int itemID)
+    public void SetTier(int itemID, ItemCategory category)
     {
-        BaseItemData data = Managers.Data.GetItemData(itemID, ItemCategory.Equipment);
-        
-        EquipmentData equipData = data as EquipmentData;
+        BaseItemData data = Managers.Data.GetItemData(itemID, category);
 
-        int tier = equipData.Tier;
+        int tier = 0;
+        if (category == ItemCategory.Equipment)
+        {
+            EquipmentData equipData = data as EquipmentData;
+            tier = equipData.Tier;
+        }
+        else if(category == ItemCategory.Material)
+        {
+            MaterialData materialData = data as MaterialData;
+            tier = materialData.Tier;
+        }
 
         _itemTier.text = $"Tier {tier}";
     }

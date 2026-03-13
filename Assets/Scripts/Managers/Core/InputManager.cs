@@ -79,6 +79,23 @@ public class InputManager
         }
     }
 
+    // 액션 이름을 주면, 할당된 키의 문자열을 반환 ("F", "1", "Tab" 등)
+    public string GetKeyName(string actionName)
+    {
+        if (_keyMap.TryGetValue(actionName, out Key key))
+        {
+            if (Keyboard.current != null)
+            {
+                // New Input System에서 제공하는 깔끔한 문자열 변환 기능 (예: Key.Digit1 -> "1")
+                return Keyboard.current[key].displayName;
+            }
+
+            // 키보드가 연결 안 된 예외 상황 시 Enum 이름 그대로 반환
+            return key.ToString();
+        }
+        return "?";
+    }
+
     // 동적 키 등록 (이름 기반)
     public void RegisterAction(string actionName, Action callback)
     {

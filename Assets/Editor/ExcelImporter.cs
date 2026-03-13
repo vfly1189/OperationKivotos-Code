@@ -28,6 +28,10 @@ public class ExcelImporter : EditorWindow
             List<MaterialData> matList = new List<MaterialData>();
             List<StatPoolData> statPoolList = new List<StatPoolData>(); // 추가됨
 
+            List<EquipmentDecompositionData> decompositionDatas = new List<EquipmentDecompositionData>();
+            List<EquipmentUpgradeBookExpData> equipmentUpgradeBookExpDatas = new List<EquipmentUpgradeBookExpData>();
+            List<EquipmentLevelExpData> equipmentLevelExpData = new List<EquipmentLevelExpData>();
+
             // 1. Equipment 시트 파싱 (수정됨)
             ISheet equipSheet = book.GetSheet("Equipment");
             if (equipSheet != null)
@@ -154,7 +158,73 @@ public class ExcelImporter : EditorWindow
                 }
             }
 
-            SaveToScriptableObject(equipList, consumeList, matList, statPoolList); // 파라미터 추가
+            // 5. EquipmentDecompositionData 시트 파싱 (기존과 동일)
+            ISheet equipmentDecompositionSheet = book.GetSheet("EquipmentDecomposition");
+            if (equipmentDecompositionSheet != null)
+            {
+                for (int i = 1; i <= equipmentDecompositionSheet.LastRowNum; i++)
+                {
+                    IRow row = equipmentDecompositionSheet.GetRow(i);
+                    if (row == null || row.GetCell(0) == null || row.GetCell(0).CellType == CellType.Blank)
+                        continue;
+
+                    EquipmentDecompositionData data = new EquipmentDecompositionData();
+                    data.Tier = (int)row.GetCell(0).NumericCellValue;
+
+                    data.Mat1_ID = (int)row.GetCell(1).NumericCellValue;
+                    data.Mat1_Count = GetNumericValue(row.GetCell(2));
+
+                    data.Mat2_ID = (int)row.GetCell(3).NumericCellValue;
+                    data.Mat2_Count = GetNumericValue(row.GetCell(4));
+
+                    data.Mat3_ID = (int)row.GetCell(5).NumericCellValue;
+                    data.Mat3_Count = GetNumericValue(row.GetCell(6));
+
+                    decompositionDatas.Add(data);
+                }
+            }
+
+            // 6. upgradeBookExpSheet 시트 파싱 (기존과 동일)
+            ISheet upgradeBookExpSheet = book.GetSheet("EquipmentUpgradeBookExp");
+            if (upgradeBookExpSheet != null)
+            {
+                for (int i = 1; i <= upgradeBookExpSheet.LastRowNum; i++)
+                {
+                    IRow row = upgradeBookExpSheet.GetRow(i);
+                    if (row == null || row.GetCell(0) == null || row.GetCell(0).CellType == CellType.Blank)
+                        continue;
+
+                    EquipmentUpgradeBookExpData data = new EquipmentUpgradeBookExpData();
+                    data.Mat_ID = (int)row.GetCell(0).NumericCellValue;
+                    data.ExpValue = (int)row.GetCell(1).NumericCellValue;
+
+                    equipmentUpgradeBookExpDatas.Add(data);
+                }
+            }
+
+
+            // 7. EquipmentLevelExpData 시트 파싱 (기존과 동일)
+            ISheet equipmentLevelExpSheet = book.GetSheet("EquipmentLevelExpData");
+            if (equipmentLevelExpSheet != null)
+            {
+                for (int i = 1; i <= equipmentLevelExpSheet.LastRowNum; i++)
+                {
+                    IRow row = equipmentLevelExpSheet.GetRow(i);
+                    if (row == null || row.GetCell(0) == null || row.GetCell(0).CellType == CellType.Blank)
+                        continue;
+
+                    EquipmentLevelExpData data = new EquipmentLevelExpData();
+                    data.Level = (int)row.GetCell(0).NumericCellValue;
+                    data.RequireExp = (int)row.GetCell(1).NumericCellValue;
+
+                    equipmentLevelExpData.Add(data);
+                }
+            }
+
+            SaveToScriptableObject(
+                equipList, consumeList, matList, 
+                statPoolList, decompositionDatas, equipmentUpgradeBookExpDatas, equipmentLevelExpData
+                ); // 파라미터 추가
         }
     }
 
@@ -191,7 +261,10 @@ public class ExcelImporter : EditorWindow
     }
 
     // statPools 파라미터 추가
-    private static void SaveToScriptableObject(List<EquipmentData> equips, List<ConsumableData> consumes, List<MaterialData> mats, List<StatPoolData> statPools)
+    private static void SaveToScriptableObject(
+        List<EquipmentData> equips, List<ConsumableData> consumes, List<MaterialData> mats, 
+        List<StatPoolData> statPools, List<EquipmentDecompositionData> equipmentDecompositionDatas,
+        List<EquipmentUpgradeBookExpData> equipmentUpgradeBookExpDatas, List<EquipmentLevelExpData> equipmentLevelExpDatas)
     {
         string assetPath = "Assets/Resources_moved/Data/ItemDatabase.asset";
         if (!Directory.Exists(Application.dataPath + "/Resources_moved/Data"))
@@ -210,11 +283,20 @@ public class ExcelImporter : EditorWindow
         database.Consumables = consumes;
         database.Materials = mats;
         database.StatPools = statPools; // 할당
+        database.DecompositionData = equipmentDecompositionDatas;
+        database.UpgradeBookExpData = equipmentUpgradeBookExpDatas;
+        database.EquipmentLevelExpData = equipmentLevelExpDatas;
 
         EditorUtility.SetDirty(database);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log($"[멀티 시트 파싱 완료] 장비: {equips.Count}개, 스탯풀: {statPools.Count}개, 소모품: {consumes.Count}개, 재료: {mats.Count}개 변환 완료!");
+        Debug.Log($"[멀티 시트 파싱 완료] 장비: " +
+            $"{equips.Count}개, 스탯풀: {statPools.Count}개, " +
+            $"소모품: {consumes.Count}개, 재료: {mats.Count}개," +
+            $"장비분해 정보: {equipmentDecompositionDatas.Count}개," +
+            $"장비강화재료 정보: {equipmentUpgradeBookExpDatas.Count}개," +
+            $"장비 강화레벨 별 경험치 : {equipmentLevelExpDatas.Count}개 변환 완료!"
+            );
     }
 }
