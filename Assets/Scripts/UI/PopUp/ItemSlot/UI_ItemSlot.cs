@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System;
 using TMPro;
 using UnityEngine;
@@ -11,8 +12,10 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     [SerializeField] private Image _itemGradeBackGround;
     [SerializeField] private Image _itemIcon;
     [SerializeField] private TextMeshProUGUI _stackText;
+    [SerializeField] private Button _cancelButton; // 강화재료 취소 버튼, 꺼져있으니 사용할거면 켜야됨
 
     private int _slotIndex;
+    private IItemSlotHandler _handler;
 
     public ItemCategory CurrentCategory => _currentCategory;
     private ItemCategory _currentCategory; // 카테고리도 기억해두면 좋음
@@ -24,17 +27,26 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     private static GameObject _dragGhost;
     private static Image _dragGhostImage;
 
-    // 외부에서 주입해줄 클릭/더블클릭/드롭 콜백 이벤트
-    public Action<UI_ItemSlot> OnDoubleClickAction;
-    public Action<UI_ItemSlot, UI_ItemSlot> OnDropAction;
-
     // _slotIndex의 getter를 만들어 외부에서 읽을 수 있게 합니다.
     public int SlotIndex => _slotIndex;
-    //public InventorySlot CurrentSlotData => _currentSlotData; // 필요하다면 데이터도 노출
 
+
+ 
     public override void Init()
     {
+        if (_cancelButton != null) _cancelButton.gameObject.SetActive(false);
         // 클릭 이벤트 등을 바인딩하려면 여기서
+        //_cancelButton.onClick.AddListener(onSlotClick);
+    }
+
+    // 신규 메서드 추가
+    public void SetCancelActive(bool active, Action onCancel = null)
+    {
+        if (_cancelButton == null) return;
+        _cancelButton.gameObject.SetActive(active);
+        _cancelButton.onClick.RemoveAllListeners();
+        if (active && onCancel != null)
+            _cancelButton.onClick.AddListener(() => onCancel());
     }
 
     public void SetInfo(InventorySlot slotData, ItemCategory category, int index)
@@ -83,7 +95,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
 
         Debug.Log($"Test : {iconKey}");
         // ResourceManager를 통해 비동기로 Sprite 로드
-        Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);
+        Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey, isGlobal:true);
         if (sprite != null && _itemIcon != null)
         {
             _itemIcon.sprite = sprite;
@@ -96,20 +108,15 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
         // 등급에 맞는 Addressable Key 문자열 조합 (예: "Common_Gray", "Rare_Blue")
         string gradeKey = $"GradeBg_{grade.ToString()}"; // 예시
         Debug.Log($"GradeKey : {gradeKey}");
-        Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey);
+        Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey, isGlobal:true);
         if (bgSprite != null && _itemGradeBackGround != null)
         {
             _itemGradeBackGround.sprite = bgSprite;
         }
     }
 
-    // SetInfo 혹은 별도의 함수로 콜백 세팅
-    public void SetCallback(Action<UI_ItemSlot> onDoubleClick, Action<UI_ItemSlot, UI_ItemSlot> onDrop = null)
-    {
-        OnDoubleClickAction = onDoubleClick;
-        OnDropAction = onDrop;
-    }
-
+    public void CancelButtonOn() { _cancelButton.gameObject.SetActive(true); }
+    public void CancelButtonOff() {  _cancelButton.gameObject.SetActive(false); }
 
     // --- Drag & Drop 구현부 ---
 
@@ -163,86 +170,37 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
         DraggingSlot = null;
     }
 
-    public void OnDrop(PointerEventData eventData)
+    public void SetHandler(IItemSlotHandler handler)
     {
-        //// 내 위에 무언가 떨어졌을 때
-        //if (DraggingSlot != null && DraggingSlot != this)
-        //{
-        //    // 같은 카테고리(탭) 탭 안에서만 작동하도록 방어
-        //    if (this._currentCategory == DraggingSlot._currentCategory)
-        //    {
-        //        Managers.Inventory.SwapItems(_currentCategory, DraggingSlot._slotIndex, this._slotIndex);
-        //    }
-        //}
-
-        if (DraggingSlot != null && DraggingSlot != this)
-        {
-            // 외부 로직 우선 실행
-            if (OnDropAction != null)
-            {
-                OnDropAction.Invoke(DraggingSlot, this);
-            }
-            else // 기본 동작
-            {
-                //if (this._currentCategory == DraggingSlot._currentCategory)
-                //{
-                //    Managers.Inventory.SwapItems(_currentCategory, DraggingSlot._slotIndex, this._slotIndex);
-                //}
-            }
-        }
+        _handler = handler;
     }
 
-    // 더블 클릭 시 장착 로직
     public void OnPointerClick(PointerEventData eventData)
     {
-        //if (eventData.clickCount == 2)
-        //{
-        //    // 장비 탭이고 빈 슬롯이 아닐 때만 장착 시도
-        //    if (_currentCategory == ItemCategory.Equipment && _currentSlotData != null && !_currentSlotData.IsEmpty)
-        //    {
-        //        Managers.Equipment.Equip(_slotIndex);
-        //        // 장착 직후 툴팁 갱신
-        //        Managers.UI.RefreshItemTooltip();
-        //    }
-        //}
+        if (CurrentSlotData == null || CurrentSlotData.IsEmpty) return;
 
+        //  클릭 횟수 관계없이 매 클릭마다 OnSlotClicked 호출
+        _handler?.OnSlotClicked(this);
+
+        // 더블클릭은 추가로 발화
         if (eventData.clickCount == 2)
-        {
-            if (CurrentSlotData != null && !CurrentSlotData.IsEmpty)
-            {
-                // 외부에서 주입된 로직이 있다면 그걸 실행 (장착이든 강화 재료 등록이든)
-                if (OnDoubleClickAction != null)
-                {
-                    OnDoubleClickAction.Invoke(this);
-                }
-                else
-                {
-                    //// 아무것도 주입 안 되었을 때의 기본 동작 (기존 인벤토리 동작)
-                    //if (_currentCategory == ItemCategory.Equipment)
-                    //{
-                    //    Managers.Equipment.Equip(_slotIndex);
-                    //    Managers.UI.RefreshItemTooltip();
-                    //}
-                }
-            }
-        }
+            _handler?.OnSlotDoubleClicked(this);
     }
 
-    // 인벤토리 슬롯 (UI_ItemSlot) 내부의 이벤트
+    public void OnDrop(PointerEventData eventData)
+    {
+        if (DraggingSlot != null && DraggingSlot != this)
+            _handler?.OnSlotDrop(DraggingSlot, this);
+    }
+
     public void OnPointerEnter(PointerEventData eventData)
     {
-        Debug.Log($"OnPointerEnter 시작");
         if (CurrentSlotData != null && !CurrentSlotData.IsEmpty)
-        {
-            Debug.Log($"OnPointerEnter 툴팁 시작");
-            // 툴팁 활성화 및 정보 셋팅
-            Managers.UI.ShowItemTooltip(CurrentSlotData, eventData.position);
-        }
+            _handler?.OnSlotPointerEnter(this, eventData.position);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        Managers.UI.HideItemTooltip();
+        _handler?.OnSlotPointerExit(this);
     }
-
 }

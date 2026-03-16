@@ -1,12 +1,13 @@
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Threading;
+
 using TMPro;
-using Unity.VisualScripting;
+
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UI_RelicUpgradePanel : UI_Base
+public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
 {
     [Header("보유 장비 목록")]
     [SerializeField] private Transform _havingRelicScollView;
@@ -31,15 +32,39 @@ public class UI_RelicUpgradePanel : UI_Base
     [Header("장비 강화 버튼")]
     [SerializeField] Button _upgradeButton;
 
+    private EquipmentUpgradeService _upgradeService;
     private List<UI_ItemSlot> _itemSlots = new List<UI_ItemSlot>();
-    private const int MAX_CONSUME_MATERIAL_SLOT_COUNT = 8;
-    private InventorySlot _selectedSlot = null;
+
+    private List<UI_ConsumeMaterialSlot> _consumeMaterialSlots = new();
+    private List<UI_UpgradePanelMainStatInfo> _mainStatSlots = new();
+    private List<UI_UpgradePanelSubStatInfo> _subStatSlots = new();
+
+
+    private const int MAX_STAT_COUNT = 6;
+    private CancellationTokenSource _itemInfoCts;
+    private CancellationTokenSource _linkedCts;
 
     public override void Init()
     {
+        InitAsync().Forget();
+    }
+
+    private async UniTask InitAsync()
+    {
+        //  Service 생성 및 이벤트 구독
+        _upgradeService = new EquipmentUpgradeService();
+        _upgradeService.OnEquipmentSelected += OnEquipmentSelected;
+        _upgradeService.OnMaterialSlotChanged += OnMaterialSlotChanged;
+        _upgradeService.OnExpPreviewChanged += OnExpPreviewChanged;
+
         ResetItemInfo();
-        SetHavingRelicScollView();
-        SetConsumeMaterialSlot();
+
+        //  슬롯들 Init에서 미리 생성
+        await UniTask.WhenAll(
+            SetHavingRelicScrollView(),
+            SetConsumeMaterialSlots(),
+            PreloadStatSlots()
+        );
     }
 
     //맨 처음 진입할때 아이템 정보들 초기화
@@ -83,7 +108,7 @@ public class UI_RelicUpgradePanel : UI_Base
         }
     }
 
-    private async void SetHavingRelicScollView()
+    private async UniTask SetHavingRelicScrollView()
     {
         InventorySlot[] relics = Managers.Inventory.Inventory[ItemCategory.Equipment];
 
@@ -91,127 +116,186 @@ public class UI_RelicUpgradePanel : UI_Base
             Debug.Log($"장비 없음");
 
 
-        foreach(InventorySlot relic in relics)
+        foreach (InventorySlot relic in relics)
         {
             if (relic.IsEmpty) continue;
 
             UI_ItemSlot slot = await Managers.UI.MakeSubItemAsync<UI_ItemSlot>("UI_ItemSlot", _havingRelicScollView);
             slot.gameObject.SetActive(true);
             slot.SetInfo(relic, ItemCategory.Equipment, -1);
-            slot.SetCallback(SetItemInfo, null);
+            slot.SetHandler(this);
 
             _itemSlots.Add(slot);
         }
     }
 
-    private async void SetItemInfo(UI_ItemSlot uiSlot)
+    private async UniTask SetConsumeMaterialSlots()
     {
-        InventorySlot slotData = uiSlot.CurrentSlotData;
-        _selectedSlot = slotData;
-
-        EquipmentData equipmentData = Managers.Data.GetData<int, EquipmentData>(slotData.itemID);
-       
-        _itemIcon.sprite = await Managers.Resource.LoadAsync<Sprite>(equipmentData.IconKey);
-        if (this == null || gameObject == null || !gameObject.activeInHierarchy)
-            return;
-        _itemIcon.gameObject.SetActive(true);
-
-        _itemName.text = equipmentData.Name;
-        _itemType.text = equipmentData.EquipPart;
-        _itemTier.text = $"Tier " + equipmentData.Tier;
-
-        _itemUpgradeLevel.text = $"+{slotData.EquipInstance.UpgradeLevel}";
-        _itemExpText.text = $"{slotData.EquipInstance.CurrentExp} / {slotData.EquipInstance.NextLevelRequireExp}";
-        _itemExpBar.value = (float)slotData.EquipInstance.CurrentExp / (float)slotData.EquipInstance.NextLevelRequireExp;
-
-
-        SetMainStat(slotData.EquipInstance).Forget();
-        SetSubStat(slotData.EquipInstance).Forget(); 
-    }
-
-
-    public async UniTask SetMainStat(EquipmentInstance equipmentInstance)
-    {
-        foreach (Transform child in _mainStatParent)
+        for (int i = 0; i < EquipmentUpgradeService.MAX_MATERIAL_SLOTS; i++)
         {
-            Managers.Resource.Destroy(child.gameObject);
-        }
+            int index = i;
+            var slot = await Managers.UI.MakeSubItemAsync<UI_ConsumeMaterialSlot>(
+                "UI_ConsumeMaterialSlot", _consumeMaterialParent);
 
-        List<StatOption> mainStats = equipmentInstance.MainStats;
-
-        foreach (StatOption statOption in mainStats)
-        {
-            UI_UpgradePanelMainStatInfo mainStatInfo = await Managers.UI.MakeSubItemAsync<UI_UpgradePanelMainStatInfo>("UI_UpgradePanelMainStatInfo", _mainStatParent);
-
-            if (this == null || gameObject == null || !gameObject.activeInHierarchy)
-                return;
-
-            if (mainStatInfo != null)
-            {
-                mainStatInfo.SetInfo(statOption);
-            }
-        }
-    }
-
-    public async UniTask SetSubStat(EquipmentInstance equipmentInstance)
-    {
-        foreach (Transform child in _subStatParent)
-        {
-            Managers.Resource.Destroy(child.gameObject);
-        }
-
-        List<StatOption> subStats = equipmentInstance.SubStats;
-
-        foreach (StatOption statOption in subStats)
-        {
-            UI_UpgradePanelSubStatInfo subStatInfo = await Managers.UI.MakeSubItemAsync<UI_UpgradePanelSubStatInfo>("UI_UpgradePanelSubStatInfo", _subStatParent);
-
-            if (this == null || gameObject == null || !gameObject.activeInHierarchy)
-                return;
-
-            if (subStatInfo != null)
-            {
-                subStatInfo.SetInfo(statOption);
-            }
-        }
-    }
-
-    public async void SetConsumeMaterialSlot()
-    {
-        for(int i=0; i< MAX_CONSUME_MATERIAL_SLOT_COUNT; i++)
-        {
-            UI_ConsumeMaterialSlot slot = await Managers.UI.MakeSubItemAsync<UI_ConsumeMaterialSlot>("UI_ConsumeMaterialSlot", _consumeMaterialParent);
-            if (this == null || gameObject == null || !gameObject.activeInHierarchy)
-                return;
-
-            slot.SetCallback(() =>
-            {
-                if (_selectedSlot == null)
+            slot.SetCallback(
+                onClick: () =>
                 {
-                    Debug.Log("강화할 장비를 먼저 선택해주세요!");
-                    return;
-                }
+                    if (_upgradeService.SelectedEquipment == null) return;
+                    OpenMaterialSelectPopup();
+                },
+                onCancel: () => _upgradeService.RemoveMaterial(index) //  Service에 위임
+            );
 
-                OpenMaterialSelectPopup();
-            });
-
+            _consumeMaterialSlots.Add(slot);
         }
     }
 
+    private async UniTask PreloadStatSlots()
+    {
+        for (int i = 0; i < MAX_STAT_COUNT; i++)
+        {
+            var main = await Managers.UI.MakeSubItemAsync<UI_UpgradePanelMainStatInfo>(
+                "UI_UpgradePanelMainStatInfo", _mainStatParent);
+            main.gameObject.SetActive(false);
+            _mainStatSlots.Add(main);
+
+            var sub = await Managers.UI.MakeSubItemAsync<UI_UpgradePanelSubStatInfo>(
+                "UI_UpgradePanelSubStatInfo", _subStatParent);
+            sub.gameObject.SetActive(false);
+            _subStatSlots.Add(sub);
+        }
+    }
+
+    //재료슬롯 콜백 함수
     private async void OpenMaterialSelectPopup()
     {
-        UI_MaterialSelectPopup popup = await Managers.UI.ShowPopupUIAsync<UI_MaterialSelectPopup>("UI_MaterialSelectPopup");
-        // 나중에 여기서 popup 쪽에 데이터나 콜백을 넘겨줄 수 있습니다.
-        if(_selectedSlot != null) popup.SetSelectedSlot(_selectedSlot);
+        Debug.Log("재료 슬롯 눌림");
+        var popup = await Managers.UI.ShowPopupUIAsync<UI_MaterialSelectPopup>("UI_MaterialSelectPopup");
+        //  Service를 통째로 주입 → 팝업도 같은 Service를 바라봄
+        popup.SetService(_upgradeService);
+    }
+
+    // =========================================================
+    // Service 이벤트 수신 → UI 갱신
+    // =========================================================
+    private void OnEquipmentSelected(InventorySlot slot)
+    {
+        RefreshItemInfo(slot).Forget();
+        _upgradeButton.interactable = _upgradeService.CanUpgrade();
+    }
+
+    // OnMaterialSlotChanged 시그니처 변경
+    private void OnMaterialSlotChanged(int index, MaterialEntry entry)
+    {
+        if (entry == null || entry.IsEmpty)
+            _consumeMaterialSlots[index].ClearSlot();
+        else
+            _consumeMaterialSlots[index].SetSlot(entry);
+
+        _upgradeButton.interactable = _upgradeService.CanUpgrade();
+    }
+    // 수신 후 UI 갱신
+    private void OnExpPreviewChanged(ExpPreviewResult result)
+    {
+        _itemUpgradeLevel.text = $"+{result.SimulatedLevel}";
+        _itemExpBar.value = (float)result.SimulatedExp / result.SimulatedRequireExp;
+        _itemExpText.text = $"{result.SimulatedExp} / {result.SimulatedRequireExp}";
+    }
+
+    // =========================================================
+    // 장비 정보 갱신 (Service 이벤트로만 호출됨)
+    // =========================================================
+    private async UniTask RefreshItemInfo(InventorySlot slotData)
+    {
+        _itemInfoCts?.Cancel();
+        _itemInfoCts?.Dispose();
+        _linkedCts?.Dispose();
+        _itemInfoCts = new CancellationTokenSource();
+        _linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+            _itemInfoCts.Token, this.GetCancellationTokenOnDestroy());
+        var token = _linkedCts.Token;
+
+        EquipmentData data = Managers.Data.GetData<int, EquipmentData>(slotData.itemID);
+
+        _itemIcon.sprite = await Managers.Resource.LoadAsync<Sprite>(data.IconKey, isGlobal: true)
+            .AttachExternalCancellation(token);
+
+        _itemIcon.gameObject.SetActive(true);
+        _itemName.text = data.Name;
+        _itemType.text = data.EquipPart;
+        _itemTier.text = $"Tier {data.Tier}";
+        _itemUpgradeLevel.text = $"+{slotData.EquipInstance.UpgradeLevel}";
+        _itemExpText.text = $"{slotData.EquipInstance.CurrentExp} / {slotData.EquipInstance.NextLevelRequireExp}";
+        _itemExpBar.value = (float)slotData.EquipInstance.CurrentExp / slotData.EquipInstance.NextLevelRequireExp;
+
+        // SetActive 토글만 (Destroy/생성 없음)
+        RefreshMainStat(slotData.EquipInstance);
+        RefreshSubStat(slotData.EquipInstance);
+    }
+
+    private void RefreshMainStat(EquipmentInstance instance)
+    {
+        var stats = instance.MainStats;
+        for (int i = 0; i < _mainStatSlots.Count; i++)
+        {
+            bool active = i < stats.Count;
+            _mainStatSlots[i].gameObject.SetActive(active);
+            if (active) _mainStatSlots[i].SetInfo(stats[i]);
+        }
+    }
+
+    private void RefreshSubStat(EquipmentInstance instance)
+    {
+        var stats = instance.SubStats;
+        for (int i = 0; i < _subStatSlots.Count; i++)
+        {
+            bool active = i < stats.Count;
+            _subStatSlots[i].gameObject.SetActive(active);
+            if (active) _subStatSlots[i].SetInfo(stats[i]);
+        }
+    }
+
+    //  인터페이스 구현은 void, 내부에서 async 메서드에 위임
+    public void OnSlotDoubleClicked(UI_ItemSlot slot)
+    {
+        _upgradeService.SelectEquipment(slot.CurrentSlotData);
+    }
+
+    public void OnSlotPointerEnter(UI_ItemSlot slot, Vector2 screenPos)
+    {
+        if (slot.CurrentSlotData != null && !slot.CurrentSlotData.IsEmpty)
+        {
+            // 툴팁 활성화 및 정보 셋팅
+            Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
+        }
+    }
+
+    public void OnSlotPointerExit(UI_ItemSlot slot)
+    {
+        Managers.UI.HideItemTooltip();
     }
 
     private void OnDestroy()
     {
-        foreach (UI_ItemSlot slot in _itemSlots)
+        _itemInfoCts?.Cancel();
+        _itemInfoCts?.Dispose();
+        _linkedCts?.Dispose();
+
+        // 이벤트 구독 해제
+        if (_upgradeService != null)
         {
-            slot.SetCallback(null, null);
+            _upgradeService.OnEquipmentSelected -= OnEquipmentSelected;
+            _upgradeService.OnMaterialSlotChanged -= OnMaterialSlotChanged;
+            _upgradeService.OnExpPreviewChanged -= OnExpPreviewChanged;
+        }
+
+        foreach (var slot in _itemSlots)
+        {
+            slot.SetHandler(null);
+            slot.CancelButtonOff();
             Managers.Resource.Destroy(slot.gameObject);
-        }  
+        }
     }
 
+    
 }

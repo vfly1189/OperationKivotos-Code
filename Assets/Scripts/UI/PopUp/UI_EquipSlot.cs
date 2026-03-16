@@ -99,7 +99,4 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
     {
         Managers.UI.HideItemTooltip();
     }
-
-
-
 }

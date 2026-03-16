@@ -16,13 +16,13 @@ public class UI_MainStatInfo : UI_Base
 
     public async void SetInfo(StatOption stat)
     {
-        // 1. 스탯 텍스트 설정 (예: MaxHP_Percent -> "HP")
+        // 스탯 텍스트 설정 (예: MaxHP_Percent -> "HP")
         _statType.text = GetStatNameKorean(stat.StatType);
 
-        // 2. 수치 텍스트 설정
+        // 수치 텍스트 설정
         _statValue.text = stat.GetStatString(); // StatOption 클래스에 만들어둔 프로퍼티 활용
 
-        // 3. 아이콘 동적 로드 
+        // 아이콘  로드 
         // (이전에 만든 아이콘들의 이름을 "Icon_MaxHP", "Icon_Attack" 등으로 Addressable에 등록해두었다고 가정)
         string iconKey = GetIconNameByStat(stat.StatType);
         Sprite iconSprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);

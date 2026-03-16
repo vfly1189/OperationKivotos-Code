@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UI_Inventory : UI_PopUp
+public class UI_Inventory : UI_PopUp, IItemSlotHandler
 {
     [SerializeField] private Transform _contentParent; // ScrollView의 Content
     [SerializeField] private Button[] _tabButtons; // 0:장비, 1:소비, 2:재료
@@ -62,26 +62,42 @@ public class UI_Inventory : UI_PopUp
             _activeSlots[i].gameObject.SetActive(true);
             _activeSlots[i].SetInfo(invenArray[i], category, i);
 
-            _activeSlots[i].SetCallback(
-                onDoubleClick: (clickedSlot) =>
-                {
-                    if (clickedSlot.CurrentCategory == ItemCategory.Equipment)
-                    {
-                        // 클로저 문제 해결: clickedSlot 자신이 가진 인덱스를 활용
-                        Managers.Equipment.Equip(clickedSlot.SlotIndex);
-                        Managers.UI.RefreshItemTooltip();
-                    }
-                },
-                onDrop: (draggedSlot, targetSlot) =>
-                {
-                    if (draggedSlot.CurrentCategory == targetSlot.CurrentCategory)
-                    {
-                        Managers.Inventory.SwapItems(category, draggedSlot.SlotIndex, targetSlot.SlotIndex);
-                    }
-                }
-            );
+            _activeSlots[i].SetHandler(this);         
         }
     }
+
+    //인벤토리에서 더블클릭 = 장착
+    public async void OnSlotDoubleClicked(UI_ItemSlot slot)
+    {
+        if (slot.CurrentCategory == ItemCategory.Equipment)
+        {
+            Managers.Equipment.Equip(slot.SlotIndex);
+            Managers.UI.RefreshItemTooltip();
+        }
+
+        await UniTask.CompletedTask; 
+    }
+
+    //인벤토리에서 드롭 = 슬롯 스왑
+    public void OnSlotDrop(UI_ItemSlot from, UI_ItemSlot to)
+    {
+        Managers.Inventory.SwapItems(from.CurrentCategory, from.SlotIndex, to.SlotIndex);
+    }
+
+    public void OnSlotPointerEnter(UI_ItemSlot slot, Vector2 screenPos)
+    {
+        if (slot.CurrentSlotData != null && !slot.CurrentSlotData.IsEmpty)
+        {
+            // 툴팁 활성화 및 정보 셋팅
+            Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
+        }
+    }
+
+    public void OnSlotPointerExit(UI_ItemSlot slot)
+    {
+        Managers.UI.HideItemTooltip();
+    }
+
 
     private void OnDestroy()
     {
@@ -97,8 +113,7 @@ public class UI_Inventory : UI_PopUp
             {
                 if (slot != null)
                 {
-                    // 콜백을 null로 밀어줍니다.
-                    slot.SetCallback(null, null);
+                    slot.SetHandler(null); //풀 반환 시 반드시 초기화
                 }
                 Managers.Resource.Destroy(slot.gameObject);
             }

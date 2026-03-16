@@ -13,16 +13,7 @@ using Cysharp.Threading.Tasks;
 
 public class ResourceManager
 {
-    // 리소스 캐싱(한번 로드한건 메모리에 들고 있자)
-    // Key: 경로, Value: 리소스 원본
-    //Dictionary<string, Object> _resources = new Dictionary<string, Object>();
-
-    // [추가] 프리로딩(라벨)된 에셋들이 메모리에서 내려가지 않게 멱살을 잡고 있을 전용 리스트
-    private List<AsyncOperationHandle> _preloadedGlobalHandles = new List<AsyncOperationHandle>();
-    private List<AsyncOperationHandle> _preloadedSceneHandles = new List<AsyncOperationHandle>();
-
-
-    // [핵심] Addressables 핸들 관리용 딕셔너리 2개 분리
+    // Addressables 핸들 관리용 딕셔너리 2개 분리
     // 1. 글로벌: 게임 종료 시까지 절대 해제되지 않음 (플레이어 캐릭터, UI, 공통 VFX 등)
     private Dictionary<string, AsyncOperationHandle> _globalHandles = new Dictionary<string, AsyncOperationHandle>();
 
@@ -33,7 +24,6 @@ public class ResourceManager
     {
         //global은 계속 살려둘거임
         _sceneHandles.Clear();
-        _preloadedSceneHandles.Clear();
     }
 
     // =========================================================================
@@ -47,88 +37,50 @@ public class ResourceManager
         // AssetReference의 런타임 키를 string으로 변환해서 내부 처리 함수로 넘김
         return await LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal);
     }
-
-    //// =========================================================================
-    //// 2. [추가] string Key를 인자로 받는 LoadAsync (오버로딩)
-    //// =========================================================================
-    //public async UniTask<T> LoadAsync<T>(string key, bool isGlobal = false) where T : UnityEngine.Object
-    //{
-    //    if (string.IsNullOrEmpty(key)) return null;
-
-    //    if (_globalHandles.TryGetValue(key, out AsyncOperationHandle globalHandle))
-    //    {
-    //        await globalHandle.ToUniTask();
-    //        return globalHandle.Result as T;
-    //    }
-
-    //    if (_sceneHandles.TryGetValue(key, out AsyncOperationHandle sceneHandle))
-    //    {
-    //        await sceneHandle.ToUniTask();
-    //        return sceneHandle.Result as T;
-    //    }
-
-    //    // string key를 사용해서 Addressables 로드
-    //    var handle = Addressables.LoadAssetAsync<T>(key);
-
-    //    if (isGlobal) _globalHandles.Add(key, handle);
-    //    else _sceneHandles.Add(key, handle);
-
-    //    await handle.ToUniTask();
-
-    //    if (handle.Status == AsyncOperationStatus.Succeeded)
-    //    {
-    //        return handle.Result as T;
-    //    }
-    //    else
-    //    {
-    //        Debug.LogError($"[ResourceManager] Addressable Load Failed: {key}");
-    //        if (isGlobal) _globalHandles.Remove(key);
-    //        else _sceneHandles.Remove(key);
-    //        return null;
-    //    }
-    //}
-    // =========================================================================
-    // 실제 로드 함수 (수정할 필요 거의 없음)
-    // =========================================================================
-    public async UniTask<T> LoadAsync<T>(string key, bool isGlobal = false) where T : UnityEngine.Object
+  
+    public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false) where T : UnityEngine.Object
     {
-        if (string.IsNullOrEmpty(key)) return null;
+        if (string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);
 
-        // 1. 글로벌 캐시 검사
-        if (_globalHandles.TryGetValue(key, out AsyncOperationHandle globalHandle))
+        //  이미 캐싱됐고 타입도 맞으면 → 상태머신 없이 즉시 동기 반환
+        if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && gh.Result is T gResult)
+            return UniTask.FromResult(gResult);
+
+        if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && sh.Result is T sResult)
+            return UniTask.FromResult(sResult);
+
+        // 캐싱 안 됐거나 타입 불일치 → 비동기 로드
+        return LoadAsyncInternal<T>(key, isGlobal);
+    }
+
+    // 실제 비동기 로직 분리
+    private async UniTask<T> LoadAsyncInternal<T>(string key, bool isGlobal) where T : UnityEngine.Object
+    {
+        // 타입 불일치 핸들 제거
+        if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && !(gh.Result is T))
+            _globalHandles.Remove(key);
+        if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && !(sh.Result is T))
+            _sceneHandles.Remove(key);
+
+        // 로딩 중인 핸들 있으면 기다리기
+        if (_globalHandles.TryGetValue(key, out var pending) && !pending.IsDone)
         {
-            //[핵심] 만약 다른 곳에서 로딩을 시작했지만 아직 안 끝난 상태라면 기다린다!
-            if (!globalHandle.IsDone) await globalHandle.ToUniTask();
-            return globalHandle.Result as T;
+            await pending.ToUniTask();
+            return pending.Result as T;
         }
 
-        // 2. 씬 캐시 검사
-        if (_sceneHandles.TryGetValue(key, out AsyncOperationHandle sceneHandle))
-        {
-            //[핵심] 만약 다른 곳에서 로딩을 시작했지만 아직 안 끝난 상태라면 기다린다!
-            if (!sceneHandle.IsDone) await sceneHandle.ToUniTask();
-            return sceneHandle.Result as T;
-        }
-
-        // 2. 딕셔너리에 없다면 로드 시도! 
-        // (만약 LoadDependenciesAsync에서 프리로드 해둔 에셋이라면, 여기서 디스크 로딩 없이 0프레임 만에 즉시 로드됩니다!)
         var handle = Addressables.LoadAssetAsync<T>(key);
-
-        // 로드된 명확한 타입의 핸들을 딕셔너리에 저장
-        if (isGlobal) _globalHandles.Add(key, handle);
-        else _sceneHandles.Add(key, handle);
+        if (isGlobal) _globalHandles[key] = handle;
+        else _sceneHandles[key] = handle;
 
         await handle.ToUniTask();
 
-        if (handle.Status == AsyncOperationStatus.Succeeded)
-            return handle.Result as T;
-        else
-        {
-            Debug.LogError($"[ResourceManager] Addressable Load Failed: {key}");
-            if (isGlobal) _globalHandles.Remove(key);
-            else _sceneHandles.Remove(key);
-            return null;
-        }
+        if (handle.Status == AsyncOperationStatus.Succeeded) return handle.Result as T;
+
+        Debug.LogError($"[ResourceManager] Load Failed: {key}");
+        if (isGlobal) _globalHandles.Remove(key);
+        else _sceneHandles.Remove(key);
+        return null;
     }
 
 
@@ -167,90 +119,50 @@ public class ResourceManager
         }
     }
 
-    //// [핵심 3] Task -> UniTask 로 변경
-    //public async UniTask LoadDependenciesAsync(IEnumerable<string> labels, bool isGlobal = false, System.Action<string, float> onProgress = null)
-    //{
-    //    var locationsHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
-    //    await locationsHandle.ToUniTask();
-
-    //    if (locationsHandle.Status == AsyncOperationStatus.Succeeded)
-    //    {
-    //        var locations = locationsHandle.Result;
-    //        int totalCount = locations.Count;
-
-    //        for (int i = 0; i < totalCount; i++)
-    //        {
-    //            var location = locations[i];
-    //            string key = location.PrimaryKey;
-    //            Debug.Log($"[ResourceManager] 로드 요청 시작: {key}");
-
-    //            if (!_globalHandles.ContainsKey(key) && !_sceneHandles.ContainsKey(key))
-    //            {
-    //                var handle = Addressables.LoadAssetAsync<Object>(location);
-
-    //                if (isGlobal) _globalHandles.Add(key, handle);
-    //                else _sceneHandles.Add(key, handle);
-
-    //                // [핵심 4] while문을 돌며 대기할 때, 유니티 프레임 단위(Update)로 안전하게 양보
-    //                // Task.Yield()가 일으키던 데드락(멈춤)을 완벽히 해결!
-    //                while (!handle.IsDone)
-    //                {
-    //                    float currentAssetProgress = handle.PercentComplete;
-    //                    float overallProgress = (i + currentAssetProgress) / totalCount;
-    //                    onProgress?.Invoke(key, overallProgress);
-
-    //                    await UniTask.Yield(PlayerLoopTiming.Update);
-    //                }
-    //            }
-
-    //            float completedProgress = (i + 1f) / totalCount;
-    //            onProgress?.Invoke(key, completedProgress);
-    //        }
-    //    }
-    //    else
-    //    {
-    //        Debug.LogError("Failed to load resource locations by labels.");
-    //    }
-
-    //    Addressables.Release(locationsHandle);
-    //}  
-
+    
 
     // =========================================================================
     // 프리로딩 전용 함수 (if-else 분기문 제거!)
     // =========================================================================
     public async UniTask LoadDependenciesAsync(IEnumerable<string> labels, bool isGlobal = false, System.Action<string, float> onProgress = null)
-    {
+    {    
         var locationsHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
         await locationsHandle.ToUniTask();
 
-        if (locationsHandle.Status == AsyncOperationStatus.Succeeded)
+        if (locationsHandle.Status != AsyncOperationStatus.Succeeded) return;
+
+        var locations = locationsHandle.Result;
+        int totalCount = locations.Count;
+
+        for (int i = 0; i < totalCount; i++)
         {
-            var locations = locationsHandle.Result;
-            int totalCount = locations.Count;
+            var location = locations[i];
+            string key = location.PrimaryKey;
 
-            for (int i = 0; i < totalCount; i++)
+            Debug.Log($"로딩 키 : {key}");
+
+            // 이미 딕셔너리에 있으면 스킵 (중복 로드 방지)
+            if (_globalHandles.ContainsKey(key) || _sceneHandles.ContainsKey(key))
             {
-                var location = locations[i];
-                string key = location.PrimaryKey;
-
-                // [핵심] 딕셔너리에 넣지 않습니다! 단순히 메모리에 올리는 용도로 Object 캐싱만 합니다.
-                var handle = Addressables.LoadAssetAsync<Object>(location);
-
-                // 메모리에서 내려가지 않도록 리스트에 보관
-                if (isGlobal) _preloadedGlobalHandles.Add(handle);
-                else _preloadedSceneHandles.Add(handle);
-
-                while (!handle.IsDone)
-                {
-                    float overallProgress = (i + handle.PercentComplete) / totalCount;
-                    onProgress?.Invoke(key, overallProgress);
-                    await UniTask.Yield(PlayerLoopTiming.Update);
-                }
-
                 onProgress?.Invoke(key, (i + 1f) / totalCount);
+                continue;
             }
+
+            //  Object 타입으로 로드하되 딕셔너리에 저장
+            var handle = Addressables.LoadAssetAsync<Object>(location);
+
+            if (isGlobal) _globalHandles[key] = handle;
+            else _sceneHandles[key] = handle;
+
+            while (!handle.IsDone)
+            {
+                onProgress?.Invoke(key, (i + handle.PercentComplete) / totalCount);
+                await UniTask.Yield(PlayerLoopTiming.Update);
+            }
+
+            onProgress?.Invoke(key, (i + 1f) / totalCount);
         }
+
         Addressables.Release(locationsHandle);
     }
 
@@ -348,16 +260,6 @@ public class ResourceManager
             }
         }
         _sceneHandles.Clear();
-
-        // 2. 프리로드용 리스트 정리 (추가됨)
-        foreach (var handle in _preloadedSceneHandles)
-        {
-            if (handle.IsValid()) Addressables.Release(handle);
-        }
-        _preloadedSceneHandles.Clear();
-
-        // 동기 로드용 _resources 딕셔너리도 비워줍니다 (Resources 폴더 사용을 대비)
-        //_resources.Clear();
     }
 
 

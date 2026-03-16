@@ -19,151 +19,114 @@ public class UI_ItemInfo : UI_Base
     [SerializeField] Transform _mainStatParent;
     [SerializeField] Transform _subStatParent;
 
-    public override void Init()
+    private const int MAX_STAT_COUNT = 6;
+    private List<UI_MainStatInfo> _mainStatSlots = new();
+    private List<UI_SubStatInfo> _subStatSlots = new();
+
+    //  Init에서 최초 1회 생성
+    public override async void Init()
     {
-        
+        for (int i = 0; i < MAX_STAT_COUNT; i++)
+        {
+            var main = await Managers.UI.MakeSubItemAsync<UI_MainStatInfo>("UI_MainStatInfo", _mainStatParent);
+            main.gameObject.SetActive(false);
+            _mainStatSlots.Add(main);
+
+            var sub = await Managers.UI.MakeSubItemAsync<UI_SubStatInfo>("UI_SubStatInfo", _subStatParent);
+            sub.gameObject.SetActive(false);
+            _subStatSlots.Add(sub);
+        }
     }
 
     public void SetInfo(InventorySlot slotData)
     {
-        if(slotData.IsEquipment)
-            SetEquipmentInfo(slotData);
-        else
-            SetMaterialInfo(slotData);
+        if (slotData.IsEquipment) SetEquipmentInfo(slotData);
+        else SetMaterialInfo(slotData);
     }
 
     public void SetEquipmentInfo(InventorySlot inventorySlot)
     {
         SetIcon(inventorySlot.itemID, ItemCategory.Equipment).Forget();
-        SetMainStat(inventorySlot.EquipInstance).Forget();
-        SetSubStat(inventorySlot.EquipInstance).Forget();
-
         SetItemName(inventorySlot.itemID, ItemCategory.Equipment);
         SetDescription(inventorySlot.itemID, ItemCategory.Equipment);
         SetUpgradeLevel(inventorySlot.EquipInstance.UpgradeLevel);
         SetGrade(inventorySlot.itemID, ItemCategory.Equipment);
         SetTier(inventorySlot.itemID, ItemCategory.Equipment);
+
+        //  Destroy/생성 없이 SetActive만
+        SetMainStat(inventorySlot.EquipInstance);
+        SetSubStat(inventorySlot.EquipInstance);
     }
 
     public void SetMaterialInfo(InventorySlot inventorySlot)
     {
         SetIcon(inventorySlot.itemID, ItemCategory.Material).Forget();
-
         SetItemName(inventorySlot.itemID, ItemCategory.Material);
         SetDescription(inventorySlot.itemID, ItemCategory.Material);
         SetGrade(inventorySlot.itemID, ItemCategory.Material);
         SetTier(inventorySlot.itemID, ItemCategory.Material);
-
-
         _itemUpgradeLevel.text = "";
-        foreach (Transform child in _subStatParent)
-        {
-            Managers.Resource.Destroy(child.gameObject);
-        }
 
-        foreach (Transform child in _mainStatParent)
+        //  재료 아이템은 스탯 없으므로 전부 숨기기
+        _mainStatSlots.ForEach(s => s.gameObject.SetActive(false));
+        _subStatSlots.ForEach(s => s.gameObject.SetActive(false));
+    }
+
+    //  완전 동기 - Destroy/생성 없음
+    private void SetMainStat(EquipmentInstance instance)
+    {
+        var stats = instance.MainStats;
+        for (int i = 0; i < _mainStatSlots.Count; i++)
         {
-            Managers.Resource.Destroy(child.gameObject);
+            bool active = i < stats.Count;
+            _mainStatSlots[i].gameObject.SetActive(active);
+            if (active) _mainStatSlots[i].SetInfo(stats[i]);
+        }
+    }
+
+    private void SetSubStat(EquipmentInstance instance)
+    {
+        var stats = instance.SubStats;
+        for (int i = 0; i < _subStatSlots.Count; i++)
+        {
+            bool active = i < stats.Count;
+            _subStatSlots[i].gameObject.SetActive(active);
+            if (active) _subStatSlots[i].SetInfo(stats[i]);
         }
     }
 
     public async UniTask SetIcon(int itemID, ItemCategory category)
     {
-        Sprite icon = await Managers.Resource.LoadAsync<Sprite>(Managers.Data.GetItemData(itemID, category).IconKey);
-        
-        if (this == null || gameObject == null || !gameObject.activeInHierarchy)
-            return;
+        Sprite icon = await Managers.Resource.LoadAsync<Sprite>(
+            Managers.Data.GetItemData(itemID, category).IconKey, isGlobal: true);
 
+        if (this == null || !gameObject.activeInHierarchy) return;
         _itemIcon.sprite = icon;
     }
 
     public void SetItemName(int itemID, ItemCategory category)
-    {
-        _itemName.text = Managers.Data.GetItemData(itemID, category).Name;
-    }
+        => _itemName.text = Managers.Data.GetItemData(itemID, category).Name;
 
     public void SetDescription(int itemID, ItemCategory category)
-    {
-        _itemDescription.text = Managers.Data.GetItemData(itemID, category).Description;
-    }
+        => _itemDescription.text = Managers.Data.GetItemData(itemID, category).Description;
 
     public void SetUpgradeLevel(int upgradeLevel)
-    {
-        _itemUpgradeLevel.text = "+" + upgradeLevel.ToString();
-    }
+        => _itemUpgradeLevel.text = "+" + upgradeLevel;
 
-    public async UniTask SetMainStat(EquipmentInstance equipmentInstance)
-    {
-        foreach (Transform child in _mainStatParent)
-        {
-            Managers.Resource.Destroy(child.gameObject);
-        }
-
-        List<StatOption> mainStats = equipmentInstance.MainStats;
-
-        foreach (StatOption statOption in mainStats)
-        {
-            UI_MainStatInfo mainStatInfo = await Managers.UI.MakeSubItemAsync<UI_MainStatInfo>("UI_MainStatInfo", _mainStatParent);
-
-            if (this == null || gameObject == null || !gameObject.activeInHierarchy)
-                return;
-
-            if (mainStatInfo != null)
-            {
-                mainStatInfo.SetInfo(statOption);
-            }
-        }
-    }
-
-    public async UniTask SetSubStat(EquipmentInstance equipmentInstance)
-    {
-        foreach (Transform child in _subStatParent)
-        {
-            Managers.Resource.Destroy(child.gameObject);
-        }
-
-        List<StatOption> subStats = equipmentInstance.SubStats;
-
-        foreach (StatOption statOption in subStats)
-        {
-            UI_SubStatInfo subStatInfo = await Managers.UI.MakeSubItemAsync<UI_SubStatInfo>("UI_SubStatInfo", _subStatParent);
-            
-            if (this == null || gameObject == null || !gameObject.activeInHierarchy)
-                return;
-
-            if (subStatInfo != null)
-            {
-                subStatInfo.SetInfo(statOption);
-            }
-        }
-    }
-    
     public void SetGrade(int itemID, ItemCategory category)
     {
         ItemGrade grade = Managers.Data.GetItemData(itemID, category).Grade;
-
         _itemGrade.text = grade.ToString();
         _itemGrade.color = ColorDict.GetGradeColor(grade);
     }
-    
+
     public void SetTier(int itemID, ItemCategory category)
     {
         BaseItemData data = Managers.Data.GetItemData(itemID, category);
-
-        int tier = 0;
-        if (category == ItemCategory.Equipment)
-        {
-            EquipmentData equipData = data as EquipmentData;
-            tier = equipData.Tier;
-        }
-        else if(category == ItemCategory.Material)
-        {
-            MaterialData materialData = data as MaterialData;
-            tier = materialData.Tier;
-        }
-
+        int tier = data is EquipmentData eq ? eq.Tier
+                 : data is MaterialData mat ? mat.Tier : 0;
         _itemTier.text = $"Tier {tier}";
     }
 
-    
+
 }
