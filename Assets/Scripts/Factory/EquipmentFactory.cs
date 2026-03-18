@@ -43,16 +43,17 @@ public static class EquipmentFactory
         if (subPool == null || subPool.Entries.Count == 0) return;
 
         // 아이템 등급별 서브 스탯 개수 설정 (로스트아크나 원신 스타일)
-        int subStatCount = 0;
-        switch (data.Grade)
-        {
-            case ItemGrade.Common: subStatCount = 0; break;
-            case ItemGrade.Uncommon: subStatCount = 1; break;
-            case ItemGrade.Rare: subStatCount = 2; break;
-            case ItemGrade.Epic: subStatCount = 3; break;
-            case ItemGrade.Legendary: subStatCount = 4; break;
-            case ItemGrade.Mythic: subStatCount = 4; break; // Mythic은 수치가 더 높거나 고정옵일 수 있음
-        }
+        int subStatCount = Managers.Data.GetData<ItemGrade, GradeConfig>(data.Grade).InitialSubStatCount;
+
+        //switch (data.Grade)
+        //{
+        //    case ItemGrade.Common: subStatCount = 0; break;
+        //    case ItemGrade.Uncommon: subStatCount = 1; break;
+        //    case ItemGrade.Rare: subStatCount = 2; break;
+        //    case ItemGrade.Epic: subStatCount = 3; break;
+        //    case ItemGrade.Legendary: subStatCount = 4; break;
+        //    case ItemGrade.Mythic: subStatCount = 4; break; // Mythic은 수치가 더 높거나 고정옵일 수 있음
+        //}
 
         // 중복 스탯 방지를 위한 리스트 복사
         List<StatPoolEntry> availableEntries = new List<StatPoolEntry>(subPool.Entries);

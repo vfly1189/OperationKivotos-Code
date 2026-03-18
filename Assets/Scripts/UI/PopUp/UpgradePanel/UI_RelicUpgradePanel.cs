@@ -6,6 +6,7 @@ using TMPro;
 
 using UnityEngine;
 using UnityEngine.UI;
+using static WeaponUpgradeService;
 
 public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
 {
@@ -56,6 +57,12 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         _upgradeService.OnEquipmentSelected += OnEquipmentSelected;
         _upgradeService.OnMaterialSlotChanged += OnMaterialSlotChanged;
         _upgradeService.OnExpPreviewChanged += OnExpPreviewChanged;
+
+        // InitAsync() 내 Service 이벤트 구독 부분에 추가
+        _upgradeService.OnUpgradeExecuted += OnUpgradeExecuted;
+
+        // 버튼 이벤트 등록
+        _upgradeButton.onClick.AddListener(() => _upgradeService.ExecuteUpgrade());
 
         ResetItemInfo();
 
@@ -110,21 +117,21 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
 
     private async UniTask SetHavingRelicScrollView()
     {
+        foreach (UI_ItemSlot slot in _itemSlots)
+            Managers.Resource.Destroy(slot.gameObject);
+
+        _itemSlots.Clear(); // ← 추가
+
         InventorySlot[] relics = Managers.Inventory.Inventory[ItemCategory.Equipment];
-
-        if (relics.Length == 0)
-            Debug.Log($"장비 없음");
-
-
         foreach (InventorySlot relic in relics)
         {
             if (relic.IsEmpty) continue;
-
             UI_ItemSlot slot = await Managers.UI.MakeSubItemAsync<UI_ItemSlot>("UI_ItemSlot", _havingRelicScollView);
             slot.gameObject.SetActive(true);
+            slot.SetSubTextFormatter(ItemSlotSubText.UpgradeLevel);
+            slot.SetSubTextStyle(SlotSubTextStyle.UpgradeLevel);
             slot.SetInfo(relic, ItemCategory.Equipment, -1);
             slot.SetHandler(this);
-
             _itemSlots.Add(slot);
         }
     }
@@ -197,9 +204,24 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
     // 수신 후 UI 갱신
     private void OnExpPreviewChanged(ExpPreviewResult result)
     {
-        _itemUpgradeLevel.text = $"+{result.SimulatedLevel}";
-        _itemExpBar.value = (float)result.SimulatedExp / result.SimulatedRequireExp;
-        _itemExpText.text = $"{result.SimulatedExp} / {result.SimulatedRequireExp}";
+        _itemUpgradeLevel.text = $"+{result.SimulatedLevel}"; // 공통으로 빼기
+
+        int itemID = _upgradeService.SelectedEquipment.itemID;
+        ItemGrade grade = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Grade;
+        int maxLevel = Managers.Data.GetData<ItemGrade, GradeConfig>(grade).MaxLevel;
+
+        if (result.SimulatedLevel < maxLevel)
+        {
+            _itemExpText.text = $"{result.SimulatedExp} / {result.SimulatedRequireExp}";
+            _itemExpBar.value = (float)result.SimulatedExp / result.SimulatedRequireExp;
+        }
+        else
+        {
+            _itemExpText.text = "MAX LEVEL";
+            _itemExpBar.value = 0;
+        }
+
+        _consumeCreditNum.text = _upgradeService.CalcCredit(_upgradeService.SelectedEquipment.EquipInstance.UpgradeLevel, result.SimulatedLevel).ToString("N0");
     }
 
     // =========================================================
@@ -225,8 +247,21 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         _itemType.text = data.EquipPart;
         _itemTier.text = $"Tier {data.Tier}";
         _itemUpgradeLevel.text = $"+{slotData.EquipInstance.UpgradeLevel}";
-        _itemExpText.text = $"{slotData.EquipInstance.CurrentExp} / {slotData.EquipInstance.NextLevelRequireExp}";
-        _itemExpBar.value = (float)slotData.EquipInstance.CurrentExp / slotData.EquipInstance.NextLevelRequireExp;
+
+        ItemGrade grade = Managers.Data.GetItemData(slotData.itemID, ItemCategory.Equipment).Grade;
+        int maxLevel = Managers.Data.GetData<ItemGrade, GradeConfig>(grade).MaxLevel;
+
+        if (slotData.EquipInstance.UpgradeLevel == maxLevel)
+        {
+            _itemExpText.text = "MAX LEVEL";
+            _itemExpBar.value = 0;
+        }
+        else
+        {
+            _itemExpText.text = $"{slotData.EquipInstance.CurrentExp} / {slotData.EquipInstance.NextLevelRequireExp}";
+            _itemExpBar.value = (float)slotData.EquipInstance.CurrentExp / slotData.EquipInstance.NextLevelRequireExp;
+        }
+        
 
         // SetActive 토글만 (Destroy/생성 없음)
         RefreshMainStat(slotData.EquipInstance);
@@ -255,6 +290,21 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         }
     }
 
+    private void OnUpgradeExecuted(InventorySlot slot, UpgradeResult result)
+    {
+        // 아이템 정보 갱신
+        RefreshItemInfo(slot).Forget();
+        SetHavingRelicScrollView().Forget();
+
+
+        // 스크롤뷰 슬롯도 레벨 표시 갱신 (해당 슬롯 찾아서)
+        var uiSlot = _itemSlots.Find(s => s.CurrentSlotData == slot);
+        uiSlot?.SetInfo(slot, ItemCategory.Equipment, -1);
+
+        _upgradeButton.interactable = _upgradeService.CanUpgrade();
+    }
+
+
     //  인터페이스 구현은 void, 내부에서 async 메서드에 위임
     public void OnSlotDoubleClicked(UI_ItemSlot slot)
     {
@@ -275,6 +325,9 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         Managers.UI.HideItemTooltip();
     }
 
+
+
+
     private void OnDestroy()
     {
         _itemInfoCts?.Cancel();
@@ -287,6 +340,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
             _upgradeService.OnEquipmentSelected -= OnEquipmentSelected;
             _upgradeService.OnMaterialSlotChanged -= OnMaterialSlotChanged;
             _upgradeService.OnExpPreviewChanged -= OnExpPreviewChanged;
+            _upgradeService.OnUpgradeExecuted -= OnUpgradeExecuted;
         }
 
         foreach (var slot in _itemSlots)

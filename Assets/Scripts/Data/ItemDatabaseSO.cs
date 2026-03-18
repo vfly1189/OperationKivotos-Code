@@ -17,13 +17,23 @@ public enum EStatType
     EnergyRegen
 }
 
+public enum UpgradeBookID
+{
+    Small = 30003,
+    Medium,
+    Large
+}
+
 [System.Serializable]
 public class StatPoolEntry
 {
     public EStatType StatType;  // 어떤 스탯인가?
     public int Weight;          // 뽑힐 확률 가중치
     public float BaseValue;     // 기본 수치
-    public float UpgradeValue;  // 강화당 증가 수치
+    //public float UpgradeValue;  // 강화당 증가 수치
+
+    public float UpgradeMinValue;
+    public float UpgradeMaxValue;
 }
 
 [System.Serializable]
@@ -37,6 +47,13 @@ public class StatPoolData
 }
 #endregion
 
+[System.Serializable]
+public class GradeConfig
+{
+    public ItemGrade Grade;
+    public int MaxLevel;
+    public int InitialSubStatCount;
+}
 
 
 [System.Serializable]
@@ -107,6 +124,13 @@ public class EquipmentLevelExpData
     public int RequireExp;
 }
 
+[System.Serializable]
+public class EquipmentUpgradeCost
+{
+    public int Level;
+    public int EnhancementCost;
+}
+
 // 데이터베이스 통합 SO
 [CreateAssetMenu(fileName = "ItemDatabase", menuName = "Data/ItemDatabase")]
 public class ItemDatabaseSO : ScriptableObject, IDataCacheable
@@ -118,7 +142,8 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
     public List<EquipmentDecompositionData> DecompositionData = new List<EquipmentDecompositionData>();
     public List<EquipmentUpgradeBookExpData> UpgradeBookExpData = new List<EquipmentUpgradeBookExpData>();
     public List<EquipmentLevelExpData> EquipmentLevelExpData = new List<EquipmentLevelExpData>();
-
+    public List<EquipmentUpgradeCost> EquipmentUpgradeCost = new List<EquipmentUpgradeCost>();
+    public List<GradeConfig> GradeConfigData = new List<GradeConfig>();
 
     // List를 Dictionary로 변환해서 넘겨주는 헬퍼 함수들
     public Dictionary<int, EquipmentData> MakeEquipDict()
@@ -169,6 +194,21 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
         return dict;
     }
 
+    public Dictionary<int, EquipmentUpgradeCost> MakeEquipmentUpgradeCostDict()
+    {
+        Dictionary<int, EquipmentUpgradeCost> dict = new Dictionary<int, EquipmentUpgradeCost>();
+        foreach (var item in EquipmentUpgradeCost) dict[item.Level] = item;
+        return dict;
+    }
+
+    public Dictionary<ItemGrade, GradeConfig> MakeGradeConfigDict()
+    {
+        Dictionary<ItemGrade, GradeConfig> dict = new Dictionary<ItemGrade, GradeConfig>();
+        foreach (var item in GradeConfigData) dict[item.Grade] = item;
+        return dict;
+    }
+
+
     // IDataCacheable 구현부: DataManager가 이 함수를 호출해줌
     public void CacheData(Dictionary<Type, object> dataDicts)
     {
@@ -179,5 +219,7 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
         dataDicts[typeof(EquipmentDecompositionData)] = MakeDecompDict();
         dataDicts[typeof(EquipmentUpgradeBookExpData)] = MakeBookExpDict();
         dataDicts[typeof(EquipmentLevelExpData)] = MakeEquipmentLevelExpDict();
+        dataDicts[typeof(EquipmentUpgradeCost)] = MakeEquipmentUpgradeCostDict();
+        dataDicts[typeof(GradeConfig)] = MakeGradeConfigDict();
     }
 }

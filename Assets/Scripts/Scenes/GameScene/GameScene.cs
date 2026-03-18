@@ -68,7 +68,7 @@ public class GameScene : BaseScene
         //Managers.Inventory.DropEquipment(10018);
         //Managers.Inventory.DropEquipment(10019);
 
-        for(int i=0; i<10; i++)
+        for(int i=0; i<40; i++)
         {
             int randNum = Random.Range(10000, 10090);
             Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(randNum));

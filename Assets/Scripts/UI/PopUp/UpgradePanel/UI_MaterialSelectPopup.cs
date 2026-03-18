@@ -1,15 +1,10 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum UpgradeBookID
-{
-    Small = 30003,
-    Medium,
-    Large
-}
 
 
 public class UI_MaterialSelectPopup : UI_PopUp, IItemSlotHandler
@@ -54,6 +49,19 @@ public class UI_MaterialSelectPopup : UI_PopUp, IItemSlotHandler
         {
             var uiSlot = await Managers.UI.MakeSubItemAsync<UI_ItemSlot>("UI_ItemSlot", _contents);
             uiSlot.gameObject.SetActive(true);
+
+            ItemCategory category = slot.IsEquipment ? ItemCategory.Equipment : ItemCategory.Material;
+            var capturedSlot = slot;
+            // 카테고리 당 한 번만 결정  루프 밖으로
+            (Func<InventorySlot, string> formatter, SlotSubTextStyle style) = category switch
+            {
+                ItemCategory.Equipment => (ItemSlotSubText.UpgradeLevel, SlotSubTextStyle.UpgradeLevel),
+                ItemCategory.Material => (ItemSlotSubText.EnhanceMaterial(() => _upgradeService.GetSelectedCount(capturedSlot)), SlotSubTextStyle.MaterialSelect),         
+                _ => (ItemSlotSubText.None, SlotSubTextStyle.Default)
+            };
+            uiSlot.SetSubTextFormatter(formatter);
+            uiSlot.SetSubTextStyle(style);
+
             uiSlot.SetInfo(slot, slot.IsEquipment ? ItemCategory.Equipment : ItemCategory.Material, -1);
             uiSlot.SetHandler(this);
             _slotMap[slot] = uiSlot;
@@ -64,10 +72,12 @@ public class UI_MaterialSelectPopup : UI_PopUp, IItemSlotHandler
     // Service 이벤트 수신 → 팝업 내 취소버튼 갱신
     private void OnMaterialSlotChanged(int index, MaterialEntry entry)
     {
+        // 모든 슬롯의 텍스트 갱신 (선택수 변화 반영)
+        foreach (var uiSlot in _uiSlots)
+            uiSlot.RefreshSubText();
+
         RefreshCancelButtons();
     }
-
-
     private void RefreshCancelButtons()
     {
         foreach (var (inventorySlot, uiSlot) in _slotMap)

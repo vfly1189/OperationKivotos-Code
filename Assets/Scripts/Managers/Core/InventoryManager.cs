@@ -340,4 +340,18 @@ public class InventoryManager
         OnInventoryUpdated?.Invoke(ItemCategory.Material);
         return true;
     }
+
+    public bool RemoveItem(ItemCategory category, int itemID)
+    {
+        foreach (var slot in Inventory[category])
+        {
+            if (!slot.IsEmpty && slot.itemID == itemID)
+            {
+                slot.Clear();
+            }
+        }
+
+        OnInventoryUpdated?.Invoke(category); // ¡ç Material ¡æ category·Î ¼öÁ¤
+        return true;
+    }
 }

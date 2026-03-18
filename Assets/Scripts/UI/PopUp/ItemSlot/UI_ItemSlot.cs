@@ -30,8 +30,8 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     // _slotIndex의 getter를 만들어 외부에서 읽을 수 있게 합니다.
     public int SlotIndex => _slotIndex;
 
+    private Func<InventorySlot, string> _subTextFormatter;
 
- 
     public override void Init()
     {
         if (_cancelButton != null) _cancelButton.gameObject.SetActive(false);
@@ -70,9 +70,16 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
         BaseItemData itemData = Managers.Data.GetItemData(slotData.itemID, category);
         if (itemData != null)
         {
-            SetStackText(slotData.Amount);
             SetItemIcon(itemData.IconKey);
             SetGradeBackGround(itemData.Grade);
+
+            //if (slotData.IsEquipment)
+            //    SetEquipmentUpgradeLevelText(slotData.EquipInstance.UpgradeLevel);
+            //else
+            //    SetStackText(slotData.Amount);
+
+            RefreshSubText(slotData); // ← 분기 제거, 포맷터 호출로 일원화
+
         }
     }
 
@@ -88,6 +95,13 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
             _stackText.gameObject.SetActive(false);
         }
     }
+
+    private void SetEquipmentUpgradeLevelText(int upgradeLevel)
+    {
+        _stackText.gameObject.SetActive(true);
+        _stackText.text = "+" + upgradeLevel.ToString();  
+    }
+
 
     private async void SetItemIcon(string iconKey)
     {
@@ -112,6 +126,41 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
         if (bgSprite != null && _itemGradeBackGround != null)
         {
             _itemGradeBackGround.sprite = bgSprite;
+        }
+    }
+
+    public void SetSubTextFormatter(Func<InventorySlot, string> formatter)
+    {
+        _subTextFormatter = formatter;
+    }
+
+    public void SetSubTextStyle(SlotSubTextStyle style)
+    {
+        _stackText.fontSize = style.FontSize;
+        _stackText.alignment = style.Alignment;
+        _stackText.color = style.Color;
+    }
+
+    // 외부에서 재호출도 가능 (예: 선택수 변경 시 갱신)
+    public void RefreshSubText(InventorySlot slotData = null)
+    {
+        var data = slotData ?? CurrentSlotData;
+        if (data == null) return;
+
+        if (_subTextFormatter != null)
+        {
+            string text = _subTextFormatter(data);
+            bool hasText = !string.IsNullOrEmpty(text);
+            _stackText.gameObject.SetActive(hasText);
+            if (hasText) _stackText.text = text;
+        }
+        else
+        {
+            // 포맷터 없으면 기본 동작 유지 (하위 호환)
+            if (data.IsEquipment)
+                SetEquipmentUpgradeLevelText(data.EquipInstance.UpgradeLevel);
+            else
+                SetStackText(data.Amount);
         }
     }
 

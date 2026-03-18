@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,7 +11,7 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
 
     private ItemCategory _currentCategory = ItemCategory.Equipment;
     private List<UI_ItemSlot> _activeSlots = new List<UI_ItemSlot>();
-
+    private bool _isRefreshing = false;
     public override void Init()
     {
         base.Init();
@@ -43,10 +44,11 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
     private async void RefreshUI(ItemCategory category)
     {
         if (_currentCategory != category) return;
+        if (_isRefreshing) return; // 중복 진입 차단
+        _isRefreshing = true;
 
         var invenArray = Managers.Inventory.Inventory[category];
 
-        // 최초 1회만 슬롯 미리 생성 (오브젝트 풀링)
         if (_activeSlots.Count == 0)
         {
             for (int i = 0; i < Managers.Inventory._maxSlotCount; i++)
@@ -56,26 +58,40 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
             }
         }
 
-        // 배열 데이터를 기반으로 갱신
+        (Func<InventorySlot, string> formatter, SlotSubTextStyle style) = category switch
+        {
+            ItemCategory.Equipment => (ItemSlotSubText.UpgradeLevel, SlotSubTextStyle.UpgradeLevel),
+            ItemCategory.Material => (ItemSlotSubText.StackCount, SlotSubTextStyle.DefaultMaterial),
+            ItemCategory.Consumable => (ItemSlotSubText.StackCount, SlotSubTextStyle.DefaultMaterial),
+            _ => (ItemSlotSubText.None, SlotSubTextStyle.Default)
+        };
+
         for (int i = 0; i < Managers.Inventory._maxSlotCount; i++)
         {
             _activeSlots[i].gameObject.SetActive(true);
+            _activeSlots[i].SetSubTextFormatter(formatter);
+            _activeSlots[i].SetSubTextStyle(style);
             _activeSlots[i].SetInfo(invenArray[i], category, i);
-
-            _activeSlots[i].SetHandler(this);         
+            _activeSlots[i].SetHandler(this);
         }
+
+        _isRefreshing = false;
+    }
+
+    // 인벤토리에서 단순 클릭은 툴팁 갱신 정도
+    public void OnSlotClicked(UI_ItemSlot slot)
+    {
+        // 필요 없으면 빈 구현이라도 명시
     }
 
     //인벤토리에서 더블클릭 = 장착
-    public async void OnSlotDoubleClicked(UI_ItemSlot slot)
+    public void OnSlotDoubleClicked(UI_ItemSlot slot)
     {
         if (slot.CurrentCategory == ItemCategory.Equipment)
         {
             Managers.Equipment.Equip(slot.SlotIndex);
             Managers.UI.RefreshItemTooltip();
         }
-
-        await UniTask.CompletedTask; 
     }
 
     //인벤토리에서 드롭 = 슬롯 스왑
@@ -101,22 +117,19 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
 
     private void OnDestroy()
     {
-        // 이벤트 구독 해제 필수
         if (Managers.Inventory != null)
-        {
             Managers.Inventory.OnInventoryUpdated -= RefreshUI;
-        }
-        // 2. 풀링되는 슬롯들의 콜백 초기화 (메모리 누수 및 오작동 방지)
-        if (_activeSlots != null)
+
+        if (_activeSlots == null) return;
+
+        foreach (var slot in _activeSlots)
         {
-            foreach (UI_ItemSlot slot in _activeSlots)
-            {
-                if (slot != null)
-                {
-                    slot.SetHandler(null); //풀 반환 시 반드시 초기화
-                }
-                Managers.Resource.Destroy(slot.gameObject);
-            }
+            if (slot != null) slot.SetHandler(null);
         }
+        foreach (var slot in _activeSlots)
+        {
+            if (slot != null) Managers.Resource.Destroy(slot.gameObject);
+        }
+        _activeSlots.Clear();
     }
 }

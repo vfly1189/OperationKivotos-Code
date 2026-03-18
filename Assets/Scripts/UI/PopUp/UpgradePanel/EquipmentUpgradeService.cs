@@ -1,9 +1,23 @@
 using Cysharp.Threading.Tasks.Triggers;
 using NPOI.OpenXmlFormats.Dml;
+using Org.BouncyCastle.Bcpg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static WeaponUpgradeService;
+
+public readonly struct UpgradeResult
+{
+    public readonly int PrevLevel;
+    public readonly int NewLevel;
+
+    public UpgradeResult(int prev, int next)
+    {
+        PrevLevel = prev;
+        NewLevel = next;
+    }
+}
 
 public class EquipmentUpgradeService
 {
@@ -20,14 +34,26 @@ public class EquipmentUpgradeService
     private readonly MaterialEntry[] _materialSlots;
     public IReadOnlyList<MaterialEntry> MaterialSlots => _materialSlots;
 
-    public event Action<ExpPreviewResult> OnExpPreviewChanged;
+    private readonly int[] _requireAccumulatedCost = new int[16];
 
+    public event Action<ExpPreviewResult> OnExpPreviewChanged;
+    public event Action<InventorySlot, UpgradeResult> OnUpgradeExecuted;
     //생성자
     public EquipmentUpgradeService()
     {
         _materialSlots = new MaterialEntry[MAX_MATERIAL_SLOTS];
         for (int i = 0; i < MAX_MATERIAL_SLOTS; i++)
             _materialSlots[i] = new MaterialEntry();
+
+        for(int i=1; i<=15; i++)
+        {
+            _requireAccumulatedCost[i] = _requireAccumulatedCost[i - 1] + Managers.Data.GetData<int, EquipmentUpgradeCost>(i).EnhancementCost;
+        }
+    }
+
+    public int CalcCredit(int curLevel, int targetLevel)
+    {
+        return _requireAccumulatedCost[targetLevel] - _requireAccumulatedCost[curLevel];
     }
 
     // =========================================================
@@ -45,6 +71,9 @@ public class EquipmentUpgradeService
     // =========================================================
     public bool TryAddMaterial(InventorySlot slot)
     {
+        if (!CanAddMoreMaterial()) return false;
+
+
         if (MaterialEntry.IsUpgradeBook(slot.itemID))
         {
             // 같은 책 타입 이미 있으면 카운트++
@@ -112,6 +141,32 @@ public class EquipmentUpgradeService
         return -1;
     }
 
+    private bool CanAddMoreMaterial()
+    {
+        if (SelectedEquipment != null)
+        {
+            int itemID = SelectedEquipment.itemID;
+
+            ItemGrade grade = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Grade;
+
+            return CalculatePreviewExp().SimulatedLevel < Managers.Data.GetData<ItemGrade, GradeConfig>(grade).MaxLevel;
+        }
+        else
+            return false;
+    }
+
+
+    public int GetSelectedCount(InventorySlot slot)
+    {
+        int count = 0;
+        foreach (MaterialEntry entry in _materialSlots) // 내부 재료 리스트
+        {
+            if (entry != null && entry.Slot == slot)
+                count+=entry.Count;
+        }
+        return count;
+    }
+
     public void ClearMaterials()
     {
         for (int i = 0; i < MAX_MATERIAL_SLOTS; i++)
@@ -152,7 +207,7 @@ public class EquipmentUpgradeService
 
         int totalGainExp = 0;
 
-        foreach (var entry in _materialSlots)
+        foreach (MaterialEntry entry in _materialSlots)
         {
             if (entry.IsEmpty) continue;
 
@@ -174,7 +229,20 @@ public class EquipmentUpgradeService
         {
             simulatedExp -= simulatedRequire;
             simulatedLevel++;
-            simulatedRequire = Managers.Data.GetData<int, EquipmentLevelExpData>(simulatedLevel).RequireExp; // 데이터 참조
+
+            // 수정
+            int itemID = SelectedEquipment.itemID;
+            ItemGrade grade = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Grade;
+            int maxLevel = Managers.Data.GetData<ItemGrade, GradeConfig>(grade).MaxLevel;
+
+            if (simulatedLevel >= maxLevel)
+            {
+                break;
+            }
+            else 
+            {
+                simulatedRequire = Managers.Data.GetData<int, EquipmentLevelExpData>(simulatedLevel + 1).RequireExp; // 데이터 참조              
+            }       
         }
 
         return new ExpPreviewResult(
@@ -190,7 +258,9 @@ public class EquipmentUpgradeService
         if (entry.IsBook)
             return Managers.Data.GetData<int, EquipmentUpgradeBookExpData>(entry.Slot.itemID).ExpValue;
         else
-            return GetEquipmentDecompositionExp(entry.Slot);
+        {
+            return GetEquipmentDecompositionExp(entry.Slot) + entry.Slot.EquipInstance.CurrentExp;
+        }
     }
 
     private int GetEquipmentDecompositionExp(InventorySlot slot)
@@ -200,12 +270,95 @@ public class EquipmentUpgradeService
 
         EquipmentDecompositionData decomposeData = Managers.Data.GetData<int, EquipmentDecompositionData>(data.Tier);
         int mat1Exp = Managers.Data.GetData<int, EquipmentUpgradeBookExpData>((int)UpgradeBookID.Small).ExpValue;
-        int mat2Exp = Managers.Data.GetData<int, EquipmentUpgradeBookExpData>((int)UpgradeBookID.Small).ExpValue;
-        int mat3Exp = Managers.Data.GetData<int, EquipmentUpgradeBookExpData>((int)UpgradeBookID.Small).ExpValue;
+        int mat2Exp = Managers.Data.GetData<int, EquipmentUpgradeBookExpData>((int)UpgradeBookID.Medium).ExpValue;
+        int mat3Exp = Managers.Data.GetData<int, EquipmentUpgradeBookExpData>((int)UpgradeBookID.Large).ExpValue;
         return decomposeData.Mat1_Count * mat1Exp + decomposeData.Mat2_Count * mat2Exp + decomposeData.Mat3_Count * mat3Exp;
     }
 
+    public bool ExecuteUpgrade()
+    {
+        if (!CanUpgrade()) return false;
+
+        var preview = CalculatePreviewExp();
+        var instance = SelectedEquipment.EquipInstance;
+
+        int currentLevel = instance.UpgradeLevel;
+        int targetLevel = preview.SimulatedLevel;
+
+        for (int lv = currentLevel + 1; lv <= targetLevel; lv++)
+        {
+            GrowMainStat(instance);
+
+            if (lv % 3 == 0 && instance.SubStats.Count > 0)
+                GrowRandomSubStat(instance);
+        }
+
+        int creditCost = CalcCredit(currentLevel, targetLevel);
+        if (!Managers.Wallet.ConsumeCurrency(CurrencyType.Credit, creditCost)) return false;
+
+        instance.UpgradeLevel = preview.SimulatedLevel;
+        instance.CurrentExp = preview.SimulatedExp;
+        instance.NextLevelRequireExp = preview.SimulatedRequireExp;
+
+        ConsumeUsedMaterials();
+        ClearMaterials();
+
+        OnUpgradeExecuted?.Invoke(SelectedEquipment, new UpgradeResult(currentLevel, targetLevel));
+        return true;
+    }
+
+    private void ConsumeUsedMaterials()
+    {
+        foreach (MaterialEntry entry in _materialSlots)
+        {
+            if (entry.IsEmpty) continue;
+
+            if (entry.IsBook)
+                Managers.Inventory.ConsumeMaterial(entry.Slot.itemID, entry.Count);
+            else
+                Managers.Inventory.RemoveItem(ItemCategory.Equipment, entry.Slot.itemID);
+        }
+    }
+
+    private void GrowMainStat(EquipmentInstance instance)
+    {
+        if (instance.MainStats.Count == 0) return;
+
+        var mainStat = instance.MainStats[0];
+        EquipmentData equipData = Managers.Data.GetData<int, EquipmentData>(SelectedEquipment.itemID);
+        StatPoolData pool = Managers.Data.GetData<int, StatPoolData>(equipData.MainStatPoolID);
+        StatPoolEntry entry = pool?.Entries.Find(e => e.StatType == mainStat.StatType);
+
+        // MainStat은 Min = Max = 고정값이므로 MinValue 그대로 사용
+        if (entry != null)
+            mainStat.Value += entry.UpgradeMinValue;
+    }
+
+    private void GrowRandomSubStat(EquipmentInstance instance)
+    {
+        int idx = UnityEngine.Random.Range(0, instance.SubStats.Count);
+        StatOption target = instance.SubStats[idx];
+
+        EquipmentData equipData = Managers.Data.GetData<int, EquipmentData>(SelectedEquipment.itemID);
+        StatPoolData pool = Managers.Data.GetData<int, StatPoolData>(equipData.SubStatPoolID);
+        StatPoolEntry entry = pool?.Entries.Find(e => e.StatType == target.StatType);
+
+        List<float> values = new List<float>();
+        values.Add(entry.UpgradeMinValue);
+        values.Add(entry.UpgradeMaxValue);
+        values.Add((entry.UpgradeMinValue + entry.UpgradeMinValue) / 2f);
+
+        int valueIdx = UnityEngine.Random.Range(0, values.Count);
+
+        if (entry != null)
+        {
+            target.Value += values[valueIdx];
+            target.UpgradeCount++;
+        }
+    }
 
     public bool CanUpgrade()
         => SelectedEquipment != null && _materialSlots.Any(s => !s.IsEmpty);
+
+
 }

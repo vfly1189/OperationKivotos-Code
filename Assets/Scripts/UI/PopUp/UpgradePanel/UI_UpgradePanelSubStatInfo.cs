@@ -28,7 +28,7 @@ public class UI_UpgradePanelSubStatInfo : UI_Base
         if (stat.UpgradeCount > 0)
         {
             _upgradeCountObject.SetActive(true);
-            _upgradeCount.text = $"+{stat.UpgradeCount}";
+            _upgradeCount.text = $"{stat.UpgradeCount}";
         }
         else
         {

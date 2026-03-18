@@ -31,6 +31,9 @@ public class ExcelImporter : EditorWindow
             List<EquipmentDecompositionData> decompositionDatas = new List<EquipmentDecompositionData>();
             List<EquipmentUpgradeBookExpData> equipmentUpgradeBookExpDatas = new List<EquipmentUpgradeBookExpData>();
             List<EquipmentLevelExpData> equipmentLevelExpData = new List<EquipmentLevelExpData>();
+            List<EquipmentUpgradeCost> equipmentUpgradeCostData = new List<EquipmentUpgradeCost>();
+
+            List<GradeConfig> gradeConfigData = new List<GradeConfig>();
 
             // 1. Equipment 시트 파싱 (수정됨)
             ISheet equipSheet = book.GetSheet("Equipment");
@@ -99,7 +102,9 @@ public class ExcelImporter : EditorWindow
 
                     entry.Weight = (int)(row.GetCell(2)?.NumericCellValue ?? 0);
                     entry.BaseValue = (float)(row.GetCell(3)?.NumericCellValue ?? 0f);
-                    entry.UpgradeValue = (float)(row.GetCell(4)?.NumericCellValue ?? 0f);
+                    entry.UpgradeMinValue = (float)(row.GetCell(4)?.NumericCellValue ?? 0f);
+                    entry.UpgradeMaxValue = (float)(row.GetCell(5)?.NumericCellValue ?? 0f);
+
 
                     // 해당 Pool의 리스트에 추가
                     poolDict[poolId].Entries.Add(entry);
@@ -221,9 +226,55 @@ public class ExcelImporter : EditorWindow
                 }
             }
 
+            // 8. EquipmentUpgradeCostData 시트 파싱 (기존과 동일)
+            ISheet equipmentUpgradeCostSheet = book.GetSheet("EquipmentUpgradeCost");
+            if (equipmentUpgradeCostSheet != null)
+            {
+                for (int i = 1; i <= equipmentUpgradeCostSheet.LastRowNum; i++)
+                {
+                    IRow row = equipmentUpgradeCostSheet.GetRow(i);
+                    if (row == null || row.GetCell(0) == null || row.GetCell(0).CellType == CellType.Blank)
+                        continue;
+
+                    EquipmentUpgradeCost data = new EquipmentUpgradeCost();
+                    data.Level = (int)row.GetCell(0).NumericCellValue;
+                    data.EnhancementCost = (int)row.GetCell(1).NumericCellValue;
+
+                    equipmentUpgradeCostData.Add(data);
+                }
+            }
+
+            // 9. GradeConfig 시트 파싱 (기존과 동일)
+            ISheet gradeConfigSheet = book.GetSheet("GradeConfig");
+            if (gradeConfigSheet != null)
+            {
+                for (int i = 1; i <= gradeConfigSheet.LastRowNum; i++)
+                {
+                    IRow row = gradeConfigSheet.GetRow(i);
+                    if (row == null || row.GetCell(0) == null || row.GetCell(0).CellType == CellType.Blank)
+                        continue;
+
+                    GradeConfig data = new GradeConfig();
+
+                    string gradeTypeStr = GetCellString(row.GetCell(0));
+
+                    if (Enum.TryParse(gradeTypeStr, true, out ItemGrade parsedType))
+                        data.Grade = parsedType;
+                    else
+                        Debug.LogWarning($"[StatPool] 알 수 없는 StatType: {data.Grade} (Row: {i})");
+
+                    data.MaxLevel = (int)row.GetCell(1).NumericCellValue;
+                    data.InitialSubStatCount = (int)row.GetCell(2).NumericCellValue;
+
+
+                    gradeConfigData.Add(data);
+                }
+            }
+
             SaveToScriptableObject(
                 equipList, consumeList, matList, 
-                statPoolList, decompositionDatas, equipmentUpgradeBookExpDatas, equipmentLevelExpData
+                statPoolList, decompositionDatas, equipmentUpgradeBookExpDatas, equipmentLevelExpData, 
+                equipmentUpgradeCostData, gradeConfigData
                 ); // 파라미터 추가
         }
     }
@@ -264,7 +315,8 @@ public class ExcelImporter : EditorWindow
     private static void SaveToScriptableObject(
         List<EquipmentData> equips, List<ConsumableData> consumes, List<MaterialData> mats, 
         List<StatPoolData> statPools, List<EquipmentDecompositionData> equipmentDecompositionDatas,
-        List<EquipmentUpgradeBookExpData> equipmentUpgradeBookExpDatas, List<EquipmentLevelExpData> equipmentLevelExpDatas)
+        List<EquipmentUpgradeBookExpData> equipmentUpgradeBookExpDatas, List<EquipmentLevelExpData> equipmentLevelExpDatas,
+        List<EquipmentUpgradeCost> equipmentUpgradeCostData, List<GradeConfig> gradeConfigData)
     {
         string assetPath = "Assets/Resources_moved/Data/ItemDatabase.asset";
         if (!Directory.Exists(Application.dataPath + "/Resources_moved/Data"))
@@ -286,6 +338,8 @@ public class ExcelImporter : EditorWindow
         database.DecompositionData = equipmentDecompositionDatas;
         database.UpgradeBookExpData = equipmentUpgradeBookExpDatas;
         database.EquipmentLevelExpData = equipmentLevelExpDatas;
+        database.EquipmentUpgradeCost = equipmentUpgradeCostData;
+        database.GradeConfigData = gradeConfigData;
 
         EditorUtility.SetDirty(database);
         AssetDatabase.SaveAssets();
@@ -296,7 +350,8 @@ public class ExcelImporter : EditorWindow
             $"소모품: {consumes.Count}개, 재료: {mats.Count}개," +
             $"장비분해 정보: {equipmentDecompositionDatas.Count}개," +
             $"장비강화재료 정보: {equipmentUpgradeBookExpDatas.Count}개," +
-            $"장비 강화레벨 별 경험치 : {equipmentLevelExpDatas.Count}개 변환 완료!"
+            $"장비 강화레벨 별 경험치 : {equipmentLevelExpDatas.Count}개," +
+            $"장비 레벨별 소모 비용 : {equipmentUpgradeCostData.Count}개 변환 완료!"
             );
     }
 }

@@ -12,6 +12,7 @@ public class ExpPreviewResult
                                      // → 경험치 바 현재값에 사용
     public int SimulatedRequireExp { get; } // 다음 레벨까지 필요 경험치
                                             // → 경험치 바 최대값에 사용
+    
 
     public static readonly ExpPreviewResult Empty = new ExpPreviewResult(0, 0, 0, 1);
 
