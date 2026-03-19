@@ -73,14 +73,17 @@ public class GameScene : BaseScene
             int randNum = Random.Range(10000, 10090);
             Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(randNum));
         }
-
+        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
+        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
+        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
+        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
         ////Managers.Inventory.AddItem(20000, ItemCategory.Consumable, 10);
         Managers.Inventory.AddItem(30000, ItemCategory.Material, 9999);
         Managers.Inventory.AddItem(30001, ItemCategory.Material, 9999);
         Managers.Inventory.AddItem(30002, ItemCategory.Material, 9999);
-        Managers.Inventory.AddItem(30003, ItemCategory.Material, 9999);
-        Managers.Inventory.AddItem(30004, ItemCategory.Material, 9999);
-        Managers.Inventory.AddItem(30005, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30003, ItemCategory.Material, 1000);
+        Managers.Inventory.AddItem(30004, ItemCategory.Material, 1000);
+        Managers.Inventory.AddItem(30005, ItemCategory.Material, 1000);
         Managers.Inventory.AddItem(30000, ItemCategory.Material, 500);
         //Managers.Inventory.AddItem(30002, ItemCategory.Material, 50);
         Debug.Log("GameScene Init Complete");

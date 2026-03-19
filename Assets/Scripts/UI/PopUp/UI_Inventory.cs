@@ -16,11 +16,12 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
     {
         base.Init();
 
+        ItemCategory[] tabCategories = { ItemCategory.Equipment, ItemCategory.Consumable, ItemCategory.Material };
         // 1. 탭 버튼 이벤트 연결
         for (int i = 0; i < _tabButtons.Length; i++)
         {
             int index = i;
-            _tabButtons[i].onClick.AddListener(() => OnClickTab((ItemCategory)index));
+            _tabButtons[i].onClick.AddListener(() => OnClickTab(tabCategories[index]));
         }
 
         // 2. InventoryManager의 갱신 이벤트 구독

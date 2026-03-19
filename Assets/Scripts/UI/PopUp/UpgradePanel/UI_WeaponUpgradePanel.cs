@@ -123,9 +123,11 @@ public class UI_WeaponUpgradePanel : UI_Base
         }
 
         int weaponLevel = selected.Stat.WeaponLevel;
-        int maxWeaponLevel = weaponData.levelStats != null && weaponData.levelStats.Length > 0
-            ? weaponData.levelStats.Length
-            : 25;
+        //int maxWeaponLevel = weaponData.levelStats != null && weaponData.levelStats.Length > 0
+        //    ? weaponData.levelStats.Length
+        //    : 25;
+
+        int maxWeaponLevel = _upgradeService.GetMaxLevel(selected);
 
         bool isMaxLevel = weaponLevel >= maxWeaponLevel;
 

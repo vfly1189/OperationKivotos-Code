@@ -25,7 +25,7 @@ public class WalletManager
 
         // TODO: Managers.Data.Load() 같은 곳에서 저장된 재화 불러오기
         // 임시로 테스트용 지급
-        AddCurrency(CurrencyType.Credit, 50000000);
+        AddCurrency(CurrencyType.Credit, 5000);
     }
 
     // 재화 확인
@@ -80,5 +80,11 @@ public class WalletManager
             return true;
         }
         return false;
+    }
+
+    public bool CanConsumeCurreny(CurrencyType type, int amount)
+    {
+        if (_currencies[type] >= amount) return true;
+        else return false;
     }
 }

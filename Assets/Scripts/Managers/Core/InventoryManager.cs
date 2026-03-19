@@ -341,17 +341,19 @@ public class InventoryManager
         return true;
     }
 
-    public bool RemoveItem(ItemCategory category, int itemID)
+    public void RemoveSlot(InventorySlot targetSlot)
     {
-        foreach (var slot in Inventory[category])
+        var equips = Inventory[ItemCategory.Equipment];
+        for (int i = 0; i < equips.Length; i++)
         {
-            if (!slot.IsEmpty && slot.itemID == itemID)
+            if (equips[i] == targetSlot)
             {
-                slot.Clear();
+                equips[i] = new InventorySlot(); // 해당 슬롯만 초기화
+                OnInventoryUpdated?.Invoke(ItemCategory.Equipment);
+                return;
             }
         }
-
-        OnInventoryUpdated?.Invoke(category); // ← Material → category로 수정
-        return true;
     }
+
+    
 }

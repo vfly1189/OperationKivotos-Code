@@ -120,7 +120,7 @@ public class EquipmentUpgradeBookExpData
 [System.Serializable]
 public class EquipmentLevelExpData
 {
-    public int Level;  // Àç·á ID (30003, 30004, 30005)
+    public int Level;  
     public int RequireExp;
 }
 

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class WeaponUpgradeService
 {
-    const int MAX_WEPAON_LEVEL = 25;
+    const int MAX_WEAPON_LEVEL = 25;
 
     public enum UpgradeResult
     {
@@ -13,7 +13,7 @@ public class WeaponUpgradeService
     public UpgradeResult TryUpgrade(BaseCharacter target)
     {
         int currentLevel = target.Stat.WeaponLevel;
-        if (currentLevel >= MAX_WEPAON_LEVEL) return UpgradeResult.AlreadyMaxLevel;
+        if (currentLevel >= MAX_WEAPON_LEVEL) return UpgradeResult.AlreadyMaxLevel;
 
         int targetLevel = currentLevel + 1;
 
@@ -64,4 +64,7 @@ public class WeaponUpgradeService
 
         return true;
     }
+
+    public int GetMaxLevel(BaseCharacter target)
+    => target.Stat.WeaponData?.levelStats?.Length ?? MAX_WEAPON_LEVEL;
 }

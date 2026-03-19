@@ -221,7 +221,14 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
             _itemExpBar.value = 0;
         }
 
-        _consumeCreditNum.text = _upgradeService.CalcCredit(_upgradeService.SelectedEquipment.EquipInstance.UpgradeLevel, result.SimulatedLevel).ToString("N0");
+        int requireCredit = _upgradeService.CalcCredit(_upgradeService.SelectedEquipment.EquipInstance.UpgradeLevel, result.SimulatedLevel);
+
+        _consumeCreditNum.text = requireCredit.ToString("N0");
+
+        if (!Managers.Wallet.CanConsumeCurreny(CurrencyType.Credit, requireCredit))
+            _consumeCreditNum.color = Color.red;     
+        else
+            _consumeCreditNum.color = Color.white;
     }
 
     // =========================================================
@@ -261,6 +268,8 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
             _itemExpText.text = $"{slotData.EquipInstance.CurrentExp} / {slotData.EquipInstance.NextLevelRequireExp}";
             _itemExpBar.value = (float)slotData.EquipInstance.CurrentExp / slotData.EquipInstance.NextLevelRequireExp;
         }
+
+        _consumeCreditNum.text = "";
         
 
         // SetActive 토글만 (Destroy/생성 없음)
@@ -294,14 +303,16 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
     {
         // 아이템 정보 갱신
         RefreshItemInfo(slot).Forget();
+
+        //여기서 비동기로 해버리면 레벨 갱신이랑 타이밍싸움이걸림.
         SetHavingRelicScrollView().Forget();
 
 
-        // 스크롤뷰 슬롯도 레벨 표시 갱신 (해당 슬롯 찾아서)
-        var uiSlot = _itemSlots.Find(s => s.CurrentSlotData == slot);
-        uiSlot?.SetInfo(slot, ItemCategory.Equipment, -1);
+        //// 스크롤뷰 슬롯도 레벨 표시 갱신 (해당 슬롯 찾아서)
+        //var uiSlot = _itemSlots.Find(s => s.CurrentSlotData == slot);
+        //uiSlot?.SetInfo(slot, ItemCategory.Equipment, -1);
 
-        _upgradeButton.interactable = _upgradeService.CanUpgrade();
+        //_upgradeButton.interactable = _upgradeService.CanUpgrade();
     }
 
 
@@ -325,8 +336,32 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         Managers.UI.HideItemTooltip();
     }
 
+    // Refresh()용 - Destroy 없이 표시만 초기화
+    private void ResetEquipmentDisplay()
+    {
+        _itemIcon.gameObject.SetActive(false);
+        _itemUpgradeLevel.text = "";
+        _itemName.text = "선택된 장비 없음";
+        _itemType.text = "";
+        _itemTier.text = "";
+        _itemExpBar.value = 0f;
+        _itemExpText.text = "0 / 0";
+        _consumeCreditNum.text = "";
+        _upgradeButton.interactable = false;
 
+        // 스탯 슬롯은 Destroy 없이 SetActive(false)만
+        foreach (var slot in _mainStatSlots) slot.gameObject.SetActive(false);
+        foreach (var slot in _subStatSlots) slot.gameObject.SetActive(false);
+    }
 
+    public override void Refresh()
+    {
+        // 선택된 장비가 있으면 그 정보 갱신
+        // 재료 목록 갱신
+        SetHavingRelicScrollView().Forget();
+        ResetEquipmentDisplay();
+        _upgradeService?.DeselectEquipment(); // ← 서비스 상태도 초기화
+    }
 
     private void OnDestroy()
     {

@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks.Triggers;
 using NPOI.OpenXmlFormats.Dml;
+using NPOI.Util;
 using Org.BouncyCastle.Bcpg;
 using System;
 using System.Collections.Generic;
@@ -230,13 +231,11 @@ public class EquipmentUpgradeService
             simulatedExp -= simulatedRequire;
             simulatedLevel++;
 
-            // 수정
-            int itemID = SelectedEquipment.itemID;
-            ItemGrade grade = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Grade;
-            int maxLevel = Managers.Data.GetData<ItemGrade, GradeConfig>(grade).MaxLevel;
+            int maxLevel = GetItemMaxLevel(SelectedEquipment.itemID);
 
             if (simulatedLevel >= maxLevel)
             {
+                simulatedRequire = 0;
                 break;
             }
             else 
@@ -279,12 +278,40 @@ public class EquipmentUpgradeService
     {
         if (!CanUpgrade()) return false;
 
-        var preview = CalculatePreviewExp();
-        var instance = SelectedEquipment.EquipInstance;
+
+        ExpPreviewResult preview = CalculatePreviewExp();
+        EquipmentInstance instance = SelectedEquipment.EquipInstance;
 
         int currentLevel = instance.UpgradeLevel;
         int targetLevel = preview.SimulatedLevel;
 
+        int creditCost = CalcCredit(currentLevel, targetLevel);
+        if (!Managers.Wallet.ConsumeCurrency(CurrencyType.Credit, creditCost)) return false;
+
+        if (targetLevel == GetItemMaxLevel(SelectedEquipment.itemID)) 
+        {
+            //남은게
+            int rest = preview.SimulatedExp;
+
+            List<int> upgradeBookExp = new List<int>();
+            upgradeBookExp.Add(Managers.Data.GetData<int, EquipmentUpgradeBookExpData>((int)UpgradeBookID.Large).ExpValue);
+            upgradeBookExp.Add(Managers.Data.GetData<int, EquipmentUpgradeBookExpData>((int)UpgradeBookID.Medium).ExpValue);
+            upgradeBookExp.Add(Managers.Data.GetData<int, EquipmentUpgradeBookExpData>((int)UpgradeBookID.Small).ExpValue);
+
+            List<int> restUpgradeBookCount = new List<int>();
+            foreach(int value in upgradeBookExp)
+            {
+                restUpgradeBookCount.Add(rest / value);
+                rest = rest % value;
+            }
+         
+            Managers.Inventory.AddItem((int)UpgradeBookID.Large, ItemCategory.Material, restUpgradeBookCount[0]);
+            Managers.Inventory.AddItem((int)UpgradeBookID.Medium, ItemCategory.Material, restUpgradeBookCount[1]); 
+            Managers.Inventory.AddItem((int)UpgradeBookID.Small, ItemCategory.Material, restUpgradeBookCount[2]);
+        }
+
+
+     
         for (int lv = currentLevel + 1; lv <= targetLevel; lv++)
         {
             GrowMainStat(instance);
@@ -293,8 +320,6 @@ public class EquipmentUpgradeService
                 GrowRandomSubStat(instance);
         }
 
-        int creditCost = CalcCredit(currentLevel, targetLevel);
-        if (!Managers.Wallet.ConsumeCurrency(CurrencyType.Credit, creditCost)) return false;
 
         instance.UpgradeLevel = preview.SimulatedLevel;
         instance.CurrentExp = preview.SimulatedExp;
@@ -307,8 +332,16 @@ public class EquipmentUpgradeService
         return true;
     }
 
+    // EquipmentUpgradeService
+    public void DeselectEquipment()
+    {
+        SelectedEquipment = null;
+        ClearMaterials();
+    }
+
     private void ConsumeUsedMaterials()
     {
+
         foreach (MaterialEntry entry in _materialSlots)
         {
             if (entry.IsEmpty) continue;
@@ -316,7 +349,7 @@ public class EquipmentUpgradeService
             if (entry.IsBook)
                 Managers.Inventory.ConsumeMaterial(entry.Slot.itemID, entry.Count);
             else
-                Managers.Inventory.RemoveItem(ItemCategory.Equipment, entry.Slot.itemID);
+                Managers.Inventory.RemoveSlot(entry.Slot); // ← 슬롯 참조 기반으로 교체
         }
     }
 
@@ -343,18 +376,27 @@ public class EquipmentUpgradeService
         StatPoolData pool = Managers.Data.GetData<int, StatPoolData>(equipData.SubStatPoolID);
         StatPoolEntry entry = pool?.Entries.Find(e => e.StatType == target.StatType);
 
+        if (entry == null) return;
+
         List<float> values = new List<float>();
         values.Add(entry.UpgradeMinValue);
         values.Add(entry.UpgradeMaxValue);
-        values.Add((entry.UpgradeMinValue + entry.UpgradeMinValue) / 2f);
+        values.Add((entry.UpgradeMinValue + entry.UpgradeMaxValue) / 2f);
 
         int valueIdx = UnityEngine.Random.Range(0, values.Count);
 
-        if (entry != null)
-        {
-            target.Value += values[valueIdx];
-            target.UpgradeCount++;
-        }
+
+        target.Value += values[valueIdx];
+        target.UpgradeCount++;
+        
+    }
+
+    public int GetItemMaxLevel(int itemID)
+    {
+        ItemGrade grade = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Grade;
+        int maxLevel = Managers.Data.GetData<ItemGrade, GradeConfig>(grade).MaxLevel;
+
+        return maxLevel;
     }
 
     public bool CanUpgrade()

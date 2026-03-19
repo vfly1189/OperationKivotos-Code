@@ -6,6 +6,7 @@ public enum EquipmentTabType
 {
     Weapon = 0,
     Relic = 1,
+    Decompose = 2,
     // 나중에 Accessory = 2, Material = 3 등 탭이 추가되면 여기에만 적어주면 됩니다.
 }
 
@@ -14,6 +15,7 @@ public class UI_EquipmentUpgradePanel : UI_PopUp
     [SerializeField] private UI_EquipmentTabPanel _tabPanel;
     [SerializeField] private UI_WeaponUpgradePanel _weaponUpgradePanel;
     [SerializeField] private UI_RelicUpgradePanel _relicUpgradePanel;
+    [SerializeField] private UI_EquipmentDecomposePanel _equipmentDecomposePanel;
 
     private Dictionary<EquipmentTabType, UI_Base> _panels = new Dictionary<EquipmentTabType, UI_Base>();
 
@@ -29,6 +31,7 @@ public class UI_EquipmentUpgradePanel : UI_PopUp
         _panels.Clear();
         _panels.Add(EquipmentTabType.Weapon, _weaponUpgradePanel);
         _panels.Add(EquipmentTabType.Relic, _relicUpgradePanel);
+        _panels.Add(EquipmentTabType.Decompose, _equipmentDecomposePanel);
 
         _tabPanel.OnTabClicked -= HandleTabChange; 
         _tabPanel.OnTabClicked += HandleTabChange;
@@ -43,9 +46,12 @@ public class UI_EquipmentUpgradePanel : UI_PopUp
             bool isActive = (kvp.Key == selectedTab);
             kvp.Value.gameObject.SetActive(isActive);
 
+            if (isActive)
+                kvp.Value.Refresh();
             // 만약 켜지는 패널에 최신 데이터를 갱신해줘야 한다면 여기서 처리 가능
         }
     }
+
  
     private void OnDestroy()
     {
