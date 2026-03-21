@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
@@ -53,7 +54,7 @@ public class MonsterController : MonoBehaviour
 
     // [추가] 행동 취소/초기화를 위한 몬스터 전역 토큰
     protected CancellationTokenSource _monsterCts;
-
+    public event Action OnDespawned;
 
     private void Awake()
     {
@@ -77,19 +78,6 @@ public class MonsterController : MonoBehaviour
 
     private async void Start()
     {
-        //if (_hpBarPrefab != null)
-        //{
-        //    GameObject canvasObj = GameObject.Find("@GameSceneCanvas_New");
-        //    Transform uiParent = canvasObj != null ? canvasObj.transform : null;
-
-        //    _hpBar = await Managers.UI.MakeSubItemAsync<UI_MonsterHPBar>("MonsterHPBar", uiParent);
-
-        //    _hpBar.SetTarget(_hpBarTransform, Stat);
-
-        //    Stat.OnHpChanged -= _hpBar.UpdateHpBar;
-        //    Stat.OnHpChanged += _hpBar.UpdateHpBar;
-        //}
-
         if (_hpBarPrefab != null)
         {
             //[수정] GameObject.Find 제거하고, UIManager의 CanvasWorld를 부모로 지정!
@@ -141,6 +129,8 @@ public class MonsterController : MonoBehaviour
         // 이전 태스크 찌꺼기 정리 및 새 토큰 발급
         CancelMonsterTasks();
         _monsterCts = new CancellationTokenSource();
+
+        OnDespawned = null;
 
         _state = MonsterState.Spawning; // 시작 상태 초기화
         _currentAmmo = _maxAmmo;
@@ -421,12 +411,18 @@ public class MonsterController : MonoBehaviour
     }
 
 
-    // [변경 4] 삭제 딜레이 UniTask (토큰 연동으로 씬 전환 릭 방지)
     private async UniTaskVoid DespawnAsync(CancellationToken token)
     {
-        bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(2.0f), cancellationToken: token).SuppressCancellationThrow();
+        bool isCanceled = await UniTask.Delay(
+            System.TimeSpan.FromSeconds(2.0f),
+            cancellationToken: token
+        ).SuppressCancellationThrow();
+
         if (isCanceled) return;
 
-        Managers.Resource.Destroy(gameObject); // 풀로 돌아감
+        // [추가] Destroy 직전에 이벤트 발송 → 스포너가 이 시점에 리스폰 시작
+        OnDespawned?.Invoke();
+
+        Managers.Resource.Destroy(gameObject);
     }
 }

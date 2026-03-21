@@ -30,8 +30,6 @@ public class MonsterSpawner : MonoBehaviour
 
     public void SpawnMonsters()
     {
-        //SpawnerData data = Managers.Data.GetSpawnerData(_spawnerId);
-
         SpawnerData data = Managers.Data.GetData<int, SpawnerData>(_spawnerId);
 
         if (data == null || data.spawnList == null || data.spawnList.Count == 0) return;
@@ -61,7 +59,7 @@ public class MonsterSpawner : MonoBehaviour
             if (monster != null)
             {
                 MonsterStat stat = monster.GetComponent<MonsterStat>();
-                if (stat != null) stat.OnDead -= HandleMonsterDead;
+                if (stat != null) stat.OnMonsterDead -= HandleMonsterDead;
 
                 Managers.Resource.Destroy(monster.gameObject);
             }
@@ -88,87 +86,113 @@ public class MonsterSpawner : MonoBehaviour
         }
     }
 
-    // [변경 4] IEnumerator -> async UniTaskVoid 로 변경
     private async UniTaskVoid SpawnPointRoutineAsync(SpawnInfo info, CancellationToken token)
     {
         int pointIdx = info.pointIndex;
         Transform spawnPoint = _spawnPoints[pointIdx];
 
-        //MonsterData monsterData = Managers.Data.GetMonsterDataById(info.monsterId);
         MonsterData monsterData = Managers.Data.GetData<int, MonsterData>(info.monsterId);
-        if (monsterData == null) return;
 
-        // [핵심] CancellationToken을 넘겨주어 대기 도중 스포너가 비활성화/파괴되면 즉시 중단되게 함
-        if (info.delay > 0)
+        //  [변경] monsterData null 체크를 try 진입 전에 처리
+        //          데이터가 없으면 CTS를 직접 정리하고 종료
+        if (monsterData == null)
         {
-            // 이 구문이 끝나기 전에 token.Cancel()이 호출되면 이 아래 로직은 아예 실행되지 않음 (안전함!)
-            bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(info.delay), cancellationToken: token).SuppressCancellationThrow();
-            if (isCanceled) return; // 취소되었다면 소환 안 하고 함수 종료
+            Debug.LogError($"[MonsterSpawner] monsterId({info.monsterId}) 데이터 없음. pointIdx({pointIdx}) 정리");
+            if (_respawnCts[pointIdx] != null)
+            {
+                _respawnCts[pointIdx].Dispose();
+                _respawnCts[pointIdx] = null;
+            }
+            return;
         }
 
-        GameObject monsterObj = Managers.Resource.Instantiate(monsterData.addressableKey, spawnPoint.position, spawnPoint.rotation);
-
-        if (monsterObj != null)
+        // [변경] try-finally로 CTS 정리 보장
+        //          어떤 경로로 나가든 finally는 반드시 실행됨
+        try
         {
+            if (info.delay > 0)
+            {
+                bool isCanceled = await UniTask.Delay(
+                    System.TimeSpan.FromSeconds(info.delay),
+                    cancellationToken: token
+                ).SuppressCancellationThrow();
+
+                if (isCanceled) return; // finally 실행 후 종료
+            }
+
+            GameObject monsterObj = Managers.Resource.Instantiate(
+                monsterData.addressableKey,
+                spawnPoint.position,
+                spawnPoint.rotation
+            );
+
+            // [변경] 경로 3 처리: 컴포넌트 누락 시 고아 GameObject 즉시 정리
+            if (monsterObj == null) return; // finally 실행 후 종료
+
             MonsterController monsterCtrl = monsterObj.GetComponent<MonsterController>();
             MonsterStat monsterStat = monsterObj.GetComponent<MonsterStat>();
 
-            if (monsterStat != null && monsterCtrl != null)
+            if (monsterStat == null || monsterCtrl == null)
             {
-                monsterStat.Init(monsterData);
-
-                _monsterToPointIndex[monsterCtrl] = pointIdx;
-                _monsterToSpawnInfo[monsterCtrl] = info;
-
-                monsterStat.OnDead -= HandleMonsterDead;
-                monsterStat.OnDead += HandleMonsterDead;
-
-                _spawnedMonsters[pointIdx] = monsterCtrl;
-                _activeMonsters.Add(monsterCtrl);
+                Debug.LogError($"[MonsterSpawner] {monsterData.addressableKey} 컴포넌트 누락. 오브젝트 정리.");
+                Managers.Resource.Destroy(monsterObj); //  고아 GameObject 즉시 파괴
+                return; // finally 실행 후 종료
             }
-        }
 
-        // 스폰이 완료되었으므로 CTS 정리
-        if (_respawnCts[pointIdx] != null)
+            monsterStat.Init(monsterData);
+
+            _monsterToPointIndex[monsterCtrl] = pointIdx;
+            _monsterToSpawnInfo[monsterCtrl] = info;
+
+            monsterStat.OnMonsterDead -= HandleMonsterDead;
+            monsterStat.OnMonsterDead += HandleMonsterDead;
+
+            _spawnedMonsters[pointIdx] = monsterCtrl;
+            _activeMonsters.Add(monsterCtrl);
+        }
+        finally
         {
-            _respawnCts[pointIdx].Dispose();
-            _respawnCts[pointIdx] = null;
+            // [핵심] try 블록의 어떤 경로로 나가든 (return, exception, 정상 완료)
+            //          CTS는 반드시 여기서 정리됨
+            if (_respawnCts[pointIdx] != null)
+            {
+                _respawnCts[pointIdx].Dispose();
+                _respawnCts[pointIdx] = null;
+            }
         }
     }
 
-    private void HandleMonsterDead()
+    private void HandleMonsterDead(MonsterController deadMonster)
     {
-        MonsterController deadMonster = null;
-        foreach (var activeMonster in _activeMonsters)
-        {
-            if (activeMonster != null && activeMonster.GetComponent<MonsterStat>().CurrentHp <= 0)
-            {
-                deadMonster = activeMonster;
-                break;
-            }
-        }
-
+        // deadMonster가 딱 누군지 이미 알고 있으므로 바로 조회
         if (deadMonster == null) return;
+        if (!_monsterToPointIndex.ContainsKey(deadMonster)) return; // 이미 처리됐거나 Despawn된 경우 방어
 
         int pointIdx = _monsterToPointIndex[deadMonster];
         SpawnInfo info = _monsterToSpawnInfo[deadMonster];
 
-        if (_activeMonsters.Contains(deadMonster)) _activeMonsters.Remove(deadMonster);
+        _activeMonsters.Remove(deadMonster);
         _spawnedMonsters[pointIdx] = null;
-
         _monsterToPointIndex.Remove(deadMonster);
         _monsterToSpawnInfo.Remove(deadMonster);
 
         MonsterStat stat = deadMonster.GetComponent<MonsterStat>();
-        if (stat != null) stat.OnDead -= HandleMonsterDead;
+        if (stat != null) stat.OnMonsterDead -= HandleMonsterDead;
 
-        // [변경 5] 다시 스폰 시작 (새로운 UniTask 실행)
         if (gameObject.activeInHierarchy)
         {
-            _respawnCts[pointIdx] = new CancellationTokenSource();
-            SpawnPointRoutineAsync(info, _respawnCts[pointIdx].Token).Forget();
+            deadMonster.OnDespawned += () => StartRespawn(pointIdx, info);
         }
     }
+    private void StartRespawn(int pointIdx, SpawnInfo info)
+    {
+        // 섹터가 이미 비활성화됐을 수 있으므로 재확인
+        if (!gameObject.activeInHierarchy) return;
+
+        _respawnCts[pointIdx] = new CancellationTokenSource();
+        SpawnPointRoutineAsync(info, _respawnCts[pointIdx].Token).Forget();
+    }
+
 
     private void OnDestroy()
     {

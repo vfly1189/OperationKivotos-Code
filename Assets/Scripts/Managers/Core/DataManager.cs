@@ -100,14 +100,23 @@ public class DataManager
 
     // (참고용) 기존 JSON 로더 (이름만 좀 명확하게 바꿈)
     private async UniTask LoadAndCacheJsonAsync<Loader, TKey, TValue>(string addressableKey)
-        where Loader : ILoader<TKey, TValue>
+    where Loader : ILoader<TKey, TValue>
     {
         TextAsset textAsset = await Managers.Resource.LoadAsyncNoCache<TextAsset>(addressableKey);
-        if (textAsset != null)
+
+        // [추가] 실패 시 명시적 로그 출력
+        if (textAsset == null)
         {
-            Loader loader = JsonUtility.FromJson<Loader>(textAsset.text);
-            _dataDicts.Add(typeof(TValue), loader.MakeDict());
+            Debug.LogError($"[DataManager] JSON 로드 실패: '{addressableKey}' (Type: {typeof(TValue).Name})");
+            return;
         }
+
+        Loader loader = JsonUtility.FromJson<Loader>(textAsset.text);
+
+        // [변경] Add() → 인덱서로 교체
+        // Add()는 중복 키 시 ArgumentException을 던지지만
+        // 인덱서는 있으면 덮어쓰고, 없으면 추가하므로 항상 안전
+        _dataDicts[typeof(TValue)] = loader.MakeDict();
     }
 
     // ==========================================================

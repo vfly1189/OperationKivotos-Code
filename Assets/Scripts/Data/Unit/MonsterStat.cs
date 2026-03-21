@@ -11,10 +11,17 @@ public class MonsterStat : BaseStat, IDamageable
 
     private bool _isDead = false;
 
+    public event Action<MonsterController> OnMonsterDead;
+    private MonsterController _controller;
+
     public void Init(MonsterData jsonStatData)
     {
         base.Init();
         _isDead = false;
+
+        // 캐싱
+        if (_controller == null)
+            _controller = GetComponent<MonsterController>();
 
         // JSON에서 읽어온 데이터로 스탯 초기화
         MaxHp.SetBaseValue(jsonStatData.hp);
@@ -26,6 +33,8 @@ public class MonsterStat : BaseStat, IDamageable
         CurrentHp = MaxHp.Value;
         CallOnHpChanged(CurrentHp, MaxHp.Value);
         ClearDeadEvent();
+
+        OnMonsterDead = null;
     }
 
 
@@ -33,6 +42,10 @@ public class MonsterStat : BaseStat, IDamageable
     {
         base.Init();
         _isDead = false;
+
+        if (_controller == null)
+            _controller = GetComponent<MonsterController>();
+
 
         if (_data != null)
         {
@@ -44,6 +57,8 @@ public class MonsterStat : BaseStat, IDamageable
         // 혹시 모르니 HP바 갱신 이벤트 한 번 쏴주기
         CallOnHpChanged(CurrentHp, MaxHp.Value);
         ClearDeadEvent();
+
+        OnMonsterDead = null;
     }
 
     public override void TakeDamage(DamageInfo damageInfo)
@@ -80,5 +95,7 @@ public class MonsterStat : BaseStat, IDamageable
 
         // 2. 이벤트 발송 (나 죽었다!)
         CallOnDead();
+
+        OnMonsterDead?.Invoke(_controller);
     }
 }
