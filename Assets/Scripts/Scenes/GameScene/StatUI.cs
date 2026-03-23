@@ -16,9 +16,13 @@ public class StatUI : MonoBehaviour
 
     public void Initialize(CharacterStat stat)
     {
-        SetLevel(stat.CurLevel);
+        //SetLevel(stat.CurLevel);
+        //SetHp(stat.CurrentHp, stat.MaxHp.Value);
+        //SetExp(stat.CurrentExp, stat.MaxExp);
+
+        SetLevel(Managers.Party.PartyLevel);
         SetHp(stat.CurrentHp, stat.MaxHp.Value);
-        SetExp(stat.CurrentExp, stat.MaxExp);
+        SetExp(Managers.Party.PartyCurrentExp, Managers.Party.PartyRequiredExp);
     }
 
     // [2] 부분 갱신 (이벤트 연결용)
@@ -33,7 +37,6 @@ public class StatUI : MonoBehaviour
         _expBar.value = (max > 0) ? cur / max : 0;
         _expText.SetText("{0:0} / {1:0}", cur, max);
     }
-
     public void SetLevel(float level)
     {
         _levelText.text = $"LV. {level}";

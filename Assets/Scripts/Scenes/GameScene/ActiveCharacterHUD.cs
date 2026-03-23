@@ -14,8 +14,11 @@ public class ActiveCharacterHUD : MonoBehaviour
         CharacterStat stat = character.Stat;
 
         stat.OnHpChanged -= _statUI.SetHp;
-        stat.OnExpChanged -= _statUI.SetExp;
-        stat.OnLevelChanged -= HandleLevelChanged;
+        //stat.OnExpChanged -= _statUI.SetExp;
+        //stat.OnLevelChanged -= HandleLevelChanged;
+
+        Managers.Party.OnPartyExpChanged    -= _statUI.SetExp;
+        Managers.Party.OnPartyLevelChanged  -= HandleLevelChanged;
 
         stat.OnEnergyChanged -= HandleActiveSkillEnergy;
         stat.OnUltimateStateChanged -= HandleActiveSkillReady;
@@ -29,8 +32,8 @@ public class ActiveCharacterHUD : MonoBehaviour
 
         _statUI.Initialize(stat);
         stat.OnHpChanged += _statUI.SetHp;
-        stat.OnExpChanged += _statUI.SetExp;
-        stat.OnLevelChanged += HandleLevelChanged;
+        Managers.Party.OnPartyExpChanged   += _statUI.SetExp;
+        Managers.Party.OnPartyLevelChanged += HandleLevelChanged;
 
         _qSkill.UpdateEnergy(stat.CurrentEnergy, stat.MaxEnergy.Value);
         bool isReady = (stat.CurrentQSkillCoolTime <= 0) && (stat.CurrentEnergy >= stat.MaxEnergy.Value);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using UnityEngine;
 
 public enum CurrencyType
@@ -86,5 +87,28 @@ public class WalletManager
     {
         if (_currencies[type] >= amount) return true;
         else return false;
+    }
+
+    public WalletSaveData GetSaveData()
+    {
+        WalletSaveData save = new WalletSaveData();
+
+        foreach (KeyValuePair<CurrencyType, int> entry in _currencies)
+        {
+            save.currencyData.Add(new WalletDataEntry { currencyType = entry.Key, amount = entry.Value });
+        }
+
+        return save;
+    }
+
+    public void LoadSaveData(WalletSaveData save)
+    {
+        if (save?.currencyData == null) return;
+
+        foreach (WalletDataEntry entry in save.currencyData)
+        {
+            _currencies[entry.currencyType] = entry.amount;
+            OnCurrencyChanged?.Invoke(entry.currencyType, entry.amount); // ¡ç Ãß°¡
+        }
     }
 }

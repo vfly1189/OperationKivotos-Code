@@ -1,9 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.AddressableAssets;
 // [추가] UniTask 네임스페이스
 using Cysharp.Threading.Tasks;
+using System.Collections;
+using System.Collections.Generic;
+using System.Drawing.Drawing2D;
+using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 public class GameScene : BaseScene
 {
@@ -36,60 +37,32 @@ public class GameScene : BaseScene
             _loadingCoverInstance.GetComponent<LoadingSceneController>().SetValue(1f);
         }
 
-        // [핵심 변경 2] UniTask.Delay 사용
-        //await UniTask.Delay(500);
-
         var poolTask = CreatePool();
         var mapTask = CreateMainVillage();
-        var bgmTask = LoadMainBGM(); // [추가] BGM 비동기 로드 분리
+        var bgmTask = LoadMainBGM();
 
-        // [핵심 변경 3] 병렬 로딩 최적화
         await UniTask.WhenAll(poolTask, mapTask, bgmTask);
 
         await CreateCharacters();
+        // Party.Init() 이후에 하는게 나음.
+        // 현재 CreateCharacters에서 하고 있음.
+        ApplySaveOrTestData(); 
+
         await SetupUI();
         await CreateShopMaster();
-
-
         await CreateModelCamera();
         await LoadAllSchoolModels();
+
+        
 
         SetupCamera();
         PlayMainBGM();
 
-        FadeInSequence().Forget(); // [변경] 코루틴 대신 UniTask 사용
+        FadeInSequence().Forget(); 
 
-        Managers.Input.RegisterAction("Info", HandleInfo);
-
-        //Managers.Inventory.DropEquipment(10002);
-        //Managers.Inventory.DropEquipment(10010);
-        //Managers.Inventory.DropEquipment(10015);
-        //Managers.Inventory.DropEquipment(10016);
-        //Managers.Inventory.DropEquipment(10018);
-        //Managers.Inventory.DropEquipment(10019);
-
-        for(int i=0; i<40; i++)
-        {
-            int randNum = Random.Range(10000, 10090);
-            Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(randNum));
-        }
-        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
-        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
-        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
-        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
-        ////Managers.Inventory.AddItem(20000, ItemCategory.Consumable, 10);
-        Managers.Inventory.AddItem(30000, ItemCategory.Material, 9999);
-        Managers.Inventory.AddItem(30001, ItemCategory.Material, 9999);
-        Managers.Inventory.AddItem(30002, ItemCategory.Material, 9999);
-        Managers.Inventory.AddItem(30003, ItemCategory.Material, 1000);
-        Managers.Inventory.AddItem(30004, ItemCategory.Material, 1000);
-        Managers.Inventory.AddItem(30005, ItemCategory.Material, 1000);
-        Managers.Inventory.AddItem(30000, ItemCategory.Material, 500);
-        //Managers.Inventory.AddItem(30002, ItemCategory.Material, 50);
-        Debug.Log("GameScene Init Complete");
+        Managers.Input.RegisterAction("Info", HandleInfo);   
     }
 
-    // [핵심 변경 4] 공통 로드/스폰 함수: ResourceManager 활용
     private async UniTask<GameObject> LoadAndSpawnAsync(AssetReferenceGameObject refObj, Transform parent = null)
     {
         if (refObj == null) return null;
@@ -109,11 +82,8 @@ public class GameScene : BaseScene
             Managers.Sound.Play(_mainBGM, Define.Sound.Bgm);
     }
 
-    // [핵심 변경 5] Addressables 직접 로드 제거
     private async UniTask SetupUI()
     {
-        // 1. 혹시 모를 씬 내에 이미 떠있는 UI가 있다면 UIManager 캐싱 및 활성화만 진행 (보통 던전에서 마을로 돌아올 때)
-        // (단, 완벽한 프레임워크라면 씬에 UI를 수동으로 두지 않아야 함)
         var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
         if (existingUI != null)
         {
@@ -122,15 +92,10 @@ public class GameScene : BaseScene
             return;
         }
 
-        // 2. 어드레서블에서 UI 프리팹을 메모리에 비동기 로드
-        // ShowSceneUI가 동기 Instantiate를 하기 때문에 로드가 선행되어야 합니다.
         await Managers.Resource.LoadAsync<GameObject>("GameSceneCanvas_New");
 
-        // 3. UIManager를 통해 Scene UI 생성
-        // @Canvas_Scene 하위로 자동 배치 및 SetCanvas 됨
         GameSceneCanvas ui = Managers.UI.ShowSceneUI<GameSceneCanvas>("GameSceneCanvas_New");
 
-        // 4. Party Manager 연동
         if (ui != null)
         {
             ui.SetPartyManager();
@@ -195,20 +160,18 @@ public class GameScene : BaseScene
         Managers.Party.Init(partyMembers, spawnPoint);
     }
 
-    // [핵심 변경 6] 캐릭터 로드도 ResourceManager.LoadAsync 활용
     private async UniTask LoadCharacterSequential(CharacterDataSO data, Transform parent, List<BaseCharacter> list, Transform spawnPoint)
     {
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(data.inGamePrefab);
 
         if (prefab != null)
         {
-            // 위치/회전 처리용 Instantiate 함수 호출
             GameObject characterGO = Managers.Resource.Instantiate(prefab, spawnPoint.position, spawnPoint.rotation, parent);
 
             BaseCharacter character = characterGO.GetComponent<BaseCharacter>();
 
-            var savedData = Managers.Context.LoadCharacterStat(data.id);
-            if (savedData != null) character.Stat.ApplyRuntimeData(savedData);
+            //var savedData = Managers.Context.LoadCharacterStat(data.id);
+            //if (savedData != null) character.Stat.ApplyRuntimeData(savedData);
 
             list.Add(character);
         }
@@ -228,7 +191,7 @@ public class GameScene : BaseScene
         }
     }
 
-    // [핵심 변경 7] 동기 로드 함수(GetLoadedAsset) 완전 제거 및 비동기 LoadAsync 사용
+    
     private async UniTask LoadMainBGM()
     {
         if (_preloadData.mainBGMs == null || _preloadData.mainBGMs.Length == 0) return;
@@ -257,7 +220,7 @@ public class GameScene : BaseScene
         Managers.Sector.Clear();
     }
 
-    // [핵심 변경 8] 코루틴(IEnumerator)에서 UniTaskVoid로 변경
+
     private async UniTaskVoid FadeInSequence()
     {
         if (_loadingCoverInstance == null) return;
@@ -291,7 +254,7 @@ public class GameScene : BaseScene
     }
 
 
-    // [핵심 변경 4] Task -> UniTask 로 반환형 변경
+
     private async UniTask LoadAllSchoolModels()
     {
         string[] spawnPointNames = { "SpawnPoint1" };
@@ -301,7 +264,6 @@ public class GameScene : BaseScene
             point = _modelCamera.transform.Find(spawnPointNames[0]);
         }
 
-        // UniTask.WhenAll 사용
         var loadingTasks = new List<UniTask>();
 
         List<BaseCharacter> characters = Managers.Party.GetMemeber();
@@ -310,13 +272,10 @@ public class GameScene : BaseScene
         {
             await LoadSingleSchoolModel(characters[i].Stat.GetSelectModel(), point);
         }
-
-        //await UniTask.WhenAll(loadingTasks);
     }
 
     private async UniTask LoadSingleSchoolModel(AssetReferenceGameObject selectPrefab, Transform spawnPoint)
-    {
-        // [수정점 4] ResourceManager로 위임하여 씬 단위 메모리 관리 보장
+    {   
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(selectPrefab);
 
         if (prefab != null)
@@ -337,7 +296,6 @@ public class GameScene : BaseScene
 
     private async UniTask CreateModelCamera()
     {
-        // [수정점 5] Handle 로직 제거
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.modelCamera);
 
         if (prefab != null)
@@ -348,6 +306,44 @@ public class GameScene : BaseScene
         }
     }
 
+    private void ApplySaveOrTestData()
+    {
+        PartySaveData saveData = Managers.Context.PartySaveData;
+
+        if (saveData != null)
+        {
+            // 저장된 데이터 복원
+            Managers.Save.ApplySaveDataToManagers(saveData);
+            Managers.Context.PartySaveData = null;
+            Debug.Log($"[GameScene] 세이브 데이터 복원 완료: {saveData.partyId}");
+        }
+        else
+        {
+            // 새 파티 or 테스트용 데이터 지급
+            ApplyTestData();
+        }
+    }
+
+    private void ApplyTestData()
+    {
+        for (int i = 0; i < 40; i++)
+        {
+            int randNum = Random.Range(10000, 10090);
+            Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(randNum));
+        }
+        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
+        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
+        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
+        Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(10010));
+
+        Managers.Inventory.AddItem(30000, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30001, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30002, ItemCategory.Material, 9999);
+        Managers.Inventory.AddItem(30003, ItemCategory.Material, 1000);
+        Managers.Inventory.AddItem(30004, ItemCategory.Material, 1000);
+        Managers.Inventory.AddItem(30005, ItemCategory.Material, 1000);
+        Managers.Inventory.AddItem(30000, ItemCategory.Material, 500);
+    }
 
     private void HandleInfo()
     {

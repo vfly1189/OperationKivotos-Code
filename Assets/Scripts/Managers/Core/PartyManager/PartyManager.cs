@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Cysharp.Threading.Tasks; // [추가]
+using Cysharp.Threading.Tasks;
 
 public class PartyManager
 {
@@ -11,16 +11,18 @@ public class PartyManager
     private PartyCharacterActivator _activator;
     private PartyDeathHandler _deathHandler;
     private PartyInputHandler _inputHandler;
+    private PartyProgress _progress;
 
     public event Action<GameObject> OnActiveCharacterChanged;
     public event Action<bool> OnGameFinished;
+    public event Action<int> OnPartyLevelChanged;
+    public event Action<float, float> OnPartyExpChanged;
 
     public PlayerController PlayerController { get; private set; }
 
     private GameObject _characterContainer;
     private bool _isGameEnding = false;
 
-    // [핵심 1] 코루틴 실행기(MonoBehaviour) 주입을 완전히 제거!
     public PartyManager(Transform managersTransform)
     {
         InitializeSubsystems();
@@ -38,9 +40,12 @@ public class PartyManager
         _swapController = new PartySwapController(_registry);
         _activator = new PartyCharacterActivator(_registry);
         _deathHandler = new PartyDeathHandler(_registry, _swapController);
+        _progress = new PartyProgress();
 
         _swapController.OnSwapRequested += HandleSwapRequest;
         _deathHandler.OnPartyWiped += () => FinishGame(false);
+        _progress.OnLevelChanged += HandlePartyLevelChanged;
+        _progress.OnExpChanged += HandlePartyExpChanged;
     }
 
     private void HandleSwapRequest(int prevIdx, int nextIdx)
@@ -134,8 +139,7 @@ public class PartyManager
             GameOverSequenceAsync().Forget(); // 코루틴 대체
         }
     }
-
-    // [핵심 4] 코루틴 대신 UniTask로 게임 오버 연출 대기
+  
     private async UniTaskVoid GameOverSequenceAsync()
     {
         // SceneManagerEx나 시스템 단의 취소가 발생할 수 있으므로 안전망 적용
@@ -168,11 +172,48 @@ public class PartyManager
         _isGameEnding = false;
     }
 
+    // 경험치 레벨 관련
+    public void AddExp(float amount)
+    {
+        _progress.AddExp(amount);
+        // LevelUp이 발생하면 HandlePartyLevelChanged가 호출됨
+    }
+    private void HandlePartyLevelChanged(int level)
+    {
+        OnPartyLevelChanged?.Invoke(level);
+        BroadcastLevelToMembers();
+    }
+    private void HandlePartyExpChanged(float cur, float max)
+    {
+        OnPartyExpChanged?.Invoke(cur, max);
+    }
+    private void BroadcastLevelToMembers()
+    {
+        foreach (var member in GetMemeber())
+            member.Stat.UpdateBaseStatsByPartyLevel(_progress.Level);
+    }
+
+    public void InitFromContext(PartyRuntimeData data)
+    {
+        int level = data != null ? data.partyLevel : 1;
+        float exp = data != null ? data.partyCurrentExp : 0f;
+
+        _progress.InitFromData(level, exp);
+
+        // 레벨에 맞춰 모든 멤버 스탯 갱신
+        BroadcastLevelToMembers();
+    }
+
+
+
     public void Dispose()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
         ClearParty();
         if (PlayerController != null) PlayerController.Dispose();
+
+        _progress.OnLevelChanged -= HandlePartyLevelChanged;
+        _progress.OnExpChanged -= HandlePartyExpChanged;
     }
 
     // Getter & Delegate
@@ -182,4 +223,7 @@ public class PartyManager
     public void TeleportParty(Vector3 pos) => _activator.TeleportAll(pos);
     public List<BaseCharacter> GetMemeber() => _registry.Members;
     public Transform GetCharacterContainer() => _characterContainer.transform;
+    public int PartyLevel => _progress.Level;
+    public float PartyCurrentExp => _progress.CurrentExp;
+    public float PartyRequiredExp => _progress.RequiredExp;
 }

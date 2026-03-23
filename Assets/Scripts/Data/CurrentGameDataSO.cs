@@ -8,6 +8,8 @@ public class CurrentGameDataSO : ScriptableObject
     [Header("Runtime Data (Do not edit manually)")]
     public SchoolDataSO _selectedSchool; // 선택된 학교
     public List<CharacterDataSO> SelectedCharacters; // 선택된 캐릭터들 (필요하다면)
+
+    public PartySaveData PartySaveData { get; set; }
     public int SchoolIdx;
     public int textidx;
 
@@ -40,6 +42,7 @@ public class CurrentGameDataSO : ScriptableObject
     {
         Debug.Log("[SO] Clear() 호출됨");
         SelectedSchool = null;
+        PartySaveData = null;
         // SelectedCharacters.Clear();
     }
 

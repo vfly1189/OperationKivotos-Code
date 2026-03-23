@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -33,6 +34,8 @@ public class SelectSceneCanvas : UI_Scene
     private SelectScene _scene; // Scene 참조
     private bool _isInit = false; // 중복 초기화 방지 플래그
 
+    public event Action OnStarted;
+
     // 2. UI_Base의 추상 메서드이자 UI_Scene의 Init을 오버라이드
     public override void Init()
     {
@@ -67,9 +70,9 @@ public class SelectSceneCanvas : UI_Scene
 
     private void OnClickGameStart()
     {
-        // Managers.SceneEx.SetActiveCover(true);
+        OnStarted?.Invoke();
         Managers.Sound.StopAll();
-        Managers.SceneEx.LoadScene(Define.Scene.Game);
+        Managers.SceneEx.LoadScene(Define.Scene.Game);     
     }
 
     // 4. UpdateUIState는 기존 로직 그대로 유지

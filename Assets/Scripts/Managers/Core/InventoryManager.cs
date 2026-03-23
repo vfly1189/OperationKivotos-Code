@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using NPOI.SS.Formula.Functions;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using System;
@@ -31,9 +32,12 @@ public class InventorySlot
     // 장비일 경우에만 할당되는 고유 데이터
     public EquipmentInstance EquipInstance;
 
+    [JsonIgnore]  // ← 추가
     public bool IsEmpty => itemID == 0 || Amount <= 0;
 
+    [JsonIgnore]  // ← 추가
     public bool IsEquipment => itemID >= 10000 && itemID <= 19999;
+
 
     public void Clear()
     {
@@ -355,5 +359,68 @@ public class InventoryManager
         }
     }
 
-    
+    public InventorySaveData GetSaveData()
+    {
+        InventorySaveData save = new InventorySaveData();
+
+        for (int i = 0; i < Inventory[ItemCategory.Equipment].Length; i++)
+        {
+            InventorySlot slot = Inventory[ItemCategory.Equipment][i];
+            if (!slot.IsEmpty)
+                save.equipments.Add(new InventorySlotEntry { slotIndex = i, slot = slot });
+        }
+
+        for (int i = 0; i < Inventory[ItemCategory.Material].Length; i++)
+        {
+            InventorySlot slot = Inventory[ItemCategory.Material][i];
+            if (!slot.IsEmpty)
+                save.materials.Add(new InventorySlotEntry { slotIndex = i, slot = slot });
+        }
+
+        for (int i = 0; i < Inventory[ItemCategory.Consumable].Length; i++)
+        {
+            InventorySlot slot = Inventory[ItemCategory.Consumable][i];
+            if (!slot.IsEmpty)
+                save.consumables.Add(new InventorySlotEntry { slotIndex = i, slot = slot });
+        }
+
+        return save;
+    }
+
+    public void LoadSaveData(InventorySaveData save)
+    {
+        if (save == null) return;
+
+        // Init() 대신 슬롯만 초기화 (이벤트 재등록 없이)
+        foreach (ItemCategory category in Enum.GetValues(typeof(ItemCategory)))
+        {
+            var slots = Inventory[category];
+            for (int i = 0; i < slots.Length; i++)
+                slots[i] = new InventorySlot();
+        }
+
+        // 슬롯 복원 (범위 체크 포함)
+        foreach (var entry in save.equipments)
+        {
+            if (entry.slotIndex < 0 || entry.slotIndex >= _maxSlotCount) continue;
+            Inventory[ItemCategory.Equipment][entry.slotIndex] = entry.slot;
+        }
+
+        foreach (var entry in save.materials)
+        {
+            if (entry.slotIndex < 0 || entry.slotIndex >= _maxSlotCount) continue;
+            Inventory[ItemCategory.Material][entry.slotIndex] = entry.slot;
+        }
+
+        foreach (var entry in save.consumables)
+        {
+            if (entry.slotIndex < 0 || entry.slotIndex >= _maxSlotCount) continue;
+            Inventory[ItemCategory.Consumable][entry.slotIndex] = entry.slot;
+        }
+
+        OnInventoryUpdated?.Invoke(ItemCategory.Equipment);
+        OnInventoryUpdated?.Invoke(ItemCategory.Material);
+        OnInventoryUpdated?.Invoke(ItemCategory.Consumable);
+    }
+
 }

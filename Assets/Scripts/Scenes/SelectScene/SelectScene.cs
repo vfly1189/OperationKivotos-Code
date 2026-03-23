@@ -200,12 +200,38 @@ public class SelectScene : BaseScene
         if (_uiCanvas != null)
         {
             _uiCanvas.Setup(this);
+            _uiCanvas.OnStarted -= OnStartButtonClicked;
+            _uiCanvas.OnStarted += OnStartButtonClicked;
         }
+    }
+
+    //스타트 버튼의 이벤트로써 호출될 함수
+    //저장된 세이브 파일 불러오기
+    private void OnStartButtonClicked()
+    {
+        PartySaveData savedData;
+        string partyID = null;
+
+        switch(_currentSchoolIdx)
+        {
+            case 0: partyID = "Abydos";
+                break;
+            case 1: partyID = "Gehenna";
+                break;
+            case 2: partyID = "Millennium";
+                break;
+        }
+        Managers.Save.SetCurrentParty(partyID);
+        Managers.Save.TryLoadParty(partyID, out savedData);
+        Managers.Context.PartySaveData = savedData;
     }
 
     public override void Clear()
     {
         base.Clear();
+
+        _uiCanvas.OnStarted -= OnStartButtonClicked;
+
         _schoolModels.Clear();
     }
 

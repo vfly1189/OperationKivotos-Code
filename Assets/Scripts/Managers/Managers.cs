@@ -23,6 +23,7 @@ public class Managers : MonoBehaviour
     SectorManager _sector = new SectorManager();
     InventoryManager _inventory = new InventoryManager();
     EquipmentManager _equipment = new EquipmentManager();
+    SaveManager _save = new SaveManager();
 
     public static InputManager Input { get { return Instance._input; } }
     public static PartyManager Party { get { return Instance._party; } }
@@ -36,6 +37,7 @@ public class Managers : MonoBehaviour
     public static SectorManager Sector { get { return Instance._sector; } }
     public static InventoryManager Inventory { get { return Instance._inventory; } }
     public static EquipmentManager Equipment { get { return Instance._equipment; } }
+    public static SaveManager Save { get { return Instance._save; } }
     #endregion
 
     // [핵심 1] 코루틴 Start 대신 일반 Start에서 Fire-and-forget 비동기 실행
@@ -99,9 +101,16 @@ public class Managers : MonoBehaviour
             s_instance._wallet.Init();
             s_instance._inventory.Init();
             s_instance._equipment.Init();
+            s_instance._save.Init();
 
             Application.targetFrameRate = 144;
         }
+    }
+
+    void OnApplicationQuit()
+    {
+        if (_save.IsReady)
+            _save.SaveCurrentParty();
     }
 
     void OnDestroy()

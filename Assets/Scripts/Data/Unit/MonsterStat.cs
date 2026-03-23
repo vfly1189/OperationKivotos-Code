@@ -88,7 +88,8 @@ public class MonsterStat : BaseStat, IDamageable
             CharacterStat playerStat = shooter.GetComponent<CharacterStat>();
             if (playerStat != null)
             {
-                playerStat.AddExp(DropExpAmount); // 경험치 추가 함수 호출
+                //playerStat.AddExp(DropExpAmount); // 경험치 추가 함수 호출
+                Managers.Party.AddExp(DropExpAmount);
                 Debug.Log($"플레이어에게 경험치 {DropExpAmount} 지급!");
             }
         }

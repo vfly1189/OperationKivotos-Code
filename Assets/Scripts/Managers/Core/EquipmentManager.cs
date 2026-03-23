@@ -1,6 +1,7 @@
 using NPOI.SS.Formula.PTG;
 using System;
 using System.Collections.Generic;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public enum EquipType
@@ -160,33 +161,88 @@ public class EquipmentManager
 
     public void ReleaseEquipment(CharacterStat playerStat, InventorySlot equipment)
     {
+        ////메인스탯
+        //List<StatOption> mainStats = equipment.EquipInstance.MainStats;
+        //foreach (StatOption statOption in mainStats)
+        //{
+        //    Stat targetStat = playerStat.GetStat(statOption.StatType);
+
+        //    StatModType modType = statOption.StatType.ToString().Contains("Percent")
+        //        ? StatModType.PercentAdd
+        //        : StatModType.Flat;
+
+        //    // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
+        //    targetStat.RemoveAllModifiersFromSource(equipment);
+        //}
+
+        ////서브스탯
+        //List<StatOption> subStats = equipment.EquipInstance.SubStats;
+        //foreach (StatOption statOption in subStats)
+        //{
+        //    Stat targetStat = playerStat.GetStat(statOption.StatType);
+
+        //    StatModType modType = statOption.StatType.ToString().Contains("Percent")
+        //        ? StatModType.PercentAdd
+        //        : StatModType.Flat;
+
+        //    // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
+        //    targetStat.RemoveAllModifiersFromSource(equipment);
+        //}
+
         //메인스탯
-        List<StatOption> mainStats = equipment.EquipInstance.MainStats;
+        List<StatOption> mainStats = equipment.EquipInstance.MainStats;    
         foreach (StatOption statOption in mainStats)
-        {
-            Stat targetStat = playerStat.GetStat(statOption.StatType);
-
-            StatModType modType = statOption.StatType.ToString().Contains("Percent")
-                ? StatModType.PercentAdd
-                : StatModType.Flat;
-
-            // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
-            targetStat.RemoveAllModifiersFromSource(equipment);
-        }
+            playerStat.GetStat(statOption.StatType)?.RemoveAllModifiersFromSource(equipment);
 
         //서브스탯
         List<StatOption> subStats = equipment.EquipInstance.SubStats;
         foreach (StatOption statOption in subStats)
-        {
-            Stat targetStat = playerStat.GetStat(statOption.StatType);
-
-            StatModType modType = statOption.StatType.ToString().Contains("Percent")
-                ? StatModType.PercentAdd
-                : StatModType.Flat;
-
-            // 3. Modifier 추가 (이제 Stat 클래스가 알아서 (Base * Percent) + Flat 공식으로 계산함)
-            targetStat.RemoveAllModifiersFromSource(equipment);
-        }
+            playerStat.GetStat(statOption.StatType)?.RemoveAllModifiersFromSource(equipment);
     }
 
+    public EquipmentSaveData GetSaveData()
+    {
+        EquipmentSaveData save = new EquipmentSaveData();
+
+        foreach (KeyValuePair<EquipType, InventorySlot> entry in _equippedItem)
+        {
+            // null이거나 비어있는 슬롯은 저장 제외
+            if (entry.Value == null || entry.Value.IsEmpty) continue;
+
+            save.equippedSlots.Add(new EquippedSlotEntry
+            {
+                slotType = entry.Key,
+                slot = entry.Value
+            });
+        }
+
+        return save;
+    }
+    
+    public void LoadSaveData(EquipmentSaveData save)
+    {
+        if (save?.equippedSlots == null) return;
+
+        foreach (var entry in save.equippedSlots)
+        {
+            if (entry.slot == null || entry.slot.IsEmpty) continue;
+
+            // 장착 슬롯 복원
+            _equippedItem[entry.slotType] = entry.slot;
+
+            // 파티원 전체에 스탯 재적용
+            foreach (var member in Managers.Party.GetMemeber())
+            {
+                if (member?.Stat != null)
+                    ApplyEquipment(member.Stat, entry.slot);
+            }
+        }
+
+        // UI 갱신
+        foreach (EquipType type in Enum.GetValues(typeof(EquipType)))
+        {
+            InventorySlot slot = _equippedItem.ContainsKey(type) ? _equippedItem[type] : null;
+            OnEquipmentChanged?.Invoke(type, slot, null);
+        }
+    }
 }
