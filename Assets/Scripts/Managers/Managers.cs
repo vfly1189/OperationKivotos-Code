@@ -24,6 +24,7 @@ public class Managers : MonoBehaviour
     InventoryManager _inventory = new InventoryManager();
     EquipmentManager _equipment = new EquipmentManager();
     SaveManager _save = new SaveManager();
+    DropManager _drop = new DropManager();
 
     public static InputManager Input { get { return Instance._input; } }
     public static PartyManager Party { get { return Instance._party; } }
@@ -38,6 +39,7 @@ public class Managers : MonoBehaviour
     public static InventoryManager Inventory { get { return Instance._inventory; } }
     public static EquipmentManager Equipment { get { return Instance._equipment; } }
     public static SaveManager Save { get { return Instance._save; } }
+    public static DropManager Drop { get { return Instance._drop; } }
     #endregion
 
     // [핵심 1] 코루틴 Start 대신 일반 Start에서 Fire-and-forget 비동기 실행

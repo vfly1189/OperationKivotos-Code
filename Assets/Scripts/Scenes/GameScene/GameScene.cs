@@ -100,6 +100,9 @@ public class GameScene : BaseScene
         {
             ui.SetPartyManager();
         }
+
+        // 임시
+        await Managers.UI.GetOrMakeLootPanelAsync();
     }
 
     private async UniTask CreatePool()
@@ -112,19 +115,22 @@ public class GameScene : BaseScene
 
         if (_preloadData.monsterAR != null)
         {
-            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("MonsterAR");
+            string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2000).AddressableKey;
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
 
         if (_preloadData.monsterRL != null)
         {
-            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("MonsterRL");
+            string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2001).AddressableKey;
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
 
         if (_preloadData.monsterTank != null)
         {
-            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("MonsterTank");
+            string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2002).AddressableKey;
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
             if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
         }
     }
@@ -320,7 +326,7 @@ public class GameScene : BaseScene
         else
         {
             // 새 파티 or 테스트용 데이터 지급
-            ApplyTestData();
+            //ApplyTestData();
         }
     }
 

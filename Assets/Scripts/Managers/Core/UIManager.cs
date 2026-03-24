@@ -13,7 +13,6 @@ public class UIManager
     Stack<UI_PopUp> _popupStack = new Stack<UI_PopUp>();
     UI_Scene _sceneUI = null;
 
-
     private Canvas _canvasScene;    // 씬마다 고정으로 뜨는 UI들
     private Canvas _canvasPopup;    // popup들
     private Canvas _canvasSystem;   // order 100 이상의 절대로 먼저 보여져야 되는것들...
@@ -21,6 +20,8 @@ public class UIManager
 
     private UI_ItemInfo _currentTooltip = null;
     private bool _isLoadingTooltip = false;
+
+    private UI_LootNotification _lootPanel = null;
 
     public bool IsPopupOpen => _popupStack.Count > 0;
 
@@ -305,6 +306,41 @@ public class UIManager
         }
     }
 
+    // [추가] Loot Panel을 띄우거나 가져오는 초기화 함수
+    // 씬이 시작될 때(GameScene 진입 시) 이 함수를 한 번 호출해 주는 것이 좋습니다.
+    public async UniTask<UI_LootNotification> GetOrMakeLootPanelAsync()
+    {
+        if (_lootPanel != null) return _lootPanel;
+
+        // CanvasSystem (가장 최상위 캔버스)에 띄우는 것을 추천합니다.
+        _lootPanel = await MakeSubItemAsync<UI_LootNotification>("UI_LootNotification", CanvasSystem.transform);
+        _lootPanel.Init();
+        _lootPanel.transform.localPosition = new Vector3(300, 0, 0);
+        return _lootPanel;
+    }
+
+    // [추가] 외부에서 아이템 획득 시 팝업을 띄우는 편의 함수
+    public void ShowLootToast(string itemName, int amount, Sprite icon, Color gradeColor)
+    {
+        if (_lootPanel == null) return;
+        _lootPanel.ShowLootToast(itemName, amount, icon, gradeColor);
+    }
+
+    public void ShowGainExp(int amount)
+    {
+        if (_lootPanel == null) return;
+        _lootPanel.GainExp(amount);
+    }
+
+    public void ShowGainCredit(int amount)
+    {
+        if (_lootPanel == null) return;
+        _lootPanel.GainCredit(amount);
+    }
+
+
+
+
     // =========================================================
     // 정리
     // =========================================================
@@ -317,6 +353,13 @@ public class UIManager
         {
             Managers.Resource.Destroy(_sceneUI.gameObject);
             _sceneUI = null;
+        }
+
+        // [수정] 씬이 바뀔 때 켜져 있던 룻 패널도 파괴하고 null로 초기화
+        if (_lootPanel != null)
+        {
+            Managers.Resource.Destroy(_lootPanel.gameObject);
+            _lootPanel = null;
         }
 
         // [수정] _root = null 삭제. DDOL이므로 Root와 Canvas들은 유지되어야 함

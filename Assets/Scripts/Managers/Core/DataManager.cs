@@ -28,57 +28,24 @@ public class DataManager
         //tasks.Add(LoadAndCacheJsonAsync<WeaponDataLoader, string, WeaponData>("Character_Weapon_Data"));
         tasks.Add(LoadAndCacheJsonAsync<WeaponEnhanceMentDataLoader, int, EnhancementRateData>("Weapon_Enhancement_Rate_Data"));
         tasks.Add(LoadAndCacheJsonAsync<SpawnerDataLoader, int, SpawnerData>("SpawnerData"));
-        tasks.Add(LoadAndCacheJsonAsync<MonsterDataLoader, int, MonsterData>("MonsterData"));
+
+        //tasks.Add(LoadAndCacheJsonAsync<MonsterDataLoader, int, MonsterData>("MonsterData"));
+
+
         // 아이템 SO를 로드하고 싶다면?
         tasks.Add(LoadAndCacheSOAsync<ItemDatabaseSO>("ItemDatabase"));
         tasks.Add(LoadAndCacheSOAsync<CharacterExpTableSO>("CharacterExpTable"));
         tasks.Add(LoadAndCacheSOAsync<WeaponEnhanceCostTableSO>("WeaponEnhanceCostTable"));
 
+        tasks.Add(LoadAndCacheSOAsync<MonsterDatabaseSO>("MonsterDatabase"));
+        tasks.Add(LoadAndCacheSOAsync<DropTableDatabaseSO>("DropTableDatabase"));
         // 병렬로 한 방에 다운로드 및 파싱
         await UniTask.WhenAll(tasks);
 
         Debug.Log($"DataManager Init Complete: 총 {_dataDicts.Count}개의 데이터 테이블 로드 완료.");
-
-
-        //// Task들을 정의만 해둡니다.
-        //var weaponTask = LoadJsonAsync<WeaponDataLoader, string, WeaponData>("Character_Weapon_Data");
-        //var enhanceTask = LoadJsonAsync<WeaponEnhanceMentDataLoader, int, EnhancementRateData>("Weapon_Enhancement_Rate_Data");
-        //var spawnerTask = LoadJsonAsync<SpawnerDataLoader, int, SpawnerData>("SpawnerData");
-        //var monsterTask = LoadJsonAsync<MonsterDataLoader, int, MonsterData>("MonsterData");
-
-        //// [핵심 수정] WhenAll이 반환하는 결과를 Tuple로 한 방에 받아냅니다!
-        //// 이렇게 하면 내부적으로 Task를 두 번 참조하지 않게 되어 에러가 발생하지 않습니다.
-        //var (weaponResult, enhanceResult, spawnerResult, monsterResult) =
-        //    await UniTask.WhenAll(weaponTask, enhanceTask, spawnerTask, monsterTask);
-
-        //// 받아온 결과물(딕셔너리)을 할당합니다.
-        //WeaponDict = weaponResult;
-        //EnhanceRateDict = enhanceResult;
-        //SpawnerDict = spawnerResult;
-        //MonsterDict = monsterResult;
-
-        //Debug.Log("DataManager Init Complete");
     }
 
-    //// [핵심 3] 콜백을 없애고 딕셔너리를 직접 반환
-    //// [핵심 변경] Addressables 직접 호출 제거, ResourceManager로 위임
-    //private async UniTask<Dictionary<Key, Value>> LoadJsonAsync<Loader, Key, Value>(string key)
-    //    where Loader : ILoader<Key, Value>
-    //{
-    //    // ResourceManager의 NoCache 함수를 사용하여 텍스트 에셋을 가져옴 (메모리 해제는 매니저가 알아서 함)
-    //    TextAsset textAsset = await Managers.Resource.LoadAsyncNoCache<TextAsset>(key);
 
-    //    if (textAsset != null)
-    //    {
-    //        Loader loader = JsonUtility.FromJson<Loader>(textAsset.text);
-    //        return loader.MakeDict();
-    //    }
-    //    else
-    //    {
-    //        Debug.LogError($"Failed to load Addressable JSON: {key}");
-    //        return new Dictionary<Key, Value>();
-    //    }
-    //}
 
     // =========================================================
     // SO 파일을 Addressables로 로드하고 딕셔너리로 분해하여 바구니에 담는 함수
@@ -140,6 +107,33 @@ public class DataManager
 
         Debug.LogError($"[DataManager] {typeof(TValue).Name} 데이터에서 키 [{key}]를 찾을 수 없습니다!");
         return null; // 못 찾으면 null
+    }
+
+    public Dictionary<K, V> GetDict<K, V>() where V : class
+    {
+        if (_dataDicts.TryGetValue(typeof(V), out object dictObj))
+        {
+            var dict = dictObj as Dictionary<K, V>;
+            if (dict != null)
+                return dict;
+        }
+
+        Debug.LogError($"[DataManager] {typeof(V).Name} 타입의 딕셔너리를 찾을 수 없습니다!");
+        return null;
+    }
+
+    // 특정 마커(TMarker)를 이용해 딕셔너리를 찾는 오버로딩
+    public Dictionary<K, V> GetDict<K, V, TMarker>() where TMarker : class
+    {
+        if (_dataDicts.TryGetValue(typeof(TMarker), out object dictObj))
+        {
+            var dict = dictObj as Dictionary<K, V>;
+            if (dict != null)
+                return dict;
+        }
+
+        Debug.LogError($"[DataManager] {typeof(TMarker).Name} 타입의 인덱스 딕셔너리를 찾을 수 없습니다!");
+        return null;
     }
 
     public BaseItemData GetItemData(int itemID, ItemCategory category)

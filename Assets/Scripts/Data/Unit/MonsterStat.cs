@@ -1,34 +1,45 @@
 using System;
+
 using UnityEngine;
-using static BaseCharacter;
+
 
 public class MonsterStat : BaseStat, IDamageable
 {
-    [Header("Data")]
-    [SerializeField] private MonsterDataSO _data; // 초기 데이터
-    // 몬스터 전용: 처치 시 주는 경험치, 드랍 아이템 확률 등
-    public float DropExpAmount = 300f;
-
     private bool _isDead = false;
 
     public event Action<MonsterController> OnMonsterDead;
     private MonsterController _controller;
 
-    public void Init(MonsterData jsonStatData)
+    // 추가된 변수: 보상 캐싱
+    public int Level { get; private set; }
+    public int FinalExpReward { get; private set; }
+    public int FinalCreditReward { get; private set; }
+    public int DropTableID { get; private set; }
+    public MonsterDefine.MonsterSpawnType SpawnType { get; private set; }
+
+    public void Init(MonsterBaseData baseData, MonsterLevelByStat levelStat)
     {
         base.Init();
         _isDead = false;
 
-        // 캐싱
         if (_controller == null)
             _controller = GetComponent<MonsterController>();
 
-        // JSON에서 읽어온 데이터로 스탯 초기화
-        MaxHp.SetBaseValue(jsonStatData.hp);
-        Attack.SetBaseValue(jsonStatData.attack);
-        Defense.SetBaseValue(jsonStatData.defense);
+        // 1. 배율을 적용하여 스탯 초기화
+        float maxHp = baseData.BaseMaxHP * levelStat.MaxHPRate;
+        float attack = baseData.BaseAttack * levelStat.AttackRate;
+        float defense = baseData.BaseDefense * levelStat.DefenseRate;
 
-        //DropExpAmount = jsonStatData.dropExpAmount;
+        MaxHp.SetBaseValue(maxHp);
+        Attack.SetBaseValue(attack);
+        Defense.SetBaseValue(defense);
+        Level = levelStat.Level;
+
+        // 2. 보상 스케일링 적용 및 캐싱
+        FinalExpReward = Mathf.RoundToInt(baseData.ExpReward); // 필요시 ExpRate 별도 추가
+        FinalCreditReward = Mathf.RoundToInt(baseData.CreditReward * levelStat.CreditRate);
+        DropTableID = baseData.DropTableID;
+        SpawnType = baseData.SpawnType;
 
         CurrentHp = MaxHp.Value;
         CallOnHpChanged(CurrentHp, MaxHp.Value);
@@ -38,43 +49,40 @@ public class MonsterStat : BaseStat, IDamageable
     }
 
 
-    public override void Init()
-    {
-        base.Init();
-        _isDead = false;
+    //public override void Init()
+    //{
+    //    base.Init();
+    //    _isDead = false;
 
-        if (_controller == null)
-            _controller = GetComponent<MonsterController>();
+    //    if (_controller == null)
+    //        _controller = GetComponent<MonsterController>();
 
 
-        if (_data != null)
-        {
-            MaxHp.SetBaseValue(_data.MaxHp);
-            Attack.SetBaseValue(_data.Attack);
-            Defense.SetBaseValue(_data.Defense);
-            CurrentHp = MaxHp.Value;
-        }
-        // 혹시 모르니 HP바 갱신 이벤트 한 번 쏴주기
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
-        ClearDeadEvent();
+    //    if (_data != null)
+    //    {
+    //        MaxHp.SetBaseValue(_data.MaxHp);
+    //        Attack.SetBaseValue(_data.Attack);
+    //        Defense.SetBaseValue(_data.Defense);
+    //        CurrentHp = MaxHp.Value;
+    //    }
+    //    // 혹시 모르니 HP바 갱신 이벤트 한 번 쏴주기
+    //    CallOnHpChanged(CurrentHp, MaxHp.Value);
+    //    ClearDeadEvent();
 
-        OnMonsterDead = null;
-    }
+    //    OnMonsterDead = null;
+    //}
 
     public override void TakeDamage(DamageInfo damageInfo)
     {
         float finalDamage = Mathf.Max(damageInfo.Amount - Defense.Value, 1);
         CurrentHp -= finalDamage;
         CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
-        // 피격 이펙트, 사운드 처리 등을 damageInfo.HitPoint를 활용해 여기서 처리 가능
 
         if (CurrentHp <= 0 && _isDead == false)
         {
-            Debug.Log("몬스터 사망 ");
             _isDead = true;
             HandleDeath(damageInfo.Attacker);
         }
-
 
         CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
@@ -89,8 +97,12 @@ public class MonsterStat : BaseStat, IDamageable
             if (playerStat != null)
             {
                 //playerStat.AddExp(DropExpAmount); // 경험치 추가 함수 호출
-                Managers.Party.AddExp(DropExpAmount);
-                Debug.Log($"플레이어에게 경험치 {DropExpAmount} 지급!");
+                Managers.Party.AddExp(FinalExpReward);
+                Managers.Wallet.AddCurrency(CurrencyType.Credit, FinalCreditReward);
+                Managers.UI.ShowGainExp(FinalExpReward);
+                Managers.UI.ShowGainCredit(FinalCreditReward);
+                //Debug.Log($"플레이어에게 경험치 {DropExpAmount} 지급!");
+                Managers.Drop.RollAndGiveDropItems(DropTableID);
             }
         }
 

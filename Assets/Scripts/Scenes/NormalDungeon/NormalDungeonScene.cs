@@ -10,6 +10,9 @@ public class NormalDungeonScene : BaseScene
     [SerializeField] private GameObject _loadingCover;
     [SerializeField] private NormalDungeonScenePreloadSO _preloadData;
 
+    // 현재 진입한 던전의 Map ID (MapMonsterConfig의 레벨을 가져오기 위함)
+    private int _currentMapId = 1000;
+
     private int _remainingMonsters = 0;
 
     private GameObject _curMap;
@@ -42,10 +45,6 @@ public class NormalDungeonScene : BaseScene
             _loadingCoverInstance.GetComponent<LoadingSceneController>().SetValue(1f);
         }
 
-        //await UniTask.Delay(500); // Task.Delay -> UniTask.Delay
-
-        //CreateUI();
-
         var mainUI = SetupUI();
         var mapTask = CreateMap();
         var poolTask = CreatePool();
@@ -65,33 +64,159 @@ public class NormalDungeonScene : BaseScene
         FadeInSequence().Forget();
     }
 
+    //async UniTask CreateMap()
+    //{
+    //    GameObject root = new GameObject { name = "@Map" };
+    //    AssetReferenceGameObject mapPrefabRef = null;
+
+    //    switch (Managers.Context.SelectedDifficulty)
+    //    {
+    //        case Define.DungeonDifficulty.Easy: mapPrefabRef = _preloadData.normalDungeonEasy; break;
+    //        case Define.DungeonDifficulty.Normal: mapPrefabRef = _preloadData.normalDungeonNormal; break;
+    //        case Define.DungeonDifficulty.Hard: mapPrefabRef = _preloadData.normalDungeonHard; break;
+    //    }
+
+    //    if (mapPrefabRef != null)
+    //    {
+    //        // Managers.Resource.LoadAsync 위임
+    //        GameObject mapPrefab = await Managers.Resource.LoadAsync<GameObject>(mapPrefabRef);
+
+    //        if (mapPrefab != null)
+    //        {
+    //            _curMap = Instantiate(mapPrefab, root.transform);
+    //            _curMap.transform.position = Vector3.zero;
+    //            CountAndRegisterMonsters(_curMap);
+    //        }
+    //    }
+    //}
+
     async UniTask CreateMap()
     {
         GameObject root = new GameObject { name = "@Map" };
         AssetReferenceGameObject mapPrefabRef = null;
 
+
         switch (Managers.Context.SelectedDifficulty)
         {
-            case Define.DungeonDifficulty.Easy: mapPrefabRef = _preloadData.normalDungeonEasy; break;
-            case Define.DungeonDifficulty.Normal: mapPrefabRef = _preloadData.normalDungeonNormal; break;
-            case Define.DungeonDifficulty.Hard: mapPrefabRef = _preloadData.normalDungeonHard; break;
+            case Define.DungeonDifficulty.Easy:
+                mapPrefabRef = _preloadData.normalDungeonEasy;
+                break;
+            case Define.DungeonDifficulty.Normal:
+                mapPrefabRef = _preloadData.normalDungeonNormal;
+                break;
+            case Define.DungeonDifficulty.Hard:
+                mapPrefabRef = _preloadData.normalDungeonHard;
+                break;
         }
 
         if (mapPrefabRef != null)
         {
-            // Managers.Resource.LoadAsync 위임
             GameObject mapPrefab = await Managers.Resource.LoadAsync<GameObject>(mapPrefabRef);
 
             if (mapPrefab != null)
             {
                 _curMap = Instantiate(mapPrefab, root.transform);
                 _curMap.transform.position = Vector3.zero;
-                CountAndRegisterMonsters(_curMap);
+
+                // [변경] 스폰 방식으로 몬스터 등록 변경
+                SpawnAndRegisterMonsters(_curMap);
             }
         }
     }
 
-    //void CreateUI() => _mainUI = GameObject.Find("@GameSceneCanvas");
+    private void SpawnAndRegisterMonsters(GameObject map)
+    {
+        Transform spawnPointsRoot = map.transform.Find("SpawnPoints");
+        if (spawnPointsRoot == null)
+        {
+            Debug.LogError("맵 프리팹에 'SpawnPoints' 오브젝트가 없습니다!");
+            _remainingMonsters = 0;
+            return;
+        }
+
+        Transform monstersRoot = map.transform.Find("Monsters");
+        if (monstersRoot == null)
+        {
+            GameObject go = new GameObject("Monsters");
+            go.transform.SetParent(map.transform);
+            monstersRoot = go.transform;
+        }
+
+        MapMonsterConfig mapConfig = Managers.Data.GetData<int, MapMonsterConfig>(_currentMapId);
+        if (mapConfig == null)
+        {
+            Debug.LogError($"맵 정보({_currentMapId})가 없습니다.");
+            return;
+        }
+
+        _remainingMonsters = 0;
+
+        // 1. 데이터 매니저에서 몬스터 전체 딕셔너리를 가져옵니다.
+        Dictionary<int, MonsterBaseData> monsterDict = Managers.Data.GetDict<int, MonsterBaseData>();
+        if (monsterDict == null) return;
+
+        // 2. SpawnPoints 바로 아래의 자식들 (AddressableKey 이름의 노드들) 순회
+        for (int i = 0; i < spawnPointsRoot.childCount; i++)
+        {
+            Transform groupNode = spawnPointsRoot.GetChild(i);
+            string addressableKey = groupNode.name; // 노드 이름 = AddressableKey
+
+            // 3. AddressableKey가 일치하면서, 던전용 몬스터(SpawnType.Dungeon)인 데이터를 찾습니다.
+            MonsterBaseData baseData = null;
+            foreach (var data in monsterDict.Values)
+            {
+                if (data.AddressableKey == addressableKey && data.SpawnType == MonsterDefine.MonsterSpawnType.Dungeon)
+                {
+                    baseData = data;
+                    break;
+                }
+            }
+
+            if (baseData == null)
+            {
+                Debug.LogWarning($"던전용 몬스터 중 AddressableKey가 '{addressableKey}'인 데이터를 찾을 수 없습니다.");
+                continue;
+            }
+
+            // 4. 그룹 노드 아래의 실제 Point들 순회하며 스폰
+            for (int j = 0; j < groupNode.childCount; j++)
+            {
+                Transform point = groupNode.GetChild(j);
+
+                // 노드 이름(addressableKey)을 그대로 프리팹 로드에 사용
+                GameObject monsterObj = Managers.Resource.Instantiate(
+                    addressableKey,
+                    point.position,
+                    point.rotation
+                );
+
+                if (monsterObj == null) continue;
+
+                monsterObj.transform.SetParent(monstersRoot);
+
+                MonsterController monsterCtrl = monsterObj.GetComponent<MonsterController>();
+                MonsterStat monsterStat = monsterObj.GetComponent<MonsterStat>();
+
+                if (monsterStat != null && monsterCtrl != null)
+                {
+                    // 레벨 계산 및 스탯 주입
+                    int spawnLevel = (baseData.Grade == MonsterDefine.MonsterGrade.Elite)
+                        ? mapConfig.EliteMonsterLevel : mapConfig.NormalMonsterLevel;
+
+                    MonsterLevelByStat levelStat = Managers.Data.GetData<int, MonsterLevelByStat>(spawnLevel);
+
+                    monsterStat.Init(baseData, levelStat);
+
+                    // 사망 이벤트 구독
+                    monsterStat.OnDead -= OnMonsterDead;
+                    monsterStat.OnDead += OnMonsterDead;
+
+                    _remainingMonsters++;
+                }
+            }
+        }
+    }
+
 
     private async UniTask SetupUI()
     {

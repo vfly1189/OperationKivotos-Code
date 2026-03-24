@@ -7,6 +7,7 @@ public class MonsterSpawner : MonoBehaviour
 {
     [Header("Spawner Info")]
     [SerializeField] private int _spawnerId;
+    [SerializeField] private int _mapId = 1000; // [추가] 이 스포너가 속한 맵의 ID (예: 1000)
 
     // [변경 1] Coroutine 배열 대신 CancellationTokenSource(CTS) 배열 사용
     private CancellationTokenSource[] _respawnCts;
@@ -91,23 +92,32 @@ public class MonsterSpawner : MonoBehaviour
         int pointIdx = info.pointIndex;
         Transform spawnPoint = _spawnPoints[pointIdx];
 
-        MonsterData monsterData = Managers.Data.GetData<int, MonsterData>(info.monsterId);
-
-        //  [변경] monsterData null 체크를 try 진입 전에 처리
-        //          데이터가 없으면 CTS를 직접 정리하고 종료
-        if (monsterData == null)
+        // 1. 몬스터 베이스 데이터 가져오기
+        MonsterBaseData monsterBaseData = Managers.Data.GetData<int, MonsterBaseData>(info.monsterId);
+        if (monsterBaseData == null)
         {
-            Debug.LogError($"[MonsterSpawner] monsterId({info.monsterId}) 데이터 없음. pointIdx({pointIdx}) 정리");
-            if (_respawnCts[pointIdx] != null)
-            {
-                _respawnCts[pointIdx].Dispose();
-                _respawnCts[pointIdx] = null;
-            }
+            Debug.LogError($"[MonsterSpawner] monsterId({info.monsterId}) 데이터 없음.");
+            DisposeCts(pointIdx);
             return;
         }
 
-        // [변경] try-finally로 CTS 정리 보장
-        //          어떤 경로로 나가든 finally는 반드시 실행됨
+        // 2. 맵 설정 데이터 가져오기
+        MapMonsterConfig mapConfig = Managers.Data.GetData<int, MapMonsterConfig>(_mapId);
+        if (mapConfig == null)
+        {
+            Debug.LogError($"[MonsterSpawner] 맵 정보({_mapId})가 없습니다.");
+            DisposeCts(pointIdx);
+            return;
+        }
+
+        // 3. 몬스터 등급에 따른 레벨 결정
+        int spawnLevel = (monsterBaseData.Grade == MonsterDefine.MonsterGrade.Elite)
+            ? mapConfig.EliteMonsterLevel
+            : mapConfig.NormalMonsterLevel;
+
+        // 4. 레벨에 따른 스탯 배율 데이터 가져오기
+        MonsterLevelByStat levelStat = Managers.Data.GetData<int, MonsterLevelByStat>(spawnLevel);
+
         try
         {
             if (info.delay > 0)
@@ -117,29 +127,28 @@ public class MonsterSpawner : MonoBehaviour
                     cancellationToken: token
                 ).SuppressCancellationThrow();
 
-                if (isCanceled) return; // finally 실행 후 종료
+                if (isCanceled) return;
             }
 
             GameObject monsterObj = Managers.Resource.Instantiate(
-                monsterData.addressableKey,
+                monsterBaseData.AddressableKey,
                 spawnPoint.position,
                 spawnPoint.rotation
             );
 
-            // [변경] 경로 3 처리: 컴포넌트 누락 시 고아 GameObject 즉시 정리
-            if (monsterObj == null) return; // finally 실행 후 종료
+            if (monsterObj == null) return;
 
             MonsterController monsterCtrl = monsterObj.GetComponent<MonsterController>();
             MonsterStat monsterStat = monsterObj.GetComponent<MonsterStat>();
 
             if (monsterStat == null || monsterCtrl == null)
             {
-                Debug.LogError($"[MonsterSpawner] {monsterData.addressableKey} 컴포넌트 누락. 오브젝트 정리.");
-                Managers.Resource.Destroy(monsterObj); //  고아 GameObject 즉시 파괴
-                return; // finally 실행 후 종료
+                Managers.Resource.Destroy(monsterObj);
+                return;
             }
 
-            monsterStat.Init(monsterData);
+            // [핵심 변경] BaseData와 LevelStat을 함께 넘겨서 스탯을 계산하게 함
+            monsterStat.Init(monsterBaseData, levelStat);
 
             _monsterToPointIndex[monsterCtrl] = pointIdx;
             _monsterToSpawnInfo[monsterCtrl] = info;
@@ -152,13 +161,15 @@ public class MonsterSpawner : MonoBehaviour
         }
         finally
         {
-            // [핵심] try 블록의 어떤 경로로 나가든 (return, exception, 정상 완료)
-            //          CTS는 반드시 여기서 정리됨
-            if (_respawnCts[pointIdx] != null)
-            {
-                _respawnCts[pointIdx].Dispose();
-                _respawnCts[pointIdx] = null;
-            }
+            DisposeCts(pointIdx);
+        }
+    }
+    private void DisposeCts(int pointIdx)
+    {
+        if (_respawnCts[pointIdx] != null)
+        {
+            _respawnCts[pointIdx].Dispose();
+            _respawnCts[pointIdx] = null;
         }
     }
 

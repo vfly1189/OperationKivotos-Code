@@ -131,6 +131,9 @@ public class EquipmentUpgradeCost
     public int EnhancementCost;
 }
 
+// [추가] 타입 바구니에서 인덱스 딕셔너리를 구별하기 위한 더미 클래스(마커)
+public class EquipmentTierIndex { }
+
 // 데이터베이스 통합 SO
 [CreateAssetMenu(fileName = "ItemDatabase", menuName = "Data/ItemDatabase")]
 public class ItemDatabaseSO : ScriptableObject, IDataCacheable
@@ -209,6 +212,23 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
     }
 
 
+    // [핵심 추가] 장비를 Tier별로 분류하여 캐싱하는 함수 (O(N)을 여기서 단 한 번만 실행)
+    public Dictionary<int, List<int>> MakeEquipmentTierIndexDict()
+    {
+        Dictionary<int, List<int>> tierIndexDict = new Dictionary<int, List<int>>();
+
+        foreach (var equip in Equipments)
+        {
+            if (!tierIndexDict.ContainsKey(equip.Tier))
+            {
+                tierIndexDict[equip.Tier] = new List<int>();
+            }
+            tierIndexDict[equip.Tier].Add(equip.ID);
+        }
+
+        return tierIndexDict;
+    }
+
     // IDataCacheable 구현부: DataManager가 이 함수를 호출해줌
     public void CacheData(Dictionary<Type, object> dataDicts)
     {
@@ -221,5 +241,9 @@ public class ItemDatabaseSO : ScriptableObject, IDataCacheable
         dataDicts[typeof(EquipmentLevelExpData)] = MakeEquipmentLevelExpDict();
         dataDicts[typeof(EquipmentUpgradeCost)] = MakeEquipmentUpgradeCostDict();
         dataDicts[typeof(GradeConfig)] = MakeGradeConfigDict();
+
+
+        //헬퍼용들
+        dataDicts[typeof(EquipmentTierIndex)] = MakeEquipmentTierIndexDict();
     }
 }
