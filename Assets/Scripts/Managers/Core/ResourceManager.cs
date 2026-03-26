@@ -10,6 +10,7 @@ using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 using Object = UnityEngine.Object;
 
 using Cysharp.Threading.Tasks;
+using UnityEngine.U2D;
 
 public class ResourceManager
 {
@@ -20,10 +21,17 @@ public class ResourceManager
     // 2. 씬: 씬 이동(Clear) 시마다 모두 해제되어 메모리 확보 (맵, 몬스터, 환경음 등)
     private Dictionary<string, AsyncOperationHandle> _sceneHandles = new Dictionary<string, AsyncOperationHandle>();
 
+    //아틀라스 파편(Sprite) 보호용 강력한 글로벌 캐시
+    private Dictionary<string, Sprite> _atlasSpriteCache = new Dictionary<string, Sprite>();
+
+
+
     public void Init()
     {
         //global은 계속 살려둘거임
         _sceneHandles.Clear();
+
+        
     }
 
     // =========================================================================
@@ -56,29 +64,80 @@ public class ResourceManager
     // 실제 비동기 로직 분리
     private async UniTask<T> LoadAsyncInternal<T>(string key, bool isGlobal) where T : UnityEngine.Object
     {
-        // 타입 불일치 핸들 제거
-        if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && !(gh.Result is T))
-            _globalHandles.Remove(key);
-        if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && !(sh.Result is T))
-            _sceneHandles.Remove(key);
+        //// 타입 불일치 핸들 제거
+        //if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && !(gh.Result is T))
+        //    _globalHandles.Remove(key);
+        //if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && !(sh.Result is T))
+        //    _sceneHandles.Remove(key);
 
-        // 로딩 중인 핸들 있으면 기다리기
-        if (_globalHandles.TryGetValue(key, out var pending) && !pending.IsDone)
+        //// 로딩 중인 핸들 있으면 기다리기
+        //if (_globalHandles.TryGetValue(key, out var pending) && !pending.IsDone)
+        //{
+        //    await pending.ToUniTask();
+        //    return pending.Result as T;
+        //}
+
+        //var handle = Addressables.LoadAssetAsync<T>(key);
+        //if (isGlobal) _globalHandles[key] = handle;
+        //else _sceneHandles[key] = handle;
+
+        //await handle.ToUniTask();
+
+        //if (handle.Status == AsyncOperationStatus.Succeeded) return handle.Result as T;
+
+        //Debug.LogError($"[ResourceManager] Load Failed: {key}");
+        //if (isGlobal) _globalHandles.Remove(key);
+        //else _sceneHandles.Remove(key);
+        //return null;
+
+        bool wasGlobal = false;
+        AsyncOperationHandle handleToRelease = default;
+
+        // 1. 타입 불일치 핸들 제거 및 원래 글로벌 소속이었는지 기억하기
+        if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && !(gh.Result is T))
         {
-            await pending.ToUniTask();
-            return pending.Result as T;
+            wasGlobal = true; // 아! 얘는 처음에 Global로 프리로드 했던 애구나!
+            _globalHandles.Remove(key);
+            handleToRelease = gh; // 즉시 해제하면 메모리가 날아갈 수 있으니 임시 보관
+        }
+        if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && !(sh.Result is T))
+        {
+            _sceneHandles.Remove(key);
+            handleToRelease = sh;
         }
 
+        // 로딩 중인 핸들 있으면 기다리기
+        if (_globalHandles.TryGetValue(key, out var pendingGlobal) && !pendingGlobal.IsDone)
+        {
+            await pendingGlobal.ToUniTask();
+            return pendingGlobal.Result as T;
+        }
+        if (_sceneHandles.TryGetValue(key, out var pendingScene) && !pendingScene.IsDone)
+        {
+            await pendingScene.ToUniTask();
+            return pendingScene.Result as T;
+        }
+
+        // 2. 새로운 타입(예: Sprite)으로 다시 로드
         var handle = Addressables.LoadAssetAsync<T>(key);
-        if (isGlobal) _globalHandles[key] = handle;
+
+        // 핵심 수정: 원래 글로벌 캐시에 있었던 녀석이면, 다시 로드할 때도 무조건 글로벌에 넣습니다!
+        if (isGlobal || wasGlobal) _globalHandles[key] = handle;
         else _sceneHandles[key] = handle;
 
         await handle.ToUniTask();
 
+        // 새 핸들 로드가 완전히 끝난 후 예전 핸들 해제 
+        // (미리 해제해버리면 새 에셋 로드 전에 번들이 메모리에서 내려가버리는 참사 방지)
+        if (handleToRelease.IsValid())
+        {
+            Addressables.Release(handleToRelease);
+        }
+
         if (handle.Status == AsyncOperationStatus.Succeeded) return handle.Result as T;
 
         Debug.LogError($"[ResourceManager] Load Failed: {key}");
-        if (isGlobal) _globalHandles.Remove(key);
+        if (isGlobal || wasGlobal) _globalHandles.Remove(key);
         else _sceneHandles.Remove(key);
         return null;
     }
@@ -119,7 +178,53 @@ public class ResourceManager
         }
     }
 
-    
+    // =========================================================================
+    // [신규] SpriteAtlas 특화 로드 및 추출 함수 (GC 방어 적용)
+    // =========================================================================
+    public async UniTask<Sprite> GetSpriteFromAtlasAsync(string atlasKey, string spriteName)
+    {
+        if (string.IsNullOrEmpty(spriteName)) return null;
+
+        // 1. 방어 캐시에 안전하게 보관 중이라면 즉시 반환 (가장 빠른 O(1) 처리)
+        if (_atlasSpriteCache.TryGetValue(spriteName, out Sprite cachedSprite))
+        {
+            if (cachedSprite != null) return cachedSprite;
+        }
+
+        // 2. 캐시에 없으면 아틀라스 자체를 어드레서블로 로드 (이미 로드되어 있으면 즉시 반환됨)
+        SpriteAtlas atlas = await LoadAsync<SpriteAtlas>(atlasKey, isGlobal: true);
+
+        if (atlas != null)
+        {
+            // 3. 아틀라스를 여는 순간, 내부의 모든 Sprite 조각을 캐시에 등록 (GC 암살 방지)
+            Sprite[] allSprites = new Sprite[atlas.spriteCount];
+            atlas.GetSprites(allSprites);
+
+            foreach (var s in allSprites)
+            {
+                // (Clone) 글자 떼기
+                string cleanName = s.name.Replace("(Clone)", "");
+
+                // 캐시에 등록
+                if (!_atlasSpriteCache.ContainsKey(cleanName))
+                {
+                    _atlasSpriteCache.Add(cleanName, s);
+                }
+            }
+
+            // 4. 이제 안전하게 캐시에서 꺼내서 반환
+            if (_atlasSpriteCache.TryGetValue(spriteName, out Sprite targetSprite))
+            {
+                return targetSprite;
+            }
+            else
+            {
+                Debug.LogWarning($"[ResourceManager] '{atlasKey}' 아틀라스에 '{spriteName}' 이미지가 없습니다.");
+            }
+        }
+        return null;
+    }
+
 
     // =========================================================================
     // 프리로딩 전용 함수 (if-else 분기문 제거!)

@@ -70,7 +70,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
         BaseItemData itemData = Managers.Data.GetItemData(slotData.itemID, category);
         if (itemData != null)
         {
-            SetItemIcon(itemData.IconKey);
+            SetItemIcon(itemData);
             SetGradeBackGround(itemData.Grade);
 
             //if (slotData.IsEquipment)
@@ -103,13 +103,30 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     }
 
 
-    private async void SetItemIcon(string iconKey)
+    private async void SetItemIcon(BaseItemData itemData)
     {
-        if (string.IsNullOrEmpty(iconKey)) return;
+        if (itemData == null) return;
 
-        Debug.Log($"Test : {iconKey}");
+        // 1. 타입 패턴 매칭을 통해 아틀라스 키와 아이콘 이름 분기 처리
+        (string atlasKey, string iconName) = itemData switch
+        {
+            // itemData가 EquipmentData 타입이면 equip 변수에 할당하고 블록 실행
+            EquipmentData equip => ("EquipmentIconAtlas", equip.IconKey),
+
+            // itemData가 ConsumableData 타입이면 cons 변수에 할당하고 블록 실행
+            ConsumableData cons => ("ConsumablesAtlas", cons.IconKey),
+
+            // itemData가 MaterialData 타입이면 mat 변수에 할당하고 블록 실행
+            MaterialData mat => ("MaterialIconAtlas", mat.IconKey),
+
+            // 어떤 타입에도 맞지 않거나 에러 방지용 (기본값)
+            _ => ("CommonAtlas", itemData.IconKey)
+        };
+
         // ResourceManager를 통해 비동기로 Sprite 로드
-        Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey, isGlobal:true);
+        //Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey, isGlobal:true);
+        Sprite sprite = await Managers.Resource.GetSpriteFromAtlasAsync(atlasKey, iconName);
+
         if (sprite != null && _itemIcon != null)
         {
             _itemIcon.sprite = sprite;
@@ -121,8 +138,10 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     {
         // 등급에 맞는 Addressable Key 문자열 조합 (예: "Common_Gray", "Rare_Blue")
         string gradeKey = $"GradeBg_{grade.ToString()}"; // 예시
-        Debug.Log($"GradeKey : {gradeKey}");
-        Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey, isGlobal:true);
+
+        //Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey, isGlobal:true);
+        Sprite bgSprite = await Managers.Resource.GetSpriteFromAtlasAsync("ItemGradeAtlas", gradeKey);
+
         if (bgSprite != null && _itemGradeBackGround != null)
         {
             _itemGradeBackGround.sprite = bgSprite;

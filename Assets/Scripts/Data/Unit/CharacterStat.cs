@@ -92,7 +92,8 @@ public class CharacterStat : BaseStat, IDamageable
     }
 
     public CharacterDataSO GetData() { return _data; }
-    public AssetReferenceSprite GetPortrait() { return _data.Portrait; }
+    public string GetNameKey() { return _data.nameKey; }
+    //public AssetReferenceSprite GetPortrait() { return _data.Portrait; }
     public AssetReferenceGameObject GetSelectModel() { return _data.selectPrefab; }
 
     public int GetID() { return _data.id; }

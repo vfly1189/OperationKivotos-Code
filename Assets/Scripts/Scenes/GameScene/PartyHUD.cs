@@ -18,10 +18,17 @@ public class PartyHUD : MonoBehaviour
             CharacterDataSO charDataSO = schoolData.characters[i];
             _slots[i].SetCharacterName(charDataSO.nameKR);
 
-            if (charDataSO.Emblem != null && charDataSO.Emblem.RuntimeKeyIsValid())
+            //if (charDataSO.Emblem != null && charDataSO.Emblem.RuntimeKeyIsValid())
+            //{
+            //    int index = i; // 클로저 캡처
+            //    loadTasks.Add(LoadEmblemAsync(charDataSO.Emblem, index));
+            //}
+
+            if (!string.IsNullOrEmpty(charDataSO.nameKey))
             {
-                int index = i; // 클로저 캡처
-                loadTasks.Add(LoadEmblemAsync(charDataSO.Emblem, index));
+                // 규칙: "캐릭터ID_Emblem"
+                string emblemName = $"Emblem_Icon_Favor_{charDataSO.nameKey}";
+                loadTasks.Add(LoadEmblemFromAtlasAsync(emblemName, i));
             }
         }
 
@@ -31,6 +38,15 @@ public class PartyHUD : MonoBehaviour
     private async UniTask LoadEmblemAsync(AssetReferenceSprite emblemRef, int index)
     {
         Sprite loadedSprite = await Managers.Resource.LoadAsync<Sprite>(emblemRef);
+        if (loadedSprite != null)
+        {
+            _slots[index].SetEmblem(loadedSprite);
+        }
+    }
+
+    private async UniTask LoadEmblemFromAtlasAsync(string emblemName, int index)
+    {
+        Sprite loadedSprite = await Managers.Resource.GetSpriteFromAtlasAsync("CharacterEmblemsAtlas", emblemName);
         if (loadedSprite != null)
         {
             _slots[index].SetEmblem(loadedSprite);

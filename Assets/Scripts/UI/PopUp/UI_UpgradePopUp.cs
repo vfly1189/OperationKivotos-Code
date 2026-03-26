@@ -112,7 +112,11 @@ public class UI_UpgradePopUp : UI_PopUp
 
         for (int i = 0; i < characters.Count && i < _partyButtons.Length; i++)
         {
-            _partyButtons[i].image.sprite = await Managers.Resource.LoadAsync<Sprite>(characters[i].Stat.GetPortrait());
+            //_partyButtons[i].image.sprite = await Managers.Resource.LoadAsync<Sprite>(characters[i].Stat.GetPortrait());
+
+            string emblemKey = "Emblem_Icon_Favor_" + characters[i].Stat.GetNameKey();
+            
+            _partyButtons[i].image.sprite = await Managers.Resource.GetSpriteFromAtlasAsync("CharacterEmblemsAtlas", emblemKey);
             _partyButtons[i].interactable = (i != currentIndex);
         }
     }

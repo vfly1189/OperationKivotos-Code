@@ -42,12 +42,29 @@ public struct SlotSubTextStyle
 public static class ItemSlotSubText
 {
     // 강화 수치 (+3)
-    public static Func<InventorySlot, string> UpgradeLevel =>
-        slot => slot.IsEquipment ? $"+{slot.EquipInstance.UpgradeLevel}" : string.Empty;
+    // 기존에 에러 나던 부분 (아마 slot.ItemData.EnhanceLevel 같은 코드가 있을 겁니다)
+    public static Func<InventorySlot, string> UpgradeLevel => slot =>
+    {
+        // 방어 코드 추가!
+        if (slot == null || slot.IsEmpty || slot.EquipInstance == null)
+            return string.Empty;
+
+        // 예시: 장비 데이터로 캐스팅 후 레벨 가져오기
+        if (slot.EquipInstance == null || slot.EquipInstance.UpgradeLevel <= 0)
+            return string.Empty;
+
+        return $"+{slot.EquipInstance.UpgradeLevel}";
+    };
 
     // 스택 수 (x5)
-    public static Func<InventorySlot, string> StackCount =>
-        slot => slot.Amount > 1 ? $"x{slot.Amount}" : string.Empty;
+    public static Func<InventorySlot, string> StackCount => slot =>
+    {
+        // 방어 코드 추가!
+        if (slot == null || slot.IsEmpty)
+            return string.Empty;
+
+        return slot.Amount > 1 ? "x" + slot.Amount.ToString() : string.Empty;
+    };
 
     // 강화재료 선택 팝업  외부 상태(selectedCount)를 클로저로 캡처
     public static Func<InventorySlot, string> EnhanceMaterial(Func<int> getSelectedCount) =>

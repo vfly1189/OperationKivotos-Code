@@ -73,7 +73,6 @@ public class EquipmentData : BaseItemData
     public string EquipPart;
     public int Tier;
 
-
     public int MainStatPoolID;
     public int SubStatPoolID;
 }

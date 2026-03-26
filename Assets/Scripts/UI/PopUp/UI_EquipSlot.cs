@@ -51,10 +51,13 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
 
         Debug.Log($"Test : {iconKey}");
         // ResourceManager를 통해 비동기로 Sprite 로드
-        Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);
-        if (sprite != null && _itemIcon != null)
+        //Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);
+        Sprite icon = await Managers.Resource.GetSpriteFromAtlasAsync("EquipmentIconAtlas", iconKey);
+
+
+        if (icon != null && _itemIcon != null)
         {
-            _itemIcon.sprite = sprite;
+            _itemIcon.sprite = icon;
             _itemIcon.gameObject.SetActive(true);
         }
     }
@@ -63,7 +66,10 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
         // 등급에 맞는 Addressable Key 문자열 조합 (예: "Common_Gray", "Rare_Blue")
         string gradeKey = $"GradeBg_{grade.ToString()}"; // 예시
         Debug.Log($"GradeKey : {gradeKey}");
-        Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey);
+        //Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey);
+        Sprite bgSprite = await Managers.Resource.GetSpriteFromAtlasAsync("ItemGradeAtlas", gradeKey);
+
+
         if (bgSprite != null && _itemGradeBackGround != null)
         {
             _itemGradeBackGround.sprite = bgSprite;
@@ -90,13 +96,16 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
         if (_currentSlotData != null && !_currentSlotData.IsEmpty)
         {
             Debug.Log($"OnPointerEnter 툴팁 시작");
+
             // 툴팁 활성화 및 정보 셋팅
-            Managers.UI.ShowItemTooltip(_currentSlotData, eventData.position);
+            //Managers.UI.ShowItemTooltip(_currentSlotData, eventData.position);
+            UI_ItemInfo.ShowTooltip(_currentSlotData, eventData.position);
         }
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        Managers.UI.HideItemTooltip();
+        //Managers.UI.HideItemTooltip();
+        UI_ItemInfo.HideTooltip();
     }
 }

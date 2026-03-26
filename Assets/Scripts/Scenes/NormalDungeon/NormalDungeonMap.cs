@@ -1,12 +1,12 @@
 using UnityEngine;
 
-public class NormalDungeonMap : BaseMap
+public class NormalDungeonMap : BaseMap, IDungeonMap
 {
     [SerializeField] private Transform[] _endingPoints;
-    [SerializeField] private Transform _cameraPoint;
+    [SerializeField] private Transform _endingCameraPoint;
     
 
-    public Transform[] GetTransforms() { return _endingPoints; }
-    public Transform GetCameraPoint() { return _cameraPoint; }
+    public Transform[] GetEndingTransforms() { return _endingPoints; }
+    public Transform GetEndingCameraPoint() { return _endingCameraPoint; }
 
 }

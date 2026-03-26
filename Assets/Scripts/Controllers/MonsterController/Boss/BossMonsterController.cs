@@ -219,7 +219,7 @@ public class BossMonsterController : MonoBehaviour
 
         // 3. 사망 애니메이션 재생
         _anim.CrossFade("Death", 0.0f);
-
+        OnDead?.Invoke();
         // 6. 3초 뒤 오브젝트 삭제 (연출 시간 확보)
         DespawnAsync(this.GetCancellationTokenOnDestroy()).Forget();
 
@@ -244,7 +244,7 @@ public class BossMonsterController : MonoBehaviour
 
         Debug.Log("보스 사망 연출 종료 -> 던전 클리어");
         Managers.Resource.Destroy(gameObject);
-        OnDead?.Invoke();
+ 
     }
 
     // 애니메이션 이벤트 등에서 호출

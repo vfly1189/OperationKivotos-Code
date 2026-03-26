@@ -10,6 +10,8 @@ public class Managers : MonoBehaviour
     private CurrentGameDataSO _currentGameContext = null;
     public static CurrentGameDataSO Context { get { return Instance._currentGameContext; } }
 
+
+
     #region Core Manager
     InputManager _input = new InputManager();
     PartyManager _party;
@@ -25,6 +27,7 @@ public class Managers : MonoBehaviour
     EquipmentManager _equipment = new EquipmentManager();
     SaveManager _save = new SaveManager();
     DropManager _drop = new DropManager();
+    DungeonManager _dungeon = new DungeonManager();
 
     public static InputManager Input { get { return Instance._input; } }
     public static PartyManager Party { get { return Instance._party; } }
@@ -40,6 +43,7 @@ public class Managers : MonoBehaviour
     public static EquipmentManager Equipment { get { return Instance._equipment; } }
     public static SaveManager Save { get { return Instance._save; } }
     public static DropManager Drop { get { return Instance._drop; } }
+    public static DungeonManager Dungeon {  get { return Instance._dungeon; } }
     #endregion
 
     // [핵심 1] 코루틴 Start 대신 일반 Start에서 Fire-and-forget 비동기 실행

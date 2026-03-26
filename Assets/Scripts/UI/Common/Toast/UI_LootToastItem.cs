@@ -35,11 +35,10 @@ public class UI_LootToastItem : MonoBehaviour
 
     private async UniTaskVoid PlayShowAndHideAnimation()
     {
-        // 1. 초기 상태: 투명하고, 크기는 살짝 작게 (포지션은 절대 건드리지 않음)
         _canvasGroup.alpha = 0f;
         _rectTransform.localScale = new Vector3(1f, 0.5f, 1f);
 
-        // 2. Fade In + 커지는 연출 (0.2초)
+        // 2. Fade In +  커지는 연출 (0.2초)
         float fadeInTime = 0.2f;
         float timer = 0f;
         while (timer < fadeInTime)

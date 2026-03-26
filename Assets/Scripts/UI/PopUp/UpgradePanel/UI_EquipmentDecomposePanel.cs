@@ -118,13 +118,15 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
         if (slot.CurrentSlotData != null && !slot.CurrentSlotData.IsEmpty)
         {
             // 툴팁 활성화 및 정보 셋팅
-            Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
+            //Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
+            UI_ItemInfo.ShowTooltip(slot.CurrentSlotData, screenPos);
         }
     }
 
     public void OnSlotPointerExit(UI_ItemSlot slot)
     {
-        Managers.UI.HideItemTooltip();
+        //Managers.UI.HideItemTooltip();
+        UI_ItemInfo.HideTooltip();
     }
 
 

@@ -25,8 +25,8 @@ public class GameScene : BaseScene
         base.Init();
         _sceneType = Define.Scene.Game;
 
-        Managers.Input.OnEscapePressed -= HandleEscape;
-        Managers.Input.OnEscapePressed += HandleEscape;
+        //Managers.Input.OnEscapePressed -= HandleEscape;
+        //Managers.Input.OnEscapePressed += HandleEscape;
 
         if (_loadingCover != null)
         {
@@ -58,7 +58,8 @@ public class GameScene : BaseScene
         SetupCamera();
         PlayMainBGM();
 
-        FadeInSequence().Forget(); 
+        FadeInSequence().Forget();
+        await UI_LootNotification.PreloadAsync();
 
         Managers.Input.RegisterAction("Info", HandleInfo);   
     }
@@ -84,13 +85,13 @@ public class GameScene : BaseScene
 
     private async UniTask SetupUI()
     {
-        var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
-        if (existingUI != null)
-        {
-            existingUI.gameObject.SetActive(true);
-            existingUI.SetPartyManager();
-            return;
-        }
+        //var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
+        //if (existingUI != null)
+        //{
+        //    existingUI.gameObject.SetActive(true);
+        //    existingUI.SetPartyManager();
+        //    return;
+        //}
 
         await Managers.Resource.LoadAsync<GameObject>("GameSceneCanvas_New");
 
@@ -102,7 +103,7 @@ public class GameScene : BaseScene
         }
 
         // юс╫ц
-        await Managers.UI.GetOrMakeLootPanelAsync();
+        //await Managers.UI.GetOrMakeLootPanelAsync();
     }
 
     private async UniTask CreatePool()
@@ -220,7 +221,6 @@ public class GameScene : BaseScene
     {
         base.Clear();
         Managers.Sound.StopAll();
-        Managers.Input.OnEscapePressed -= HandleEscape;
 
         Managers.Input.UnregisterAction("Info", HandleInfo);
         Managers.Sector.Clear();
@@ -251,14 +251,7 @@ public class GameScene : BaseScene
         Destroy(_loadingCoverInstance);
     }
 
-    private void HandleEscape()
-    {
-        if (Managers.UI.IsPopupOpen)
-        {
-            Managers.UI.ClosePopupUI();
-        }
-    }
-
+    
 
 
     private async UniTask LoadAllSchoolModels()

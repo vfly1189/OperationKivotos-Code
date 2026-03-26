@@ -1,25 +1,33 @@
+using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
 
+
 public class DropManager
 {
-    // 드랍 테이블 ID를 받아 실제로 아이템을 뽑고 인벤토리에 넣은 뒤, 획득한 목록을 반환
-    public void RollAndGiveDropItems(int dropTableId)
+    // 반환형을 List<RewardInfo>로 변경
+    public List<InventorySlot> RollAndGiveDropItems(int dropTableId, bool showToast = true)
     {
-        DropTable table = Managers.Data.GetData<int, DropTable>(dropTableId);
-        if (table == null || table.Entries.Count == 0) return;
+        List<InventorySlot> results = new List<InventorySlot>();
 
-        // 테이블에 명시된 Rolls(굴림 횟수)만큼 가챠를 돌림
+        DropTable table = Managers.Data.GetData<int, DropTable>(dropTableId);
+        if (table == null || table.Entries.Count == 0) return results;
+
         for (int r = 0; r < table.Rolls; r++)
         {
             DropTableEntry pickedEntry = PickRandomEntry(table);
-
             if (pickedEntry != null)
             {
-                GiveReward(pickedEntry);
+                // 실제 인벤토리에 넣고 결과를 받아옴
+                InventorySlot info = GiveReward(pickedEntry, showToast);
+                if (info.itemID > 0)
+                {
+                    results.Add(info);
+                }
             }
         }
+        return results;
     }
 
     // 가중치(Weight) 기반으로 아이템 하나를 뽑는 핵심 함수
@@ -45,8 +53,10 @@ public class DropManager
     }
 
     // 뽑힌 엔트리를 분석해서 실제 인벤토리에 넣어주고 UI 띄우기
-    private async void GiveReward(DropTableEntry entry)
+    private InventorySlot GiveReward(DropTableEntry entry, bool showToast)
     {
+        InventorySlot result = new InventorySlot();
+
         // 1. 개수 결정 (Min ~ Max)
         int amount = Random.Range(entry.MinCount, entry.MaxCount + 1);
 
@@ -61,15 +71,20 @@ public class DropManager
                 // 인벤토리에 추가
                 Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(finalItemId));
 
-                BaseItemData baseData = Managers.Data.GetItemData(finalItemId, ItemCategory.Equipment);
-                EquipmentData data = baseData as EquipmentData;
+                result.itemID = finalItemId;
+                result.Amount = amount;
+                result.itemCategory = ItemCategory.Equipment;
 
-                Sprite icon = await Managers.Resource.LoadAsync<Sprite>(data.IconKey);
+                if(showToast)
+                {
+                    BaseItemData baseData = Managers.Data.GetItemData(finalItemId, ItemCategory.Equipment);
+                    EquipmentData data = baseData as EquipmentData;
+                    UnityEngine.Color backgroundColor = ColorDict.GetGradeColor(data.Grade);
 
-                UnityEngine.Color backgroundColor = ColorDict.GetGradeColor(data.Grade);
-
-                // UI 알림 띄우기
-                Managers.UI.ShowLootToast(data.Name, amount, icon, backgroundColor);
+                    // UI 알림 띄우기
+                    //Managers.UI.ShowLootToast(data.Name, amount, icon, backgroundColor);
+                    UI_LootNotification.ShowToast(ItemCategory.Equipment, data.Name, amount, data.IconKey, backgroundColor).Forget();
+                }
             }
         }
         else if (entry.RewardType == DropTableDefine.RewardType.Material)
@@ -77,14 +92,23 @@ public class DropManager
             // 재료는 ItemID가 명확하게 들어있음
             Managers.Inventory.AddItem(entry.ItemID, ItemCategory.Material, amount);
 
-            BaseItemData baseData = Managers.Data.GetItemData(entry.ItemID, ItemCategory.Material);
-            MaterialData data = baseData as MaterialData;
+            result.itemID = entry.ItemID;
+            result.Amount = amount;
+            result.itemCategory = ItemCategory.Material;
 
-            Sprite icon = await Managers.Resource.LoadAsync<Sprite>(data.IconKey);
-            UnityEngine.Color backgroundColor = ColorDict.GetGradeColor(data.Grade);
-            // UI 알림 띄우기
-            Managers.UI.ShowLootToast(data.Name, amount, icon, backgroundColor);
+            if( showToast)
+            {
+                BaseItemData baseData = Managers.Data.GetItemData(entry.ItemID, ItemCategory.Material);
+                MaterialData data = baseData as MaterialData;
+                UnityEngine.Color backgroundColor = ColorDict.GetGradeColor(data.Grade);
+
+                // UI 알림 띄우기
+                //Managers.UI.ShowLootToast(data.Name, amount, icon, backgroundColor);
+                UI_LootNotification.ShowToast(ItemCategory.Material, data.Name, amount, data.IconKey, backgroundColor).Forget();
+            }
         }
+
+        return result;
     }
 
     // 티어 기반으로 무작위 장비를 하나 뽑아오는 함수

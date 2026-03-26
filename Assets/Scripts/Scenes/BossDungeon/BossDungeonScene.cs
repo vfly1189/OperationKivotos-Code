@@ -1,6 +1,7 @@
 // [추가] UniTask 네임스페이스
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.Linq;
+using NPOI.SS.Formula.Functions;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,6 +13,10 @@ public class BossDungeonScene : BaseScene
 {
     [SerializeField] private BossDungeonScenePreloadSO _preloadData;
     [SerializeField] private GameObject _loadingCover;
+
+
+    // 현재 진입한 던전의 Map ID (MapMonsterConfig의 레벨을 가져오기 위함)
+    private int _currentMapId = 1003;
 
     private GameObject _boss;
     private GameObject _curMap;
@@ -26,6 +31,9 @@ public class BossDungeonScene : BaseScene
 
     private AudioClip _mainBGM;
     private AudioClip _successBGM;
+    private AudioClip _victoryVoice;
+
+    private DungeonSequenceDirector _clearDirector;
 
     // [핵심 1] async UniTaskVoid 로 선언
     protected override async void Init()
@@ -42,23 +50,34 @@ public class BossDungeonScene : BaseScene
             _loadingCoverInstance.GetComponent<LoadingSceneController>().SetValue(1f);
         }
 
-        // [핵심 2] UniTask.Delay 사용
-        //await UniTask.Delay(1000);
-
         await CreateMap();
-        //CreateUI();
 
         var mainUI = SetupUI();
         var poolTask = CreatePool();
         var effectTask = CreateEffectStage();
         var successBgmTask = CreateSuccessBGM();
-        var clearUITask = CreateClearUI();
+        //var clearUITask = CreateClearUI();
+        var victoryVoice = LoadVictoryVoice();
 
         await CreateBoss();
         await CreateBossHPBarUI();
 
         // [핵심 3] UniTask.WhenAll 사용
-        await UniTask.WhenAll(mainUI, poolTask, effectTask, successBgmTask, clearUITask);
+        await UniTask.WhenAll(mainUI, poolTask, effectTask, successBgmTask, victoryVoice);
+
+        var clearCondition = _curMap.AddComponent<KillBossCondition>();
+        clearCondition.SetupCondition(_curMap);
+
+        if (_curMap.GetComponent<DungeonSequenceDirector>() == null)
+        {
+            _clearDirector = _curMap.AddComponent<DungeonSequenceDirector>();
+            _clearDirector.SetupDirector(_curMap, _successBGM, _victoryVoice);
+
+            _clearDirector.OnClearUI -= ClearUI;
+            _clearDirector.OnClearUI += ClearUI;
+        }
+
+        Managers.Dungeon.StartDungeon(clearCondition);
 
 
         // Fire and Forget
@@ -192,21 +211,49 @@ public class BossDungeonScene : BaseScene
     {
         if (_bossSpawnPoint == null || _preloadData.boss == null) return;
 
-        GameObject root = new GameObject { name = "@BossMonster" };
-        root.transform.position = _bossSpawnPoint.position;
+        _bossSpawnPoint = _curMap.transform.Find("BossSpawnPoint");
+
+        Dictionary<int, MonsterBaseData> monsterDict = Managers.Data.GetDict<int, MonsterBaseData>();
+        if (monsterDict == null) return;
+
+        string addressableKey = "Hieronymus_Boss";
+        MonsterBaseData baseData = null;
+        foreach (var data in monsterDict.Values)
+        {
+            if (data.AddressableKey == addressableKey && data.SpawnType == MonsterDefine.MonsterSpawnType.Dungeon)
+            {
+                baseData = data;
+                break;
+            }
+        }
+        if (baseData == null)
+        {
+            Debug.LogWarning($"던전용 몬스터 중 AddressableKey가 '{addressableKey}'인 데이터를 찾을 수 없습니다.");
+            return;
+        }
+
 
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.boss);
 
         if (prefab != null)
         {
-            _boss = Instantiate(prefab, root.transform);
+            _boss = Instantiate(prefab, _bossSpawnPoint.transform);
             _boss.transform.localPosition = Vector3.zero;
 
             var ctrl = _boss.GetComponent<BossMonsterController>();
             if (ctrl != null)
             {
-                ctrl.OnDead -= OnMonsterDead;
-                ctrl.OnDead += OnMonsterDead;
+                MonsterStat monsterStat = _boss.GetComponent<MonsterStat>();
+                if (monsterStat != null && ctrl != null)
+                {
+                    // 레벨 계산 및 스탯 주입
+                    int spawnLevel = 1;
+
+                    MonsterLevelByStat levelStat = Managers.Data.GetData<int, MonsterLevelByStat>(spawnLevel);
+
+                    monsterStat.Init(baseData, levelStat);
+                }
+
             }
 
             if (_curMap != null)
@@ -227,121 +274,38 @@ public class BossDungeonScene : BaseScene
         // [핵심 6] Task.Yield() 대신 안전한 UniTask.Yield() 사용 (에디터 멈춤 원천 차단)
         while (_boss == null) await UniTask.Yield();
 
-        if (_preloadData.bossHPBar == null) return;
-
-        GameObject root = new GameObject { name = "@HPBarUI" };
-
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bossHPBar);
-
-        if (prefab != null)
+        // 1. 이미 BossHPBar 컴포넌트 타입으로 받아옴
+        BossHPBar hpScript = Managers.UI.ShowSceneUI<BossHPBar>("UI_BossHPBar_New");
+        _bossHPBar = hpScript.gameObject;
+        // 2. 받아온 컴포넌트가 널이 아니라면 즉시 데이터 주입
+        if (hpScript != null)
         {
-            _bossHPBar = Instantiate(prefab, root.transform);
-            var hpScript = _bossHPBar.GetComponent<BossHPBar>();
-            if (hpScript != null) hpScript.SetBoss(_boss);
+            hpScript.SetBoss(_boss);
+        }
+        else
+        {
+            Debug.LogError("BossHPBar UI를 로드하는데 실패했습니다! Addressable Key나 Prefab 상태를 확인하세요.");
         }
     }
 
-    async UniTaskVoid PlayVictoryVoice()
+    async UniTask LoadVictoryVoice()
     {
         List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
         if (partyMembers.Count == 0) return;
 
-        int randomNum = Random.Range(0, partyMembers.Count);
-        AssetReferenceT<AudioClip>[] voices = partyMembers[randomNum].Stat.GetBattleVictoryVoices();
+        int randomMemberIdx = Random.Range(0, partyMembers.Count);
+        AssetReferenceT<AudioClip>[] voices = partyMembers[randomMemberIdx].Stat.GetBattleVictoryVoices();
 
         if (voices != null && voices.Length > 0)
         {
             var voiceRef = voices[Random.Range(0, voices.Length)];
             if (voiceRef != null && voiceRef.RuntimeKeyIsValid())
             {
-                AudioClip clip = await Managers.Resource.LoadAsync<AudioClip>(voiceRef);
-                if (clip != null) Managers.Sound.Play(clip, Define.Sound.Voice);
+                _victoryVoice = await Managers.Resource.LoadAsync<AudioClip>(voiceRef);
             }
         }
     }
 
-    private void OnMonsterDead()
-    {
-        if (_successBGM != null) Managers.Sound.Play(_successBGM, Define.Sound.Bgm);
-
-        Managers.Party.FinishGame(true);
-        Managers.Resource.Destroy(_bossHPBar);
-        CoVictoryPoze().Forget(); // 코루틴 대신 UniTask 호출
-    }
-
-    // [핵심 7] 승리 연출 코루틴을 UniTask로 변경
-    private async UniTaskVoid CoVictoryPoze()
-    {
-        Managers.Party.PlayerController.VictoryTime = true;
-
-        // WaitForSeconds 대신 UniTask.Delay(초) 사용
-        await UniTask.Delay(System.TimeSpan.FromSeconds(3.0));
-
-        PlayVictoryVoice().Forget();
-
-        if (_mainUI != null) _mainUI.gameObject.SetActive(false);
-        _clearUI.SetActive(true);
-
-        GameObject camObj = _curMap.GetComponent<BossDungeonMap>().GetEndingCameraPoint().gameObject;
-        camObj.SetActive(true);
-        var token = camObj.GetCancellationTokenOnDestroy();
-        // 카메라 줌 시작
-        CoCameraZoomEffect(camObj.transform, token).Forget();
-
-        Transform[] endingPositions = _curMap.GetComponent<BossDungeonMap>().GetEndingPoints();
-        List<BaseCharacter> characters = Managers.Party.GetMemeber();
-
-        int index = 0;
-        foreach (BaseCharacter character in characters)
-        {
-            character.gameObject.SetActive(true);
-
-            var agent = character.GetComponent<UnityEngine.AI.NavMeshAgent>();
-            if (agent != null) agent.enabled = false;
-
-            var rb = character.GetComponent<Rigidbody>();
-            if (rb != null) rb.isKinematic = true;
-
-            if (index < endingPositions.Length)
-            {
-                character.transform.position = endingPositions[index].position;
-
-                Vector3 targetPos = camObj.transform.position;
-                targetPos.y = character.transform.position.y;
-                Vector3 dir = targetPos - character.transform.position;
-
-                if (dir != Vector3.zero) character.transform.rotation = Quaternion.LookRotation(dir);
-                index++;
-            }
-            character.Victory();
-        }
-    }
-
-    private async UniTaskVoid CoCameraZoomEffect(Transform camTr, System.Threading.CancellationToken cancellationToken)
-    {
-        float duration = 4.0f;
-        float timer = 0f;
-        Vector3 startPos = camTr.position;
-        Vector3 targetPos = startPos + (camTr.forward * 2.0f);
-
-        while (timer < duration)
-        {
-            // [방어 코드] 혹시라도 토큰이 취소되기 직전에 파괴된 경우를 대비한 null 체크
-            if (camTr == null) return;
-
-            timer += Time.deltaTime;
-            float t = timer / duration;
-            float easeT = (t < 0.5f) ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) / 2f;
-
-            camTr.position = Vector3.Lerp(startPos, targetPos, easeT);
-
-            // [핵심 변경] 대기할 때 cancellationToken을 넘겨주어, 파괴 시 루프를 탈출하게 만듦
-            // SuppressCancellationThrow를 쓰면 취소 시 에러 로그 없이 조용히 종료됩니다.
-            bool isCanceled = await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken).SuppressCancellationThrow();
-            if (isCanceled) return; // 씬이 넘어가서 카메라가 파괴되면 쿨하게 연출 종료!
-        }
-        camTr.position = targetPos;
-    }
 
     private async UniTaskVoid CoSafeTeleport()
     {
@@ -350,6 +314,42 @@ public class BossDungeonScene : BaseScene
         Managers.Party.TeleportParty(_spawnPoint.position);
         Camera.main.transform.position = _cameraPoint.position;
         Camera.main.transform.rotation = _cameraPoint.rotation;
+    }
+
+    private void ClearUI()
+    {
+        if (_mainUI != null) _mainUI.gameObject.SetActive(false);
+        if (_clearUI != null) _clearUI.SetActive(true);
+        if (_bossHPBar != null) Managers.Resource.Destroy(_bossHPBar);
+
+        // 1. 던전 테이블에서 현재 맵(_currentMapId)의 클리어 보상 정보 가져오기
+        // (이름은 실제 프로젝트의 던전 테이블 구조에 맞게 변경하세요)
+        DungeonTable dungeonTable = Managers.Data.GetData<int, DungeonTable>(_currentMapId);
+
+        int clearExp = 0;
+        int clearCredit = 0;
+        List<InventorySlot> finalRewards = new List<InventorySlot>();
+
+        if (dungeonTable != null)
+        {
+            clearExp = dungeonTable.ClearExp;
+            clearCredit = dungeonTable.ClearCredit;
+
+            // 2. 실제 플레이어/파티에 경험치와 재화 지급
+            Managers.Party.AddExp(clearExp);
+            Managers.Wallet.AddCurrency(CurrencyType.Credit, clearCredit);
+
+            // 3. 드랍 테이블 ID로 주사위를 굴리고 획득한 아이템 목록 받아오기
+            // (클리어 보상이므로 우측 하단 토스트 팝업은 안 띄우도록 showToast: false 전달)
+            finalRewards = Managers.Drop.RollAndGiveDropItems(dungeonTable.ClearDropTableID, false);
+        }
+
+        // 4. 결과 UI 띄우고 데이터 꽂아주기
+        UI_DungeonClear clearUI = Managers.UI.ShowSceneUI<UI_DungeonClear>("UI_DungeonClear");
+        if (clearUI != null)
+        {
+            clearUI.SetInfo(clearCredit, clearExp, finalRewards);
+        }
     }
 
     private async UniTaskVoid FadeInSequence()
@@ -369,5 +369,14 @@ public class BossDungeonScene : BaseScene
             }
         }
         Managers.Resource.Destroy(_loadingCoverInstance);
+    }
+
+    public override void Clear()
+    {
+        base.Clear();
+        Managers.Sound.StopAll();
+
+        Managers.Dungeon.ClearDungeonData();
+        _clearDirector.OnClearUI -= ClearUI;
     }
 }

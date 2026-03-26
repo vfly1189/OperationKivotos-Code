@@ -28,6 +28,7 @@ public class InventorySlot
 {
     public int itemID;
     public int Amount;
+    public ItemCategory itemCategory;
 
     // 장비일 경우에만 할당되는 고유 데이터
     public EquipmentInstance EquipInstance;

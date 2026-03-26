@@ -77,6 +77,8 @@ public class GameSceneCanvas : UI_Scene
         }
     }
 
+
+
     void Update()
     {
         if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)

@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System;
 
 using UnityEngine;
@@ -99,10 +100,25 @@ public class MonsterStat : BaseStat, IDamageable
                 //playerStat.AddExp(DropExpAmount); // 경험치 추가 함수 호출
                 Managers.Party.AddExp(FinalExpReward);
                 Managers.Wallet.AddCurrency(CurrencyType.Credit, FinalCreditReward);
-                Managers.UI.ShowGainExp(FinalExpReward);
-                Managers.UI.ShowGainCredit(FinalCreditReward);
+
+                if (FinalExpReward > 0)
+                {
+                    //Managers.UI.ShowGainExp(FinalExpReward);
+                    UI_LootNotification.ShowGainExp(FinalExpReward).Forget();
+                }
+
+
+                if (FinalCreditReward > 0)
+                {
+                    //Managers.UI.ShowGainCredit(FinalCreditReward);
+                    UI_LootNotification.ShowGainCredit(FinalCreditReward).Forget();
+                }
+
                 //Debug.Log($"플레이어에게 경험치 {DropExpAmount} 지급!");
-                Managers.Drop.RollAndGiveDropItems(DropTableID);
+
+                if (DropTableID >= 0)
+                    Managers.Drop.RollAndGiveDropItems(DropTableID);
+                
             }
         }
 

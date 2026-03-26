@@ -15,12 +15,22 @@ public abstract class BaseScene : MonoBehaviour
     }
 
     protected virtual void Init()
-    { 
-
+    {
+        Managers.Input.OnEscapePressed -= HandleEscape;
+        Managers.Input.OnEscapePressed += HandleEscape;
     }
 
     public virtual void Clear()
     {
         Managers.Resource.Clear();
+        Managers.Input.OnEscapePressed -= HandleEscape;
+    }
+
+    private void HandleEscape()
+    {
+        if (Managers.UI.IsPopupOpen)
+        {
+            Managers.UI.ClosePopupUI();
+        }
     }
 }

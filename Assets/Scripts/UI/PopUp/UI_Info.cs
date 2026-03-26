@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using System.Threading.Tasks;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -24,7 +25,7 @@ public class UI_Info : UI_PopUp
     {
         base.Init();
 
-        Managers.UI.PreloadTooltip().Forget();
+        //Managers.UI.PreloadTooltip().Forget();
 
 
         // 초기 화면 그리기
@@ -56,7 +57,9 @@ public class UI_Info : UI_PopUp
 
         if(weaponData != null)
         {
-            Sprite icon = await Managers.Resource.LoadAsync<Sprite>(weaponData.weaponIcon);
+            //Sprite icon = await Managers.Resource.LoadAsync<Sprite>(weaponData.weaponIcon);
+            Sprite icon = await Managers.Resource.GetSpriteFromAtlasAsync("WeaponIconAtlas", weaponData.GetWeaponIconName());
+
             _weaponImage.sprite = icon;
         }
 

@@ -12,6 +12,7 @@ public class CharacterDataSO : ScriptableObject
     public int id;              // int_ID
     public string key;           // 예: char_Hoshino -> string_ID
     public string nameKR;       // 예: 호시노
+    public string nameKey;      // 단순 캐릭터 이름, Hoshino, Ako, Aru ...
     // (nameEN은 엑셀에 없으므로 일단 제외하거나 나중에 엑셀에 추가하시면 됩니다)
 
     [Header("Excel Data - Base Stats (Lv.1)")]
@@ -31,15 +32,6 @@ public class CharacterDataSO : ScriptableObject
     [Header("Excel Data - Fixed Stats")]
     public float maxEnergy;           // Max_Energy
 
-
-    // ==========================================
-    // [2] 유니티 에디터에서 개발자가 직접 연결할 에셋들
-    // ==========================================
-    [Header("Assets - UI")]
-    public AssetReferenceSprite  Emblem;
-    public AssetReferenceSprite  Portrait;
-    public AssetReferenceSprite  qSkillIcon;
-    public AssetReferenceSprite  eSkillIcon;
     public Color energyFillColor;
     public Color ultimateGlowColor;
 

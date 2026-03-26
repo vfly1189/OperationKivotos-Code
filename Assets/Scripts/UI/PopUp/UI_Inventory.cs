@@ -28,7 +28,7 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
         Managers.Inventory.OnInventoryUpdated -= RefreshUI;
         Managers.Inventory.OnInventoryUpdated += RefreshUI;
 
-        Managers.UI.PreloadTooltip().Forget();
+        //Managers.UI.PreloadTooltip().Forget();
 
         // 초기 화면 그리기
         RefreshUI(_currentCategory);
@@ -91,7 +91,8 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
         if (slot.CurrentCategory == ItemCategory.Equipment)
         {
             Managers.Equipment.Equip(slot.SlotIndex);
-            Managers.UI.RefreshItemTooltip();
+            //Managers.UI.RefreshItemTooltip();
+            UI_ItemInfo.RefreshItemTooltip();
         }
     }
 
@@ -106,13 +107,15 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
         if (slot.CurrentSlotData != null && !slot.CurrentSlotData.IsEmpty)
         {
             // 툴팁 활성화 및 정보 셋팅
-            Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
+            //Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
+            UI_ItemInfo.ShowTooltip(slot.CurrentSlotData, screenPos);
         }
     }
 
     public void OnSlotPointerExit(UI_ItemSlot slot)
     {
-        Managers.UI.HideItemTooltip();
+        //Managers.UI.HideItemTooltip();
+        UI_ItemInfo.HideTooltip();
     }
 
 

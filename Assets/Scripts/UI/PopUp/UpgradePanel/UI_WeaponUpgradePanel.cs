@@ -104,7 +104,10 @@ public class UI_WeaponUpgradePanel : UI_Base
 
         for (int i = 0; i < characters.Count && i < _partyButtons.Length; i++)
         {
-            _partyButtons[i].image.sprite = await Managers.Resource.LoadAsync<Sprite>(characters[i].Stat.GetPortrait());
+            //_partyButtons[i].image.sprite = await Managers.Resource.LoadAsync<Sprite>(characters[i].Stat.GetPortrait());
+            string emblemKey = "Student_Portrait_" + characters[i].Stat.GetNameKey();
+
+            _partyButtons[i].image.sprite = await Managers.Resource.GetSpriteFromAtlasAsync("CharacterPortraitsAtlas", emblemKey);
             _partyButtons[i].interactable = (i != currentIndex);
         }
     }
@@ -137,7 +140,10 @@ public class UI_WeaponUpgradePanel : UI_Base
             Sprite icon = null;
 
             if (weaponData.weaponIcon != null)
-                icon = await Managers.Resource.LoadAsync<Sprite>(weaponData.weaponIcon);
+            {
+                //icon = await Managers.Resource.LoadAsync<Sprite>(weaponData.weaponIcon);
+                icon = await Managers.Resource.GetSpriteFromAtlasAsync("WeaponIconAtlas", weaponData.GetWeaponIconName());
+            }
 
             _weaponImage.sprite = icon;
             _weaponImage.enabled = (icon != null);

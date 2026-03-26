@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class BossDungeonMap : BaseMap
+public class BossDungeonMap : BaseMap, IDungeonMap
 {
     [SerializeField] private Transform _spawnPoint;
     [SerializeField] private Transform _cameraPoint;
@@ -17,7 +17,7 @@ public class BossDungeonMap : BaseMap
     public Transform GetCameraPoint() { return _cameraPoint; }
     public Transform GetBossSpawnPoint() { return _bossSpawnPoint; }
 
-    public Transform[] GetEndingPoints() {  return _endingPoints; }
+    public Transform[] GetEndingTransforms() {  return _endingPoints; }
     public Transform GetEndingCameraPoint() { return _endingCameraPoint; }
 
     public Transform[] GetMonsterSpawnPoints() { return _monsterSpawnPoints; }

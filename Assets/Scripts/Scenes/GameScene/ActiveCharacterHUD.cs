@@ -48,20 +48,21 @@ public class ActiveCharacterHUD : MonoBehaviour
     {
         if (charData == null) return;
 
+        Debug.Log($"[ActiveHUD] ChangeStaticDataAsync 호출: {charData.nameKey}");
+
         _qSkill.SetEnergyFillColor(charData.energyFillColor);
         _qSkill.SetReadyGlowColor(charData.ultimateGlowColor);
 
-        if (charData.qSkillIcon != null && charData.qSkillIcon.RuntimeKeyIsValid())
-        {
-            Sprite qIcon = await Managers.Resource.LoadAsync<Sprite>(charData.qSkillIcon);
-            _qSkill.SetIcon(qIcon);
-        }
 
-        if (charData.eSkillIcon != null && charData.eSkillIcon.RuntimeKeyIsValid())
-        {
-            Sprite eIcon = await Managers.Resource.LoadAsync<Sprite>(charData.eSkillIcon);
-            _eSkill.SetIcon(eIcon);
-        }
+        // 규칙: "캐릭터ID_Q_Icon"
+        string qIconName = $"{charData.nameKey}_Q_Icon";
+        Sprite qIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", qIconName);      
+        if (qIcon != null) _qSkill.SetIcon(qIcon);
+
+        // 규칙: "캐릭터ID_E_Icon"
+        string eIconName = $"{charData.nameKey}_E_Icon";
+        Sprite eIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", eIconName);
+        if (eIcon != null) _eSkill.SetIcon(eIcon);
     }
 
     public void UpdateCooldowns(CharacterStat stat)

@@ -47,4 +47,25 @@ public class WeaponDataSO : ScriptableObject
         Debug.LogError($"[{weaponName}] {level} 레벨의 스탯 데이터가 없습니다.");
         return default;
     }
+
+    public string GetWeaponIconName()
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            Debug.LogWarning($"[WeaponDataSO] 무기 ID {id}의 key가 비어있습니다!");
+            return "Weapon_Icon_Default"; // 빈 하얀색 대신 띄워줄 기본 아이콘 이름
+        }
+
+        // 2. 형식이 안 맞을 때 (언더바가 없을 때) 방어
+        string[] splitData = key.Split('_');
+        if (splitData.Length < 2)
+        {
+            Debug.LogWarning($"[WeaponDataSO] 무기 key 형식이 잘못되었습니다. (현재: {key}, 예상: wpn_Name)");
+            return "Weapon_Icon_Default";
+        }
+
+        // 3. 문자열 보간을 사용하여 깔끔하게 조합
+        string characterName = splitData[1];
+        return $"Weapon_Icon_{characterName}";
+    }
 }

@@ -30,7 +30,9 @@ public class UI_SubStatInfo : UI_Base
         // 3. 아이콘 동적 로드 
         // (이전에 만든 아이콘들의 이름을 "Icon_MaxHP", "Icon_Attack" 등으로 Addressable에 등록해두었다고 가정)
         string iconKey = GetIconNameByStat(stat.StatType);
-        Sprite iconSprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);
+        //Sprite iconSprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);
+        Sprite iconSprite = await Managers.Resource.GetSpriteFromAtlasAsync("StatIconAtlas", iconKey);
+
 
         if (this == null || gameObject == null || !gameObject.activeInHierarchy)
             return;
