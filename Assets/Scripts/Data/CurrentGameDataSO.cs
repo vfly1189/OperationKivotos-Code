@@ -17,6 +17,9 @@ public class CurrentGameDataSO : ScriptableObject
     public Dictionary<int, CharacterRuntimeData> SavedCharacterStats = new Dictionary<int, CharacterRuntimeData>();
     public Define.DungeonDifficulty SelectedDifficulty { get; set; } = Define.DungeonDifficulty.Easy;
 
+    // CurrentGameDataSO.cs
+    public int CurrentDungeonID { get; set; } // 추가!
+    public int CurrentDungeonGroupID { get; set; } // (선택) UI 띄울때 필요하다면 저장
 
     public SchoolDataSO SelectedSchool
     {
@@ -43,6 +46,8 @@ public class CurrentGameDataSO : ScriptableObject
         Debug.Log("[SO] Clear() 호출됨");
         SelectedSchool = null;
         PartySaveData = null;
+        CurrentDungeonID = 0;
+        CurrentDungeonGroupID = 0;
         // SelectedCharacters.Clear();
     }
 

@@ -11,9 +11,6 @@ public class NormalDungeonScene : BaseScene
     [SerializeField] private GameObject _loadingCover;
     [SerializeField] private NormalDungeonScenePreloadSO _preloadData;
 
-    // 현재 진입한 던전의 Map ID (MapMonsterConfig의 레벨을 가져오기 위함)
-    private int _currentMapId = 1000;
-
     private GameObject _curMap;
     private GameSceneCanvas _mainUI;
     private GameObject _loadingCoverInstance;
@@ -29,6 +26,7 @@ public class NormalDungeonScene : BaseScene
     {
         base.Init();
         _sceneType = Define.Scene.NormalDungeon;
+
 
         GameObject spawnPointObj = new GameObject("TempSpawn");
         spawnPointObj.transform.position = Vector3.zero;
@@ -130,10 +128,10 @@ public class NormalDungeonScene : BaseScene
             monstersRoot = go.transform;
         }
 
-        MapMonsterConfig mapConfig = Managers.Data.GetData<int, MapMonsterConfig>(_currentMapId);
+        MapMonsterConfig mapConfig = Managers.Data.GetData<int, MapMonsterConfig>(Managers.Context.CurrentDungeonID);
         if (mapConfig == null)
         {
-            Debug.LogError($"맵 정보({_currentMapId})가 없습니다.");
+            Debug.LogError($"맵 정보({Managers.Context.CurrentDungeonGroupID})가 없습니다.");
             return;
         }
 
@@ -308,21 +306,28 @@ public class NormalDungeonScene : BaseScene
 
     private void ClearUI()
     {
-        if (_mainUI != null) _mainUI.gameObject.SetActive(false);
+        if (_mainUI != null)
+        {
+            //_mainUI.gameObject.SetActive(false);
+            Managers.Resource.Destroy(_mainUI.gameObject);
+        }
         if (_clearUI != null) _clearUI.SetActive(true);
 
         // 1. 던전 테이블에서 현재 맵(_currentMapId)의 클리어 보상 정보 가져오기
         // (이름은 실제 프로젝트의 던전 테이블 구조에 맞게 변경하세요)
-        DungeonTable dungeonTable = Managers.Data.GetData<int, DungeonTable>(_currentMapId);
+        //DungeonTable dungeonTable = Managers.Data.GetData<int, DungeonTable>(_currentMapId);
+        DungeonGroup dungeonGroup = Managers.Data.GetData<int, DungeonGroup>(Managers.Context.CurrentDungeonGroupID);
+        DungeonData dungeonData = dungeonGroup.DungeonDataByDifficulty[Managers.Context.SelectedDifficulty];
+
 
         int clearExp = 0;
         int clearCredit = 0;
         List<InventorySlot> finalRewards = new List<InventorySlot>();
 
-        if (dungeonTable != null)
+        if (dungeonData != null)
         {
-            clearExp = dungeonTable.ClearExp;
-            clearCredit = dungeonTable.ClearCredit;
+            clearExp = dungeonData.ClearExp;
+            clearCredit = dungeonData.ClearCredit;
 
             // 2. 실제 플레이어/파티에 경험치와 재화 지급
             Managers.Party.AddExp(clearExp);
@@ -330,7 +335,7 @@ public class NormalDungeonScene : BaseScene
 
             // 3. 드랍 테이블 ID로 주사위를 굴리고 획득한 아이템 목록 받아오기
             // (클리어 보상이므로 우측 하단 토스트 팝업은 안 띄우도록 showToast: false 전달)
-            finalRewards = Managers.Drop.RollAndGiveDropItems(dungeonTable.ClearDropTableID, false);
+            finalRewards = Managers.Drop.RollAndGiveDropItems(dungeonData.ClearDropTableID, false);
         }
 
         // 4. 결과 UI 띄우고 데이터 꽂아주기
@@ -367,5 +372,7 @@ public class NormalDungeonScene : BaseScene
 
         Managers.Dungeon.ClearDungeonData();
         _clearDirector.OnClearUI -= ClearUI;
+
+        Managers.Resource.Destroy(_clearUI);
     }
 }

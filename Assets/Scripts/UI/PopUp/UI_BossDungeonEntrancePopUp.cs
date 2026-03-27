@@ -6,12 +6,17 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
     [SerializeField] private Button _enterButton;
     [SerializeField] private Button _cancelButton;
 
+    private int _dungeonGroupID = -1;
     public override void Init()
     {
        base.Init();
 
         if(_enterButton != null) _enterButton.onClick.AddListener(OnEnterClicked);
         if(_cancelButton != null) _cancelButton.onClick.AddListener(OnCancelClicked);
+    }
+    public void SetDungeonGroupID(int groupID)
+    {
+        _dungeonGroupID = groupID;
     }
 
     void OnCancelClicked()

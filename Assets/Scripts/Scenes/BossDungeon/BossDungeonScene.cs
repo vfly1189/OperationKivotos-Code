@@ -14,10 +14,6 @@ public class BossDungeonScene : BaseScene
     [SerializeField] private BossDungeonScenePreloadSO _preloadData;
     [SerializeField] private GameObject _loadingCover;
 
-
-    // 현재 진입한 던전의 Map ID (MapMonsterConfig의 레벨을 가져오기 위함)
-    private int _currentMapId = 1003;
-
     private GameObject _boss;
     private GameObject _curMap;
     private GameSceneCanvas _mainUI;
@@ -318,22 +314,28 @@ public class BossDungeonScene : BaseScene
 
     private void ClearUI()
     {
-        if (_mainUI != null) _mainUI.gameObject.SetActive(false);
+        if (_mainUI != null)
+        {
+            //_mainUI.gameObject.SetActive(false);
+            Managers.Resource.Destroy(_mainUI.gameObject);
+        }
         if (_clearUI != null) _clearUI.SetActive(true);
         if (_bossHPBar != null) Managers.Resource.Destroy(_bossHPBar);
 
         // 1. 던전 테이블에서 현재 맵(_currentMapId)의 클리어 보상 정보 가져오기
         // (이름은 실제 프로젝트의 던전 테이블 구조에 맞게 변경하세요)
-        DungeonTable dungeonTable = Managers.Data.GetData<int, DungeonTable>(_currentMapId);
+        //DungeonTable dungeonTable = Managers.Data.GetData<int, DungeonTable>(_currentMapId);
+        DungeonGroup dungeonGroup = Managers.Data.GetData<int, DungeonGroup>(Managers.Context.CurrentDungeonGroupID);
+        DungeonData dungeonData = dungeonGroup.DungeonDataByDifficulty[Managers.Context.SelectedDifficulty];
 
         int clearExp = 0;
         int clearCredit = 0;
         List<InventorySlot> finalRewards = new List<InventorySlot>();
 
-        if (dungeonTable != null)
+        if (dungeonData != null)
         {
-            clearExp = dungeonTable.ClearExp;
-            clearCredit = dungeonTable.ClearCredit;
+            clearExp = dungeonData.ClearExp;
+            clearCredit = dungeonData.ClearCredit;
 
             // 2. 실제 플레이어/파티에 경험치와 재화 지급
             Managers.Party.AddExp(clearExp);
@@ -341,7 +343,7 @@ public class BossDungeonScene : BaseScene
 
             // 3. 드랍 테이블 ID로 주사위를 굴리고 획득한 아이템 목록 받아오기
             // (클리어 보상이므로 우측 하단 토스트 팝업은 안 띄우도록 showToast: false 전달)
-            finalRewards = Managers.Drop.RollAndGiveDropItems(dungeonTable.ClearDropTableID, false);
+            finalRewards = Managers.Drop.RollAndGiveDropItems(dungeonData.ClearDropTableID, false);
         }
 
         // 4. 결과 UI 띄우고 데이터 꽂아주기

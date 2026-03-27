@@ -39,6 +39,7 @@ public class DataManager
 
         tasks.Add(LoadAndCacheSOAsync<MonsterDatabaseSO>("MonsterDatabase"));
         tasks.Add(LoadAndCacheSOAsync<DropTableDatabaseSO>("DropTableDatabase"));
+        tasks.Add(LoadAndCacheSOAsync<DungeonDatabaseSO>("DungeonDatabase"));
         // 병렬로 한 방에 다운로드 및 파싱
         await UniTask.WhenAll(tasks);
 

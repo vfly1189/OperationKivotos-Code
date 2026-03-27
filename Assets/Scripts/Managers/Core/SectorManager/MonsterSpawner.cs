@@ -7,7 +7,7 @@ public class MonsterSpawner : MonoBehaviour
 {
     [Header("Spawner Info")]
     [SerializeField] private int _spawnerId;
-    [SerializeField] private int _mapId = 1000; // [추가] 이 스포너가 속한 맵의 ID (예: 1000)
+    [SerializeField] private int _mapId = 1006; // [추가] 이 스포너가 속한 맵의 ID (예: 1000)
 
     // [변경 1] Coroutine 배열 대신 CancellationTokenSource(CTS) 배열 사용
     private CancellationTokenSource[] _respawnCts;

@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,6 +9,8 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
 {
     [SerializeField] private Transform _contentParent; // ScrollView의 Content
     [SerializeField] private Button[] _tabButtons; // 0:장비, 1:소비, 2:재료
+
+    [SerializeField] private TextMeshProUGUI _creditNum;
 
     private ItemCategory _currentCategory = ItemCategory.Equipment;
     private List<UI_ItemSlot> _activeSlots = new List<UI_ItemSlot>();
@@ -75,8 +78,14 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
             _activeSlots[i].SetInfo(invenArray[i], category, i);
             _activeSlots[i].SetHandler(this);
         }
-
+        SetCredit();
         _isRefreshing = false;
+    }
+
+    private void SetCredit()
+    {
+        Debug.Log($"현재 크레딧 : {Managers.Wallet.GetCurrency(CurrencyType.Credit)}");
+        _creditNum.text = Managers.Wallet.GetCurrency(CurrencyType.Credit).ToString("N0");
     }
 
     // 인벤토리에서 단순 클릭은 툴팁 갱신 정도

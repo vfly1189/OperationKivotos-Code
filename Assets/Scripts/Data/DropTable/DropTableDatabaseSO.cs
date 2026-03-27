@@ -26,15 +26,15 @@ public class DropTableEntry
     public int MinCount;
 }
 
-[Serializable]
-public class DungeonTable
-{
-    public int DungeonID;
-    public string DungeonName;
-    public int ClearExp;
-    public int ClearCredit;
-    public int ClearDropTableID;
-}
+//[Serializable]
+//public class DungeonTable
+//{
+//    public int DungeonID;
+//    public string DungeonName;
+//    public int ClearExp;
+//    public int ClearCredit;
+//    public int ClearDropTableID;
+//}
 
 
 [Serializable]
@@ -56,7 +56,7 @@ public class DropTable
 public class DropTableDatabaseSO : ScriptableObject, IDataCacheable
 {
     public List<DropTable> DropTables = new List<DropTable>();
-    public List<DungeonTable> DungeonTables = new List<DungeonTable>();
+    //public List<DungeonTable> DungeonTables = new List<DungeonTable>();
 
     public Dictionary<int, DropTable> MakeDropTableDict()
     {
@@ -65,12 +65,12 @@ public class DropTableDatabaseSO : ScriptableObject, IDataCacheable
         return dict;
     }
 
-    public Dictionary<int, DungeonTable> MakeDungeonTableDict()
-    {
-        Dictionary<int, DungeonTable> dict = new Dictionary<int, DungeonTable>();
-        foreach (var item in DungeonTables) dict[item.DungeonID] = item;
-        return dict;
-    }
+    //public Dictionary<int, DungeonTable> MakeDungeonTableDict()
+    //{
+    //    Dictionary<int, DungeonTable> dict = new Dictionary<int, DungeonTable>();
+    //    foreach (var item in DungeonTables) dict[item.DungeonID] = item;
+    //    return dict;
+    //}
 
     public void CacheData(Dictionary<Type, object> dataDicts)
     {
@@ -86,6 +86,6 @@ public class DropTableDatabaseSO : ScriptableObject, IDataCacheable
         }
 
         dataDicts[typeof(DropTable)] = MakeDropTableDict();
-        dataDicts[typeof(DungeonTable)] = MakeDungeonTableDict();
+        //dataDicts[typeof(DungeonTable)] = MakeDungeonTableDict();
     }
 }

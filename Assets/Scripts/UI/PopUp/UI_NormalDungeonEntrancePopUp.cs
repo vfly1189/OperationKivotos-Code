@@ -12,6 +12,9 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
     [SerializeField] private Button _normalButton;
     [SerializeField] private Button _hardButton;
 
+    [SerializeField] private TextMeshProUGUI _requireLevelText;
+    [SerializeField] private TextMeshProUGUI _dungeonNameText;
+
     // 텍스트 컴포넌트 캐싱용 (버튼 자식에 있는 텍스트)
     private TextMeshProUGUI _easyText;
     private TextMeshProUGUI _normalText;
@@ -23,6 +26,7 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
     private Color _colHard;
     private Color _colDeactive = new Color(0.7f, 0.7f, 0.7f, 1f); // 비활성 색상 (회색)
 
+    private int _dungeonGroupID = -1;
     public override void Init()
     {
         base.Init();
@@ -55,8 +59,13 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
         // 1. 매니저에 저장
         Managers.Context.SelectedDifficulty = difficulty;
 
+        Managers.Context.CurrentDungeonGroupID = _dungeonGroupID;
+        Managers.Context.CurrentDungeonID =
+            Managers.Data.GetData<int, DungeonGroup>(_dungeonGroupID).DungeonDataByDifficulty[difficulty].DungeonID;
+
         // 2. 버튼 색상 갱신
         UpdateButtonColors(difficulty);
+        UpdateRequireLevelText(difficulty);
     }
 
     void UpdateButtonColors(Define.DungeonDifficulty selectedDifficulty)
@@ -94,6 +103,20 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
         }
     }
 
+    private void UpdateRequireLevelText(Define.DungeonDifficulty difficulty)
+    {
+        _requireLevelText.gameObject.SetActive(true);
+
+        DungeonData data = Managers.Data.GetData<int, DungeonGroup>(_dungeonGroupID).GetDungeonData(difficulty);
+
+        _requireLevelText.text = $"권장레벨 : " + data.RequiredLevel.ToString();
+
+        if (data.RequiredLevel <= Managers.Party.PartyLevel)
+            _requireLevelText.color = _colEasy;
+        else
+            _requireLevelText.color = _colHard;
+    }
+
     // 버튼과 텍스트 색상 일괄 적용 함수
     void SetButtonColor(Button btn, TextMeshProUGUI txt, Color color, bool isSelected)
     {
@@ -101,6 +124,11 @@ public class UI_NormalDungeonEntrancePopUp : UI_PopUp
         {
             txt.color = color; // 텍스트 색상 변경
         }
+    }
+
+    public void SetDungeonGroupID(int groupID)
+    {
+        _dungeonGroupID = groupID;
     }
 
     void OnCancelClicked()

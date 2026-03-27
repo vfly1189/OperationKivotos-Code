@@ -25,7 +25,7 @@ public class DropTableExcelImporter : EditorWindow
             IWorkbook book = new XSSFWorkbook(stream);
 
             List<DropTable> dropTables = new List<DropTable>();
-            List<DungeonTable> dungeonTables = new List<DungeonTable>();
+            //List<DungeonTable> dungeonTables = new List<DungeonTable>();
 
 
             // 1. DropTable 시트 파싱 
@@ -77,33 +77,33 @@ public class DropTableExcelImporter : EditorWindow
                 }
             }
 
-            // 3. DungeonTable 시트 파싱 
-            ISheet dungeonTableSheet = book.GetSheet("DungeonTable");
-            if (dungeonTableSheet != null)
-            {
-                for (int i = 1; i <= dungeonTableSheet.LastRowNum; i++)
-                {
-                    IRow row = dungeonTableSheet.GetRow(i);
-                    if (row == null || row.GetCell(0) == null || row.GetCell(0).CellType == CellType.Blank)
-                        continue;
+            //// 3. DungeonTable 시트 파싱 
+            //ISheet dungeonTableSheet = book.GetSheet("DungeonTable");
+            //if (dungeonTableSheet != null)
+            //{
+            //    for (int i = 1; i <= dungeonTableSheet.LastRowNum; i++)
+            //    {
+            //        IRow row = dungeonTableSheet.GetRow(i);
+            //        if (row == null || row.GetCell(0) == null || row.GetCell(0).CellType == CellType.Blank)
+            //            continue;
 
-                    DungeonTable data = new DungeonTable();
-                    // --- BaseItemData 상속 속성 ---
+            //        DungeonTable data = new DungeonTable();
+            //        // --- BaseItemData 상속 속성 ---
 
-                    data.DungeonID = GetNumericValue(row.GetCell(0));
-                    data.DungeonName = GetCellString(row.GetCell(1));
-                    data.ClearExp = GetNumericValue(row.GetCell(2));
-                    data.ClearCredit = GetNumericValue(row.GetCell(3));
-                    data.ClearDropTableID = GetNumericValue(row.GetCell(4));
+            //        data.DungeonID = GetNumericValue(row.GetCell(0));
+            //        data.DungeonName = GetCellString(row.GetCell(1));
+            //        data.ClearExp = GetNumericValue(row.GetCell(2));
+            //        data.ClearCredit = GetNumericValue(row.GetCell(3));
+            //        data.ClearDropTableID = GetNumericValue(row.GetCell(4));
                  
-                    dungeonTables.Add(data);
-                }
-            }
+            //        dungeonTables.Add(data);
+            //    }
+            //}
 
 
 
             SaveToScriptableObject(
-                dropTables, dungeonTables
+                dropTables
                 ); // 파라미터 추가
         }
     }
@@ -148,7 +148,7 @@ public class DropTableExcelImporter : EditorWindow
 
     // statPools 파라미터 추가
     private static void SaveToScriptableObject(
-        List<DropTable> dropTables, List<DungeonTable> dungeonTables)
+        List<DropTable> dropTables)
     {
         string assetPath = "Assets/Resources_moved/Data/DropTableDatabase.asset";
         if (!Directory.Exists(Application.dataPath + "/Resources_moved/Data"))
@@ -164,7 +164,7 @@ public class DropTableExcelImporter : EditorWindow
         }
 
         database.DropTables = dropTables;
-        database.DungeonTables = dungeonTables;
+        //database.DungeonTables = dungeonTables;
 
         EditorUtility.SetDirty(database);
         AssetDatabase.SaveAssets();
