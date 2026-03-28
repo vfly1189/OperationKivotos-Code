@@ -243,9 +243,10 @@ public class BossDungeonScene : BaseScene
                 if (monsterStat != null && ctrl != null)
                 {
                     // 레벨 계산 및 스탯 주입
-                    int spawnLevel = 1;
+                    //int spawnLevel = 1;
+                    MapMonsterConfig config = Managers.Data.GetData<int, MapMonsterConfig>(Managers.Context.CurrentDungeonID);
 
-                    MonsterLevelByStat levelStat = Managers.Data.GetData<int, MonsterLevelByStat>(spawnLevel);
+                    MonsterLevelByStat levelStat = Managers.Data.GetData<int, MonsterLevelByStat>(config.EliteMonsterLevel);
 
                     monsterStat.Init(baseData, levelStat);
                 }

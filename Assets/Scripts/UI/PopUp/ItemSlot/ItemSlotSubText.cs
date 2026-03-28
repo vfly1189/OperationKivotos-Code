@@ -50,7 +50,7 @@ public static class ItemSlotSubText
             return string.Empty;
 
         // 예시: 장비 데이터로 캐스팅 후 레벨 가져오기
-        if (slot.EquipInstance == null || slot.EquipInstance.UpgradeLevel <= 0)
+        if (slot.EquipInstance == null || slot.EquipInstance.UpgradeLevel < 0)
             return string.Empty;
 
         return $"+{slot.EquipInstance.UpgradeLevel}";
