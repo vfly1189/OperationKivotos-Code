@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.UI;
@@ -6,14 +7,6 @@ public class SoundButton : MonoBehaviour
 {
     [SerializeField] private Button _soundSettingButton;
     
-    
-    private GameObject _soundSettingPopupPrefab;
-
-    // 외부에서 Prefab 주입
-    public void SetPopupPrefab(GameObject prefab)
-    {
-        _soundSettingPopupPrefab = prefab;
-    }
 
     private void Start()
     {
@@ -24,16 +17,10 @@ public class SoundButton : MonoBehaviour
             _soundSettingButton.onClick.AddListener(OnSoundSettingClicked);
     }
 
-    private void OnSoundSettingClicked()
+    private async void OnSoundSettingClicked()
     {
-        if (_soundSettingPopupPrefab == null)
-        {
-            Debug.LogError("SoundSetting Popup Prefab이 연결되지 않았습니다!");
-            return;
-        }
-
         // Prefab을 직접 전달
-       // Managers.UI.ShowPopupUI<UI_SoundSetting>(_soundSettingPopupPrefab);
+        await Managers.UI.ShowPopupUIAsync<UI_SoundSetting>("UI_SoundSetting");
     }
 
     private void OnDestroy()

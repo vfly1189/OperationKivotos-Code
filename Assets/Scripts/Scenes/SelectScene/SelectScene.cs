@@ -104,7 +104,7 @@ public class SelectScene : BaseScene
                     // [수정점 3] Addressables 직접 로드 제거 -> ResourceManager 위임
                     AudioClip clip = await Managers.Resource.LoadAsync<AudioClip>(voiceRef);
 
-                    if (clip != null) Managers.Sound.Play(clip, Define.Sound.Effect);
+                    if (clip != null) Managers.Sound.Play(clip, Define.Sound.Voice);
                 }
             }
         }
@@ -259,4 +259,5 @@ public class SelectScene : BaseScene
 
         Destroy(_loadingCoverInstance);
     }
+
 }

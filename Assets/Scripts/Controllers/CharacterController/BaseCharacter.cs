@@ -282,14 +282,23 @@ public class BaseCharacter : MonoBehaviour
     {
         if (_stateMachine.IsDead()) return;
 
-        bool isAttackPressed = UnityEngine.InputSystem.Mouse.current.leftButton.isPressed;
+        //  1. 팝업이 떠 있으면 강제로 누르지 않은 것으로 간주
+        bool isUIOpen = Managers.UI.IsPopupOpen;
 
-        if (isAttackPressed && _stateMachine.CurrentState == CharacterStateMachine.PlayerState.Attack)
+        //  2. 현재 마우스 왼쪽 버튼 상태
+        bool isMousePhysicalPressed = UnityEngine.InputSystem.Mouse.current.leftButton.isPressed;
+
+        //  핵심: 마우스를 누르고 있더라도 UI가 떠 있다면 연사 중지!
+        bool shouldContinueAttack = isMousePhysicalPressed && !isUIOpen;
+
+        if (shouldContinueAttack && _stateMachine.CurrentState == CharacterStateMachine.PlayerState.Attack)
         {
-            _anim.Play("Attack_Ing", 0, 0f);
+            // 계속 누르고 있고 UI도 안 떠있으므로 연사 진행
+            _anim.Play("Attack_Ing", -1, 0f);
             return;
         }
 
+        // 위 조건에 안 맞으면 (마우스를 뗐거나, UI가 떴거나) 무조건 Idle로 복귀
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);
         IsUsingSkill = false;
     }

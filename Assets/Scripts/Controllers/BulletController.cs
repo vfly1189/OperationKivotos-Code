@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks.Triggers;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Diagnostics;
@@ -81,7 +82,9 @@ public class BulletController : MonoBehaviour
         {
             Debug.Log($"other : {other.gameObject.name}");
             // 데미지 대상은 아닌데 부딪힘 -> 벽(Wall)이나 장애물
-            Managers.Resource.Destroy(gameObject);
+            
+            if(other.gameObject.layer == LayerMask.NameToLayer("Wall")) 
+                Managers.Resource.Destroy(gameObject);
         }
     }
 

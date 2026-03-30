@@ -15,6 +15,7 @@ public class StartScene : BaseScene
     [SerializeField] private TextMeshProUGUI _loadingText; // "데이터를 준비중입니다..."
     [SerializeField] private GameObject _tapToStartGroup; // (시작 시 비활성화 상태)
     [SerializeField] private Button _startButton;
+    [SerializeField] private GameObject _soundSettingButton;
 
     float _voiceDelay = 0.5f;
 
@@ -38,6 +39,7 @@ public class StartScene : BaseScene
         _loadingText.gameObject.SetActive(true);
         if (_tapToStartGroup != null) _tapToStartGroup.SetActive(false);
         _startButton.interactable = false;
+        _soundSettingButton.gameObject.SetActive(false);
 
         // 2. 비동기 로딩 병렬 실행 (UniTask 기반)
         var audioTask = PlayMainTitle();
@@ -58,7 +60,7 @@ public class StartScene : BaseScene
 
         // 4. 로딩 완료!
         _startButton.interactable = true;
-
+        _soundSettingButton.gameObject.SetActive(true);
         // 보이스 재생 (Invoke 대신 딜레이를 직접 주거나 UniTask.Delay 사용 가능)
         // 여기서는 안전하게 Fire-and-forget 방식(UniTaskVoid)으로 백그라운드 재생
         PlayTitleVoiceWithDelay(_voiceDelay).Forget();
@@ -67,6 +69,8 @@ public class StartScene : BaseScene
         _loadingText.gameObject.SetActive(false);
         if (_tapToStartGroup != null) _tapToStartGroup.SetActive(true);
 
+
+        Managers.Input.OnEscapePressed -= HandleEscape;
         Managers.Input.OnEscapePressed += HandleEscape;
     }
 
@@ -140,6 +144,7 @@ public class StartScene : BaseScene
 
     private void HandleEscape()
     {
+        Debug.Log("Handle Escape 호출");
         if (Managers.UI.IsPopupOpen)
         {
             Managers.UI.ClosePopupUI();

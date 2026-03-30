@@ -45,7 +45,8 @@ public class CharacterStateMachine
         //공격 할 수 없는 State가 아니면 true
         //밑에 작성된건 공격할 수 없는 상태
 
-        return CurrentState != PlayerState.Death &&
+        return CurrentState != PlayerState.Attack &&
+               CurrentState != PlayerState.Death &&
                CurrentState != PlayerState.Q_Skill_CutScene &&
                CurrentState != PlayerState.Q_Skill &&
                CurrentState != PlayerState.E_Skill &&

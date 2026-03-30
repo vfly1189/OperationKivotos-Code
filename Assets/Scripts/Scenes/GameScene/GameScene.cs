@@ -59,9 +59,13 @@ public class GameScene : BaseScene
         PlayMainBGM();
 
         FadeInSequence().Forget();
+
         await UI_LootNotification.PreloadAsync();
 
-        Managers.Input.RegisterAction("Info", HandleInfo);   
+        Managers.Input.RegisterAction("Info", HandleInfo);
+        Managers.Input.OnEscapePressed -= HandleEscape;
+        Managers.Input.OnEscapePressed += HandleEscape;
+
     }
 
     private async UniTask<GameObject> LoadAndSpawnAsync(AssetReferenceGameObject refObj, Transform parent = null)
@@ -223,6 +227,7 @@ public class GameScene : BaseScene
         Managers.Sound.StopAll();
 
         Managers.Input.UnregisterAction("Info", HandleInfo);
+        Managers.Input.OnEscapePressed -= HandleEscape;
         Managers.Sector.Clear();
     }
 
@@ -354,5 +359,26 @@ public class GameScene : BaseScene
         _infoModels[index].SetActive(true);
 
         _prevIndex = index;
+    }
+
+    private void HandleEscape()
+    {
+        if (Managers.UI.IsPopupOpen)
+        {
+            Debug.Log("닫기 시작 ");
+            Managers.UI.ClosePopupUI();
+        }
+        else
+        {
+            Debug.Log("또 열기");
+            ShowEscapeMenu().Forget();
+        }
+    }
+
+    // 버튼 클릭 등의 이벤트에서 비동기를 띄울 때는 async UniTaskVoid 사용
+    private async UniTaskVoid ShowEscapeMenu()
+    {
+        //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
+        UI_EscapeMenu popupPrefab = await Managers.UI.ShowPopupUIAsync<UI_EscapeMenu>("UI_EscapeMenu");
     }
 }

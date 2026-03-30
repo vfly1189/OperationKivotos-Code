@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks.Triggers;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -26,7 +27,8 @@ public class UIManager
 
     //private UI_DungeonClear _dungeonClear = null;
 
-    public bool IsPopupOpen => _popupStack.Count > 0;
+    private bool _isLoadingPopup = false;
+    public bool IsPopupOpen => _popupStack.Count > 0 || _isLoadingPopup;
 
     public GameObject Root
     {
@@ -110,6 +112,9 @@ public class UIManager
     }
     public async UniTask<T> ShowPopupUIAsync<T>(string addressableKey = null) where T : UI_PopUp
     {
+        if (_isLoadingPopup) return null;
+        _isLoadingPopup = true;
+
         if (string.IsNullOrEmpty(addressableKey))
             addressableKey = typeof(T).Name;
 
@@ -119,6 +124,7 @@ public class UIManager
         // [수정] 하드코딩된 @GameSceneCanvas 대신 CanvasPopup 아래에 배치
         GameObject go = Managers.Resource.Instantiate(prefab, CanvasPopup.transform);
         go.transform.SetParent(CanvasPopup.transform, false);
+        go.SetActive(true);
 
         RectTransform rect = go.GetComponent<RectTransform>();
         rect.anchoredPosition = Vector2.zero;
@@ -127,9 +133,11 @@ public class UIManager
         T popup = Util.GetOrAddComponent<T>(go);
         _popupStack.Push(popup);
 
+        Debug.Log($"팝업 스택 : {_popupStack.Count}");
+
         // [수정] 주석 해제. 팝업 정렬(Z-Order) 관리를 위해 호출
         SetCanvas(go, true);
-
+        _isLoadingPopup = false;
         return popup;
     }
 
@@ -201,7 +209,21 @@ public class UIManager
         return _sceneUI as T;
     }
 
-    
+    public void SetActiveSystemCavas(bool value)
+    {
+        _canvasScene.gameObject.SetActive(value);
+    }
+
+    public bool IsOpened<T>() where T : UI_PopUp
+    {
+        // 스택을 순회하며 타입이 T와 일치하는 것이 있는지 검사
+        foreach (var popup in _popupStack)
+        {
+            if (popup is T)
+                return true;
+        }
+        return false;
+    }
 
 
     // =========================================================
