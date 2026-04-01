@@ -14,10 +14,6 @@ public class GameScene : BaseScene
     private GameObject _loadingCoverInstance;
     private GameObject _map;
     private AudioClip _mainBGM;
-    private GameObject _modelCamera;
-
-    private int _prevIndex = -1;
-    private List<GameObject> _infoModels = new List<GameObject>();
 
     // [핵심 변경 1] async void 사용
     protected override async void Init()
@@ -50,8 +46,6 @@ public class GameScene : BaseScene
 
         await SetupUI();
         await CreateShopMaster();
-        await CreateModelCamera();
-        await LoadAllSchoolModels();
 
         
 
@@ -61,8 +55,6 @@ public class GameScene : BaseScene
         FadeInSequence().Forget();
 
         await UI_LootNotification.PreloadAsync();
-
-        Managers.Input.RegisterAction("Info", HandleInfo);
         Managers.Input.OnEscapePressed -= HandleEscape;
         Managers.Input.OnEscapePressed += HandleEscape;
 
@@ -225,8 +217,6 @@ public class GameScene : BaseScene
     {
         base.Clear();
         Managers.Sound.StopAll();
-
-        Managers.Input.UnregisterAction("Info", HandleInfo);
         Managers.Input.OnEscapePressed -= HandleEscape;
         Managers.Sector.Clear();
     }
@@ -256,75 +246,36 @@ public class GameScene : BaseScene
         Destroy(_loadingCoverInstance);
     }
 
-    
-
-
-    private async UniTask LoadAllSchoolModels()
-    {
-        string[] spawnPointNames = { "SpawnPoint1" };
-        Transform point = null;
-        if (_modelCamera != null)
-        {
-            point = _modelCamera.transform.Find(spawnPointNames[0]);
-        }
-
-        var loadingTasks = new List<UniTask>();
-
-        List<BaseCharacter> characters = Managers.Party.GetMemeber();
-
-        for (int i = 0; i < 4; i++)
-        {
-            await LoadSingleSchoolModel(characters[i].Stat.GetSelectModel(), point);
-        }
-    }
-
-    private async UniTask LoadSingleSchoolModel(AssetReferenceGameObject selectPrefab, Transform spawnPoint)
-    {   
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(selectPrefab);
-
-        if (prefab != null)
-        {
-            GameObject go = Instantiate(prefab, spawnPoint);
-            _infoModels.Add(go);
-            go.SetActive(false);
-            go.transform.localPosition = Vector3.zero;
-
-            if (_modelCamera != null)
-            {
-                Vector3 dir = _modelCamera.transform.position - go.transform.position;
-                dir.y = 0;
-                if (dir != Vector3.zero) go.transform.rotation = Quaternion.LookRotation(dir);
-            }
-        }
-    }
-
-    private async UniTask CreateModelCamera()
-    {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.modelCamera);
-
-        if (prefab != null)
-        {
-            _modelCamera = Instantiate(prefab);
-            _modelCamera.transform.position = new Vector3(1000f, 1000f, 1000f);
-            _modelCamera.name = "@ModelCamera";
-        }
-    }
+   
+   
 
     private void ApplySaveOrTestData()
     {
-        PartySaveData saveData = Managers.Context.PartySaveData;
-
-        if (saveData != null)
+        //방금 게임을 켜서 파일에서 데이터를 읽어야 할 때만 실행
+        if (Managers.Context.ShouldLoadSaveData)
         {
-            // 저장된 데이터 복원
-            Managers.Save.ApplySaveDataToManagers(saveData);
-            Managers.Context.PartySaveData = null;
-            Debug.Log($"[GameScene] 세이브 데이터 복원 완료: {saveData.partyId}");
+            PartySaveData saveData = Managers.Context.SelectedSavedData;
+
+            if (saveData != null)
+            {
+                // 저장된 데이터 복원
+                Managers.Save.ApplySaveDataToManagers(saveData);
+            }
+            else
+            {
+                // 세이브 데이터가 없는 새 게임(Fresh Start)일 경우
+                Managers.Party.InitFromContext(null);
+            }
+
+            // 핵심: 한 번 로드했으면 플래그를 끄기 (던전에서 돌아올 땐 안 읽게 됨)
+            Managers.Context.ShouldLoadSaveData = false;
         }
         else
         {
-            // 새 파티 or 테스트용 데이터 지급
-            //ApplyTestData();
+            // 던전에서 돌아온 경우 (메모리에 있는 Managers.Party 상태를 그대로 유지)
+            Debug.Log("[GameScene] 던전에서 귀환: 기존 메모리 상태 유지");
+
+            // 주의: 파티 스폰 위치 등 물리적 리셋이 필요하다면 여기서 처리 (이미 CreateCharacters에서 하고 계시긴 합니다)
         }
     }
 
@@ -349,36 +300,36 @@ public class GameScene : BaseScene
         Managers.Inventory.AddItem(30000, ItemCategory.Material, 500);
     }
 
-    private void HandleInfo()
-    {
-        int index = Managers.Party.GetCurrentCharacterIndex();
+    //private void HandleInfo()
+    //{
+    //    int index = Managers.Party.GetCurrentCharacterIndex();
 
-        if(_prevIndex != index && _prevIndex != -1) 
-            _infoModels[_prevIndex].SetActive(false);
+    //    if(_prevIndex != index && _prevIndex != -1) 
+    //        _infoModels[_prevIndex].SetActive(false);
 
-        _infoModels[index].SetActive(true);
+    //    _infoModels[index].SetActive(true);
 
-        _prevIndex = index;
-    }
+    //    _prevIndex = index;
+    //}
 
-    private void HandleEscape()
-    {
-        if (Managers.UI.IsPopupOpen)
-        {
-            Debug.Log("닫기 시작 ");
-            Managers.UI.ClosePopupUI();
-        }
-        else
-        {
-            Debug.Log("또 열기");
-            ShowEscapeMenu().Forget();
-        }
-    }
+    //private void HandleEscape()
+    //{
+    //    if (Managers.UI.IsPopupOpen)
+    //    {
+    //        Debug.Log("닫기 시작 ");
+    //        Managers.UI.ClosePopupUI();
+    //    }
+    //    else
+    //    {
+    //        Debug.Log("또 열기");
+    //        ShowEscapeMenu().Forget();
+    //    }
+    //}
 
-    // 버튼 클릭 등의 이벤트에서 비동기를 띄울 때는 async UniTaskVoid 사용
-    private async UniTaskVoid ShowEscapeMenu()
-    {
-        //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
-        UI_EscapeMenu popupPrefab = await Managers.UI.ShowPopupUIAsync<UI_EscapeMenu>("UI_EscapeMenu");
-    }
+    //// 버튼 클릭 등의 이벤트에서 비동기를 띄울 때는 async UniTaskVoid 사용
+    //private async UniTaskVoid ShowEscapeMenu()
+    //{
+    //    //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
+    //    UI_EscapeMenu popupPrefab = await Managers.UI.ShowPopupUIAsync<UI_EscapeMenu>("UI_EscapeMenu");
+    //}
 }

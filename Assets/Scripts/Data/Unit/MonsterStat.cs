@@ -85,6 +85,7 @@ public class MonsterStat : BaseStat, IDamageable
             HandleDeath(damageInfo.Attacker);
         }
 
+        ToastDamageUI(finalDamage, damageInfo.HitPoint, true);
         CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 

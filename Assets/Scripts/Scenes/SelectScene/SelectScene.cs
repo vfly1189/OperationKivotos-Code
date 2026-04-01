@@ -34,21 +34,11 @@ public class SelectScene : BaseScene
             _loadingCoverInstance.GetComponent<LoadingSceneController>().SetValue(1f);
         }
 
-        // [핵심 변경 2] UniTask.Delay 사용 (에디터 멈춤 방지)
-        //await UniTask.Delay(500);
 
         // 비동기 작업들 대기 (await)
         await CreateModelCamera();
         await CreateMainUI();
         await LoadAllSchoolModels();
-
-        //if (_uiCanvas == null)
-        //{
-        //    //_uiCanvas.Init(this);
-        //    SelectSceneCanvas canvas = Managers.UI.ShowSceneUI<SelectSceneCanvas>("SelectSceneCanvas_New");
-        //    canvas.Setup(this);
-        //    SelectSchool(0);
-        //}
 
         // [추가] 3D 모델과 UI 로딩이 완벽히 끝난 후, 초기 학교(0번)를 선택 상태로 만듦
         SelectSchool(0);
@@ -76,8 +66,9 @@ public class SelectScene : BaseScene
         PlaySchoolSoundAsync(index).Forget();
 
         _currentSchoolIdx = index;
-        Managers.Context.SchoolIdx = index;
-        Managers.Context.SelectedSchool = _schoolDatas[index];
+
+        //Managers.Context.SchoolIdx = index;
+        //Managers.Context.SelectedSchool = _schoolDatas[index];
 
         _uiCanvas.UpdateUIState(index, _schoolDatas[index]);
     }
@@ -176,17 +167,6 @@ public class SelectScene : BaseScene
 
     private async UniTask CreateMainUI()
     {
-        //// [수정점 6] Handle 로직 제거
-        //GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.mainUI);
-
-
-        //if (prefab != null)
-        //{
-        //    GameObject uiObj = Instantiate(prefab);
-        //    uiObj.name = "@SelectSceneCanvas";
-        //    _uiCanvas = uiObj.GetComponent<SelectSceneCanvas>();
-        //}
-
         // 1. 리소스 매니저를 통해 UI 프리팹을 메모리에 비동기 로드
         // (ShowSceneUI의 동기 Instantiate가 실패하지 않도록 보장)
         await Managers.Resource.LoadAsync<GameObject>("SelectSceneCanvas_New");
@@ -200,42 +180,62 @@ public class SelectScene : BaseScene
         if (_uiCanvas != null)
         {
             _uiCanvas.Setup(this);
-            _uiCanvas.OnStarted -= OnStartButtonClicked;
-            _uiCanvas.OnStarted += OnStartButtonClicked;
+            _uiCanvas.OnContinue -= OnContinueButtonClicked;
+            _uiCanvas.OnContinue += OnContinueButtonClicked;
+
+            _uiCanvas.OnNewStart -= OnNewStartButtonClicked;
+            _uiCanvas.OnNewStart += OnNewStartButtonClicked;        
         }
     }
 
-    //스타트 버튼의 이벤트로써 호출될 함수
-    //저장된 세이브 파일 불러오기
-    private void OnStartButtonClicked()
+    private void OnContinueButtonClicked()
     {
-        PartySaveData savedData;
-        string partyID = null;
+        string partyID = GetPartyIdByIndex(_currentSchoolIdx);
 
-        switch(_currentSchoolIdx)
-        {
-            case 0: partyID = "Abydos";
-                break;
-            case 1: partyID = "Gehenna";
-                break;
-            case 2: partyID = "Millennium";
-                break;
-        }
+        Managers.Context.SchoolIdx = _currentSchoolIdx;
+        Managers.Context.SelectedSchool = _schoolDatas[_currentSchoolIdx];
+
+        // [수정] 이어하기 로직 호출
+        Managers.Context.LoadSchool(partyID);
+
         Managers.Save.SetCurrentParty(partyID);
-        Managers.Save.TryLoadParty(partyID, out savedData);
-        Managers.Context.PartySaveData = savedData;
+    }
+
+    private void OnNewStartButtonClicked()
+    {
+        string partyID = GetPartyIdByIndex(_currentSchoolIdx);
+
+        Managers.Context.SchoolIdx = _currentSchoolIdx;
+        Managers.Context.SelectedSchool = _schoolDatas[_currentSchoolIdx];
+
+        // [수정] 새로하기 로직 호출 (기존 세이브 날리고 깨끗한 상태로 덮어씌움)
+        Managers.Context.CreateNewSchool(partyID);
+
+        Managers.Save.SetCurrentParty(partyID);
+    }
+
+    // (스위치문 중복 제거용 헬퍼 함수)
+    private string GetPartyIdByIndex(int index)
+    {
+        return index switch
+        {
+            0 => "Abydos",
+            1 => "Gehenna",
+            2 => "Millennium",
+            _ => "Abydos"
+        };
     }
 
     public override void Clear()
     {
         base.Clear();
 
-        _uiCanvas.OnStarted -= OnStartButtonClicked;
+        _uiCanvas.OnContinue -= OnContinueButtonClicked;
+        _uiCanvas.OnNewStart -= OnNewStartButtonClicked;
 
         _schoolModels.Clear();
     }
 
-    // [수정점 7] IEnumerator 코루틴을 UniTaskVoid로 변경
     private async UniTaskVoid FadeInSequence()
     {
         if (_loadingCoverInstance == null) return;
@@ -259,5 +259,4 @@ public class SelectScene : BaseScene
 
         Destroy(_loadingCoverInstance);
     }
-
 }

@@ -69,4 +69,18 @@ public class BaseStat : MonoBehaviour, IDamageable
     public virtual void TakeDamage(DamageInfo damageInfo) { }
 
     protected void ClearDeadEvent() { OnDead = null; }
+    
+    protected async void ToastDamageUI(float damage, Vector3 hitPoint, bool isCritical)
+    {
+        UI_DamageToast toast = await Managers.UI.MakeSubItemAsync<UI_DamageToast>("UI_DamageToast", Managers.UI.CanvasSystem.transform);
+        toast.gameObject.SetActive(true);
+        Camera mainCam = Camera.main;
+        Vector3 screenPos = mainCam.WorldToScreenPoint(hitPoint);
+        toast.transform.position = screenPos;
+        if (toast != null)
+        {
+            // int로 형변환해서 넘겨줌
+            toast.SetupDamageText((int)damage, isCritical);
+        }
+    }
 }

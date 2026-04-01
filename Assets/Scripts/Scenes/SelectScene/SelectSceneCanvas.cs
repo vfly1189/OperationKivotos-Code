@@ -25,7 +25,8 @@ public class SelectSceneCanvas : UI_Scene
 
     [Header("UI Controls")]
     [SerializeField] private SchoolUIElements[] _schoolUIElements; // 0:아비도스, 1:게헨나, 2:밀레니엄
-    [SerializeField] private Button _gameStartButton;
+    [SerializeField] private Button _continueButton;
+    [SerializeField] private Button _newStartButton;
 
     [Header("Display Info")]
     [SerializeField] private Image _schoolIcon;
@@ -34,7 +35,8 @@ public class SelectSceneCanvas : UI_Scene
     private SelectScene _scene; // Scene 참조
     private bool _isInit = false; // 중복 초기화 방지 플래그
 
-    public event Action OnStarted;
+    public event Action OnContinue;
+    public event Action OnNewStart;
 
     // 2. UI_Base의 추상 메서드이자 UI_Scene의 Init을 오버라이드
     public override void Init()
@@ -51,8 +53,10 @@ public class SelectSceneCanvas : UI_Scene
             _schoolUIElements[i].textButton.onClick.AddListener(() => OnClickSchool(idx));
         }
 
-        _gameStartButton.onClick.AddListener(OnClickGameStart);
-
+        //_gameStartButton.onClick.AddListener(OnClickGameStart);
+        _continueButton.onClick.AddListener(OnClickContinue);
+        _newStartButton.onClick.AddListener(OnClickNewStart);
+        
         _isInit = true;
     }
 
@@ -67,12 +71,18 @@ public class SelectSceneCanvas : UI_Scene
         if (_scene != null)
             _scene.SelectSchool(idx);
     }
-
-    private void OnClickGameStart()
+    private void OnClickContinue()
     {
-        OnStarted?.Invoke();
+        OnContinue?.Invoke();
         Managers.Sound.StopAll();
         Managers.SceneEx.LoadScene(Define.Scene.Game);     
+    }
+
+    private void OnClickNewStart()
+    {
+        OnNewStart?.Invoke();
+        Managers.Sound.StopAll();
+        Managers.SceneEx.LoadScene(Define.Scene.Game);
     }
 
     // 4. UpdateUIState는 기존 로직 그대로 유지

@@ -41,7 +41,7 @@ public class UI_EscapeMenu : UI_PopUp
             };
 
             // 0 1 2 순서대로 Left, Middle, Right
-            string schoolName = Managers.Context._selectedSchool.schoolNameEN;
+            string schoolName = Managers.Context.SelectedSchool.schoolNameEN;
             for(int i= 0; i < 3; i++)
             {
                 string key = schoolName + "_Deco_" + dir[i];
@@ -70,7 +70,7 @@ public class UI_EscapeMenu : UI_PopUp
     {
         if(_imageFont != null)
         {
-            string schoolName = Managers.Context._selectedSchool.schoolNameEN;
+            string schoolName = Managers.Context.SelectedSchool.schoolNameEN;
             string key = schoolName + "_ImageFont";
             Sprite img = await Managers.Resource.GetSpriteFromAtlasAsync("ImageFontsAtlas", key);
             _imageFont.sprite = img;
@@ -109,7 +109,7 @@ public class UI_EscapeMenu : UI_PopUp
     private void OnSave()
     {
         if (Managers.Save.IsReady)
-            Managers.Save.SaveCurrentParty();
+            Managers.Save.SaveCurrentPartyAsync().Forget();
     }
 
     private void OnDestroy()

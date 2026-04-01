@@ -1,16 +1,12 @@
 using UnityEngine;
 // [추가] UniTask
 using Cysharp.Threading.Tasks;
+using NUnit.Framework.Constraints;
 
 public class Managers : MonoBehaviour
 {
     static Managers s_instance;
     static Managers Instance { get { Init(); return s_instance; } }
-
-    private CurrentGameDataSO _currentGameContext = null;
-    public static CurrentGameDataSO Context { get { return Instance._currentGameContext; } }
-
-
 
     #region Core Manager
     InputManager _input = new InputManager();
@@ -28,6 +24,7 @@ public class Managers : MonoBehaviour
     SaveManager _save = new SaveManager();
     DropManager _drop = new DropManager();
     DungeonManager _dungeon = new DungeonManager();
+    GameSessionContext _context = new GameSessionContext();
 
     public static InputManager Input { get { return Instance._input; } }
     public static PartyManager Party { get { return Instance._party; } }
@@ -44,6 +41,7 @@ public class Managers : MonoBehaviour
     public static SaveManager Save { get { return Instance._save; } }
     public static DropManager Drop { get { return Instance._drop; } }
     public static DungeonManager Dungeon {  get { return Instance._dungeon; } }
+    public static GameSessionContext Context { get { return Instance._context; } }
     #endregion
 
     // [핵심 1] 코루틴 Start 대신 일반 Start에서 Fire-and-forget 비동기 실행
@@ -90,17 +88,6 @@ public class Managers : MonoBehaviour
             DontDestroyOnLoad(go);
             s_instance = go.GetComponent<Managers>();
 
-            s_instance._currentGameContext = Resources.Load<CurrentGameDataSO>("Data/CurrentGameData/CurrentGameData");
-
-            if (s_instance._currentGameContext == null)
-            {
-                Debug.LogError("CurrentGameDataSO를 찾을 수 없습니다! Resources/Data 폴더에 있는지 확인하세요.");
-            }
-            else
-            {
-                s_instance._currentGameContext.Clear();
-            }
-
             s_instance._party = new PartyManager(s_instance.transform);
             s_instance._pool.Init();
             s_instance._sound.Init();
@@ -115,8 +102,7 @@ public class Managers : MonoBehaviour
 
     void OnApplicationQuit()
     {
-        if (_save.IsReady)
-            _save.SaveCurrentParty();
+
     }
 
     void OnDestroy()

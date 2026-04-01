@@ -4,8 +4,6 @@ using UnityEngine.UI;
 
 public class GameSceneCanvas : UI_Scene
 {
-    [SerializeField] private CurrentGameDataSO _currentGameContext;
-
     [Header("Data Source")]
     [SerializeField] private SchoolDataSO[] _schoolDatas;
 

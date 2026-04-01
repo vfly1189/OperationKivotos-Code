@@ -44,6 +44,7 @@ public class StartScene : BaseScene
         // 2. 비동기 로딩 병렬 실행 (UniTask 기반)
         var audioTask = PlayMainTitle();
         var popupTask = PreloadPopups();
+        var saveTask = LoadingSaveDatas();
 
         // [핵심 2] ResourceManager의 UniTask 버전 LoadDependenciesAsync 호출
         var globalAssetTask = Managers.Resource.LoadDependenciesAsync(
@@ -56,7 +57,7 @@ public class StartScene : BaseScene
         );
 
         // [핵심 3] Task.WhenAll 대신 UniTask.WhenAll을 사용하여 스레드 데드락 방지
-        await UniTask.WhenAll(audioTask, popupTask, globalAssetTask);
+        await UniTask.WhenAll(audioTask, popupTask, globalAssetTask, saveTask);
 
         // 4. 로딩 완료!
         _startButton.interactable = true;
@@ -91,6 +92,13 @@ public class StartScene : BaseScene
                 Managers.Sound.Play(bgm, Define.Sound.Bgm);
             }
         }
+    }
+
+    private async UniTask LoadingSaveDatas()
+    {
+        Managers.Context.SetPreloadedSaveData("Abydos", await Managers.Save.LoadPartyAsync("Abydos"));
+        Managers.Context.SetPreloadedSaveData("Gehenna", await Managers.Save.LoadPartyAsync("Gehenna"));
+        Managers.Context.SetPreloadedSaveData("Millennium", await Managers.Save.LoadPartyAsync("Millennium"));
     }
 
     // 딜레이를 주고 백그라운드에서 실행할 수 있도록 UniTaskVoid로 분리

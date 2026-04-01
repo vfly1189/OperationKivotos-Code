@@ -9,6 +9,7 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
 {
     [SerializeField] private Transform _contentParent; // ScrollView의 Content
     [SerializeField] private Button[] _tabButtons; // 0:장비, 1:소비, 2:재료
+    [SerializeField] private Button _arrangeButton;
 
     [SerializeField] private TextMeshProUGUI _creditNum;
 
@@ -31,7 +32,9 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
         Managers.Inventory.OnInventoryUpdated -= RefreshUI;
         Managers.Inventory.OnInventoryUpdated += RefreshUI;
 
-        //Managers.UI.PreloadTooltip().Forget();
+
+        _arrangeButton.onClick.AddListener(ArrangeCurrentInventory);
+
 
         // 초기 화면 그리기
         RefreshUI(_currentCategory);
@@ -43,6 +46,11 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
 
         _currentCategory = category;
         RefreshUI(_currentCategory);
+    }
+
+    private void ArrangeCurrentInventory()
+    {
+        Managers.Inventory.ArrangeCurrentInventory(_currentCategory);
     }
 
     private async void RefreshUI(ItemCategory category)

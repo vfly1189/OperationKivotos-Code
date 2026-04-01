@@ -56,6 +56,7 @@ public class NormalDungeonScene : BaseScene
         // UniTask.WhenAll 로 병렬 대기
         await UniTask.WhenAll(mainUI, mapTask, poolTask, effectStageTask, clearUI, successBgm, victoryVoice, battleInVoice);
 
+
         var clearCondition = _curMap.AddComponent<KillAllMonstersCondition>();
         clearCondition.SetupCondition(_curMap);
 
@@ -374,6 +375,9 @@ public class NormalDungeonScene : BaseScene
         _clearDirector.OnClearUI -= ClearUI;
 
         Managers.Resource.Destroy(_clearUI);
+
+        if (Managers.Save.IsReady)
+            Managers.Save.SaveCurrentPartyAsync().Forget();
     }
 
 

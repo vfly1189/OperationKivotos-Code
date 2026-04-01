@@ -221,6 +221,7 @@ public class CharacterStat : BaseStat, IDamageable
 
         if (CurrentHp <= 0) HandleDeath(damageInfo.Attacker);
 
+        ToastDamageUI(finalDamage, damageInfo.HitPoint, true);
         CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 

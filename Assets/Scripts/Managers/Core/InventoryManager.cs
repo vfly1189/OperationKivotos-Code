@@ -388,6 +388,34 @@ public class InventoryManager
         return save;
     }
 
+    public void ArrangeCurrentInventory(ItemCategory category)
+    {
+        InventorySlot[] targetArray = Inventory[category];
+
+        // Array.Sort를 사용하여 사용자 정의 조건으로 정렬합니다.
+        Array.Sort(targetArray, (slotA, slotB) =>
+        {
+            // 1. 둘 다 비어있으면 순서 유지
+            if (slotA.IsEmpty && slotB.IsEmpty) return 0;
+            // 2. A만 비어있으면 A를 뒤로(1)
+            if (slotA.IsEmpty) return 1;
+            // 3. B만 비어있으면 B를 뒤로(-1)
+            if (slotB.IsEmpty) return -1;
+
+            // 4. 둘 다 아이템이 있다면 ItemID를 기준으로 오름차순 정렬
+            if (slotA.itemID != slotB.itemID)
+            {
+                return slotA.itemID.CompareTo(slotB.itemID);
+            }
+
+            // 5. ItemID까지 같다면 Amount(개수)를 기준으로 내림차순 정렬 (개수가 많은 게 앞으로)
+            return slotB.Amount.CompareTo(slotA.Amount);
+        });
+
+        // 정렬이 완료되었으므로 UI 갱신 이벤트를 발생시킵니다.
+        OnInventoryUpdated?.Invoke(category);
+    }
+
     public void LoadSaveData(InventorySaveData save)
     {
         if (save == null) return;

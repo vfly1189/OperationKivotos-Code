@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,19 +22,48 @@ public class UI_DungeonClear : UI_Scene, IItemSlotHandler
         _dungeonClearConfirmButton.onClick.AddListener(Confirm);
     }
 
+    //public async void SetInfo(int gainedCredit, int gainedExp, List<InventorySlot> droppedItems)
+    //{
+    //    _creditText.text = gainedCredit.ToString("N0");
+    //    _expText.text = gainedExp.ToString("N0");
+
+    //    foreach (var item in droppedItems)
+    //    {
+    //        if (item == null || item.IsEmpty) continue;
+
+    //        // 1. 슬롯 비동기 생성
+    //        UI_ItemSlot slot = await Managers.UI.MakeSubItemAsync<UI_ItemSlot>("UI_ItemSlot", _rewardList);
+
+    //        // 2. 현재 아이템의 카테고리에 맞춰 포맷터와 스타일 결정 (루프 내부에서 처리!)
+    //        var (formatter, style) = GetSlotStyleByCategory(item.itemCategory);
+
+    //        // 3. 슬롯 초기화 및 데이터 주입
+    //        slot.gameObject.SetActive(true);
+    //        slot.SetSubTextFormatter(formatter);
+    //        slot.SetSubTextStyle(style);
+    //        slot.SetInfo(item, item.itemCategory, -1);
+    //        slot.SetHandler(this);
+
+    //        _activeSlots.Add(slot);
+    //    }
+    //}
+
     public async void SetInfo(int gainedCredit, int gainedExp, List<InventorySlot> droppedItems)
     {
         _creditText.text = gainedCredit.ToString("N0");
         _expText.text = gainedExp.ToString("N0");
 
-        foreach (var item in droppedItems)
+        // [핵심 변경] 아이템 스택 처리 (LINQ 활용)
+        List<InventorySlot> stackedItems = StackDroppedItems(droppedItems);
+
+        foreach (var item in stackedItems) // [수정] stackedItems로 순회
         {
             if (item == null || item.IsEmpty) continue;
 
             // 1. 슬롯 비동기 생성
             UI_ItemSlot slot = await Managers.UI.MakeSubItemAsync<UI_ItemSlot>("UI_ItemSlot", _rewardList);
 
-            // 2. 현재 아이템의 카테고리에 맞춰 포맷터와 스타일 결정 (루프 내부에서 처리!)
+            // 2. 현재 아이템의 카테고리에 맞춰 포맷터와 스타일 결정
             var (formatter, style) = GetSlotStyleByCategory(item.itemCategory);
 
             // 3. 슬롯 초기화 및 데이터 주입
@@ -45,6 +75,40 @@ public class UI_DungeonClear : UI_Scene, IItemSlotHandler
 
             _activeSlots.Add(slot);
         }
+    }
+
+    // ========================================================
+    //  아이템 스택 병합(Stacking) 로직
+    // ========================================================
+    private List<InventorySlot> StackDroppedItems(List<InventorySlot> rawItems)
+    {
+        List<InventorySlot> result = new List<InventorySlot>();
+
+        // 1. 장비(Equipment)는 옵션이 다르므로 합치지 않고 그대로 결과 리스트에 추가
+        var equipments = rawItems.Where(i => i.itemCategory == ItemCategory.Equipment);
+        result.AddRange(equipments);
+
+        // 2. 장비가 아닌 아이템(Material, Consumable 등)은 ItemID 기준으로 그룹화(GroupBy)
+        var stackableItems = rawItems.Where(i => i.itemCategory != ItemCategory.Equipment);
+        var groupedItems = stackableItems.GroupBy(i => i.itemID);
+
+        // 3. 그룹화된 아이템들의 Amount(수량)를 합쳐서 하나의 InventorySlot으로 새로 만듦
+        foreach (var group in groupedItems)
+        {
+            // group.Key = itemID
+            // group.Sum(i => i.Amount) = 같은 아이템들의 갯수 총합
+
+            InventorySlot stackedSlot = new InventorySlot
+            {
+                itemID = group.Key,
+                Amount = group.Sum(i => i.Amount),
+                itemCategory = group.First().itemCategory // 카테고리는 첫 번째 아이템 것을 그대로 사용
+            };
+
+            result.Add(stackedSlot);
+        }
+
+        return result;
     }
 
     // 포맷팅 결정 로직을 별도의 함수로 분리하여 가독성을 높였습니다.

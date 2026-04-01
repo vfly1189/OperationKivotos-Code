@@ -1,13 +1,17 @@
+using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
 
 public abstract class BaseScene : MonoBehaviour
 {
     public Define.Scene _sceneType { get; protected set; } = Define.Scene.Unknown;
 
-
+    protected GameObject _modelCamera;
+    protected int _prevIndex = -1;
+    protected List<GameObject> _infoModels = new List<GameObject>();
 
     void Awake()
     {
@@ -26,18 +30,27 @@ public abstract class BaseScene : MonoBehaviour
         //Managers.Input.OnEscapePressed -= OnEscapeEvent;
     }
 
-    //// 델리게이트에 직접 연결되는 함수 (sealed 역할)
-    //private void OnEscapeEvent()
-    //{
-    //    HandleEscape(); // 실제 다형성 발동 지점
-    //}
+    
 
-    //// 자식 클래스에서 덮어쓸 로직
-    //protected virtual void HandleEscape()
-    //{
-    //    if (Managers.UI.IsPopupOpen)
-    //    {
-    //        Managers.UI.ClosePopupUI();
-    //    }
-    //}
+
+    protected void HandleEscape()
+    {
+        if (Managers.UI.IsPopupOpen)
+        {
+            Debug.Log("닫기 시작 ");
+            Managers.UI.ClosePopupUI();
+        }
+        else
+        {
+            Debug.Log("또 열기");
+            ShowEscapeMenu().Forget();
+        }
+    }
+
+    // 버튼 클릭 등의 이벤트에서 비동기를 띄울 때는 async UniTaskVoid 사용
+    protected async UniTaskVoid ShowEscapeMenu()
+    {
+        //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
+        UI_EscapeMenu popupPrefab = await Managers.UI.ShowPopupUIAsync<UI_EscapeMenu>("UI_EscapeMenu");
+    }
 }

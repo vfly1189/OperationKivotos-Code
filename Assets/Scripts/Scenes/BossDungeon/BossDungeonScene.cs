@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using static UnityEngine.VFX.VFXTypeAttribute;
 
 public class BossDungeonScene : BaseScene
 {
@@ -61,6 +62,7 @@ public class BossDungeonScene : BaseScene
         // [핵심 3] UniTask.WhenAll 사용
         await UniTask.WhenAll(mainUI, poolTask, effectTask, successBgmTask, victoryVoice);
 
+
         var clearCondition = _curMap.AddComponent<KillBossCondition>();
         clearCondition.SetupCondition(_curMap);
 
@@ -75,6 +77,8 @@ public class BossDungeonScene : BaseScene
 
         Managers.Dungeon.StartDungeon(clearCondition);
 
+        Managers.Input.OnEscapePressed -= HandleEscape;
+        Managers.Input.OnEscapePressed += HandleEscape;
 
         // Fire and Forget
         //비동기 작업 끝날때까지 기다리는게 아니라 다음꺼 실행
@@ -285,6 +289,7 @@ public class BossDungeonScene : BaseScene
         }
     }
 
+ 
     async UniTask LoadVictoryVoice()
     {
         List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
@@ -381,6 +386,10 @@ public class BossDungeonScene : BaseScene
 
         Managers.Dungeon.ClearDungeonData();
         _clearDirector.OnClearUI -= ClearUI;
+        Managers.Input.OnEscapePressed -= HandleEscape;
+
+        if (Managers.Save.IsReady)
+            Managers.Save.SaveCurrentPartyAsync().Forget();
     }
 
 }

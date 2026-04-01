@@ -1,7 +1,7 @@
-using Cysharp.Threading.Tasks.Triggers;
-using System.Collections;
+using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Diagnostics;
 
 public class BulletController : MonoBehaviour
 {
@@ -9,9 +9,10 @@ public class BulletController : MonoBehaviour
     [SerializeField] private float _lifeTime = 1f;
 
     private GameObject _shooter;
-
     private float _damage;
-    private Coroutine _lifeTimeCoroutine; // 실행 중인 코루틴 저장용
+
+    // 코루틴(Coroutine)을 대체할 취소 토큰 소스
+    private CancellationTokenSource _lifeTimeCts;
 
     // 성능을 위해 레이어 인덱스는 Awake에서 한 번만 찾아둠
     private int _layerPlayer;
@@ -44,16 +45,18 @@ public class BulletController : MonoBehaviour
             Util.SetLayerRecursively(gameObject, _layerMonsterBullet);
         }
 
-        // 기존에 돌던 코루틴이 있다면 멈춤 (재사용 시 안전장치)
-        if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
-        // 수명 카운트 시작
-        _lifeTimeCoroutine = StartCoroutine(CoLifeTimeTimer());
+        // 기존에 돌던 UniTask가 있다면 안전하게 취소 및 정리
+        CancelLifeTimeTimer();
+
+        // 새로운 토큰 발급 및 수명 카운트 시작 (비동기 메서드 호출)
+        _lifeTimeCts = new CancellationTokenSource();
+        LifeTimeTimerAsync(_lifeTimeCts.Token).Forget();
     }
 
-    // [중요] 풀링되어 비활성화될 때 코루틴도 확실히 꺼줌
+    // [중요] 풀링되어 비활성화될 때 실행 중인 UniTask도 확실히 꺼줌
     private void OnDisable()
     {
-        if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
+        CancelLifeTimeTimer();
     }
 
     void Update()
@@ -76,14 +79,15 @@ public class BulletController : MonoBehaviour
             // 인터페이스 메서드 호출 (상대가 Player든 Monster든 상관 안 함)
             target.TakeDamage(new DamageInfo(_damage, _shooter, hitPoint));
 
+
             Managers.Resource.Destroy(gameObject);
         }
         else
         {
             Debug.Log($"other : {other.gameObject.name}");
             // 데미지 대상은 아닌데 부딪힘 -> 벽(Wall)이나 장애물
-            
-            if(other.gameObject.layer == LayerMask.NameToLayer("Wall")) 
+
+            if (other.gameObject.layer == LayerMask.NameToLayer("Wall"))
                 Managers.Resource.Destroy(gameObject);
         }
     }
@@ -93,13 +97,31 @@ public class BulletController : MonoBehaviour
         // 1. 트레일 초기화
         TrailRenderer trail = GetComponent<TrailRenderer>();
         if (trail != null) trail.Clear();
-
     }
 
-        // 일정 시간(_lifeTime) 지나면 자동 반납
-    IEnumerator CoLifeTimeTimer()
+    private async UniTaskVoid LifeTimeTimerAsync(CancellationToken token)
     {
-        yield return new WaitForSeconds(_lifeTime);
+        // SuppressCancellationThrow를 사용하면, 총알이 중간에 벽에 부딪혀 비활성화되면서
+        // 토큰이 취소(Cancel)되었을 때 에러(TaskCanceledException) 로그가 콘솔에 찍히는 것을 방지합니다.
+        bool isCanceled = await UniTask.Delay(TimeSpan.FromSeconds(_lifeTime), cancellationToken: token).SuppressCancellationThrow();
+
+        // 중간에 Cancel되었다면 바로 종료 (오브젝트 풀로 돌아감)
+        if (isCanceled) return;
+
+        // 지정된 시간이 무사히 다 지났다면 반납
         Managers.Resource.Destroy(gameObject);
+    }
+
+   
+
+    // 토큰 소스 취소 및 메모리 해제 헬퍼 함수
+    private void CancelLifeTimeTimer()
+    {
+        if (_lifeTimeCts != null)
+        {
+            _lifeTimeCts.Cancel();
+            _lifeTimeCts.Dispose();
+            _lifeTimeCts = null;
+        }
     }
 }

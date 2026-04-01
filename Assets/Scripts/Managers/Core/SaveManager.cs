@@ -1,4 +1,6 @@
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -36,8 +38,25 @@ public class SaveManager
         _currentPartyId = partyId;
     }
 
-    // 현재 파티 저장
-    public void SaveCurrentParty()
+    //// 현재 파티 저장
+    //public void SaveCurrentParty()
+    //{
+    //    if (string.IsNullOrEmpty(_currentPartyId))
+    //    {
+    //        Debug.LogError("[SaveManager] CurrentPartyId가 설정되지 않았습니다.");
+    //        return;
+    //    }
+
+    //    var data = CollectCurrentSaveData();
+    //    WriteToFile(_currentPartyId, data);
+
+    //    Debug.Log($"[SaveManager] 저장 완료: {GetPath(_currentPartyId)}");
+    //}
+
+    // ==========================================
+    // [중요] 비동기 세이브 (Safe Save & ThreadPool)
+    // ==========================================
+    public async UniTask SaveCurrentPartyAsync()
     {
         if (string.IsNullOrEmpty(_currentPartyId))
         {
@@ -45,10 +64,48 @@ public class SaveManager
             return;
         }
 
-        var data = CollectCurrentSaveData();
-        WriteToFile(_currentPartyId, data);
+        // 1. 메인 스레드에서 데이터 긁어오기 (유니티 API는 메인 스레드에서만 접근 가능)
+        PartySaveData data = CollectCurrentSaveData();
 
-        Debug.Log($"[SaveManager] 저장 완료: {GetPath(_currentPartyId)}");
+        string finalPath = GetPath(_currentPartyId);
+        string tempPath = finalPath + ".tmp"; // 임시 파일 경로
+        string backupPath = finalPath + ".bak"; // 백업 파일 경로 (선택사항)
+
+        try
+        {
+            // 2. 무거운 작업(JSON 변환, 암호화, 파일 쓰기)을 백그라운드 스레드로 넘김
+            await UniTask.RunOnThreadPool(() =>
+            {
+                // JSON 직렬화
+                string json = JsonConvert.SerializeObject(data, _settings);
+                // AES 암호화
+                byte[] encrypted = Encrypt(json);
+
+                // [Safe Save 1단계] 임시 파일(temp)에 먼저 씀
+                File.WriteAllBytes(tempPath, encrypted);
+
+                // [Safe Save 2단계] 기존 세이브 파일이 있다면 교체 작업 진행
+                if (File.Exists(finalPath))
+                {
+                    // File.Replace는 temp를 final로 덮어쓰고, 기존 final을 backup으로 뺌
+                    // (플랫폼에 따라 Replace가 안 통할 수 있으므로 try-catch로 대비)
+                    File.Replace(tempPath, finalPath, backupPath, ignoreMetadataErrors: true);
+                }
+                else
+                {
+                    // 기존 파일이 없으면 그냥 temp를 final로 이름 변경
+                    File.Move(tempPath, finalPath);
+                }
+            });
+
+            Debug.Log($"[SaveManager] 비동기 안전 저장 완료: {finalPath}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[SaveManager] 세이브 저장 중 오류 발생: {ex.Message}");
+            // 저장이 실패했다면 찌꺼기 temp 파일 삭제
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+        }
     }
 
     // 특정 파티 로드
@@ -61,20 +118,48 @@ public class SaveManager
         string json = Decrypt(encrypted);                          // ← 복호화 추가
         data = JsonConvert.DeserializeObject<PartySaveData>(json, _settings);
         return data != null;
+    }
 
+    // ==========================================
+    // 비동기 로드 (스레드 분리)
+    // ==========================================
+    public async UniTask<PartySaveData> LoadPartyAsync(string partyId)
+    {
+        string finalPath = GetPath(partyId);
+        string backupPath = finalPath + ".bak";
 
+        if (!File.Exists(finalPath))
+        {
+            // 메인 파일이 없는데 백업 파일이 있다면 (저장 중 튕겼을 때 복구)
+            if (File.Exists(backupPath))
+            {
+                Debug.LogWarning("[SaveManager] 메인 세이브가 없어 백업 파일에서 복구합니다.");
+                File.Copy(backupPath, finalPath);
+            }
+            else
+            {
+                return null;
+            }
+        }
 
-        //string path = GetPath(partyId);
-        //if (!File.Exists(path))
-        //{
-        //    data = null;
-        //    return false;
-        //}
+        try
+        {
+            // 로딩도 스레드 풀에서 수행
+            PartySaveData resultData = null;
+            await UniTask.RunOnThreadPool(() =>
+            {
+                byte[] encrypted = File.ReadAllBytes(finalPath);
+                string json = Decrypt(encrypted);
+                resultData = JsonConvert.DeserializeObject<PartySaveData>(json, _settings);
+            });
 
-        //string json = File.ReadAllText(path);
-        //data = JsonConvert.DeserializeObject<PartySaveData>(json, _settings);
-        //return data != null;
-
+            return resultData;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[SaveManager] 세이브 로드 실패: {ex.Message}");
+            return null;
+        }
     }
 
     // 새 파티 세이브 생성
@@ -143,10 +228,8 @@ public class SaveManager
 
     }
 
-    private string GetPath(string partyId)
-    {
-        return Path.Combine(Application.persistentDataPath, $"save_{partyId}.json");
-    }
+
+    private string GetPath(string partyId) => Path.Combine(Application.persistentDataPath, $"save_{partyId}.json");
 
     // ==========================================
     // AES 암호화 / 복호화
