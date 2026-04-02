@@ -7,5 +7,5 @@ public abstract class BaseClearCondition : MonoBehaviour
     public event Action OnConditionMet;
     protected void InvokeConditionMet() => OnConditionMet?.Invoke();
 
-    public abstract void SetupCondition(GameObject mapRoot);
+    //public abstract void SetupCondition(GameObject mapRoot);
 }

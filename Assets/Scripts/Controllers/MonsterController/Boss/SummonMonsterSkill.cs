@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System.Collections;
 using UnityEngine;
 
@@ -10,15 +11,22 @@ public class SummonMonsterSkill : BossSkillBase
     public override void Cast(BossSkillContext context)
     {
         // 프리팹이 활성화될 때 코루틴 시작
-        StartCoroutine(ProcessSkillRoutine(context._spawnPoints));
+        ProcessSkill(context._spawnPoints).Forget();
     }
 
-    private IEnumerator ProcessSkillRoutine(Transform[] monsterSpawnPoints)
+    private async UniTask ProcessSkill(Transform[] monsterSpawnPoints)
     {
         for(int i=0; i<monsterSpawnPoints.Length; i++)
         {
+            GameObject mosnter = await MonsterFactory.CreateMonsterByAddressableKeyAsync(
+                "Droid_Helmet_RL",
+                Managers.Context.CurrentDungeonID,
+                monsterSpawnPoints[i]
+                );
+
+
             // 1. 생성 시 위치/회전 지정 (이게 제일 안전함)
-            GameObject monster = Managers.Resource.Instantiate(_monsterRL, monsterSpawnPoints[i].position, Quaternion.identity);
+            //GameObject monster = Managers.Resource.Instantiate(_monsterRL, monsterSpawnPoints[i].position, Quaternion.identity);
 
             //monster.GetComponent<MonsterController>().Stat.Init();
 
@@ -34,7 +42,6 @@ public class SummonMonsterSkill : BossSkillBase
             //    agent.Warp(monsterSpawnPoints[i].position);
             //}
 
-            yield return null;
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using static UnityEngine.VFX.VFXTypeAttribute;
@@ -64,7 +65,8 @@ public class BossDungeonScene : BaseScene
 
 
         var clearCondition = _curMap.AddComponent<KillBossCondition>();
-        clearCondition.SetupCondition(_curMap);
+        BossMonsterController bossCtrl = _boss.GetComponent<BossMonsterController>();
+        clearCondition.Setup(bossCtrl);
 
         if (_curMap.GetComponent<DungeonSequenceDirector>() == null)
         {
@@ -213,49 +215,41 @@ public class BossDungeonScene : BaseScene
 
         _bossSpawnPoint = _curMap.transform.Find("BossSpawnPoint");
 
-        Dictionary<int, MonsterBaseData> monsterDict = Managers.Data.GetDict<int, MonsterBaseData>();
-        if (monsterDict == null) return;
+        //Dictionary<int, MonsterBaseData> monsterDict = Managers.Data.GetDict<int, MonsterBaseData>();
+        //if (monsterDict == null) return;
 
         string addressableKey = "Hieronymus_Boss";
-        MonsterBaseData baseData = null;
-        foreach (var data in monsterDict.Values)
-        {
-            if (data.AddressableKey == addressableKey && data.SpawnType == MonsterDefine.MonsterSpawnType.Dungeon)
-            {
-                baseData = data;
-                break;
-            }
-        }
-        if (baseData == null)
-        {
-            Debug.LogWarning($"던전용 몬스터 중 AddressableKey가 '{addressableKey}'인 데이터를 찾을 수 없습니다.");
-            return;
-        }
+        //MonsterBaseData baseData = null;
+        //foreach (var data in monsterDict.Values)
+        //{
+        //    if (data.AddressableKey == addressableKey && data.SpawnType == MonsterDefine.MonsterSpawnType.Dungeon)
+        //    {
+        //        baseData = data;
+        //        break;
+        //    }
+        //}
+        //if (baseData == null)
+        //{
+        //    Debug.LogWarning($"던전용 몬스터 중 AddressableKey가 '{addressableKey}'인 데이터를 찾을 수 없습니다.");
+        //    return;
+        //}
 
 
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.boss);
+        //GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.boss);
 
-        if (prefab != null)
+        GameObject boss = await MonsterFactory.CreateMonsterByAddressableKeyAsync(
+            addressableKey,
+            Managers.Context.CurrentDungeonID,
+            _bossSpawnPoint
+        );
+
+        if (boss != null)
         {
-            _boss = Instantiate(prefab, _bossSpawnPoint.transform);
+            _boss = boss;
+            _boss.transform.SetParent(_bossSpawnPoint);
             _boss.transform.localPosition = Vector3.zero;
 
-            var ctrl = _boss.GetComponent<BossMonsterController>();
-            if (ctrl != null)
-            {
-                MonsterStat monsterStat = _boss.GetComponent<MonsterStat>();
-                if (monsterStat != null && ctrl != null)
-                {
-                    // 레벨 계산 및 스탯 주입
-                    //int spawnLevel = 1;
-                    MapMonsterConfig config = Managers.Data.GetData<int, MapMonsterConfig>(Managers.Context.CurrentDungeonID);
-
-                    MonsterLevelByStat levelStat = Managers.Data.GetData<int, MonsterLevelByStat>(config.EliteMonsterLevel);
-
-                    monsterStat.Init(baseData, levelStat);
-                }
-
-            }
+            // (SetStat은 이제 팩토리에서 해줬으므로 여기서 중복으로 할 필요 없습니다! 코드가 훨씬 짧아집니다.)
 
             if (_curMap != null)
             {

@@ -33,7 +33,7 @@ public abstract class BaseScene : MonoBehaviour
     
 
 
-    protected void HandleEscape()
+    protected virtual void HandleEscape()
     {
         if (Managers.UI.IsPopupOpen)
         {

@@ -8,8 +8,8 @@ public class MonsterStat : BaseStat, IDamageable
 {
     private bool _isDead = false;
 
-    public event Action<MonsterController> OnMonsterDead;
-    private MonsterController _controller;
+    public event Action<BaseMonsterController> OnMonsterDead;
+    private BaseMonsterController _controller;
 
     // 추가된 변수: 보상 캐싱
     public int Level { get; private set; }
@@ -18,35 +18,32 @@ public class MonsterStat : BaseStat, IDamageable
     public int DropTableID { get; private set; }
     public MonsterDefine.MonsterSpawnType SpawnType { get; private set; }
 
-    public void Init(MonsterBaseData baseData, MonsterLevelByStat levelStat)
+    public void SetStat(MonsterBaseData baseData, MonsterLevelByStat levelStat)
     {
-        base.Init();
-        _isDead = false;
+        // [방어 코드 추가] 스탯 딕셔너리가 아직 안 만들어졌다면 먼저 만들어줍니다.
+        if (_stats == null || _stats.Count == 0)
+        {
+            base.Init(); // BaseStat.Init()을 호출하여 딕셔너리 할당
+        }
 
         if (_controller == null)
-            _controller = GetComponent<MonsterController>();
+            _controller = GetComponent<BaseMonsterController>();
 
-        // 1. 배율을 적용하여 스탯 초기화
-        float maxHp = baseData.BaseMaxHP * levelStat.MaxHPRate;
-        float attack = baseData.BaseAttack * levelStat.AttackRate;
-        float defense = baseData.BaseDefense * levelStat.DefenseRate;
-
-        MaxHp.SetBaseValue(maxHp);
-        Attack.SetBaseValue(attack);
-        Defense.SetBaseValue(defense);
+        // 1. 배율을 적용하여 스탯 세팅 (이제 MaxHp가 절대 null이 아님)
+        MaxHp.SetBaseValue(baseData.BaseMaxHP * levelStat.MaxHPRate);
+        Attack.SetBaseValue(baseData.BaseAttack * levelStat.AttackRate);
+        Defense.SetBaseValue(baseData.BaseDefense * levelStat.DefenseRate);
         Level = levelStat.Level;
 
-        // 2. 보상 스케일링 적용 및 캐싱
-        FinalExpReward = Mathf.RoundToInt(baseData.ExpReward); // 필요시 ExpRate 별도 추가
+        FinalExpReward = Mathf.RoundToInt(baseData.ExpReward);
         FinalCreditReward = Mathf.RoundToInt(baseData.CreditReward * levelStat.CreditRate);
         DropTableID = baseData.DropTableID;
         SpawnType = baseData.SpawnType;
 
-        CurrentHp = MaxHp.Value;
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
-        ClearDeadEvent();
-
         OnMonsterDead = null;
+
+        // 스탯 세팅이 끝나면 HP를 최대로 채움
+        Recover();
     }
 
 

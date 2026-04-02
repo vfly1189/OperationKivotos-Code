@@ -56,6 +56,9 @@ public class MapMonsterConfig
     public int EliteMonsterLevel;
 }
 
+// AddressableKey 딕셔너리를 구분하기 위한 빈 마커 클래스 - MonsterBaseData
+public class MonsterAddressableMarker { }
+
 [CreateAssetMenu(fileName = "MonsterDatabase", menuName = "Data/MonsterDatabase")]
 public class MonsterDatabaseSO : ScriptableObject, IDataCacheable
 {
@@ -67,6 +70,21 @@ public class MonsterDatabaseSO : ScriptableObject, IDataCacheable
     {
         Dictionary<int, MonsterBaseData> dict = new Dictionary<int, MonsterBaseData>();
         foreach (var item in MonsterBaseDatas) dict[item.ID] = item;
+        return dict;
+    }
+
+    // [추가] AddressableKey(string)를 Key로 하는 딕셔너리 생성
+    public Dictionary<string, MonsterBaseData> MakeMonsterAddressableDict()
+    {
+        Dictionary<string, MonsterBaseData> dict = new Dictionary<string, MonsterBaseData>();
+        foreach (var item in MonsterBaseDatas)
+        {
+            // 비어있지 않은 경우에만 추가
+            if (!string.IsNullOrEmpty(item.AddressableKey))
+            {
+                dict[item.AddressableKey] = item;
+            }
+        }
         return dict;
     }
 
@@ -87,6 +105,10 @@ public class MonsterDatabaseSO : ScriptableObject, IDataCacheable
     public void CacheData(Dictionary<Type, object> dataDicts)
     {
         dataDicts[typeof(MonsterBaseData)] = MakeMonsterBaseDataDict();
+        // 2. [추가] AddressableKey(string) 기준 딕셔너리 캐싱 (Marker 사용)
+        dataDicts[typeof(MonsterAddressableMarker)] = MakeMonsterAddressableDict();
+
+
         dataDicts[typeof(MonsterLevelByStat)] = MakeMonsterLevelByStatDict();
         dataDicts[typeof(MapMonsterConfig)] = MakeMonsterConfigDict();        
     }

@@ -2,7 +2,7 @@ using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class MonsterRLController : MonsterController
+public class MonsterRLController : RangedMonsterController
 {
     [Header("Weapon Settings")]
     [SerializeField] private GameObject _bulletPrefab; // 풀링용 프리팹 (Poolable 필수)

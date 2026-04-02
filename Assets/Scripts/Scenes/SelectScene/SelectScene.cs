@@ -13,7 +13,6 @@ public class SelectScene : BaseScene
     [SerializeField] private SelectScenePreloadSO _preloadData;
     [SerializeField] private SchoolDataSO[] _schoolDatas;
 
-    private GameObject _modelCamera;
     private SelectSceneCanvas _uiCanvas;
     private int _currentSchoolIdx = -1;
     private GameObject _loadingCoverInstance;

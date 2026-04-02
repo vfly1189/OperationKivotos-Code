@@ -32,7 +32,6 @@ public class StartScene : BaseScene
             DontDestroyOnLoad(eventSystem.gameObject);
         }
 
-
         _startButton.onClick.AddListener(OnClick);
 
         // 1. 초기 UI 상태 세팅
@@ -150,7 +149,7 @@ public class StartScene : BaseScene
         Managers.Sound.StopBgm();
     }
 
-    private void HandleEscape()
+    protected override void HandleEscape()
     {
         Debug.Log("Handle Escape 호출");
         if (Managers.UI.IsPopupOpen)

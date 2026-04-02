@@ -22,6 +22,7 @@ public class NormalDungeonScene : BaseScene
     private AudioClip _mainBGM;
 
     private DungeonSequenceDirector _clearDirector;
+    private List<BaseMonsterController> _spawnedMonsters = new List<BaseMonsterController>();
     protected override async void Init()
     {
         base.Init();
@@ -58,7 +59,7 @@ public class NormalDungeonScene : BaseScene
 
 
         var clearCondition = _curMap.AddComponent<KillAllMonstersCondition>();
-        clearCondition.SetupCondition(_curMap);
+        clearCondition.Setup(_spawnedMonsters);
 
         if (_curMap.GetComponent<DungeonSequenceDirector>() == null)
         {
@@ -107,18 +108,21 @@ public class NormalDungeonScene : BaseScene
                 _curMap.transform.position = Vector3.zero;
 
                 // [변경] 스폰 방식으로 몬스터 등록 변경
-                SpawnAndRegisterMonsters(_curMap);
+                _spawnedMonsters = await SpawnAndRegisterMonstersAsync(_curMap);
             }
         }
     }
 
-    private void SpawnAndRegisterMonsters(GameObject map)
+    // [핵심 변경] 비동기 팩토리(MonsterID 기반)를 사용하도록 수정
+    private async UniTask<List<BaseMonsterController>> SpawnAndRegisterMonstersAsync(GameObject map)
     {
+        List<BaseMonsterController> monsterList = new List<BaseMonsterController>();
+
         Transform spawnPointsRoot = map.transform.Find("SpawnPoints");
         if (spawnPointsRoot == null)
         {
             Debug.LogError("맵 프리팹에 'SpawnPoints' 오브젝트가 없습니다!");
-            return;
+            return monsterList;
         }
 
         Transform monstersRoot = map.transform.Find("Monsters");
@@ -132,69 +136,57 @@ public class NormalDungeonScene : BaseScene
         MapMonsterConfig mapConfig = Managers.Data.GetData<int, MapMonsterConfig>(Managers.Context.CurrentDungeonID);
         if (mapConfig == null)
         {
-            Debug.LogError($"맵 정보({Managers.Context.CurrentDungeonGroupID})가 없습니다.");
-            return;
+            Debug.LogError($"맵 정보({Managers.Context.CurrentDungeonID})가 없습니다.");
+            return monsterList;
         }
 
+        List<UniTask<GameObject>> spawnTasks = new List<UniTask<GameObject>>();
 
-        // 1. 데이터 매니저에서 몬스터 전체 딕셔너리를 가져옵니다.
-        Dictionary<int, MonsterBaseData> monsterDict = Managers.Data.GetDict<int, MonsterBaseData>();
-        if (monsterDict == null) return;
-
-        // 2. SpawnPoints 바로 아래의 자식들 (AddressableKey 이름의 노드들) 순회
+        // 2. SpawnPoints 바로 아래의 자식들 순회 (이제 이 노드의 이름은 "2003", "2004" 같은 ID가 되어야 합니다)
         for (int i = 0; i < spawnPointsRoot.childCount; i++)
         {
             Transform groupNode = spawnPointsRoot.GetChild(i);
-            string addressableKey = groupNode.name; // 노드 이름 = AddressableKey
 
-            // 3. AddressableKey가 일치하면서, 던전용 몬스터(SpawnType.Dungeon)인 데이터를 찾습니다.
-            MonsterBaseData baseData = null;
-            foreach (var data in monsterDict.Values)
+            // [수정] 그룹 노드의 이름을 int형 ID로 파싱합니다.
+            if (!int.TryParse(groupNode.name, out int monsterId))
             {
-                if (data.AddressableKey == addressableKey && data.SpawnType == MonsterDefine.MonsterSpawnType.Dungeon)
-                {
-                    baseData = data;
-                    break;
-                }
-            }
-
-            if (baseData == null)
-            {
-                Debug.LogWarning($"던전용 몬스터 중 AddressableKey가 '{addressableKey}'인 데이터를 찾을 수 없습니다.");
+                Debug.LogError($"[Spawn] 잘못된 그룹 노드 이름입니다. 몬스터 ID(숫자)로 설정해주세요: {groupNode.name}");
                 continue;
             }
 
-            // 4. 그룹 노드 아래의 실제 Point들 순회하며 스폰
+            // 4. 그룹 노드 아래의 실제 Point들 순회하며 스폰 태스크 수집
             for (int j = 0; j < groupNode.childCount; j++)
             {
                 Transform point = groupNode.GetChild(j);
 
-                // 노드 이름(addressableKey)을 그대로 프리팹 로드에 사용
-                GameObject monsterObj = Managers.Resource.Instantiate(
-                    addressableKey,
-                    point.position,
-                    point.rotation
+                // [수정] AddressableKey가 아닌 ID를 받는 팩토리 메서드 호출!
+                var task = MonsterFactory.CreateMonsterByMonsterIDAsync(
+                    monsterId,
+                    Managers.Context.CurrentDungeonID,
+                    point
                 );
 
-                if (monsterObj == null) continue;
-
-                monsterObj.transform.SetParent(monstersRoot);
-
-                MonsterController monsterCtrl = monsterObj.GetComponent<MonsterController>();
-                MonsterStat monsterStat = monsterObj.GetComponent<MonsterStat>();
-
-                if (monsterStat != null && monsterCtrl != null)
-                {
-                    // 레벨 계산 및 스탯 주입
-                    int spawnLevel = (baseData.Grade == MonsterDefine.MonsterGrade.Elite)
-                        ? mapConfig.EliteMonsterLevel : mapConfig.NormalMonsterLevel;
-
-                    MonsterLevelByStat levelStat = Managers.Data.GetData<int, MonsterLevelByStat>(spawnLevel);
-
-                    monsterStat.Init(baseData, levelStat);
-                }
+                spawnTasks.Add(task);
             }
         }
+
+        // 수집된 모든 몬스터 생성 태스크를 병렬로 대기
+        GameObject[] spawnedObjects = await UniTask.WhenAll(spawnTasks);
+
+        foreach (GameObject monsterObj in spawnedObjects)
+        {
+            if (monsterObj == null) continue;
+
+            monsterObj.transform.SetParent(monstersRoot);
+
+            BaseMonsterController monsterCtrl = monsterObj.GetComponent<BaseMonsterController>();
+            if (monsterCtrl != null)
+            {
+                monsterList.Add(monsterCtrl);
+            }
+        }
+
+        return monsterList;
     }
 
     private async UniTask SetupUI()

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
-public class MonsterTankController : MonsterController
+public class MonsterTankController : RangedMonsterController
 {
     [Header("Artillery Settings")]
     [SerializeField] private TankBombController[] _bombPoints;

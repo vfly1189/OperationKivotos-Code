@@ -50,6 +50,14 @@ public class BaseStat : MonoBehaviour, IDamageable
         return null;
     }
 
+    // [추가] 풀링에서 꺼낼 때 스탯은 유지하고 HP만 회복시키는 용도
+    public virtual void Recover()
+    {
+        IsDead = false;
+        CurrentHp = MaxHp.Value;
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
+    }
+
     protected virtual void HandleDeath(GameObject shooter)
     {
         OnDead?.Invoke();

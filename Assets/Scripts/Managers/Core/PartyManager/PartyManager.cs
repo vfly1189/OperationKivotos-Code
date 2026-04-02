@@ -143,7 +143,7 @@ public class PartyManager
     private async UniTaskVoid GameOverSequenceAsync()
     {
         // SceneManagerEx나 시스템 단의 취소가 발생할 수 있으므로 안전망 적용
-        bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(4.0f)).SuppressCancellationThrow();
+        bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(5.0f)).SuppressCancellationThrow();
         if (isCanceled) return;
 
         _isGameEnding = false;

@@ -137,6 +137,24 @@ public class DataManager
         return null;
     }
 
+    // [추가] TMarker를 이용해 단일 데이터를 바로 가져오는 만능 Getter 오버로딩
+    public TValue GetData<TKey, TValue, TMarker>(TKey key)
+        where TValue : class
+        where TMarker : class
+    {
+        if (_dataDicts.TryGetValue(typeof(TMarker), out object dictObj))
+        {
+            var dict = dictObj as Dictionary<TKey, TValue>;
+            if (dict != null && dict.TryGetValue(key, out TValue data))
+            {
+                return data;
+            }
+        }
+
+        Debug.LogError($"[DataManager] {typeof(TMarker).Name} 마커에서 키 [{key}]를 찾을 수 없습니다!");
+        return null;
+    }
+
     public BaseItemData GetItemData(int itemID, ItemCategory category)
     {
         switch (category)

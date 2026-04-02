@@ -3,11 +3,11 @@ using System.Collections;
 using System.Threading;
 using UnityEngine;
 
-public class MonsterARController : MonsterController
+public class MonsterARController : RangedMonsterController
 {
     [Header("Weapon Settings")]
     [SerializeField] private GameObject _bulletPrefab; // 풀링용 프리팹 (Poolable 필수)
-    [SerializeField] private GameObject _bulletFire;  //총구화염
+    [SerializeField] private GameObject _bulletFire;   // 총구화염
     [SerializeField] private Transform _firePoint;     // 총구 위치
 
     [Header("Rapid Fire Settings")]
@@ -20,37 +20,7 @@ public class MonsterARController : MonsterController
 
 
         RapidFireAsync(_monsterCts.Token).Forget();
-        //StartCoroutine(CoRapidFire());
     }
-
-    //private IEnumerator CoRapidFire()
-    //{
-    //    Vector3 position = _firePoint.position;
-
-
-    //    for (int i = 0; i < _shotCount; i++)
-    //    {
-    //        // [핵심] 연사 도중 몬스터가 사망하면 즉시 발사 중지
-    //        if (_state == MonsterState.Dead) yield break;
-
-    //        // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
-    //        GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
-
-    //        bulletObj.transform.position = _firePoint.position;
-    //        // 캐릭터가 바라보는 방향 기준으로 회전
-    //        bulletObj.transform.rotation = transform.rotation;
-    //        // 2. 데미지 주입
-    //        BulletController bulletScript = bulletObj.GetComponent<BulletController>();
-    //        if (bulletScript != null && Stat != null)
-    //        {
-    //            bulletScript.Init(Stat.Attack.Value, this.gameObject);
-    //        }
-    //        PlayFireEffect();
-    //        // 3. 다음 발사까지 대기
-    //        yield return new WaitForSeconds(_fireDelay);
-    //    }
-    //}
-
     private async UniTaskVoid RapidFireAsync(CancellationToken token)
     {
         for (int i = 0; i < _shotCount; i++)
