@@ -2,14 +2,14 @@ using UnityEngine;
 
 public class CharacterMovement
 {
-    private Transform _transform;
-    private float _speed;
-    private int _obstacleMask;
+    private readonly Transform _transform;
+    private readonly float _speed;
+    private readonly int _obstacleMask;
 
     public CharacterMovement(Transform transform, float speed)
     {
-        _transform = transform;
-        _speed = speed;
+        this._transform = transform;
+        this._speed = speed;
         _obstacleMask = LayerMask.GetMask("Wall", "Barricade");
     }
 
@@ -18,18 +18,11 @@ public class CharacterMovement
         Vector3 moveDir = CalculateCameraRelativeDirection(inputDir);
         float moveDist = _speed * Time.deltaTime;
 
-        // 충돌 체크
         if (!CheckObstacle(moveDir, moveDist))
-        {
             _transform.position += moveDir * moveDist;
-        }
 
-        // 회전
         if (moveDir != Vector3.zero)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-            _transform.rotation = Quaternion.Slerp(_transform.rotation, targetRotation, 10.0f * Time.deltaTime);
-        }
+            _transform.rotation = Quaternion.Slerp(_transform.rotation, Quaternion.LookRotation(moveDir), 10.0f * Time.deltaTime);
     }
 
     public void RotateToMouse()
@@ -52,15 +45,12 @@ public class CharacterMovement
 
     private Vector3 CalculateCameraRelativeDirection(Vector2 inputDir)
     {
-        if (Camera.main == null)
-            return new Vector3(inputDir.x, 0, inputDir.y).normalized;
+        if (Camera.main == null) return new Vector3(inputDir.x, 0, inputDir.y).normalized;
 
         Vector3 camFwd = Camera.main.transform.forward;
         Vector3 camRight = Camera.main.transform.right;
-        camFwd.y = 0;
-        camRight.y = 0;
-        camFwd.Normalize();
-        camRight.Normalize();
+        camFwd.y = 0; camRight.y = 0;
+        camFwd.Normalize(); camRight.Normalize();
 
         return (camFwd * inputDir.y + camRight * inputDir.x).normalized;
     }

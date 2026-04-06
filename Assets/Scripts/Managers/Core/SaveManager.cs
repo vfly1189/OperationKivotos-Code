@@ -264,18 +264,20 @@ public class SaveManager
     private List<CharacterSaveData> CollectCharacterData()
     {
         List<CharacterSaveData> save = new List<CharacterSaveData>();
-        List<BaseCharacter> members = Managers.Party.GetMemeber();
+        List<BaseCharacter> members = Managers.Party.GetMember();
 
+ 
         foreach (BaseCharacter member in members)
         {
             save.Add(
-                new CharacterSaveData 
-                { 
+                new CharacterSaveData
+                {
                     characterId = member.Stat.GetID(),
                     weaponLevel = member.Stat.WeaponLevel,
-                    currentHp = member.Stat.CurrentHp,
+                    currentHp = member.Stat.CurrentHp <= 0 ? 1 : member.Stat.CurrentHp
                 }
             );
+ 
         }
 
         return save;
@@ -285,7 +287,7 @@ public class SaveManager
     {
         if (savedCharacters == null || savedCharacters.Count == 0) return;
 
-        List<BaseCharacter> members = Managers.Party.GetMemeber();
+        List<BaseCharacter> members = Managers.Party.GetMember();
 
         foreach (BaseCharacter member in members)
         {

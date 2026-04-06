@@ -30,8 +30,8 @@ public class PlayerController
 
         Managers.Input.RegisterAction("Info", HandleInfo);
         Managers.Input.RegisterAction("Inventory", HandleInventory);
-        Managers.Input.RegisterAction("Q_Skill", HandleSkill_Q);
-        Managers.Input.RegisterAction("E_Skill", HandleSkill_E);
+        Managers.Input.RegisterAction("Q_Skill", HandleSkillQ);
+        Managers.Input.RegisterAction("E_Skill", HandleSkillE);
         Managers.Input.RegisterAction("Interact", HandleInteract);
     }
 
@@ -69,20 +69,7 @@ public class PlayerController
 
     // 마우스 입력 처리 (공격)
     private void HandleMouse(Define.MouseEvent evt)
-    {
-        //if (Managers.UI.IsPopupOpen) return;
-
-        //if (_currentTarget == null) return;
-
-        //if (evt == Define.MouseEvent.Press)
-        //{
-        //    _isMousePressed = true;
-        //}
-        //else if (evt == Define.MouseEvent.Click)
-        //{
-        //    _isMousePressed = false;
-        //}
-
+    {  
         //팝업이 열려있다면 입력을 무시하되, 누름 상태는 강제로 취소(초기화)해야 합니다!
         if (Managers.UI.IsPopupOpen)
         {
@@ -103,15 +90,8 @@ public class PlayerController
     }
 
     // 스킬 입력 처리
-    private void HandleSkill_Q()
-    {
-        _currentTarget?.UseSkill_Q();
-    }
-
-    private void HandleSkill_E()
-    {
-        _currentTarget?.UseSkill_E();
-    }
+    private void HandleSkillQ() => _currentTarget?.UseSkillQ();
+    private void HandleSkillE() => _currentTarget?.UseSkillE();
 
     private void HandleInteract()
     {
@@ -147,6 +127,12 @@ public class PlayerController
         if (_currentTarget == null || _currentTarget.Stat.IsDead) return;
 
         _currentTarget.Attack(_isMousePressed);
+    }
+
+    // PlayerController.cs
+    public void ClearMouseState()
+    {
+        _isMousePressed = false;
     }
 
     // 정리 메서드 (Dispose 시 호출)

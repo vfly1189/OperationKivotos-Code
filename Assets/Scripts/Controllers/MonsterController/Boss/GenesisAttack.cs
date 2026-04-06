@@ -91,27 +91,7 @@ public class GenesisAttack : MonoBehaviour
         _activeTargets.Clear();
     }
 
-    //// 주기적으로 데미지 주는 코루틴
-    //private IEnumerator CoDotDamage(IDamageable target, Collider collider)
-    //{
-    //    while (true)
-    //    {
-    //        // 간격 대기
-    //        yield return new WaitForSeconds(_dotInterval);
 
-    //        // 타겟이 유효한지(파괴되지 않았는지) 확인 (MonoBehaviour로 캐스팅)
-    //        MonoBehaviour targetMono = target as MonoBehaviour;
-    //        if (targetMono == null || targetMono.gameObject == null)
-    //        {
-    //            _activeTargets.Remove(target);
-    //            yield break;
-    //        }
-
-    //        // 가장 가까운 위치 다시 계산 (이동했을 테니까)
-    //        Vector3 hitPoint = collider.ClosestPoint(transform.position);
-    //        ApplyDamage(target, hitPoint);
-    //    }
-    //}
 
     private async UniTaskVoid DotDamageAsync(IDamageable target, Collider collider, CancellationToken token)
     {
@@ -121,12 +101,21 @@ public class GenesisAttack : MonoBehaviour
             if (isCanceled) return;
 
             MonoBehaviour targetMono = target as MonoBehaviour;
-            if (targetMono == null || targetMono.gameObject == null)
+
+            // [핵심 추가] targetMono.gameObject.activeInHierarchy 로 비활성화 여부 검사!
+            if (targetMono == null || targetMono.gameObject == null || !targetMono.gameObject.activeInHierarchy)
             {
-                // [최적화] 자신을 파괴할 때 Dictionary에서 스스로 Remove하는 것은 안전하지 않으므로
-                // 나갈 때(Exit)나 Disable에서 지워지도록 내버려두고, 루프만 탈출합니다.
+                // 타겟이 파괴되었거나 SetActive(false)로 꺼졌다면
+                // 딕셔너리에서 본인을 안전하게 제거하고 루프를 즉시 탈출합니다.
+                if (_activeTargets.ContainsKey(target))
+                {
+                    _activeTargets.Remove(target);
+                }
                 return;
             }
+
+            // 혹시 콜라이더 컴포넌트 자체만 꺼진 경우도 방어하고 싶다면 아래 조건도 추가 가능합니다.
+            // if (!collider.enabled) return;
 
             Vector3 hitPoint = collider.ClosestPoint(transform.position);
             ApplyDamage(target, hitPoint);
@@ -137,6 +126,6 @@ public class GenesisAttack : MonoBehaviour
     {
         // 인터페이스 호출
         Debug.Log($"장판 데미지: {_damage}");
-        target.TakeDamage(new DamageInfo(_damage, this.gameObject, hitPoint));
+        target.TakeDamage(new DamageInfo(500, this.gameObject, hitPoint));
     }
 }

@@ -100,7 +100,7 @@ public class UI_WeaponUpgradePanel : UI_Base
     private async UniTask RefreshPartyButtons()
     {
         int currentIndex = Managers.Party.GetCurrentCharacterIndex();
-        List<BaseCharacter> characters = Managers.Party.GetMemeber();
+        List<BaseCharacter> characters = Managers.Party.GetMember();
 
         for (int i = 0; i < characters.Count && i < _partyButtons.Length; i++)
         {
@@ -245,6 +245,6 @@ public class UI_WeaponUpgradePanel : UI_Base
     private BaseCharacter GetSelectedCharacter()
     {
         int currentIndex = Managers.Party.GetCurrentCharacterIndex();
-        return Managers.Party.GetMemeber()[currentIndex];
+        return Managers.Party.GetMember()[currentIndex];
     }
 }

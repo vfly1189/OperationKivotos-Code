@@ -81,7 +81,7 @@ public class EquipmentManager
 
 
         // [핵심 변경점] 현재 파티원 4명 모두에게 스탯을 적용합니다.
-        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMember();
         foreach (BaseCharacter member in partyMembers)
         {
             if (member != null && member.Stat != null)
@@ -107,7 +107,7 @@ public class EquipmentManager
         InventorySlot unequippedItem = _equippedItem[type];
 
         // [핵심 변경점] 현재 파티원 4명 모두에게서 스탯을 제거합니다.
-        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMember();
         foreach (BaseCharacter member in partyMembers)
         {
             if (member != null && member.Stat != null)
@@ -230,7 +230,7 @@ public class EquipmentManager
             _equippedItem[entry.slotType] = entry.slot;
 
             // 파티원 전체에 스탯 재적용
-            foreach (var member in Managers.Party.GetMemeber())
+            foreach (var member in Managers.Party.GetMember())
             {
                 if (member?.Stat != null)
                     ApplyEquipment(member.Stat, entry.slot);

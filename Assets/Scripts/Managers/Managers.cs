@@ -25,6 +25,7 @@ public class Managers : MonoBehaviour
     DropManager _drop = new DropManager();
     DungeonManager _dungeon = new DungeonManager();
     GameSessionContext _context = new GameSessionContext();
+    FieldManager _field = new FieldManager();
 
     public static InputManager Input { get { return Instance._input; } }
     public static PartyManager Party { get { return Instance._party; } }
@@ -42,6 +43,7 @@ public class Managers : MonoBehaviour
     public static DropManager Drop { get { return Instance._drop; } }
     public static DungeonManager Dungeon {  get { return Instance._dungeon; } }
     public static GameSessionContext Context { get { return Instance._context; } }
+    public static FieldManager Field { get { return Instance._field; } }
     #endregion
 
     // [핵심 1] 코루틴 Start 대신 일반 Start에서 Fire-and-forget 비동기 실행
@@ -115,6 +117,6 @@ public class Managers : MonoBehaviour
     public static void Clear()
     {
         SceneEx.Clear();
-
+        Field.Clear();
     }
 }

@@ -16,6 +16,7 @@ public class BossMonsterController : BaseMonsterController
     private bool _isSkillFiring = false;
     private bool _entranceFinish = false; // 오타 수정 (entrace -> entrance)
 
+    private List<GameObject> _summonedMonsters = new List<GameObject>();
 
     protected override void OnEnable()
     {
@@ -182,6 +183,24 @@ public class BossMonsterController : BaseMonsterController
         // 중복 방지는 부모(Base)에서 처리하므로 여기선 제외 가능하거나 _state 체크
         if (_state == MonsterState.Dead) return NodeState.Running;
 
+        // [핵심] 보스가 죽을 때 소환된 잡몹들도 모두 파괴 (또는 데미지를 줘서 죽게 만듦)
+        foreach (var minion in _summonedMonsters)
+        {
+            if (minion != null)
+            {
+                // 방법 A: 즉시 파괴
+                // Managers.Resource.Destroy(minion);
+
+                // 방법 B: 잡몹도 죽는 애니메이션을 재생하게 하려면 Stat의 체력을 0으로 만듦
+                var stat = minion.GetComponent<MonsterStat>();
+                if (stat != null && !stat.IsDead)
+                {
+                    stat.TakeDamage(new DamageInfo { Amount = 99999f, Attacker = this.gameObject });
+                }
+            }
+        }
+        _summonedMonsters.Clear(); // 리스트 비우기
+
         // 1. 진행 중인 타임라인/스킬 강제 종료
         if (_director != null && _director.state == PlayState.Playing)
         {
@@ -199,4 +218,13 @@ public class BossMonsterController : BaseMonsterController
     {
         return 5.0f;
     }
+
+    public void RegisterSummonedMonster(GameObject monster)
+    {
+        if (monster != null)
+        {
+            _summonedMonsters.Add(monster);
+        }
+    }
+
 }

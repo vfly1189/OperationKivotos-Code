@@ -47,8 +47,11 @@ public class GameScene : BaseScene
         await SetupUI();
         await CreateShopMaster();
 
-        
+        Transform spawnPoint = _map.GetComponent<BaseMap>().GetPlayerSpawnPoint();
+        Managers.Field.Init(spawnPoint);
 
+
+        //SetupFieldConditions();
         SetupCamera();
         PlayMainBGM();
 
@@ -145,10 +148,11 @@ public class GameScene : BaseScene
     private async UniTask CreateCharacters()
     {
         Transform spawnPoint = _map.GetComponent<BaseMap>().GetPlayerSpawnPoint();
+        Managers.Party.TeleportParty(spawnPoint.position);
 
-        if (Managers.Party.GetMemeber() != null && Managers.Party.GetMemeber().Count > 0)
+        if (Managers.Party.GetMember() != null && Managers.Party.GetMember().Count > 0)
         {
-            Managers.Party.ResetPartyForNewScene(spawnPoint);
+            Managers.Party.ReturnToTownForNewScene(spawnPoint);
             return;
         }
 
@@ -218,6 +222,8 @@ public class GameScene : BaseScene
         base.Clear();
         Managers.Sound.StopAll();
         Managers.Input.OnEscapePressed -= HandleEscape;
+
+        Managers.Field.Clear();
         Managers.Sector.Clear();
     }
 
@@ -279,6 +285,29 @@ public class GameScene : BaseScene
         }
     }
 
+    private void SetupFieldConditions()
+    {
+        // 1. 실패 조건(파티 전멸) 생성
+        PartyWipeCondition failCondition = _map.AddComponent<PartyWipeCondition>();
+        failCondition.SetUp(); // Manager 이벤트 구독
+
+        // 2. 매니저에 실패 조건 등록
+        Managers.Dungeon.AddFailCondition(failCondition);
+
+        // 3. 필드 전용 실패 연출 등록 (스폰 지점으로 부활)
+        Managers.Dungeon.OnDungeonFailed += HandleFieldPartyWipe;
+    }
+
+    private void HandleFieldPartyWipe()
+    {
+        // 스폰 지점 가져오기
+        Transform spawnPoint = _map.GetComponent<BaseMap>().GetPlayerSpawnPoint();
+
+        // 파티 부활 및 스폰 지점으로 이동 처리
+        Managers.Party.ResetPartyForNewScene(spawnPoint);
+        // (선택) 여기에 페이드인/아웃 연출을 추가할 수 있습니다.
+    }
+
     private void ApplyTestData()
     {
         for (int i = 0; i < 40; i++)
@@ -299,37 +328,4 @@ public class GameScene : BaseScene
         Managers.Inventory.AddItem(30005, ItemCategory.Material, 1000);
         Managers.Inventory.AddItem(30000, ItemCategory.Material, 500);
     }
-
-    //private void HandleInfo()
-    //{
-    //    int index = Managers.Party.GetCurrentCharacterIndex();
-
-    //    if(_prevIndex != index && _prevIndex != -1) 
-    //        _infoModels[_prevIndex].SetActive(false);
-
-    //    _infoModels[index].SetActive(true);
-
-    //    _prevIndex = index;
-    //}
-
-    //private void HandleEscape()
-    //{
-    //    if (Managers.UI.IsPopupOpen)
-    //    {
-    //        Debug.Log("닫기 시작 ");
-    //        Managers.UI.ClosePopupUI();
-    //    }
-    //    else
-    //    {
-    //        Debug.Log("또 열기");
-    //        ShowEscapeMenu().Forget();
-    //    }
-    //}
-
-    //// 버튼 클릭 등의 이벤트에서 비동기를 띄울 때는 async UniTaskVoid 사용
-    //private async UniTaskVoid ShowEscapeMenu()
-    //{
-    //    //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
-    //    UI_EscapeMenu popupPrefab = await Managers.UI.ShowPopupUIAsync<UI_EscapeMenu>("UI_EscapeMenu");
-    //}
 }

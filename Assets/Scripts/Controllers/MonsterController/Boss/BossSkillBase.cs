@@ -8,6 +8,8 @@ public class BossSkillContext
     public GameObject _boss;
     public Transform[] _lightningPoints;
     public BossRelicController _bossRelicController;
+    // (보스 컨트롤러 참조를 캐싱해두면 편합니다)
+    public BossMonsterController _bossController;
 }
 
 public abstract class BossSkillBase : MonoBehaviour

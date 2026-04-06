@@ -87,8 +87,8 @@ public class GameSceneCanvas : UI_Scene
 
     void ConnectPermanentPartyEvents()
     {
-        if (Managers.Party == null || Managers.Party.GetMemeber() == null) return;
-        _partyHUD.ConnectPartyEvents(Managers.Party.GetMemeber());
+        if (Managers.Party == null || Managers.Party.GetMember() == null) return;
+        _partyHUD.ConnectPartyEvents(Managers.Party.GetMember());
     }
 
     // 델리게이트와 시그니처를 맞추기 위한 동기 래퍼 함수

@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -9,117 +10,100 @@ public class BaseCharacter : MonoBehaviour
     [Header("Base Settings")]
     [SerializeField] protected float _speed = 5.0f;
     [SerializeField] protected float _attackRate = 0.5f;
-    [SerializeField] protected Animator _anim;
-    
+    [SerializeField] protected Animator anim;
+
     [Header("Skill Settings")]
-    [SerializeField] protected PlayableDirector _skillTimeline;
+    [SerializeField] protected PlayableDirector skillTimeline;
 
     [Header("Combat Settings")]
     [SerializeField] protected GameObject _bulletPrefab;
     [SerializeField] protected Transform _firePoint;
-    [SerializeField] protected ParticleSystem _fireEffectParticle;
+    [SerializeField] protected ParticleSystem fireEffectParticle;
 
-    // 상태 & 컴포넌트들
     public CharacterStat Stat { get; private set; }
     public IInteractable CurrentInteractable { get; private set; }
     public bool IsUsingSkill { get; protected set; }
+    public bool CanSwap => _stateMachine.CanSwap; // 공격/스킬 중 스왑 차단용
 
     protected CharacterStateMachine _stateMachine;
     protected CharacterMovement _movement;
     protected CharacterCombat _combat;
     protected CharacterAnimationController _animController;
-
     protected GameObject _gameCanvas;
 
-    // --- 공통 VFX (Static) --- ( 공용으로 쓰는 오라들 )
+    // VFX
     protected static GameObject _healingAuraPrefab;
     protected GameObject _healingAuraInstance;
     protected ParticleSystem _healingAuraParticle;
-
-    // [추가] 캐릭터의 현재 행동(공격 등)을 취소하기 위한 토큰
     protected CancellationTokenSource _actionCts;
 
-    #region 유니티 생명주기
+    public event Action<BaseCharacter> OnCharacterDead;
 
-    private void Awake()
+    #region Lifecycle
+
+    private void Awake() => Init();
+
+    public virtual async void Init()
     {
-        Init();
-    }
-
-    public virtual void Init()
-    {
-        // 컴포넌트 초기화
-        if (_anim == null) _anim = GetComponent<Animator>();
-
+        if (anim == null) anim = GetComponent<Animator>();
         Stat = GetComponent<CharacterStat>();
         Stat?.Init();
 
-        // 서브시스템 초기화
         _stateMachine = new CharacterStateMachine();
         _movement = new CharacterMovement(transform, _speed);
         _combat = new CharacterCombat(Stat, _attackRate);
-        _animController = new CharacterAnimationController(_anim);
+        _animController = new CharacterAnimationController(anim);
 
-        // 이벤트 연결
         _stateMachine.OnStateChanged += OnStateChanged;
 
-        if (_skillTimeline != null)
+        if (skillTimeline != null)
         {
-            _skillTimeline.stopped += OnCutsceneEnded;
-            _skillTimeline.Stop();
+            skillTimeline.stopped += OnCutsceneEnded;
+            skillTimeline.Stop();
         }
 
-        //// 공통 이펙트 최초 1회 로드
-        //if (_healingAuraPrefab == null)
-        //{
-        //    _healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("Healing_Aura").WaitForCompletion();
-        //    if (_healingAuraPrefab == null) Debug.LogError("Healing_Aura 로드 실패!");
-        //}
+        if (_healingAuraPrefab == null)
+        {
+            //_healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("HealingAura").WaitForCompletion();
+            _healingAuraPrefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura");
+            if (_healingAuraPrefab == null) Debug.LogError("HealingAura 로드 실패!");
+        }
     }
 
-    void Start()
+    private void Update()
+    {
+        if (_stateMachine.CurrentState == CharacterStateMachine.PlayerState.Attack)
+            _movement.RotateToMouse();
+    }
+
+    protected virtual void OnEnable()
     {
         if (Stat != null)
         {
             Stat.OnDead -= HandleDeath;
             Stat.OnDead += HandleDeath;
         }
-    }
-
-    void Update()
-    {
-        //공격중에는 마우스 따라 공격
-        if (_stateMachine.CurrentState == CharacterStateMachine.PlayerState.Attack)
-        {
-            _movement.RotateToMouse();
-        }
-    }
-
-    void OnEnable()
-    {
-        if (Stat != null) Stat.OnDead += HandleDeath;
-        _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);
+        _stateMachine?.ChangeState(CharacterStateMachine.PlayerState.Idle);
     }
 
     protected virtual void OnDisable()
     {
         if (Stat != null) Stat.OnDead -= HandleDeath;
-        CancelCurrentAction(); // 파괴되거나 비활성화될 때도 취소
+        CancelCurrentAction();
     }
 
     #endregion
 
-    #region 외부에서 호출될 API
+    #region API
 
     public void Move(Vector2 dir)
     {
-        if (!_stateMachine.CanMove() || Stat.IsDead) return;
+        if (!_stateMachine.CanMove || Stat.IsDead) return;
 
         if (dir.sqrMagnitude > 0.01f)
         {
             if (_stateMachine.CurrentState != CharacterStateMachine.PlayerState.Move)
                 _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Move);
-
             _movement.Move(dir);
         }
     }
@@ -133,129 +117,110 @@ public class BaseCharacter : MonoBehaviour
     public void Attack(bool isPressing)
     {
         if (!isPressing) return;
-        if (!_stateMachine.CanAttack() || IsUsingSkill || Stat.IsDead) return;
+        if (!_stateMachine.CanAttack || IsUsingSkill || Stat.IsDead) return;
         if (!_combat.CanAttack) return;
 
         if (_combat.TryAttack())
-        {
             _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Attack);
-        }
     }
 
-    public void UseSkill_Q()
+    public void UseSkillQ()
     {
-        if (!_stateMachine.CanUseSkill() || IsUsingSkill || Stat.IsDead) return;
+        if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.IsDead) return;
         if (!_combat.TryUseSkillQ()) return;
-
-        Debug.Log("Q 스킬 사용!");
-        _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Q_Skill_CutScene);
+        _stateMachine.ChangeState(CharacterStateMachine.PlayerState.QSkillCutScene);
     }
 
-    public void UseSkill_E()
+    public void UseSkillE()
     {
-        if (!_stateMachine.CanUseSkill() || IsUsingSkill || Stat.IsDead) return;
+        if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.IsDead) return;
         if (!_combat.TryUseSkillE()) return;
-
-        Debug.Log("E 스킬 사용!");
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.E_Skill);
     }
 
-    public void Victory()
-    {
+    public void Victory() =>
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Victory);
-    }
 
     public void ResetCharacterState(Vector3 pos, Quaternion rot)
     {
-        // 2. 위치/회전 강제 덮어쓰기
-        transform.position = pos;
-        transform.rotation = rot;
+        transform.SetPositionAndRotation(pos, rot);
+        Stat?.ResetState();
+        IsUsingSkill = false;
+        _stateMachine?.ChangeState(CharacterStateMachine.PlayerState.Idle);
+        anim?.Rebind();
+    }
 
-        // 5. 스탯 복구 (체력 풀피, 사망 상태 해제 등)
+    // 씬 귀환 시 호출
+    public void ReturnToTownCharacterState(Vector3 pos, Quaternion rot)
+    {
+        transform.SetPositionAndRotation(pos, rot);
+
+        // 일반 ResetState 대신 귀환용 보정 함수 호출
         if (Stat != null)
         {
-            Stat.ResetState();
-            // Stat 쪽에 RestoreHealth() 같은 게 있다면 호출 (아래 팁 참고)
-            // Stat.RestoreAll(); 
+            Stat.ReturnToTownState();
         }
 
-        // 3. 상태 머신 초기화 (무조건 Idle로)
         IsUsingSkill = false;
-        if (_stateMachine != null)
-        {
-            _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);
-        }
-
-        // 4. 애니메이터 완전 리셋 (이전 씬에서의 죽음, 스킬 모션 등 강제 해제)
-        if (_anim != null)
-        {
-            _anim.Rebind();
-        }        
+        _stateMachine?.ChangeState(CharacterStateMachine.PlayerState.Idle);
+        anim?.Rebind();
     }
 
     #endregion
 
-    #region 콜백 함수들
-    // ==================== State Callbacks ====================
+    #region State Callbacks
 
     private void OnStateChanged(CharacterStateMachine.PlayerState newState)
     {
-        // [추가] 상태가 바뀔 때마다 기존에 진행 중이던 행동(ex: 연사) 취소!
         CancelCurrentAction();
-        _actionCts = new CancellationTokenSource(); // 새 토큰 발급
+        _actionCts = new CancellationTokenSource();
 
-        // 무적 처리
-        Stat.IsInvincible = (newState == CharacterStateMachine.PlayerState.Q_Skill_CutScene ||
-                            newState == CharacterStateMachine.PlayerState.Q_Skill ||
-                            newState == CharacterStateMachine.PlayerState.Victory);
+        Stat.IsInvincible = newState == CharacterStateMachine.PlayerState.QSkillCutScene
+                         || newState == CharacterStateMachine.PlayerState.Q_Skill
+                         || newState == CharacterStateMachine.PlayerState.Victory;
 
-        // 애니메이션 재생
         _animController.PlayState(newState);
 
-        // 스킬 진입 처리
-        if (newState == CharacterStateMachine.PlayerState.Q_Skill_CutScene)
-        {
+        if (newState == CharacterStateMachine.PlayerState.QSkillCutScene)
             OnSkillEnter();
-        }
     }
 
-    // 행동 강제 취소 함수
     protected void CancelCurrentAction()
     {
-        if (_actionCts != null)
-        {
-            _actionCts.Cancel();
-            _actionCts.Dispose();
-            _actionCts = null;
-        }
+        if (_actionCts == null) return;
+        _actionCts.Cancel();
+        _actionCts.Dispose();
+        _actionCts = null;
     }
 
     protected void OnSkillEnter()
     {
-        if (_skillTimeline != null)
+        if (skillTimeline == null)
         {
-            IsUsingSkill = true;
-            _skillTimeline.Play();
+            _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Q_Skill);
+            return;
+        }
 
-            if(_gameCanvas == null)
+        IsUsingSkill = true;
+        skillTimeline.Play();
+
+        if (_gameCanvas == null)
+        {
+            var existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
+            if (existingUI != null)
             {
-                GameSceneCanvas existingUI = FindAnyObjectByType<GameSceneCanvas>(FindObjectsInactive.Include);
-                if (existingUI != null)
-                {
-                    existingUI.gameObject.SetActive(false);
-                    _gameCanvas = existingUI.gameObject;
-                }
+                existingUI.gameObject.SetActive(false);
+                _gameCanvas = existingUI.gameObject;
             }
         }
         else
         {
-            _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Q_Skill);
+            _gameCanvas.SetActive(false);
         }
     }
 
     protected virtual void OnCutsceneEnded(PlayableDirector director)
     {
-        Debug.Log("컷신 종료 -> 스킬 액션 상태로 전환");
         if (_gameCanvas != null) _gameCanvas.SetActive(true);
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Q_Skill);
     }
@@ -263,168 +228,150 @@ public class BaseCharacter : MonoBehaviour
     private void HandleDeath()
     {
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Death);
+        OnCharacterDead?.Invoke(this);
     }
 
     #endregion
 
-    #region 애니메이션 이벤트
-
-    // ==================== Animation Events ====================
+    #region Animation Events
 
     void ChangeToIdle()
     {
-        if (_stateMachine.IsDead()) return;
+        if (_stateMachine.IsDead) return;
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);
         IsUsingSkill = false;
     }
 
     void CheckAttackFinished()
     {
-        if (_stateMachine.IsDead()) return;
+        //if (_stateMachine.IsDead) return;
 
-        //  1. 팝업이 떠 있으면 강제로 누르지 않은 것으로 간주
-        bool isUIOpen = Managers.UI.IsPopupOpen;
+        //// Attack 상태가 아니면 이 이벤트가 발화될 이유 없음
+        //if (_stateMachine.CurrentState != CharacterStateMachine.PlayerState.Attack)
+        //{
+        //    IsUsingSkill = false;
+        //    return;
+        //}
 
-        //  2. 현재 마우스 왼쪽 버튼 상태
-        bool isMousePhysicalPressed = UnityEngine.InputSystem.Mouse.current.leftButton.isPressed;
+        //bool isMouseHeld = UnityEngine.InputSystem.Mouse.current.leftButton.isPressed;
+        //bool shouldContinue = isMouseHeld && !Managers.UI.IsPopupOpen;
 
-        //  핵심: 마우스를 누르고 있더라도 UI가 떠 있다면 연사 중지!
-        bool shouldContinueAttack = isMousePhysicalPressed && !isUIOpen;
+        //if (shouldContinue)
+        //{
+        //    anim.Play("Attack_Ing", -1, 0f); // 연사 유지
+        //    return;
+        //}
 
-        if (shouldContinueAttack && _stateMachine.CurrentState == CharacterStateMachine.PlayerState.Attack)
+        //_stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);
+        //IsUsingSkill = false;
+
+        if (_stateMachine.IsDead) return;
+
+        // 현재 공격 상태가 아니면 무시 (스킬 등으로 캔슬된 경우)
+        if (_stateMachine.CurrentState != CharacterStateMachine.PlayerState.Attack)
         {
-            // 계속 누르고 있고 UI도 안 떠있으므로 연사 진행
-            _anim.Play("Attack_Ing", -1, 0f);
             return;
         }
 
-        // 위 조건에 안 맞으면 (마우스를 뗐거나, UI가 떴거나) 무조건 Idle로 복귀
+        // 애니메이션이 끝나면 무조건 Idle로 돌려보냄.
+        // 마우스를 누르고 있다면 PlayerController가 쿨타임을 확인하고 즉시 다시 Attack 상태로 만듭니다.
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);
         IsUsingSkill = false;
     }
 
     public void OnAttackEvent(AudioClip sfx)
     {
-        if (_stateMachine.CurrentState == CharacterStateMachine.PlayerState.Attack)
-        {
-            PerformAttackAction();
-            Managers.Sound.Play(sfx, Define.Sound.Effect);
-        }
+        if (_stateMachine.CurrentState != CharacterStateMachine.PlayerState.Attack) return;
+        PerformAttackAction();
+        Managers.Sound.Play(sfx, Define.Sound.Effect);
     }
 
     public void OnPlaySoundEvent(AudioClip clip)
     {
         if (clip != null) Managers.Sound.Play(clip, Define.Sound.Effect);
     }
+
+    public void PlayAudio() { }
+
     #endregion
 
-    #region 가상 함수들 ( override )
-
-    // ==================== Virtual Methods ====================
+    #region Virtual Methods
 
     protected virtual void PerformAttackAction() { }
+
     protected virtual void PlayFireEffect()
     {
-        if (_fireEffectParticle == null) return;
-        _fireEffectParticle.Stop();
-        _fireEffectParticle.Play();
+        if (fireEffectParticle == null) return;
+        fireEffectParticle.Stop(true);
+        fireEffectParticle.Play();
     }
 
     protected virtual void FireOneBullet()
     {
-        // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
         GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
-
-        bulletObj.transform.position = _firePoint.position;
-        // 캐릭터가 바라보는 방향 기준으로 회전
         bulletObj.transform.rotation = transform.rotation;
-        // 2. 데미지 주입
+
         BulletController bulletScript = bulletObj.GetComponent<BulletController>();
         if (bulletScript != null && Stat != null)
-        {
-            Debug.Log($"데미지 : {Stat.Attack.Value}");
-            bulletScript.Init(Stat.Attack.Value, this.gameObject);
-        }
+            bulletScript.Init(Stat.Attack.Value, gameObject);
+
         PlayFireEffect();
     }
 
     protected virtual void PlaySFXOnly() { }
     protected virtual void PlaySFX() { }
-
     protected virtual void OnESkillEvent(AudioClip sfx) { }
 
     #endregion
 
-    #region 충돌 & 상호작용
+    #region NPC Trigger
 
-    // NPC의 Trigger Collider 영역에 들어갔을 때
     private void OnTriggerEnter(Collider other)
     {
-        IInteractable interactable = other.GetComponent<IInteractable>();
-        if (interactable != null)
-        {
-            CurrentInteractable = interactable;
-
-            // 객체 구분 없이 다형성으로 호출 (힐링이든 UI든 해당 객체가 알아서 처리)
-            interactable.OnTargetEnter(this);
-        }
+        var interactable = other.GetComponent<IInteractable>();
+        if (interactable == null) return;
+        CurrentInteractable = interactable;
+        interactable.OnTargetEnter(this);
     }
 
-    // NPC 영역에서 벗어났을 때
     private void OnTriggerExit(Collider other)
     {
-        IInteractable interactable = other.GetComponent<IInteractable>();
-        if (interactable != null && CurrentInteractable == interactable)
-        {
-            interactable.OnTargetExit(this);
-            CurrentInteractable = null;
-        }
+        var interactable = other.GetComponent<IInteractable>();
+        if (interactable == null || CurrentInteractable != interactable) return;
+        interactable.OnTargetExit(this);
+        CurrentInteractable = null;
     }
 
-    // 힐링 효과 실행 메서드 
+    #endregion
+
+    #region VFX
+
     public virtual async UniTaskVoid PlayHealingAura()
     {
         if (_healingAuraInstance == null)
         {
-            // [핵심 수정] Instantiate 하기 전에 무조건 LoadAsync를 먼저 호출해서 딕셔너리에 GameObject 타입으로 등록시킵니다.
-            // 프리로드 해두었으므로 0프레임 만에 끝납니다!
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura");
-
             if (prefab == null) return;
 
-            // 이제 딕셔너리에 확실히 존재하므로 기존 리소스 매니저 Instantiate도 써도 되고,
-            // 아래처럼 유니티 기본 Instantiate를 써도 됩니다. (이게 더 직관적입니다)
             _healingAuraInstance = Managers.Resource.Instantiate(prefab, transform);
-
-            // 위치 초기화
             _healingAuraInstance.transform.localPosition = Vector3.zero;
             _healingAuraInstance.transform.localRotation = Quaternion.identity;
-
             _healingAuraParticle = _healingAuraInstance.GetComponentInChildren<ParticleSystem>();
         }
 
-        if (_healingAuraInstance != null)
+        _healingAuraInstance?.SetActive(true);
+        if (_healingAuraParticle != null)
         {
-            _healingAuraInstance.SetActive(true);
-            if (_healingAuraParticle != null)
-            {
-                _healingAuraParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-                _healingAuraParticle.Play(true);
-            }
+            _healingAuraParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            _healingAuraParticle.Play(true);
         }
     }
 
-    // 힐링 효과 중지 메서드
     public virtual void StopHealingAura()
     {
-        if (_healingAuraInstance != null && _healingAuraInstance.activeSelf)
-        {
-            if (_healingAuraParticle != null)
-                _healingAuraParticle.Stop();
-
-            // 완전히 끄려면 SetActive(false) 혹은 Particle이 끝나면 자동 소멸되도록 세팅
-            _healingAuraInstance.SetActive(false);
-        }
+        if (_healingAuraInstance == null || !_healingAuraInstance.activeSelf) return;
+        _healingAuraParticle?.Stop();
+        _healingAuraInstance.SetActive(false);
     }
 
     #endregion

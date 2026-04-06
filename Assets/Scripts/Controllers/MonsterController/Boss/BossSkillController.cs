@@ -74,7 +74,8 @@ public class BossSkillController : MonoBehaviour
                 _spawnPoints = _monsterSpawnPoints,
                 _boss = this.gameObject,
                 _lightningPoints = _lightningSpawnPoints,
-                _bossRelicController = _relicController
+                _bossRelicController = _relicController,
+                _bossController = this.GetComponent<BossMonsterController>()
             };
             skillLogic.Cast(context);
         }

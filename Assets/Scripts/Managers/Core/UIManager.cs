@@ -209,9 +209,14 @@ public class UIManager
         return _sceneUI as T;
     }
 
-    public void SetActiveSystemCavas(bool value)
+    public void SetActiveSystemCanvas(bool value)
     {
         _canvasScene.gameObject.SetActive(value);
+    }
+
+    public void SetActiveWorldCanvas(bool value)
+    {
+        _canvasWorld.gameObject.SetActive(value);
     }
 
     public bool IsOpened<T>() where T : UI_PopUp

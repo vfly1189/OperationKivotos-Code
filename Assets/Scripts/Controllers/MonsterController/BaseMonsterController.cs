@@ -110,6 +110,8 @@ public abstract class BaseMonsterController : MonoBehaviour
         if (_state == MonsterState.Dead) return NodeState.Running;
         _state = MonsterState.Dead;
 
+
+
         // 2. 공통 로직: 콜라이더 끄기
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;

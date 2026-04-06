@@ -101,7 +101,7 @@ public class CharacterStat : BaseStat, IDamageable
     public void ResetState()
     {
         IsDead = false;
-
+        IsInvincible = false; // [추가] 씬 이동/부활 시 무조건 무적 해제 보장
         CurrentHp = MaxHp.Value;
         CurrentEnergy = 0;
         CurrentQSkillCoolTime = QSkillCoolTime.Value;
@@ -113,6 +113,39 @@ public class CharacterStat : BaseStat, IDamageable
 
         Rigidbody rigid = GetComponent<Rigidbody>();
         if (rigid != null) rigid.isKinematic = false;
+
+        OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
+    }
+
+    // 마을 귀환용 상태 보정 (생존자는 체력 유지, 사망자만 예외 부활)
+    public void ReturnToTownState()
+    {
+        // 사망한 캐릭터라면 HP 1로 예외 부활
+        if (CurrentHp <= 0 || IsDead)
+        {
+            IsDead = false;
+            CurrentHp = 1;
+        }
+        else
+        {
+            // 생존자는 체력 유지 (최대 체력 넘어가지 않게 방지)
+            CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+        }
+
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = true;
+
+        Rigidbody rigid = GetComponent<Rigidbody>();
+        if (rigid != null) rigid.isKinematic = false;
+
+        IsInvincible = false; // 무적은 무조건 해제
+        CurrentEnergy = 0;
+        CurrentQSkillCoolTime = QSkillCoolTime.Value;
+        CurrentESkillCoolTime = 0;
+
+        OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
+        CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 
     //테스트용
@@ -238,45 +271,6 @@ public class CharacterStat : BaseStat, IDamageable
         CallOnDead();
     }
 
-    public void ResetStat()
-    {
-        CurrentHp = MaxHp.Value;
-    }
-
-
-    // [추가] 런타임 데이터 적용 함수 (Restore)
-    public void ApplyRuntimeData(CharacterRuntimeData savedData)
-    {
-        //if (savedData == null) return;
-
-        //// [핵심 1] 데이터를 미리 로컬 변수(값)로 복사해둠 (참조 오염 방지)
-        //int targetLevel = savedData.level;
-        //float targetExp = savedData.currentExp;
-        //int targetWeaponLevel = savedData.weaponLevel;
-
-        //// 1. 레벨 복구 (레벨업 로직을 반복 수행해서 스탯 뻥튀기)
-        //// 현재 1레벨이므로 (savedData.level - 1)번 레벨업
-        //for (int i = 1; i < savedData.level; i++)
-        //{
-        //    LevelUp(true); // 이 함수 안에서 스탯 증가가 일어남
-        //}
-
-        //WeaponLevel = targetWeaponLevel;
-        //ApplyWeaponStats();
-
-        //// 2. 경험치 복구
-        //CurrentExp = targetExp;
-
-        //// 3. 체력/에너지는 풀로 채워주기 (마을 귀환 서비스)
-        //CurrentHp = MaxHp.Value;
-        //CurrentEnergy = 0; // 또는 MaxEnergy
-
-        //// 4. UI 및 데이터 갱신을 여기서 한 번만 수행
-        //OnLevelChanged?.Invoke((int)CurLevel);
-        //OnExpChanged?.Invoke(CurrentExp, MaxExp);
-        //OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
-        //CallOnHpChanged(CurrentHp, MaxHp.Value);
-    }
 
     private void ApplyWeaponStats()
     {
@@ -309,6 +303,8 @@ public class CharacterStat : BaseStat, IDamageable
 
         // HP 복원 (마을 귀환 시 풀충전 원하면 MaxHp.Value로 변경)
         CurrentHp = Mathf.Clamp(saved.currentHp, 0, MaxHp.Value);
+        if (CurrentHp > 0) IsDead = false;
+
         CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
     public void WeaponLevelUp()

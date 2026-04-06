@@ -11,16 +11,14 @@ public class DungeonSequenceDirector : MonoBehaviour
     [SerializeField] private Transform[] _endingPositions;
 
     private GameObject _curMap;
-
     private AudioClip _successBgm;
     private AudioClip _victoryVoice;
-
-    public event Action OnClearUI;
 
     private void OnEnable()
     {
         // 매니저의 클리어 이벤트를 듣고 대기
         Managers.Dungeon.OnDungeonCleared += PlayVictorySequence;
+
     }
 
     private void OnDisable()
@@ -36,70 +34,69 @@ public class DungeonSequenceDirector : MonoBehaviour
     }
     private void PlayVictorySequence()
     {
+       
+
         Managers.Sound.Play(_successBgm, Define.Sound.Bgm);
         
         CoVictorySequence().Forget();
     }
-    void PlayVictoryVoice()
-    {
-        Managers.Sound.Play(_victoryVoice, Define.Sound.Voice);
-    }
+
 
     private async UniTaskVoid CoVictorySequence()
     {
+        Managers.Party.CancelDeathTasks();
+
         if (Managers.Party.PlayerController != null)
             Managers.Party.PlayerController.VictoryTime = true;
 
+        // 3초 대기 후 대사 재생
         await UniTask.Delay(System.TimeSpan.FromSeconds(3.0));
+        Managers.Sound.Play(_victoryVoice, Define.Sound.Voice);
 
-        PlayVictoryVoice();
-        OnClearUI?.Invoke();
+        // --- 카메라 줌 및 캐릭터 승리 모션 연출 로직 ---
+        if (_curMap == null) return;
 
-        if (_curMap != null)
+        var mapScript = _curMap.GetComponent<IDungeonMap>();
+        if (mapScript == null) return;
+
+        GameObject camObj = mapScript.GetEndingCameraPoint().gameObject;
+        if (camObj != null)
         {
-            var mapScript = _curMap.GetComponent<IDungeonMap>();
-            if (mapScript != null)
+            camObj.SetActive(true);
+            var token = camObj.GetCancellationTokenOnDestroy();
+            CoCameraZoomEffect(camObj.transform, token).Forget();
+        }
+
+        Transform[] endingPositions = mapScript.GetEndingTransforms();
+        List<BaseCharacter> characters = Managers.Party.GetMember();
+
+        for (int i = 0; i < characters.Count; i++)
+        {
+            var character = characters[i];
+
+          
+            character.gameObject.SetActive(true);
+
+            var agent = character.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null) agent.enabled = false;
+
+            var rb = character.GetComponent<Rigidbody>();
+            if (rb != null) rb.isKinematic = true;
+
+            if (i < endingPositions.Length)
             {
-                GameObject camObj = mapScript.GetEndingCameraPoint().gameObject;
+                character.transform.position = endingPositions[i].position;
+
                 if (camObj != null)
                 {
-                    camObj.SetActive(true);
-                    // [핵심 변경] 카메라 오브젝트가 파괴될 때 발동하는 Token을 뽑아서 넘겨줌!
-                    var token = camObj.GetCancellationTokenOnDestroy();
-                    CoCameraZoomEffect(camObj.transform, token).Forget();
-                }
-
-                Transform[] endingPositions = mapScript.GetEndingTransforms();
-                List<BaseCharacter> characters = Managers.Party.GetMemeber();
-                int index = 0;
-
-                foreach (BaseCharacter character in characters)
-                {
-                    character.gameObject.SetActive(true);
-
-                    var agent = character.GetComponent<UnityEngine.AI.NavMeshAgent>();
-                    if (agent != null) agent.enabled = false;
-
-                    var rb = character.GetComponent<Rigidbody>();
-                    if (rb != null) rb.isKinematic = true;
-
-                    if (index < endingPositions.Length)
-                    {
-                        character.transform.position = endingPositions[index].position;
-
-                        if (camObj != null)
-                        {
-                            Vector3 targetPos = camObj.transform.position;
-                            targetPos.y = character.transform.position.y;
-                            Vector3 dir = targetPos - character.transform.position;
-                            if (dir != Vector3.zero)
-                                character.transform.rotation = Quaternion.LookRotation(dir);
-                        }
-                        index++;
-                    }
-                    character.Victory();
+                    Vector3 targetPos = camObj.transform.position;
+                    targetPos.y = character.transform.position.y;
+                    Vector3 dir = targetPos - character.transform.position;
+                    if (dir != Vector3.zero)
+                        character.transform.rotation = Quaternion.LookRotation(dir);
                 }
             }
+            character.Victory();
         }
     }
     private async UniTaskVoid CoCameraZoomEffect(Transform camTr, System.Threading.CancellationToken cancellationToken)

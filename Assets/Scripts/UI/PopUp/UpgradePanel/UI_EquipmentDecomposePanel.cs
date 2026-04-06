@@ -28,6 +28,8 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 
     private readonly Dictionary<InventorySlot, UI_ItemSlot> _slotMap = new();
 
+    private bool _isSpawning = false; // 중복 실행 방지 플래그
+
     public override void Init()
     {
         InitAsync().Forget();
@@ -43,11 +45,13 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 
         _decomposeButton.onClick.AddListener(() => _decomposeService.ExecuteDecompose());
 
-        //  슬롯들 Init에서 미리 생성
-        await UniTask.WhenAll(
-            SetHavingRelicScrollView(),
-            SetConsumeMaterialSlots()
-        );
+        ////  슬롯들 Init에서 미리 생성
+        //await UniTask.WhenAll(
+        //    SetHavingRelicScrollView(),
+        //    SetConsumeMaterialSlots()
+        //);
+
+        await SetConsumeMaterialSlots();
     }
 
     private void ResetResultText()
@@ -67,12 +71,19 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 
     private async UniTask SetHavingRelicScrollView()
     {
+        if (_isSpawning) return; // 이미 생성 중이면 무시
+        _isSpawning = true;
+
+        Debug.Log("SetHavingRelicScrollView() 호출됨");
+
         foreach (UI_ItemSlot slot in _itemSlots)
             Managers.Resource.Destroy(slot.gameObject);
 
         _itemSlots.Clear(); // ← 추가
         _slotMap.Clear();
+
         InventorySlot[] relics = Managers.Inventory.Inventory[ItemCategory.Equipment];
+
         foreach (InventorySlot relic in relics)
         {
             if (relic.IsEmpty) continue;
@@ -85,6 +96,8 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
             _slotMap[relic] = slot;
             _itemSlots.Add(slot);
         }
+
+        _isSpawning = false; // 생성 완료
     }
 
     private async UniTask SetConsumeMaterialSlots()

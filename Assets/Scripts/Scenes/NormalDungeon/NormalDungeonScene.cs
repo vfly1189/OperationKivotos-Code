@@ -48,29 +48,33 @@ public class NormalDungeonScene : BaseScene
         var mapTask = CreateMap();
         var poolTask = CreatePool();
         var effectStageTask = CreateEffectStage();
-        var clearUI = CreateClearUI();
+        //var clearUI = CreateClearUI();
         var successBgm = CreateSuccessBGM();
         var victoryVoice = LoadVictoryVoice();
         var battleInVoice = LoadBattleInVoice();
         var mainBgmTask = LoadMainBgm();
 
         // UniTask.WhenAll 로 병렬 대기
-        await UniTask.WhenAll(mainUI, mapTask, poolTask, effectStageTask, clearUI, successBgm, victoryVoice, battleInVoice);
+        await UniTask.WhenAll(mainUI, mapTask, poolTask, effectStageTask, successBgm, victoryVoice, battleInVoice);
 
 
-        var clearCondition = _curMap.AddComponent<KillAllMonstersCondition>();
-        clearCondition.Setup(_spawnedMonsters);
 
         if (_curMap.GetComponent<DungeonSequenceDirector>() == null)
         {
             _clearDirector = _curMap.AddComponent<DungeonSequenceDirector>();
             _clearDirector.SetupDirector(_curMap, _successBGM, _victoryVoice);
-
-            _clearDirector.OnClearUI -= ClearUI;
-            _clearDirector.OnClearUI += ClearUI;
         }
 
-        Managers.Dungeon.StartDungeon(clearCondition);
+        Managers.Dungeon.OnDungeonCleared -= OnDungeonSuccess;
+        Managers.Dungeon.OnDungeonCleared += OnDungeonSuccess;
+
+        Managers.Dungeon.OnDungeonFailed -= OnDungeonFail;
+        Managers.Dungeon.OnDungeonFailed += OnDungeonFail;
+
+
+        SetupDungeonConditions();
+
+        Managers.Party.TeleportParty(new Vector3(0,0,0));
 
         PlayBGM();
         PlayBattleInVoice();
@@ -242,7 +246,7 @@ public class NormalDungeonScene : BaseScene
 
     async UniTask LoadBattleInVoice()
     {
-        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMember();
         if (partyMembers.Count == 0) return;
 
         int randomMemberIdx = Random.Range(0, partyMembers.Count);
@@ -260,7 +264,7 @@ public class NormalDungeonScene : BaseScene
 
     async UniTask LoadVictoryVoice()
     {
-        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMember();
         if (partyMembers.Count == 0) return;
 
         int randomMemberIdx = Random.Range(0, partyMembers.Count);
@@ -297,14 +301,38 @@ public class NormalDungeonScene : BaseScene
     }
 
 
-    private void ClearUI()
+    private void SetupDungeonConditions()
     {
-        if (_mainUI != null)
-        {
-            //_mainUI.gameObject.SetActive(false);
-            Managers.Resource.Destroy(_mainUI.gameObject);
-        }
-        if (_clearUI != null) _clearUI.SetActive(true);
+        // 1. 보스 처치 (승리) 조건 설정
+        KillAllMonstersCondition clearCondition = _curMap.AddComponent<KillAllMonstersCondition>();
+        clearCondition.SetMonsters(_spawnedMonsters);
+        clearCondition.SetUp();
+
+        // 2. 파티 전멸 (패배) 조건 설정
+        PartyWipeCondition failCondition = _curMap.AddComponent<PartyWipeCondition>();
+        failCondition.SetUp();
+
+        // 3. 매니저에 각각 등록
+        Managers.Dungeon.AddClearCondition(clearCondition);
+        Managers.Dungeon.AddFailCondition(failCondition);
+
+        Managers.Dungeon.StartDungeon();
+    }
+
+    private void OnDungeonSuccess()
+    {
+        // 보상을 주고 UI를 띄우는 비동기 함수 호출
+        ShowSuccessUIAsync().Forget();
+        Managers.Party.FinishGame(true);
+    }
+
+    private async UniTaskVoid ShowSuccessUIAsync()
+    {
+        // [핵심] Director의 컷신 연출이 끝날 때까지 씬에서 대기 (예: 3.5초)
+        // 이벤트로 콜백 받지 않고, 씬이 연출 시간을 알고 기다리는 방식이 훨씬 유지보수가 좋습니다.
+        await UniTask.Delay(System.TimeSpan.FromSeconds(3.0f));
+
+        BaseClearUI();
 
         // 1. 던전 테이블에서 현재 맵(_currentMapId)의 클리어 보상 정보 가져오기
         // (이름은 실제 프로젝트의 던전 테이블 구조에 맞게 변경하세요)
@@ -339,6 +367,25 @@ public class NormalDungeonScene : BaseScene
         }
     }
 
+    private async void OnDungeonFail()
+    {  
+        Managers.Party.FinishGame(false);
+        // 실패는 컷신 대기 없이 바로 실패 팝업 띄우기
+        await UniTask.Delay(System.TimeSpan.FromSeconds(3.5f));
+        BaseClearUI();
+
+    }
+
+    private void BaseClearUI()
+    {
+        if (_mainUI != null)
+        {
+            //_mainUI.gameObject.SetActive(false);
+            Managers.Resource.Destroy(_mainUI.gameObject);
+        }
+        if (_clearUI != null) _clearUI.SetActive(true);
+    }
+
     private async UniTaskVoid FadeInSequence()
     {
         if (_loadingCoverInstance == null) return;
@@ -364,7 +411,9 @@ public class NormalDungeonScene : BaseScene
         Managers.Sound.StopAll();
 
         Managers.Dungeon.ClearDungeonData();
-        _clearDirector.OnClearUI -= ClearUI;
+
+        Managers.Dungeon.OnDungeonCleared -= OnDungeonSuccess;
+        Managers.Dungeon.OnDungeonFailed -= OnDungeonFail;
 
         Managers.Resource.Destroy(_clearUI);
 

@@ -1,15 +1,8 @@
 // [추가] UniTask 네임스페이스
 using Cysharp.Threading.Tasks;
-using Cysharp.Threading.Tasks.Linq;
-using NPOI.SS.Formula.Functions;
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using static UnityEngine.VFX.VFXTypeAttribute;
 
 public class BossDungeonScene : BaseScene
 {
@@ -33,7 +26,6 @@ public class BossDungeonScene : BaseScene
 
     private DungeonSequenceDirector _clearDirector;
 
-    // [핵심 1] async UniTaskVoid 로 선언
     protected override async void Init()
     {
         base.Init();
@@ -54,45 +46,42 @@ public class BossDungeonScene : BaseScene
         var poolTask = CreatePool();
         var effectTask = CreateEffectStage();
         var successBgmTask = CreateSuccessBGM();
-        //var clearUITask = CreateClearUI();
         var victoryVoice = LoadVictoryVoice();
 
         await CreateBoss();
         await CreateBossHPBarUI();
 
-        // [핵심 3] UniTask.WhenAll 사용
         await UniTask.WhenAll(mainUI, poolTask, effectTask, successBgmTask, victoryVoice);
 
-
-        var clearCondition = _curMap.AddComponent<KillBossCondition>();
-        BossMonsterController bossCtrl = _boss.GetComponent<BossMonsterController>();
-        clearCondition.Setup(bossCtrl);
 
         if (_curMap.GetComponent<DungeonSequenceDirector>() == null)
         {
             _clearDirector = _curMap.AddComponent<DungeonSequenceDirector>();
             _clearDirector.SetupDirector(_curMap, _successBGM, _victoryVoice);
-
-            _clearDirector.OnClearUI -= ClearUI;
-            _clearDirector.OnClearUI += ClearUI;
         }
 
-        Managers.Dungeon.StartDungeon(clearCondition);
+      
+        // 씬 자체적으로 던전 매니저의 결과를 구독
+        Managers.Dungeon.OnDungeonCleared -= OnDungeonSuccess;
+        Managers.Dungeon.OnDungeonCleared += OnDungeonSuccess;
+
+        Managers.Dungeon.OnDungeonFailed -= OnDungeonFail;
+        Managers.Dungeon.OnDungeonFailed += OnDungeonFail;
+
+        SetupDungeonConditions();
 
         Managers.Input.OnEscapePressed -= HandleEscape;
         Managers.Input.OnEscapePressed += HandleEscape;
 
         // Fire and Forget
-        //비동기 작업 끝날때까지 기다리는게 아니라 다음꺼 실행
         PlayBGM().Forget();
         PlayBattleInVoice().Forget(); 
 
-        // [핵심 4] 코루틴들을 통일성을 위해 UniTask로 변경하여 await
         CoSafeTeleport().Forget();
         FadeInSequence().Forget();
     }
 
-    // [핵심 5] 모든 Task 반환형을 UniTask로 변경
+    
     async UniTask CreateMap()
     {
         GameObject root = new GameObject { name = "@Map" };
@@ -120,8 +109,6 @@ public class BossDungeonScene : BaseScene
         if (_preloadData.successBgm == null) return;
         _successBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.successBgm);
     }
-
-    //void CreateUI() => _mainUI = GameObject.Find("@GameSceneCanvas");
 
     private async UniTask SetupUI()
     {
@@ -151,7 +138,7 @@ public class BossDungeonScene : BaseScene
 
     async UniTaskVoid PlayBattleInVoice()
     {
-        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMember();
         if (partyMembers.Count == 0) return;
 
         int randomNum = Random.Range(0, partyMembers.Count);
@@ -215,27 +202,7 @@ public class BossDungeonScene : BaseScene
 
         _bossSpawnPoint = _curMap.transform.Find("BossSpawnPoint");
 
-        //Dictionary<int, MonsterBaseData> monsterDict = Managers.Data.GetDict<int, MonsterBaseData>();
-        //if (monsterDict == null) return;
-
         string addressableKey = "Hieronymus_Boss";
-        //MonsterBaseData baseData = null;
-        //foreach (var data in monsterDict.Values)
-        //{
-        //    if (data.AddressableKey == addressableKey && data.SpawnType == MonsterDefine.MonsterSpawnType.Dungeon)
-        //    {
-        //        baseData = data;
-        //        break;
-        //    }
-        //}
-        //if (baseData == null)
-        //{
-        //    Debug.LogWarning($"던전용 몬스터 중 AddressableKey가 '{addressableKey}'인 데이터를 찾을 수 없습니다.");
-        //    return;
-        //}
-
-
-        //GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.boss);
 
         GameObject boss = await MonsterFactory.CreateMonsterByAddressableKeyAsync(
             addressableKey,
@@ -286,7 +253,7 @@ public class BossDungeonScene : BaseScene
  
     async UniTask LoadVictoryVoice()
     {
-        List<BaseCharacter> partyMembers = Managers.Party.GetMemeber();
+        List<BaseCharacter> partyMembers = Managers.Party.GetMember();
         if (partyMembers.Count == 0) return;
 
         int randomMemberIdx = Random.Range(0, partyMembers.Count);
@@ -312,46 +279,83 @@ public class BossDungeonScene : BaseScene
         Camera.main.transform.rotation = _cameraPoint.rotation;
     }
 
-    private void ClearUI()
+    private void OnDungeonSuccess()
     {
-        if (_mainUI != null)
-        {
-            //_mainUI.gameObject.SetActive(false);
-            Managers.Resource.Destroy(_mainUI.gameObject);
-        }
-        if (_clearUI != null) _clearUI.SetActive(true);
-        if (_bossHPBar != null) Managers.Resource.Destroy(_bossHPBar);
+        // 보상을 주고 UI를 띄우는 비동기 함수 호출
+        ShowSuccessUIAsync().Forget();
+        Managers.Party.FinishGame(true);
+    }
 
-        // 1. 던전 테이블에서 현재 맵(_currentMapId)의 클리어 보상 정보 가져오기
-        // (이름은 실제 프로젝트의 던전 테이블 구조에 맞게 변경하세요)
-        //DungeonTable dungeonTable = Managers.Data.GetData<int, DungeonTable>(_currentMapId);
+    private async UniTaskVoid ShowSuccessUIAsync()
+    {
+        // [핵심] Director의 컷신 연출이 끝날 때까지 씬에서 대기 (예: 3.5초)
+        // 이벤트로 콜백 받지 않고, 씬이 연출 시간을 알고 기다리는 방식이 훨씬 유지보수가 좋습니다.
+        await UniTask.Delay(System.TimeSpan.FromSeconds(3.0f));
+
+        BaseClearUI();
+
+        // 던전 보상 로직
         DungeonGroup dungeonGroup = Managers.Data.GetData<int, DungeonGroup>(Managers.Context.CurrentDungeonGroupID);
         DungeonData dungeonData = dungeonGroup.DungeonDataByDifficulty[Managers.Context.SelectedDifficulty];
 
-        int clearExp = 0;
-        int clearCredit = 0;
+        int clearExp = 0, clearCredit = 0;
         List<InventorySlot> finalRewards = new List<InventorySlot>();
 
         if (dungeonData != null)
         {
             clearExp = dungeonData.ClearExp;
             clearCredit = dungeonData.ClearCredit;
-
-            // 2. 실제 플레이어/파티에 경험치와 재화 지급
             Managers.Party.AddExp(clearExp);
             Managers.Wallet.AddCurrency(CurrencyType.Credit, clearCredit);
-
-            // 3. 드랍 테이블 ID로 주사위를 굴리고 획득한 아이템 목록 받아오기
-            // (클리어 보상이므로 우측 하단 토스트 팝업은 안 띄우도록 showToast: false 전달)
             finalRewards = Managers.Drop.RollAndGiveDropItems(dungeonData.ClearDropTableID, false);
         }
 
-        // 4. 결과 UI 띄우고 데이터 꽂아주기
+        // 성공 UI 띄우기
         UI_DungeonClear clearUI = Managers.UI.ShowSceneUI<UI_DungeonClear>("UI_DungeonClear");
-        if (clearUI != null)
+        if (clearUI != null) clearUI.SetInfo(clearCredit, clearExp, finalRewards);
+    }
+
+    private async void OnDungeonFail()
+    {
+        Managers.Party.FinishGame(false);
+        // 실패는 컷신 대기 없이 바로 실패 팝업 띄우기
+        await UniTask.Delay(System.TimeSpan.FromSeconds(3.5f));
+        BaseClearUI();
+    }
+
+    private void BaseClearUI()
+    {
+        if (_mainUI != null)
         {
-            clearUI.SetInfo(clearCredit, clearExp, finalRewards);
+            _mainUI.gameObject.SetActive(false);
+            Managers.Resource.Destroy(_mainUI.gameObject);
         }
+
+        if (_clearUI != null) _clearUI.SetActive(true);
+
+        if (_bossHPBar != null)
+        {
+            _bossHPBar.gameObject.SetActive(false);
+            Managers.Resource.Destroy(_bossHPBar);
+        }
+    }
+
+    private void SetupDungeonConditions()
+    {
+        // 1. 보스 처치 (승리) 조건 설정
+        KillBossCondition clearCondition = _curMap.AddComponent<KillBossCondition>();
+        clearCondition.SetBoss(_boss);
+        clearCondition.SetUp();
+
+        // 2. 파티 전멸 (패배) 조건 설정
+        PartyWipeCondition failCondition = _curMap.AddComponent<PartyWipeCondition>();
+        failCondition.SetUp();
+
+        // 3. 매니저에 각각 등록
+        Managers.Dungeon.AddClearCondition(clearCondition);
+        Managers.Dungeon.AddFailCondition(failCondition);
+
+        Managers.Dungeon.StartDungeon();
     }
 
     private async UniTaskVoid FadeInSequence()
@@ -373,13 +377,18 @@ public class BossDungeonScene : BaseScene
         Managers.Resource.Destroy(_loadingCoverInstance);
     }
 
+   
     public override void Clear()
     {
         base.Clear();
         Managers.Sound.StopAll();
 
         Managers.Dungeon.ClearDungeonData();
-        _clearDirector.OnClearUI -= ClearUI;
+
+        Managers.Dungeon.OnDungeonCleared -= OnDungeonSuccess;
+        Managers.Dungeon.OnDungeonFailed -= OnDungeonFail;
+
+
         Managers.Input.OnEscapePressed -= HandleEscape;
 
         if (Managers.Save.IsReady)

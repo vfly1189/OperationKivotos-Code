@@ -1,19 +1,17 @@
 using System;
 using UnityEngine;
 
-
-// 교체 로직만 담당 (쿨타임, 유효성 검사, 실제 swap)
 public class PartySwapController
 {
-    private PartyRegistry _registry;
-    private float _swapCooldown = 1.0f;
+    private readonly PartyRegistry _registry;
+    private readonly float _swapCooldown = 1.0f;
     private float _lastSwapTime = -99f;
 
-    public event Action<int, int> OnSwapRequested; // (prevIdx, nextIdx)
+    public event Action<int, int> OnSwapRequested;
 
     public PartySwapController(PartyRegistry registry)
     {
-        _registry = registry;
+        this._registry = registry;
     }
 
     public bool CanSwap(int targetIndex)
@@ -22,18 +20,23 @@ public class PartySwapController
         if (targetIndex >= _registry.Members.Count) return false;
         if (targetIndex == _registry.CurrentIndex) return false;
         if (_registry.Members[targetIndex].Stat.IsDead) return false;
-        if (_registry.GetCurrent().IsUsingSkill) return false;
+
+        var current = _registry.GetCurrent();
+        if (current.IsUsingSkill) return false;
+        if (!current.CanSwap) return false; // 공격(Attack) 상태 차단
+
         return true;
     }
 
-    public void TrySwap(int targetIndex)
+    // isForce: 사망 처리 후 강제 스왑 등 내부용
+    public void TrySwap(int targetIndex, bool isForce = false)
     {
-        if (!CanSwap(targetIndex)) return;
+        if (!isForce && !CanSwap(targetIndex)) return;
+        if (_registry.Members[targetIndex].Stat.IsDead) return;
 
         int prevIdx = _registry.CurrentIndex;
         _registry.SetCurrentIndex(targetIndex);
         _lastSwapTime = Time.time;
-
         OnSwapRequested?.Invoke(prevIdx, targetIndex);
     }
 }
