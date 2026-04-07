@@ -44,7 +44,7 @@ public class HoshinoCharacter : BaseCharacter
             BulletController bulletScript = bulletObj.GetComponent<BulletController>();
             if (bulletScript != null && Stat != null)
             {
-                bulletScript.Init(Stat.Attack.Value, this.gameObject);
+                bulletScript.Init(CalculatedDamage(), this.gameObject);
             }
         }
         PlayFireEffect();
@@ -62,7 +62,7 @@ public class HoshinoCharacter : BaseCharacter
         BulletController bulletScript = bulletObj.GetComponent<BulletController>();
         if (bulletScript != null && Stat != null)
         {
-            bulletScript.Init(Stat.Attack.Value, this.gameObject);
+            bulletScript.Init(CalculatedDamage(), this.gameObject);
         }
         PlayESkillFireEffect();
     }

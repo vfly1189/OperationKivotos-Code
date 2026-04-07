@@ -20,6 +20,7 @@ public class GenesisAttack : MonoBehaviour
     // Coroutine 대신 CancellationTokenSource 관리
     private Dictionary<IDamageable, CancellationTokenSource> _activeTargets = new Dictionary<IDamageable, CancellationTokenSource>();
 
+    // 클래스 상단에 캐싱용 변수 추가
     private void Start()
     {
         // 일정 시간 후 장판 자체 삭제
@@ -29,6 +30,7 @@ public class GenesisAttack : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+
         // 1. 데미지 입을 수 있는 녀석인지 확인
         if (other.TryGetComponent<IDamageable>(out IDamageable target))
         {
@@ -126,6 +128,13 @@ public class GenesisAttack : MonoBehaviour
     {
         // 인터페이스 호출
         Debug.Log($"장판 데미지: {_damage}");
-        target.TakeDamage(new DamageInfo(500, this.gameObject, hitPoint));
+
+        DamageInfo damageInfo = new DamageInfo();
+        damageInfo.Amount = 500;
+        damageInfo.HitPoint = hitPoint;
+        damageInfo.Attacker = this.gameObject;
+        damageInfo.IsCritical = false;
+
+        target.TakeDamage(damageInfo);
     }
 }

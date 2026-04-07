@@ -27,17 +27,6 @@ public class RelicActivation : BossSkillBase
         ProcessSkillRoutineAsync(context._boss).Forget();
     }
 
-    //private IEnumerator ProcessSkillRoutine(GameObject boss)
-    //{
-    //    Vector3 skillPos = boss.transform.position + boss.transform.forward * 5.0f;
-
-    //    GameObject warningZone = Managers.Resource.Instantiate(_yellowWarning, skillPos, Quaternion.identity);
-
-    //    warningZone.GetComponent<ParticleSystem>().Play();
-
-    //    yield return new WaitForSeconds(3.0f);
-    //    Managers.Destroy(warningZone);
-    //}
 
     private async UniTaskVoid ProcessSkillRoutineAsync(GameObject boss)
     {

@@ -32,31 +32,7 @@ public class TokiCharacter : BaseCharacter
         }
     }
 
-    //private IEnumerator CoRapidFire()
-    //{
-    //    Vector3 position = _firePoint.position;
-
-
-    //    for (int i = 0; i < _shotCount; i++)
-    //    {
-    //        // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
-    //        GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
-
-    //        bulletObj.transform.position = _firePoint.position;
-    //        // 캐릭터가 바라보는 방향 기준으로 회전
-    //        bulletObj.transform.rotation = transform.rotation;
-    //        // 2. 데미지 주입
-    //        BulletController bulletScript = bulletObj.GetComponent<BulletController>();
-    //        if (bulletScript != null && Stat != null)
-    //        {
-    //            bulletScript.Init(Stat.Attack.Value, this.gameObject);
-    //        }
-    //        PlayFireEffect();
-    //        // 3. 다음 발사까지 대기
-    //        yield return new WaitForSeconds(_fireDelay);
-    //    }
-    //}
-
+   
     // [핵심 2] 코루틴을 비동기 메서드로 변경
     private async UniTaskVoid RapidFireAsync(CancellationToken token)
     {
@@ -74,7 +50,7 @@ public class TokiCharacter : BaseCharacter
             BulletController bulletScript = bulletObj.GetComponent<BulletController>();
             if (bulletScript != null && Stat != null)
             {
-                bulletScript.Init(Stat.Attack.Value, this.gameObject);
+                bulletScript.Init(CalculatedDamage(), this.gameObject);
             }
             PlayFireEffect();
 

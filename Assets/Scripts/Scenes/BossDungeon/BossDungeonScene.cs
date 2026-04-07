@@ -183,19 +183,6 @@ public class BossDungeonScene : BaseScene
         }
     }
 
-    async UniTask CreateClearUI()
-    {
-        if (_preloadData.dungeonClearUI == null) return;
-
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.dungeonClearUI);
-
-        if (prefab != null)
-        {
-            _clearUI = Instantiate(prefab);
-            _clearUI.SetActive(false);
-        }
-    }
-
     async UniTask CreateBoss()
     {
         if (_bossSpawnPoint == null || _preloadData.boss == null) return;

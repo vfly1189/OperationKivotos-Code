@@ -238,23 +238,18 @@ public class CharacterStat : BaseStat, IDamageable
 
     public override void TakeDamage(DamageInfo damageInfo)
     {
-        // 1. 무적 체크: 무적이면 데미지 연산 스킵
-        if (IsInvincible)
-        {
-            Debug.Log("무적 상태라 데미지를 입지 않습니다.");
-            // (선택) 여기서 "IMMUNE" 같은 텍스트 이펙트를 띄우기
-            return;
-        }
-        if (IsDead) return;
+        if (IsInvincible || IsDead) return;
 
+        // 방어력 적용
         float finalDamage = Mathf.Max(damageInfo.Amount - Defense.Value, 1);
         CurrentHp -= finalDamage;
         CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
-        // 피격 이펙트, 사운드 처리 등을 damageInfo.HitPoint를 활용해 여기서 처리 가능
+
+        // 데미지 토스트 호출 (Layer 정보와 치명타 여부 전달)
+        ToastDamageUI(finalDamage, damageInfo.HitPoint, damageInfo.Attacker.layer, damageInfo.IsCritical);
 
         if (CurrentHp <= 0) HandleDeath(damageInfo.Attacker);
 
-        ToastDamageUI(finalDamage, damageInfo.HitPoint, true);
         CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 

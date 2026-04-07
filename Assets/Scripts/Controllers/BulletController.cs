@@ -9,7 +9,7 @@ public class BulletController : MonoBehaviour
     [SerializeField] private float _lifeTime = 1f;
 
     private GameObject _shooter;
-    private float _damage;
+    private DamageInfo _damageInfo;
 
     // 코루틴(Coroutine)을 대체할 취소 토큰 소스
     private CancellationTokenSource _lifeTimeCts;
@@ -28,9 +28,9 @@ public class BulletController : MonoBehaviour
         _layerMonsterBullet = LayerMask.NameToLayer("MonsterBullet");
     }
 
-    public void Init(float damage, GameObject shooter)
+    public void Init(DamageInfo damageInfo, GameObject shooter)
     {
-        _damage = damage;
+        _damageInfo = damageInfo;
         _shooter = shooter;
 
         // [핵심] 쏘는 사람 레이어에 따라 내 레이어 결정 -> 매트릭스 설정에 따라 충돌 자동 필터링
@@ -75,9 +75,9 @@ public class BulletController : MonoBehaviour
         {
             // 정확한 타격 위치 계산 (이펙트 용)
             Vector3 hitPoint = other.ClosestPoint(transform.position);
-
+            _damageInfo.HitPoint = hitPoint;
             // 인터페이스 메서드 호출 (상대가 Player든 Monster든 상관 안 함)
-            target.TakeDamage(new DamageInfo(_damage, _shooter, hitPoint));
+            target.TakeDamage(_damageInfo);
 
 
             Managers.Resource.Destroy(gameObject);

@@ -29,10 +29,8 @@ public class NormalDungeonScene : BaseScene
         _sceneType = Define.Scene.NormalDungeon;
 
 
-        GameObject spawnPointObj = new GameObject("TempSpawn");
-        spawnPointObj.transform.position = Vector3.zero;
-        Managers.Party.ResetPartyForNewScene(spawnPointObj.transform);
-        Destroy(spawnPointObj);
+        Managers.Party.TeleportParty(new Vector3(0, 0, 0));
+
 
         if (_loadingCover != null)
         {
@@ -71,6 +69,9 @@ public class NormalDungeonScene : BaseScene
         Managers.Dungeon.OnDungeonFailed -= OnDungeonFail;
         Managers.Dungeon.OnDungeonFailed += OnDungeonFail;
 
+
+        Managers.Input.OnEscapePressed -= HandleEscape;
+        Managers.Input.OnEscapePressed += HandleEscape;
 
         SetupDungeonConditions();
 
@@ -414,6 +415,8 @@ public class NormalDungeonScene : BaseScene
 
         Managers.Dungeon.OnDungeonCleared -= OnDungeonSuccess;
         Managers.Dungeon.OnDungeonFailed -= OnDungeonFail;
+
+        Managers.Input.OnEscapePressed -= HandleEscape;
 
         Managers.Resource.Destroy(_clearUI);
 

@@ -80,26 +80,59 @@ public class Sequence : Node
     }
 }
 
-public class RandomSelector : Node
-{
-    protected List<Node> nodes = new List<Node>();
-    private int _currentIndex = -1;
+//public class RandomSelector : Node
+//{
+//    protected List<Node> nodes = new List<Node>();
+//    private int _currentIndex = -1;
 
-    public RandomSelector(List<Node> nodes) { this.nodes = nodes; }
+//    public RandomSelector(List<Node> nodes) { this.nodes = nodes; }
+
+//    public override NodeState Evaluate()
+//    {
+//        // [수정] 처음 실행(-1)이거나, 이전 실행이 끝났다면(Running이 아님) 새로 뽑기
+//        // NodeState의 기본값이 Running(0)이라서 _currentIndex == -1 체크가 필수입니다.
+//        if (_nodeState != NodeState.Running || _currentIndex == -1)
+//        {
+//            _currentIndex = Random.Range(0, 5);
+//        }
+
+//        var result = nodes[_currentIndex].Evaluate();
+
+//        _nodeState = result;
+//        return _nodeState;
+//    }
+//}
+
+public class RandomNode : Node
+{
+    private List<Node> _nodes;
+    private Node _currentNode;
+
+    public RandomNode(List<Node> nodes) { _nodes = nodes; }
 
     public override NodeState Evaluate()
     {
-        // [수정] 처음 실행(-1)이거나, 이전 실행이 끝났다면(Running이 아님) 새로 뽑기
-        // NodeState의 기본값이 Running(0)이라서 _currentIndex == -1 체크가 필수입니다.
-        if (_nodeState != NodeState.Running || _currentIndex == -1)
+        // 1. 현재 실행 중인 노드가 없으면 새로 하나 랜덤으로 뽑음
+        if (_currentNode == null)
         {
-            _currentIndex = Random.Range(0, 5);
+            int randIdx = UnityEngine.Random.Range(0, _nodes.Count);
+            _currentNode = _nodes[randIdx];
+
+            // [디버그용] 콘솔창에 진짜로 다른 스킬이 뽑히는지 확인!
+            Debug.Log($"[RandomNode] {randIdx}번 스킬이 선택되었습니다!");
         }
 
-        var result = nodes[_currentIndex].Evaluate();
+        // 2. 뽑은 노드 평가
+        NodeState state = _currentNode.Evaluate();
+        _nodeState = state; // 상태 동기화
 
-        _nodeState = result;
-        return _nodeState;
+        // 3. 끝났으면 (성공 or 실패) 다음 번을 위해 노드 비워줌
+        if (state != NodeState.Running)
+        {
+            _currentNode = null;
+        }
+
+        return state;
     }
 }
 

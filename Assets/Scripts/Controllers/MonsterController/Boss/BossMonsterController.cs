@@ -15,6 +15,7 @@ public class BossMonsterController : BaseMonsterController
     private bool _isActionRunning = false;
     private bool _isSkillFiring = false;
     private bool _entranceFinish = false; // 오타 수정 (entrace -> entrance)
+    private bool _isDeadProcessed = false;
 
     private List<GameObject> _summonedMonsters = new List<GameObject>();
 
@@ -45,6 +46,7 @@ public class BossMonsterController : BaseMonsterController
         if (_isActionRunning)
         {
             _isActionRunning = false;
+            _isSkillFiring = true;
 
             // 상태를 Idle로 되돌려야 다음 BehaviorTree 루프가 제대로 작동함
             if (_state != MonsterState.Dead) _state = MonsterState.Idle;
@@ -91,7 +93,7 @@ public class BossMonsterController : BaseMonsterController
         Node combatSequence = new BossSequence(new List<Node>
         {
             new ActionNode(CheckEntranceFinished),
-            new RandomSelector(new List<Node>
+            new RandomNode(new List<Node>
             {
                 new ActionNode(() => UseSkill(0)),
                 new ActionNode(() => UseSkill(1)),
@@ -171,6 +173,8 @@ public class BossMonsterController : BaseMonsterController
         }
 
         return NodeState.Running;
+
+
     }
 
     // ====================================================
@@ -180,37 +184,56 @@ public class BossMonsterController : BaseMonsterController
     // 보스 전용 사망 처리 (부모의 기능 호출 필수)
     protected override NodeState HandleDeadState()
     {
-        // 중복 방지는 부모(Base)에서 처리하므로 여기선 제외 가능하거나 _state 체크
-        if (_state == MonsterState.Dead) return NodeState.Running;
+        //// 중복 방지는 부모(Base)에서 처리하므로 여기선 제외 가능하거나 _state 체크
+        //if (_state == MonsterState.Dead) return NodeState.Running;
 
-        // [핵심] 보스가 죽을 때 소환된 잡몹들도 모두 파괴 (또는 데미지를 줘서 죽게 만듦)
-        foreach (var minion in _summonedMonsters)
-        {
-            if (minion != null)
-            {
-                // 방법 A: 즉시 파괴
-                // Managers.Resource.Destroy(minion);
+        //// [핵심] 보스가 죽을 때 소환된 잡몹들도 모두 파괴 (또는 데미지를 줘서 죽게 만듦)
+        //foreach (var minion in _summonedMonsters)
+        //{
+        //    if (minion != null)
+        //    {
+        //        // 방법 A: 즉시 파괴
+        //        // Managers.Resource.Destroy(minion);
 
-                // 방법 B: 잡몹도 죽는 애니메이션을 재생하게 하려면 Stat의 체력을 0으로 만듦
-                var stat = minion.GetComponent<MonsterStat>();
-                if (stat != null && !stat.IsDead)
-                {
-                    stat.TakeDamage(new DamageInfo { Amount = 99999f, Attacker = this.gameObject });
-                }
-            }
-        }
-        _summonedMonsters.Clear(); // 리스트 비우기
+        //        // 방법 B: 잡몹도 죽는 애니메이션을 재생하게 하려면 Stat의 체력을 0으로 만듦
+        //        var stat = minion.GetComponent<MonsterStat>();
+        //        if (stat != null && !stat.IsDead)
+        //        {
+        //            stat.TakeDamage(new DamageInfo { Amount = 99999f, Attacker = this.gameObject });
+        //        }
+        //    }
+        //}
+        //_summonedMonsters.Clear(); // 리스트 비우기
 
-        // 1. 진행 중인 타임라인/스킬 강제 종료
+        //// 1. 진행 중인 타임라인/스킬 강제 종료
+        //if (_director != null && _director.state == PlayState.Playing)
+        //{
+        //    _director.Stop();
+        //}
+
+        //CallOnDead();
+
+        //// 2. 부모의 HandleDeadState()를 호출 (Collider off, Anim Play, Event Invoke, Destroy 대기)
+        //return base.HandleDeadState();
+
+        // 이미 죽은 상태 처리를 마쳤다면 Success
+        if (_isDeadProcessed) return NodeState.Success;
+
+        _isDeadProcessed = true;
+        // [추가] 시전 중이던 타임라인 스킬 즉시 강제 종료
         if (_director != null && _director.state == PlayState.Playing)
         {
             _director.Stop();
         }
 
-        CallOnDead();
+        // 플래그 리셋 (다음 노드나 혹시 모를 부활에 대비)
+        _isActionRunning = false;
+        _isSkillFiring = false;
 
-        // 2. 부모의 HandleDeadState()를 호출 (Collider off, Anim Play, Event Invoke, Destroy 대기)
-        return base.HandleDeadState();
+        // 기본 사망 로직 실행 (애니메이션, 드롭 등)
+        base.HandleDeadState();
+
+        return NodeState.Success;
     }
 
     // 보스는 죽는 연출이 기니까 좀 길게 (5초)

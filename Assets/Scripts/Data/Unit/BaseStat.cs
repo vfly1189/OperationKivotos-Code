@@ -78,7 +78,13 @@ public class BaseStat : MonoBehaviour, IDamageable
 
     protected void ClearDeadEvent() { OnDead = null; }
     
-    protected async void ToastDamageUI(float damage, Vector3 hitPoint, bool isCritical)
+    public void Heal()
+    {
+        CurrentHp = MaxHp.Value;
+        OnHpChanged?.Invoke(CurrentHp, MaxHp.Value);
+    }
+
+    protected async void ToastDamageUI(float damage, Vector3 hitPoint, LayerMask layer ,bool isCritical)
     {
         UI_DamageToast toast = await Managers.UI.MakeSubItemAsync<UI_DamageToast>("UI_DamageToast", Managers.UI.CanvasSystem.transform);
         toast.gameObject.SetActive(true);
@@ -88,7 +94,7 @@ public class BaseStat : MonoBehaviour, IDamageable
         if (toast != null)
         {
             // int로 형변환해서 넘겨줌
-            toast.SetupDamageText((int)damage, isCritical);
+            toast.SetupDamageText((int)damage, isCritical, layer);
         }
     }
 }

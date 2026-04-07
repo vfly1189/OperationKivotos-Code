@@ -91,7 +91,7 @@ public class RelicAttack : BossSkillBase
 
                         // [추가] 무작위 위치에 떨어질 때도 0.02초 간격을 두어 시각적인 타격감을 줌
                         // 숫자를 Random으로 주면 더 불규칙하게 떨어집니다.
-                        float randomDelay = Random.Range(0.01f, 0.05f);
+                        float randomDelay = Random.Range(0.01f, 0.02f);
                         await UniTask.Delay(System.TimeSpan.FromSeconds(randomDelay), cancellationToken: token).SuppressCancellationThrow();
                     }
                 }

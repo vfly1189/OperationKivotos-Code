@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using SixLabors.Fonts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -136,12 +137,27 @@ public class MonsterTankController : RangedMonsterController
         }
 
         // 반경 내의 모든 콜라이더 검출
-        int layerMask = 1 << LayerMask.NameToLayer("Unit");
+        int layerMask = 1 << LayerMask.NameToLayer("Player");
         Collider[] colliders = Physics.OverlapSphere(pos, _explosionRadius, layerMask);
 
         foreach (Collider col in colliders)
         {
-            Debug.Log($"Hit Player! at {pos}");
+            if(col.TryGetComponent<IDamageable>(out IDamageable target))
+            {
+                DamageInfo damageInfo = new DamageInfo();
+                damageInfo.Amount = Stat.Attack.Value;
+                damageInfo.Attacker = this.gameObject;
+                damageInfo.IsCritical = false;
+
+                // 정확한 타격 위치 계산 (이펙트 용)
+                Vector3 hitPoint = col.ClosestPoint(transform.position);
+                damageInfo.HitPoint = hitPoint;
+                // 인터페이스 메서드 호출 (상대가 Player든 Monster든 상관 안 함)
+                target.TakeDamage(damageInfo);
+            }
+
+
+            //Debug.Log($"Hit Player! at {pos}");
         }
     }
 

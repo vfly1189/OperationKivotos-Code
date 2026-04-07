@@ -28,7 +28,8 @@ public class MonsterRLController : RangedMonsterController
         BulletController bulletScript = bulletObj.GetComponent<BulletController>();
         if (bulletScript != null && Stat != null)
         {
-            bulletScript.Init(Stat.Attack.Value, this.gameObject);
+            //bulletScript.Init(Stat.Attack.Value, this.gameObject);
+            bulletScript.Init(new DamageInfo(Stat.Attack.Value, this.gameObject, false), this.gameObject);
         }
         PlayFireEffect();
     }

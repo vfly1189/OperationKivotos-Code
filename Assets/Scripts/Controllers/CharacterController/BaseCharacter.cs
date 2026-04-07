@@ -62,12 +62,11 @@ public class BaseCharacter : MonoBehaviour
             skillTimeline.Stop();
         }
 
-        if (_healingAuraPrefab == null)
-        {
-            //_healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("HealingAura").WaitForCompletion();
-            _healingAuraPrefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura");
-            if (_healingAuraPrefab == null) Debug.LogError("HealingAura 로드 실패!");
-        }
+        
+        //_healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("HealingAura").WaitForCompletion();
+        _healingAuraPrefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura");
+        if (_healingAuraPrefab == null) Debug.LogError("HealingAura 로드 실패!");
+        
     }
 
     private void Update()
@@ -313,9 +312,26 @@ public class BaseCharacter : MonoBehaviour
 
         BulletController bulletScript = bulletObj.GetComponent<BulletController>();
         if (bulletScript != null && Stat != null)
-            bulletScript.Init(Stat.Attack.Value, gameObject);
+            bulletScript.Init(CalculatedDamage(), gameObject);
 
         PlayFireEffect();
+    }
+
+    protected DamageInfo CalculatedDamage()
+    {
+        // 1. 플레이어의 스탯 가져오기
+        float baseDamage = Stat.Attack.Value;
+        float critRate = Stat.CritRate.Value;
+        float critDamage = Stat.CritDamage.Value;
+
+        // 2. 치명타 계산
+        bool isCrit = UnityEngine.Random.value < critRate;
+
+        // 3. 최종 데미지 산출
+        float finalDamage = isCrit ? baseDamage * critDamage : baseDamage;
+
+        // 4. 정보 캡슐화 후 반환
+        return new DamageInfo(finalDamage, gameObject, isCrit);
     }
 
     protected virtual void PlaySFXOnly() { }
@@ -365,6 +381,8 @@ public class BaseCharacter : MonoBehaviour
             _healingAuraParticle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             _healingAuraParticle.Play(true);
         }
+
+        Stat.Heal();
     }
 
     public virtual void StopHealingAura()

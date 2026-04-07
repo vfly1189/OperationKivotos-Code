@@ -10,6 +10,7 @@ public class UI_DamageToast : UI_Base
     [Header("Material Presets")]
     [SerializeField] private Material normalDamageMaterial;   // 인스펙터에서 MainFont_Bold_DamageNormal 할당
     [SerializeField] private Material criticalDamageMaterial; // 인스펙터에서 MainFont_Bold_DamageCritical 할당
+    [SerializeField] private Material monsterDamageMaterial; // 인스펙터에서 MainFont_Bold_DamageCritical 할당
 
     [SerializeField] private CanvasGroup _canvasGroup;
 
@@ -32,25 +33,32 @@ public class UI_DamageToast : UI_Base
     /// <summary>
     /// 데미지와 치명타 여부를 입력받아 텍스트와 스타일을 업데이트합니다.
     /// </summary>
-    public void SetupDamageText(int damageAmount, bool isCritical)
+    public void SetupDamageText(int damageAmount, bool isCritical, int attackerLayer)
     {
-        // 1. 초기화 (알파값 및 텍스트 설정)
         _canvasGroup.alpha = 1f;
         _damageText.text = damageAmount.ToString();
+        transform.localScale = Vector3.one * (isCritical ? 1.5f : 1.0f);
 
-        // 2. 머티리얼(프리셋) 및 추가 효과 교체
-        if (isCritical)
+        int playerLayer = LayerMask.NameToLayer("Player");
+        int monsterLayer = LayerMask.NameToLayer("Monster"); // 혹은 적군 레이어
+        int monsterBulletLayer = LayerMask.NameToLayer("MonsterBullet");
+
+        if (attackerLayer == monsterLayer || attackerLayer == monsterBulletLayer)
         {
-            _damageText.fontSharedMaterial = criticalDamageMaterial;
-            transform.localScale = Vector3.one * 1.5f;
+            // 몬스터가 때린 경우 (플레이어 피격)
+            _damageText.fontSharedMaterial = monsterDamageMaterial;
+        }
+        else if (attackerLayer == playerLayer)
+        {
+            // 플레이어가 때린 경우
+            _damageText.fontSharedMaterial = isCritical ? criticalDamageMaterial : normalDamageMaterial;
         }
         else
         {
+            // 기타 (함정, 환경 데미지 등)
             _damageText.fontSharedMaterial = normalDamageMaterial;
-            transform.localScale = Vector3.one * 1.0f;
         }
 
-        // 3. 기존 타이머 취소 후 애니메이션 & 자동 파괴 시작
         CancelTimer();
         _cts = new CancellationTokenSource();
         AnimateAndDestroyAsync(_cts.Token).Forget();

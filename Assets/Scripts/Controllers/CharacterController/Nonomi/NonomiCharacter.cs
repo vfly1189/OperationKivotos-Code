@@ -69,7 +69,7 @@ public class NonomiCharacter : BaseCharacter
             BulletController bulletScript = bulletObj.GetComponent<BulletController>();
             if (bulletScript != null && Stat != null)
             {
-                bulletScript.Init(Stat.Attack.Value, this.gameObject);
+                bulletScript.Init(CalculatedDamage(), this.gameObject);
             }
             PlayFireEffect();
 
