@@ -230,6 +230,8 @@ public class BossMonsterController : BaseMonsterController
         _isActionRunning = false;
         _isSkillFiring = false;
 
+        CallOnDead();
+
         // 기본 사망 로직 실행 (애니메이션, 드롭 등)
         base.HandleDeadState();
 

@@ -8,7 +8,7 @@ public class SectorManager
 
     public void RegisterSector(Sector sector)
     {
-        // 이미 같은 ID의 섹터가 등록되어 있다면 덮어쓰거나 경고 (안전장치)
+        // 이미 같은 ID의 섹터가 등록되어 있다면 덮어쓰거나 경고 
         if (_sectors.ContainsKey(sector._sectorID))
         {
             Debug.LogWarning($"[SectorManager] 중복된 SectorId({sector._sectorID})가 등록되었습니다.");
@@ -20,7 +20,7 @@ public class SectorManager
     // 플레이어가 특정 구역에 진입했을 때 호출
     public void OnPlayerEnterSector(int sectorId)
     {
-        // 딕셔너리에 없거나 죽은(null) 섹터면 무시 (안전 장치)
+        // 딕셔너리에 없거나 죽은 섹터면 무시 
         if (!_sectors.ContainsKey(sectorId) || _sectors[sectorId] == null) return;
 
         Debug.Log($"{_sectors[sectorId].gameObject.name}에 진입");
@@ -28,8 +28,6 @@ public class SectorManager
         if (_currentActiveSector != null && _currentActiveSector._sectorID == sectorId)
             return;
 
-        // Unity 객체는 null 체크 시 == null 외에 내부 생존 여부도 확인해야 할 수 있음.
-        // 연산자는 C# 레벨의 널 체크이므로, Unity 파괴 객체를 체크하기 위해 명시적으로 검사
         if (_currentActiveSector != null && _currentActiveSector.gameObject != null)
         {
             _currentActiveSector.DeactivateSector();
@@ -37,6 +35,31 @@ public class SectorManager
 
         _currentActiveSector = _sectors[sectorId];
         _currentActiveSector?.ActivateSector();
+    }
+
+    // 모든 섹터를 동시에 활성화
+    public void ActivateAllSectors()
+    {
+        foreach (var kvp in _sectors)
+        {
+            if (kvp.Value != null && kvp.Value.gameObject != null)
+                kvp.Value.ActivateSector();
+        }
+
+        // 전체 활성화 상태에서는 단일 추적 대상이 없으므로 초기화
+        _currentActiveSector = null;
+    }
+
+    // 모든 섹터를 동시에 비활성화
+    public void DeactivateAllSectors()
+    {
+        foreach (var kvp in _sectors)
+        {
+            if (kvp.Value != null && kvp.Value.gameObject != null)
+                kvp.Value.DeactivateSector();
+        }
+
+        _currentActiveSector = null;
     }
 
     public void Clear()

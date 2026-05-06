@@ -29,7 +29,6 @@ public abstract class BaseMonsterController : MonoBehaviour
 
     [SerializeField] protected Animator _anim;
 
-
     private MonsterStat _stat;
 
     // 외부에서 Stat을 요구할 때, 만약 비어있다면 스스로 찾아오게 만듦
@@ -70,8 +69,6 @@ public abstract class BaseMonsterController : MonoBehaviour
         _monsterCts = new CancellationTokenSource();
         _state = MonsterState.Spawning;
 
-        // [핵심 수정] Init() 대신 Recover() 호출! 
-        // 풀에서 꺼낼 때 기존 스탯 데이터는 보존하고 피만 채웁니다.
         Stat?.Recover();
 
         Collider col = GetComponent<Collider>();
@@ -110,8 +107,6 @@ public abstract class BaseMonsterController : MonoBehaviour
         if (_state == MonsterState.Dead) return NodeState.Running;
         _state = MonsterState.Dead;
 
-
-
         // 2. 공통 로직: 콜라이더 끄기
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
@@ -125,13 +120,12 @@ public abstract class BaseMonsterController : MonoBehaviour
         return NodeState.Running;
     }
 
-    // 이 부분만 virtual로 만들어서 자식이 "시간"만 바꿀 수 있게 열어줍니다.
+
     protected virtual float GetDespawnDelay()
     {
         return 2.0f; // 일반 몬스터의 기본 디스폰 대기 시간 (2초)
     }
 
-    // 디스폰 로직 자체는 굳이 virtual일 필요가 없습니다. (어차피 하는 일이 똑같으므로)
     private async UniTaskVoid DespawnAsync(CancellationToken token, float delaySeconds)
     {
         bool isCanceled = await UniTask.Delay(TimeSpan.FromSeconds(delaySeconds), cancellationToken: token).SuppressCancellationThrow();

@@ -20,13 +20,6 @@ public class UIManager
     private Canvas _canvasSystem;   // order 100 이상의 절대로 먼저 보여져야 되는것들...
     private Canvas _canvasWorld;
 
-    //private UI_ItemInfo _currentTooltip = null;
-    //private bool _isLoadingTooltip = false;
-
-    //private UI_LootNotification _lootPanel = null;
-
-    //private UI_DungeonClear _dungeonClear = null;
-
     private bool _isLoadingPopup = false;
     public bool IsPopupOpen => _popupStack.Count > 0 || _isLoadingPopup;
 
@@ -121,7 +114,7 @@ public class UIManager
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, isGlobal: true);
         if (prefab == null) return null;
 
-        // [수정] 하드코딩된 @GameSceneCanvas 대신 CanvasPopup 아래에 배치
+        // 하드코딩된 @GameSceneCanvas 대신 CanvasPopup 아래에 배치
         GameObject go = Managers.Resource.Instantiate(prefab, CanvasPopup.transform);
         go.transform.SetParent(CanvasPopup.transform, false);
         go.SetActive(true);
@@ -135,7 +128,7 @@ public class UIManager
 
         Debug.Log($"팝업 스택 : {_popupStack.Count}");
 
-        // [수정] 주석 해제. 팝업 정렬(Z-Order) 관리를 위해 호출
+       
         SetCanvas(go, true);
         _isLoadingPopup = false;
         return popup;
@@ -181,8 +174,6 @@ public class UIManager
         while (_popupStack.Count > 0)
             ClosePopupUI();
 
-        // 팝업이 닫힐 때 혹시 열려있을지 모르는 툴팁을 무조건 함께 끕니다.
-        //HideItemTooltip();
     }
 
     // =========================================================
@@ -211,7 +202,7 @@ public class UIManager
 
     public void SetActiveSystemCanvas(bool value)
     {
-        _canvasScene.gameObject.SetActive(value);
+        _canvasSystem.gameObject.SetActive(value);
     }
 
     public void SetActiveWorldCanvas(bool value)
@@ -238,21 +229,13 @@ public class UIManager
     {
         CloseAllPopupUI();
 
-        // [수정] 씬 전환 시 SceneUI 파괴 처리 추가
+       
         if (_sceneUI != null)
         {
             Managers.Resource.Destroy(_sceneUI.gameObject);
             _sceneUI = null;
         }
 
-        //// [수정] 씬이 바뀔 때 켜져 있던 룻 패널도 파괴하고 null로 초기화
-        //if (_lootPanel != null)
-        //{
-        //    Managers.Resource.Destroy(_lootPanel.gameObject);
-        //    _lootPanel = null;
-        //}
-
-        // [수정] _root = null 삭제. DDOL이므로 Root와 Canvas들은 유지되어야 함
         _order = 10;
     }
 }

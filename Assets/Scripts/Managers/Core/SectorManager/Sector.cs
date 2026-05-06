@@ -16,7 +16,7 @@ public class Sector : MonoBehaviour
         Managers.Sector.RegisterSector(this);
     }
 
-    // [방어 코드 1] 외부에서 호출될 수도 있으므로 초기화 여부 체크
+    //  외부에서 호출될 수도 있으므로 초기화 여부 체크
     private void InitSpawners()
     {
         if (_isInitialized) return;

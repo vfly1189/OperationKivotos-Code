@@ -210,17 +210,24 @@ public class BaseCharacter : MonoBehaviour
             {
                 existingUI.gameObject.SetActive(false);
                 _gameCanvas = existingUI.gameObject;
+
+                Managers.UI.SetActiveWorldCanvas(false);
             }
         }
         else
         {
             _gameCanvas.SetActive(false);
+            Managers.UI.SetActiveWorldCanvas(false);
         }
     }
 
     protected virtual void OnCutsceneEnded(PlayableDirector director)
     {
-        if (_gameCanvas != null) _gameCanvas.SetActive(true);
+        if (_gameCanvas != null)
+        {
+            _gameCanvas.SetActive(true);
+            Managers.UI.SetActiveWorldCanvas(true);
+        }
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Q_Skill);
     }
 

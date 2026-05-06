@@ -101,7 +101,7 @@ public class CharacterStat : BaseStat, IDamageable
     public void ResetState()
     {
         IsDead = false;
-        IsInvincible = false; // [추가] 씬 이동/부활 시 무조건 무적 해제 보장
+        IsInvincible = false; 
         CurrentHp = MaxHp.Value;
         CurrentEnergy = 0;
         CurrentQSkillCoolTime = QSkillCoolTime.Value;
@@ -309,7 +309,7 @@ public class CharacterStat : BaseStat, IDamageable
         ApplyWeaponStats();
     }
 
-    // 외부(EquipmentManager 등)에서는 이 public 함수만 호출합니다.
+
     public void RefreshStatsUI()
     {
         // 1. 필요한 내부 로직 처리 (최대 체력이 변했을 수 있으니 현재 체력 보정)

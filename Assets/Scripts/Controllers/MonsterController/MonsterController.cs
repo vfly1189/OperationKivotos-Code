@@ -9,7 +9,7 @@ using UnityEngine.AI;
 
 public class MonsterController : MonoBehaviour
 {
-    // [추가] 몬스터의 현재 행동 상태를 명확히 정의
+    
     public enum MonsterState
     {
         Spawning,   // 스폰 및 준비 중 (Agent 활성화 전)
@@ -27,14 +27,14 @@ public class MonsterController : MonoBehaviour
     [SerializeField] private int _maxAmmo = 3; // 공격 3번 후 재장전
 
     [Header("UI Settings")]
-    [SerializeField] private GameObject _hpBarPrefab; // [핵심] 인스펙터에서 프리팹 직접 할당!
+    [SerializeField] private GameObject _hpBarPrefab; //  인스펙터에서 프리팹 직접 할당
     [SerializeField] private Transform _hpBarTransform;
 
     [Header("Components")]
     [SerializeField] private Animator _anim;
-    [SerializeField] private NavMeshAgent _agent; // 길찾기용 (필수 아님, Transform이동이면 제거)
+    [SerializeField] private NavMeshAgent _agent; // 길찾기용 
 
-    // 스탯 (필수 재사용)
+    // 스탯
     public MonsterStat Stat { get; private set; }
 
     // 타겟(플레이어)
@@ -42,17 +42,16 @@ public class MonsterController : MonoBehaviour
     // 행동 트리 루트 노드
     private Node _topNode;
 
-    // [상태 관리 변수]
-    // [핵심] 여러 bool 변수들을 하나의 State로 통합
+
     protected MonsterState _state = MonsterState.Spawning;
     private int _currentAmmo;
 
     private UI_MonsterHPBar _hpBar;
 
-    // [최적화용] SetDestination 과호출 방지를 위한 캐싱 변수
+
     private Vector3 _lastDestPosition = Vector3.zero;
 
-    // [추가] 행동 취소/초기화를 위한 몬스터 전역 토큰
+
     protected CancellationTokenSource _monsterCts;
     public event Action OnDespawned;
 
@@ -80,7 +79,6 @@ public class MonsterController : MonoBehaviour
     {
         if (_hpBarPrefab != null)
         {
-            //[수정] GameObject.Find 제거하고, UIManager의 CanvasWorld를 부모로 지정!
             Transform uiParent = Managers.UI.CanvasWorld.transform;
 
             _hpBar = await Managers.UI.MakeSubItemAsync<UI_MonsterHPBar>("MonsterHPBar", uiParent);
@@ -167,10 +165,10 @@ public class MonsterController : MonoBehaviour
         }
     }
 
-    // [변경 2] 코루틴을 비동기 함수로 변경
+
     private async UniTaskVoid EnableAgentDelayAsync(CancellationToken token)
     {
-        // 1프레임 대기 (파괴/비활성화 시 즉시 취소되도록 토큰 연동)
+
         bool isCanceled = await UniTask.Yield(PlayerLoopTiming.Update, token).SuppressCancellationThrow();
         if (isCanceled) return;
 
@@ -183,14 +181,14 @@ public class MonsterController : MonoBehaviour
     }
 
 
-    // 풀로 돌아갈 때(OnDisable) 꺼주는 로직 필수
+    // 풀로 돌아갈 때(OnDisable) 꺼주는 로직
     protected void OnDisable()
     {
         if (_agent != null && _agent.enabled)
         {
             _agent.enabled = false;
         }
-        CancelMonsterTasks(); // [핵심] 비활성화 시 모든 UniTask 대기 즉시 취
+        CancelMonsterTasks(); 
     }
 
 
@@ -318,7 +316,7 @@ public class MonsterController : MonoBehaviour
 
         if (_hpBar != null) _hpBar.gameObject.SetActive(false);
 
-        // [변경 3] 사망 코루틴 -> UniTask
+
         DespawnAsync(_monsterCts.Token).Forget();
 
         return NodeState.Running;
@@ -366,7 +364,6 @@ public class MonsterController : MonoBehaviour
         {
             _agent.isStopped = false;
 
-            // [최적화 핵심] 타겟의 위치가 이전 위치와 0.5f 이상 차이 날 때만 길찾기 연산 수행!
             if (Vector3.SqrMagnitude(_target.position - _lastDestPosition) > 0.25f)
             {
                 _lastDestPosition = _target.position;
@@ -420,7 +417,6 @@ public class MonsterController : MonoBehaviour
 
         if (isCanceled) return;
 
-        // [추가] Destroy 직전에 이벤트 발송 → 스포너가 이 시점에 리스폰 시작
         OnDespawned?.Invoke();
 
         Managers.Resource.Destroy(gameObject);

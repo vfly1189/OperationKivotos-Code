@@ -35,7 +35,7 @@ public class ResourceManager
     }
 
     // =========================================================================
-    // 1. [기존] AssetReference를 인자로 받는 LoadAsync (씬에서 주로 사용)
+    // 1. AssetReference를 인자로 받는 LoadAsync (씬에서 주로 사용)
     // =========================================================================
     public async UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false) where T : UnityEngine.Object
     {
@@ -50,45 +50,18 @@ public class ResourceManager
     {
         if (string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);
 
-        //  이미 캐싱됐고 타입도 맞으면 → 상태머신 없이 즉시 동기 반환
         if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && gh.Result is T gResult)
             return UniTask.FromResult(gResult);
 
         if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && sh.Result is T sResult)
             return UniTask.FromResult(sResult);
 
-        // 캐싱 안 됐거나 타입 불일치 → 비동기 로드
         return LoadAsyncInternal<T>(key, isGlobal);
     }
 
     // 실제 비동기 로직 분리
     private async UniTask<T> LoadAsyncInternal<T>(string key, bool isGlobal) where T : UnityEngine.Object
     {
-        //// 타입 불일치 핸들 제거
-        //if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && !(gh.Result is T))
-        //    _globalHandles.Remove(key);
-        //if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && !(sh.Result is T))
-        //    _sceneHandles.Remove(key);
-
-        //// 로딩 중인 핸들 있으면 기다리기
-        //if (_globalHandles.TryGetValue(key, out var pending) && !pending.IsDone)
-        //{
-        //    await pending.ToUniTask();
-        //    return pending.Result as T;
-        //}
-
-        //var handle = Addressables.LoadAssetAsync<T>(key);
-        //if (isGlobal) _globalHandles[key] = handle;
-        //else _sceneHandles[key] = handle;
-
-        //await handle.ToUniTask();
-
-        //if (handle.Status == AsyncOperationStatus.Succeeded) return handle.Result as T;
-
-        //Debug.LogError($"[ResourceManager] Load Failed: {key}");
-        //if (isGlobal) _globalHandles.Remove(key);
-        //else _sceneHandles.Remove(key);
-        //return null;
 
         bool wasGlobal = false;
         AsyncOperationHandle handleToRelease = default;
@@ -121,14 +94,13 @@ public class ResourceManager
         // 2. 새로운 타입(예: Sprite)으로 다시 로드
         var handle = Addressables.LoadAssetAsync<T>(key);
 
-        // 핵심 수정: 원래 글로벌 캐시에 있었던 녀석이면, 다시 로드할 때도 무조건 글로벌에 넣습니다!
+
         if (isGlobal || wasGlobal) _globalHandles[key] = handle;
         else _sceneHandles[key] = handle;
 
         await handle.ToUniTask();
 
         // 새 핸들 로드가 완전히 끝난 후 예전 핸들 해제 
-        // (미리 해제해버리면 새 에셋 로드 전에 번들이 메모리에서 내려가버리는 참사 방지)
         if (handleToRelease.IsValid())
         {
             Addressables.Release(handleToRelease);
@@ -144,7 +116,7 @@ public class ResourceManager
 
 
     // =========================================================================
-    // 3. [기존] NoCache 로드 (문자열 string Key 기반) -> DataManager에서 JSON 부를 때 사용
+    // 3. NoCache 로드 (문자열 string Key 기반) -> DataManager에서 JSON 부를 때 사용
     // =========================================================================
     public async UniTask<T> LoadAsyncNoCache<T>(string key) where T : UnityEngine.Object
     {
@@ -153,7 +125,7 @@ public class ResourceManager
         // string key를 사용해 로드
         var handle = Addressables.LoadAssetAsync<T>(key);
 
-        // [수정 핵심] ToUniTask로 대기할 때 에러가 나면 잡을 수 있도록 안전하게 처리
+        // ToUniTask로 대기할 때 에러가 나면 잡을 수 있도록 안전하게 처리
         T result = null;
         try
         {
@@ -179,24 +151,24 @@ public class ResourceManager
     }
 
     // =========================================================================
-    // [신규] SpriteAtlas 특화 로드 및 추출 함수 (GC 방어 적용)
+    //  SpriteAtlas 특화 로드 및 추출 함수
     // =========================================================================
     public async UniTask<Sprite> GetSpriteFromAtlasAsync(string atlasKey, string spriteName)
     {
         if (string.IsNullOrEmpty(spriteName)) return null;
 
-        // 1. 방어 캐시에 안전하게 보관 중이라면 즉시 반환 (가장 빠른 O(1) 처리)
+        // 1. 방어 캐시에 안전하게 보관 중이라면 반환
         if (_atlasSpriteCache.TryGetValue(spriteName, out Sprite cachedSprite))
         {
             if (cachedSprite != null) return cachedSprite;
         }
 
-        // 2. 캐시에 없으면 아틀라스 자체를 어드레서블로 로드 (이미 로드되어 있으면 즉시 반환됨)
+        // 2. 캐시에 없으면 아틀라스 자체를 어드레서블로 로드
         SpriteAtlas atlas = await LoadAsync<SpriteAtlas>(atlasKey, isGlobal: true);
 
         if (atlas != null)
         {
-            // 3. 아틀라스를 여는 순간, 내부의 모든 Sprite 조각을 캐시에 등록 (GC 암살 방지)
+            // 3. 아틀라스를 여는 순간, 내부의 모든 Sprite 조각을 캐시에 등록
             Sprite[] allSprites = new Sprite[atlas.spriteCount];
             atlas.GetSprites(allSprites);
 
@@ -227,7 +199,7 @@ public class ResourceManager
 
 
     // =========================================================================
-    // 프리로딩 전용 함수 (if-else 분기문 제거!)
+    // 프리로딩 전용 함수
     // =========================================================================
     public async UniTask LoadDependenciesAsync(IEnumerable<string> labels, bool isGlobal = false, System.Action<string, float> onProgress = null)
     {    
@@ -314,10 +286,10 @@ public class ResourceManager
         return go;
     }
 
-    // [추가] Addressable Key 문자열을 받아 위치/회전까지 맞춰주는 Instantiate 함수
+    //  Addressable Key 문자열을 받아 위치/회전까지 맞춰주는 Instantiate 함수
     public GameObject Instantiate(string key, Vector3 position, Quaternion rotation, Transform parent = null)
     {
-        // 1. 캐시에서 찾기 (글로벌 우선, 그 다음 씬)
+        // 캐시에서 찾기 (글로벌 우선, 그 다음 씬)
         AsyncOperationHandle handle;
         bool found = _globalHandles.TryGetValue(key, out handle) || _sceneHandles.TryGetValue(key, out handle);
 

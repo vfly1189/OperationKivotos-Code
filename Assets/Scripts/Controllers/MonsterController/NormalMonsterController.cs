@@ -20,7 +20,7 @@ public abstract class NormalMonsterController : BaseMonsterController
     protected Transform _target;
     protected UI_MonsterHPBar _hpBar;
 
-    // [최적화용] SetDestination 과호출 방지를 위한 캐싱 변수
+    
     private Vector3 _lastDestPosition = Vector3.zero;
 
     protected override void Awake()
@@ -104,29 +104,28 @@ public abstract class NormalMonsterController : BaseMonsterController
         });
     }
 
-    // [핵심] 자식 클래스(원거리/근접)가 각자의 전투 방식을 행동 트리에 꽂아 넣을 수 있게 함
+
     protected abstract Node GetCombatNode();
 
-    // NormalMonsterController.cs 내부
+
     protected override NodeState HandleDeadState()
     {
-        // 중복 실행 방지 (자식 쪽에서도 방어)
+        // 중복 실행 방지 
         if (_state == MonsterState.Dead) return NodeState.Running;
 
-        // [일반 몬스터 특화 로직] 
-        // 1. 길찾기 에이전트 정지 및 비활성화
+      
+
         if (_agent != null && _agent.enabled)
         {
             _agent.isStopped = true;
             _agent.enabled = false;
         }
 
-        // 2. 머리 위 HP바 숨기기
+
         if (_hpBar != null) _hpBar.gameObject.SetActive(false);
 
         CallOnDead();
 
-        // [핵심] 특화 로직이 끝났으면 부모의 공통 사망 로직(콜라이더 끄기, 애니메이션, 삭제) 호출!
         return base.HandleDeadState();
     }
 

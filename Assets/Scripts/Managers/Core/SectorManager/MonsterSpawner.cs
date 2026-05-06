@@ -30,24 +30,8 @@ public class MonsterSpawner : MonoBehaviour
 
     public void SpawnMonsters()
     {
-        //SpawnerData data = Managers.Data.GetData<int, SpawnerData>(_spawnerId);
-
-        //if (data == null || data.spawnList == null || data.spawnList.Count == 0) return;
-
-        Debug.Log($"[{gameObject.name}] SpawnMonsters 호출됨! ID: {_spawnerId}");
-
         SpawnerData data = Managers.Data.GetData<int, SpawnerData>(_spawnerId);
 
-        if (data == null)
-        {
-            Debug.LogError($"[Spawner] {_spawnerId}번 데이터가 없습니다!");
-            return;
-        }
-        if (data.spawnList == null || data.spawnList.Count == 0)
-        {
-            Debug.LogError($"[Spawner] {_spawnerId}번 스폰 리스트가 비어있습니다!");
-            return;
-        }
 
         foreach (var info in data.spawnList)
         {
@@ -103,7 +87,7 @@ public class MonsterSpawner : MonoBehaviour
         int pointIdx = info.pointIndex;
         Transform spawnPoint = _spawnPoints[pointIdx];
 
-        // 1. 몬스터 BaseData만 가져오기 (AddressableKey를 얻기 위함)
+        //  몬스터 BaseData만 가져오기 (AddressableKey를 얻기 위함)
         MonsterBaseData monsterBaseData = Managers.Data.GetData<int, MonsterBaseData>(info.monsterId);
         if (monsterBaseData == null)
         {
@@ -114,7 +98,7 @@ public class MonsterSpawner : MonoBehaviour
 
         try
         {
-            // 2. 스폰 딜레이 대기
+            // 스폰 딜레이 대기
             if (info.delay > 0)
             {
                 bool isCanceled = await UniTask.Delay(
@@ -125,7 +109,7 @@ public class MonsterSpawner : MonoBehaviour
                 if (isCanceled) return;
             }
 
-            // [핵심 변경] 모든 생성 로직과 데이터 주입을 Factory에 위임합니다!
+            //  모든 생성 로직과 데이터 주입을 Factory에 위임
             GameObject monsterObj = await MonsterFactory.CreateMonsterByMonsterIDAsync(
                 info.monsterId,
                 _mapId,

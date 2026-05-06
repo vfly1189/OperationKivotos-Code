@@ -1,6 +1,5 @@
 using UnityEngine;
 
-// 데미지 정보를 담는 구조체 (확장성 확보)
 public struct DamageInfo
 {
     public float Amount;            // 데미지 양

@@ -41,6 +41,7 @@ public class KillBossCondition : BaseCondition
 
     private void OnMonsterDead()
     {
+        Debug.Log("∏ÛΩ∫≈ÕªÁ∏¡ OnMonsterDead");
         InvokeConditionMet();
     }
 

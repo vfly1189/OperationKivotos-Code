@@ -53,7 +53,7 @@ public class NormalDungeonScene : BaseScene
         var mainBgmTask = LoadMainBgm();
 
         // UniTask.WhenAll 로 병렬 대기
-        await UniTask.WhenAll(mainUI, mapTask, poolTask, effectStageTask, successBgm, victoryVoice, battleInVoice);
+        await UniTask.WhenAll(mainUI, mapTask, poolTask, mainBgmTask,  effectStageTask, successBgm, victoryVoice, battleInVoice);
 
 
 
@@ -231,13 +231,18 @@ public class NormalDungeonScene : BaseScene
     {
         if (_preloadData.fightingBgms == null || _preloadData.fightingBgms.Length == 0) return;
         int rand = Random.Range(0, _preloadData.fightingBgms.Length);
+        Debug.Log($"rand : {rand}");
 
         _mainBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.fightingBgms[rand]);
+
+        if (_mainBGM != null) Debug.Log("메인 브금 로딩");
+        else Debug.Log("메인 브금 로딩안돼");
     }
 
     void PlayBGM()
     {
         if (_mainBGM != null) Managers.Sound.Play(_mainBGM, Define.Sound.Bgm);
+        else Debug.Log("우헤헤헤헤헿");
     }
 
     void PlayBattleInVoice()

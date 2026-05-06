@@ -132,7 +132,7 @@ public class MonsterTankController : RangedMonsterController
 
         if (_showExplosionGizmo)
         {
-            // [핵심 3] 코루틴 대신 단순히 리스트에 구조체만 추가 (Update에서 자동 관리)
+           
             _explosionGizmos.Add(new GizmoInfo { Position = pos, ExpireTime = Time.time + _gizmoDuration });
         }
 
@@ -198,7 +198,7 @@ public class MonsterTankController : RangedMonsterController
         // 2. 실제 폭발 반경 (빨간색 구체)
         Gizmos.color = new Color(1, 0, 0, 0.5f);
 
-        // [핵심 4] 시간이 지난 기즈모 데이터는 여기서 그려주면서 동시에 지워줌 (코루틴 불필요)
+        // 시간이 지난 기즈모 데이터는 여기서 그려주면서 동시에 지워줌
         for (int i = _explosionGizmos.Count - 1; i >= 0; i--)
         {
             if (Time.time > _explosionGizmos[i].ExpireTime)

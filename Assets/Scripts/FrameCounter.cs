@@ -4,7 +4,7 @@ public class FrameCounter : MonoBehaviour
 {
     private float deltaTime = 0f;
 
-    [SerializeField] private int size = 25;
+    [SerializeField] private int size = 60;
     [SerializeField] private Color color = Color.red;
 
     void Update()

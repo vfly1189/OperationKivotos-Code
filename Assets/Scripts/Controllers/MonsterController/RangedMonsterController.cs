@@ -29,7 +29,7 @@ public abstract class RangedMonsterController : NormalMonsterController
         });
     }
 
-    // [변경 2] 코루틴을 비동기 함수로 변경
+
     private async UniTaskVoid EnableAgentDelayAsync(CancellationToken token)
     {
         // 1프레임 대기 (파괴/비활성화 시 즉시 취소되도록 토큰 연동)

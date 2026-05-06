@@ -71,6 +71,7 @@ public class BaseStat : MonoBehaviour, IDamageable
 
     protected void CallOnDead()
     {
+        Debug.Log("∏ÛΩ∫≈ÕªÁ∏¡ CallOnDead");
         OnDead?.Invoke();
     }
 
