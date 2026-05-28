@@ -7,7 +7,7 @@ public enum EquipmentTabType
     Weapon = 0,
     Relic = 1,
     Decompose = 2,
-    // ³ªÁß¿¡ Accessory = 2, Material = 3 µî ÅÇÀÌ Ãß°¡µÇ¸é ¿©±â¿¡¸¸ Àû¾îÁÖ¸é µË´Ï´Ù.
+    // ë‚˜ì¤‘ì— Accessory = 2, Material = 3 ë“± íƒ­ì´ ì¶”ê°€ë˜ë©´ ì—¬ê¸°ì—ë§Œ ì ì–´ì£¼ë©´ ë©ë‹ˆë‹¤.
 }
 
 public class UI_EquipmentUpgradePanel : UI_PopUp
@@ -27,7 +27,7 @@ public class UI_EquipmentUpgradePanel : UI_PopUp
         //_weaponUpgradePanel.Init();
         //_relicUpgradePanel.Init();
 
-        //µñ¼Å³Ê¸®¿¡ ÆĞ³Î ¸ÅÇÎ (»õ ÅÇÀÌ »ı±â¸é ¿©±â¸¸ Ãß°¡ÇÏ¸é µÊ)
+        //ë”•ì…”ë„ˆë¦¬ì— íŒ¨ë„ ë§¤í•‘ (ìƒˆ íƒ­ì´ ìƒê¸°ë©´ ì—¬ê¸°ë§Œ ì¶”ê°€í•˜ë©´ ë¨)
         _panels.Clear();
         _panels.Add(EquipmentTabType.Weapon, _weaponUpgradePanel);
         _panels.Add(EquipmentTabType.Relic, _relicUpgradePanel);
@@ -37,7 +37,7 @@ public class UI_EquipmentUpgradePanel : UI_PopUp
         _tabPanel.OnTabClicked += HandleTabChange;
     }
 
-    // ÅÇÀÌ º¯°æµÉ ¶§ È£ÃâµÇ´Â ÇÔ¼ö
+    // íƒ­ì´ ë³€ê²½ë  ë•Œ í˜¸ì¶œë˜ëŠ” í•¨ìˆ˜
     private void HandleTabChange(EquipmentTabType selectedTab)
     {
         
@@ -48,7 +48,7 @@ public class UI_EquipmentUpgradePanel : UI_PopUp
 
             if (isActive)
                 kvp.Value.Refresh();
-            // ¸¸¾à ÄÑÁö´Â ÆĞ³Î¿¡ ÃÖ½Å µ¥ÀÌÅÍ¸¦ °»½ÅÇØÁà¾ß ÇÑ´Ù¸é ¿©±â¼­ Ã³¸® °¡´É
+            // ë§Œì•½ ì¼œì§€ëŠ” íŒ¨ë„ì— ìµœì‹  ë°ì´í„°ë¥¼ ê°±ì‹ í•´ì¤˜ì•¼ í•œë‹¤ë©´ ì—¬ê¸°ì„œ ì²˜ë¦¬ ê°€ëŠ¥
         }
     }
 

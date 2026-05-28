@@ -3,33 +3,33 @@ using UnityEngine.UI;
 
 public class UI_MonsterHPBar : UI_Base
 {
-    private Camera _mainCamera; // Ä«¸Ş¶ó Ä³½Ì¿ë º¯¼ö
+    private Camera _mainCamera; // ì¹´ë©”ë¼ ìºì‹±ìš© ë³€ìˆ˜
 
-    private Transform _targetTr; // µû¶ó´Ù´Ò 3D ¿ÀºêÁ§Æ® (¸ó½ºÅÍ ¸Ó¸® À§)
-    private MonsterStat _stat; // ¸ó½ºÅÍ ½ºÅÈ (HP Á¤º¸)
+    private Transform _targetTr; // ë”°ë¼ë‹¤ë‹ 3D ì˜¤ë¸Œì íŠ¸ (ëª¬ìŠ¤í„° ë¨¸ë¦¬ ìœ„)
+    private MonsterStat _stat; // ëª¬ìŠ¤í„° ìŠ¤íƒ¯ (HP ì •ë³´)
 
     private RectTransform _rectTransform;
     private Slider _slider;
 
     public override void Init()
     {
-        // 1. ÄÄÆ÷³ÍÆ® Ä³½Ì
+        // 1. ì»´í¬ë„ŒíŠ¸ ìºì‹±
         _rectTransform = GetComponent<RectTransform>();
         _slider = GetComponent<Slider>();
 
         if (_slider == null)
-            Debug.LogError("UI_MonsterHPBar: Slider ÄÄÆ÷³ÍÆ®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù! ÇÁ¸®ÆÕÀ» È®ÀÎÇÏ¼¼¿ä.");
+            Debug.LogError("UI_MonsterHPBar: Slider ì»´í¬ë„ŒíŠ¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤! í”„ë¦¬íŒ¹ì„ í™•ì¸í•˜ì„¸ìš”.");
 
         _mainCamera = Camera.main;
     }
 
-    // ¸ó½ºÅÍ ÂÊ¿¡¼­ »ı¼º Á÷ÈÄ È£ÃâÇØÁà¾ß ÇÔ
+    // ëª¬ìŠ¤í„° ìª½ì—ì„œ ìƒì„± ì§í›„ í˜¸ì¶œí•´ì¤˜ì•¼ í•¨
     public void SetTarget(Transform target, MonsterStat stat)
     {
         _targetTr = target;
         _stat = stat;
 
-        // ÃÊ±â °»½Å
+        // ì´ˆê¸° ê°±ì‹ 
         UpdateHpBar(stat.CurrentHp, stat.MaxHp.Value);
     }
 
@@ -41,21 +41,21 @@ public class UI_MonsterHPBar : UI_Base
             return;
         }
 
-        // Ä«¸Ş¶ó°¡ ¾øÀ¸¸é Ã£±â ½Ãµµ
+        // ì¹´ë©”ë¼ê°€ ì—†ìœ¼ë©´ ì°¾ê¸° ì‹œë„
         if (_mainCamera == null) _mainCamera = Camera.main;
         if (_mainCamera == null) return;
 
         Vector3 screenPos = _mainCamera.WorldToScreenPoint(_targetTr.position);
 
-        // [º¸°­] Z°ª Ã¼Å© (Ä«¸Ş¶ó µÚÂÊ)
+        // [ë³´ê°•] Zê°’ ì²´í¬ (ì¹´ë©”ë¼ ë’¤ìª½)
         if (screenPos.z <= 0)
         {
-            // ±×³É Äµ¹ö½º ¹ÛÀ¸·Î ³¯·Á¹ö¸²
+            // ê·¸ëƒ¥ ìº”ë²„ìŠ¤ ë°–ìœ¼ë¡œ ë‚ ë ¤ë²„ë¦¼
             screenPos = new Vector3(-1000, -1000, 0);
         }
         else
         {
-            // [º¸°­] Z°ªÀ» 0À¸·Î ¸ÂÃç¾ß UI Äµ¹ö½º Æò¸é¿¡ µü ºÙÀ½ (Overlay°¡ ¾Æ´Ñ °æ¿ì Áß¿ä)
+            // [ë³´ê°•] Zê°’ì„ 0ìœ¼ë¡œ ë§ì¶°ì•¼ UI ìº”ë²„ìŠ¤ í‰ë©´ì— ë”± ë¶™ìŒ (Overlayê°€ ì•„ë‹Œ ê²½ìš° ì¤‘ìš”)
             screenPos.z = 0;
         }
 
@@ -66,7 +66,7 @@ public class UI_MonsterHPBar : UI_Base
     {
         if (_stat == null || _slider == null) return;
 
-        // HP ºñÀ² °è»ê (0 ~ 1)
+        // HP ë¹„ìœ¨ ê³„ì‚° (0 ~ 1)
         float ratio = 0f;
         if (_stat.MaxHp.Value > 0)
         {

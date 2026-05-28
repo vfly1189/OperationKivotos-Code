@@ -3,9 +3,9 @@ using UnityEngine.AddressableAssets;
 [CreateAssetMenu(menuName = "Preload/SelectScenePreloadData")]
 public class SelectScenePreloadSO : SceneDataSO
 {
-    [Header("¸ğµ¨µé ÂïÀ» Ä«¸Ş¶ó")]
+    [Header("ëª¨ë¸ë“¤ ì°ì„ ì¹´ë©”ë¼")]
     public AssetReferenceGameObject modelCamera;
 
-    [Header("¼±ÅÃÃ¢ ¸ŞÀÎ UI")]
+    [Header("ì„ íƒì°½ ë©”ì¸ UI")]
     public AssetReferenceGameObject mainUI;
 }

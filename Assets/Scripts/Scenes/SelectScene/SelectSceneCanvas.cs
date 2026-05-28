@@ -14,7 +14,7 @@ using Image = UnityEngine.UI.Image;
 public class SelectSceneCanvas : UI_Scene
 {
     // ========================================================================
-    // [2] UI ¿ä¼Ò ±×·ìÈ­ (¹öÆ° ¹× Ç¥½ÃºÎ)
+    // [2] UI ìš”ì†Œ ê·¸ë£¹í™” (ë²„íŠ¼ ë° í‘œì‹œë¶€)
     // ========================================================================
     [System.Serializable]
     public class SchoolUIElements
@@ -24,7 +24,7 @@ public class SelectSceneCanvas : UI_Scene
     }
 
     [Header("UI Controls")]
-    [SerializeField] private SchoolUIElements[] _schoolUIElements; // 0:¾Æºñµµ½º, 1:°ÔÇî³ª, 2:¹Ğ·¹´Ï¾ö
+    [SerializeField] private SchoolUIElements[] _schoolUIElements; // 0:ì•„ë¹„ë„ìŠ¤, 1:ê²Œí—¨ë‚˜, 2:ë°€ë ˆë‹ˆì—„
     [SerializeField] private Button _continueButton;
     [SerializeField] private Button _newStartButton;
 
@@ -32,23 +32,23 @@ public class SelectSceneCanvas : UI_Scene
     [SerializeField] private Image _schoolIcon;
     [SerializeField] private Image _schoolName;
 
-    private SelectScene _scene; // Scene ÂüÁ¶
-    private bool _isInit = false; // Áßº¹ ÃÊ±âÈ­ ¹æÁö ÇÃ·¡±×
+    private SelectScene _scene; // Scene ì°¸ì¡°
+    private bool _isInit = false; // ì¤‘ë³µ ì´ˆê¸°í™” ë°©ì§€ í”Œë˜ê·¸
 
     public event Action OnContinue;
     public event Action OnNewStart;
 
-    // 2. UI_BaseÀÇ Ãß»ó ¸Ş¼­µåÀÌÀÚ UI_SceneÀÇ InitÀ» ¿À¹ö¶óÀÌµå
+    // 2. UI_Baseì˜ ì¶”ìƒ ë©”ì„œë“œì´ì UI_Sceneì˜ Initì„ ì˜¤ë²„ë¼ì´ë“œ
     public override void Init()
     {
-        if (_isInit) return; // Start()¿Í ¼öµ¿ È£ÃâÀÌ °ãÄ¡Áö ¾Ê°Ô ¹æÁö
+        if (_isInit) return; // Start()ì™€ ìˆ˜ë™ í˜¸ì¶œì´ ê²¹ì¹˜ì§€ ì•Šê²Œ ë°©ì§€
 
-        base.Init(); // ºÎ¸ğ(UI_Scene)ÀÇ Init È£Ãâ (SetCanvas µî)
+        base.Init(); // ë¶€ëª¨(UI_Scene)ì˜ Init í˜¸ì¶œ (SetCanvas ë“±)
 
-        // ¹öÆ° ¸®½º³Ê ¿¬°á (Awake/Start Å¸ÀÌ¹Ö¿¡ 1¹ø¸¸ ½ÇÇàµÊ)
+        // ë²„íŠ¼ ë¦¬ìŠ¤ë„ˆ ì—°ê²° (Awake/Start íƒ€ì´ë°ì— 1ë²ˆë§Œ ì‹¤í–‰ë¨)
         for (int i = 0; i < _schoolUIElements.Length; i++)
         {
-            int idx = i; // Å¬·ÎÀú ÀÌ½´ ¹æÁö¸¦ À§ÇÑ Áö¿ª º¯¼ö º¹»ç
+            int idx = i; // í´ë¡œì € ì´ìŠˆ ë°©ì§€ë¥¼ ìœ„í•œ ì§€ì—­ ë³€ìˆ˜ ë³µì‚¬
             _schoolUIElements[i].imageButton.onClick.AddListener(() => OnClickSchool(idx));
             _schoolUIElements[i].textButton.onClick.AddListener(() => OnClickSchool(idx));
         }
@@ -60,7 +60,7 @@ public class SelectSceneCanvas : UI_Scene
         _isInit = true;
     }
 
-    // 3. ±âÁ¸ÀÇ Init(SelectScene scene)À» Setup(µ¥ÀÌÅÍ ÁÖÀÔ¿ë)À¸·Î º¯°æ
+    // 3. ê¸°ì¡´ì˜ Init(SelectScene scene)ì„ Setup(ë°ì´í„° ì£¼ì…ìš©)ìœ¼ë¡œ ë³€ê²½
     public void Setup(SelectScene scene)
     {
         _scene = scene;
@@ -85,17 +85,17 @@ public class SelectSceneCanvas : UI_Scene
         Managers.SceneEx.LoadScene(Define.Scene.Game);
     }
 
-    // 4. UpdateUIState´Â ±âÁ¸ ·ÎÁ÷ ±×´ë·Î À¯Áö
+    // 4. UpdateUIStateëŠ” ê¸°ì¡´ ë¡œì§ ê·¸ëŒ€ë¡œ ìœ ì§€
     public void UpdateUIState(int index, SchoolDataSO data)
     {
-        // 1. ¾ÆÀÌÄÜ º¯°æ
+        // 1. ì•„ì´ì½˜ ë³€ê²½
         if (data != null)
         {
             _schoolIcon.sprite = data.schoolIcon;
             _schoolName.sprite = data.schoolNameFont;
         }
 
-        // 2. ¹öÆ° È°¼º/ºñÈ°¼º Ã³¸®
+        // 2. ë²„íŠ¼ í™œì„±/ë¹„í™œì„± ì²˜ë¦¬
         for (int i = 0; i < _schoolUIElements.Length; i++)
         {
             _schoolUIElements[i].imageButton.interactable = (i != index);

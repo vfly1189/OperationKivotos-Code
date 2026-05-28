@@ -10,7 +10,7 @@ public class UI_UnitName : UI_Base
 
     public override void Init()
     {
-        // 1. ÄÄÆ÷³ÍÆ® Ä³½Ì
+        // 1. ì»´í¬ë„ŒíŠ¸ ìºì‹±
         _rectTransform = GetComponent<RectTransform>();
         _mainCamera = Camera.main;
     }
@@ -30,21 +30,21 @@ public class UI_UnitName : UI_Base
             return;
         }
 
-        // Ä«¸Ş¶ó°¡ ¾øÀ¸¸é Ã£±â ½Ãµµ
+        // ì¹´ë©”ë¼ê°€ ì—†ìœ¼ë©´ ì°¾ê¸° ì‹œë„
         if (_mainCamera == null) _mainCamera = Camera.main;
         if (_mainCamera == null) return;
 
         Vector3 screenPos = _mainCamera.WorldToScreenPoint(_target.position);
 
-        // [º¸°­] Z°ª Ã¼Å© (Ä«¸Ş¶ó µÚÂÊ)
+        // [ë³´ê°•] Zê°’ ì²´í¬ (ì¹´ë©”ë¼ ë’¤ìª½)
         if (screenPos.z <= 0)
         {
-            // ±×³É Äµ¹ö½º ¹ÛÀ¸·Î ³¯·Á¹ö¸²
+            // ê·¸ëƒ¥ ìº”ë²„ìŠ¤ ë°–ìœ¼ë¡œ ë‚ ë ¤ë²„ë¦¼
             screenPos = new Vector3(-1000, -1000, 0);
         }
         else
         {
-            // [º¸°­] Z°ªÀ» 0À¸·Î ¸ÂÃç¾ß UI Äµ¹ö½º Æò¸é¿¡ µü ºÙÀ½ (Overlay°¡ ¾Æ´Ñ °æ¿ì Áß¿ä)
+            // [ë³´ê°•] Zê°’ì„ 0ìœ¼ë¡œ ë§ì¶°ì•¼ UI ìº”ë²„ìŠ¤ í‰ë©´ì— ë”± ë¶™ìŒ (Overlayê°€ ì•„ë‹Œ ê²½ìš° ì¤‘ìš”)
             screenPos.z = 0;
         }
 

@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
-// [Ãß°¡]
+// [ì¶”ê°€]
 using Cysharp.Threading.Tasks;
 public class LoadingScene : BaseScene
 {
@@ -24,30 +24,30 @@ public class LoadingScene : BaseScene
 
     private async UniTaskVoid LoadProcessAsync()
     {
-        // 1. ¾À ÀüÈ¯ Á÷ÈÄÀÇ ¿£Áø ºÒ¾ÈÁ¤ »óÅÂ¸¦ ¹æÁöÇÏ±â À§ÇØ 0.1ÃÊ ´ë±â
+        // 1. ì”¬ ì „í™˜ ì§í›„ì˜ ì—”ì§„ ë¶ˆì•ˆì • ìƒíƒœë¥¼ ë°©ì§€í•˜ê¸° ìœ„í•´ 0.1ì´ˆ ëŒ€ê¸°
         await UniTask.Delay(100);
 
         Managers.Resource.Clear();
         Managers.Pool.Clear();
         Managers.UI.Clear();
 
-        // 2. ¾È ¾²´Â ¿¡¼Â ¸Ş¸ğ¸®¿¡¼­ ÇØÁ¦ (UniTask·Î ´ë±â)
+        // 2. ì•ˆ ì“°ëŠ” ì—ì…‹ ë©”ëª¨ë¦¬ì—ì„œ í•´ì œ (UniTaskë¡œ ëŒ€ê¸°)
         AsyncOperation unloadOp = Resources.UnloadUnusedAssets();
         await unloadOp.ToUniTask();
 
         System.GC.Collect();
 
-        // 3. ´ÙÀ½ ¾À µ¥ÀÌÅÍ È®ÀÎ
+        // 3. ë‹¤ìŒ ì”¬ ë°ì´í„° í™•ì¸
         var sceneData = Managers.SceneEx.NextSceneData;
         if (sceneData == null)
         {
-            Debug.LogError("NextSceneData°¡ ¼³Á¤µÇÁö ¾Ê¾Ò½À´Ï´Ù!");
+            Debug.LogError("NextSceneDataê°€ ì„¤ì •ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤!");
             return;
         }
 
         string nextSceneName = Managers.SceneEx.NextSceneName;
 
-        // 4. ÇÁ¸®·Îµù ¶óº§ÀÌ ÀÖ´Ù¸é ´Ù¿î·Îµå ¹× ¸Ş¸ğ¸® ·Îµå ÁøÇà
+        // 4. í”„ë¦¬ë¡œë”© ë¼ë²¨ì´ ìˆë‹¤ë©´ ë‹¤ìš´ë¡œë“œ ë° ë©”ëª¨ë¦¬ ë¡œë“œ ì§„í–‰
         if (sceneData.preloadLabels != null && sceneData.preloadLabels.Length > 0)
         {
             await Managers.Resource.LoadDependenciesAsync(
@@ -55,13 +55,13 @@ public class LoadingScene : BaseScene
                 false,
                 (fileName, progress) =>
                 {
-                    // 0% ~ 100% UI ¾÷µ¥ÀÌÆ®
+                    // 0% ~ 100% UI ì—…ë°ì´íŠ¸
                     _loadingUI.UpdateProgress(progress * 1.0f, fileName);
                 }
             );
         }
 
-        // 5. ´ÙÀ½ ¾À ±¸Á¶¸¸ ¸Ş¸ğ¸®¿¡ ·Îµå (È°¼ºÈ­´Â ¾È ÇÔ: activateOnLoad = false)
+        // 5. ë‹¤ìŒ ì”¬ êµ¬ì¡°ë§Œ ë©”ëª¨ë¦¬ì— ë¡œë“œ (í™œì„±í™”ëŠ” ì•ˆ í•¨: activateOnLoad = false)
         var sceneHandle = Addressables.LoadSceneAsync(nextSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single, false);
 
         while (!sceneHandle.IsDone)
@@ -70,11 +70,17 @@ public class LoadingScene : BaseScene
             await UniTask.Yield(PlayerLoopTiming.Update);
         }
 
-        // 6. ·Îµå ¿Ï·á ¿¬Ãâ ¹× ¾À È°¼ºÈ­
-        _loadingUI.UpdateProgress(1f); // °ÔÀÌÁö ²Ë Ã¤¿ì±â
-        await UniTask.Delay(500); // 0.5ÃÊ ´ë±â (³Ê¹« ¼ø½Ä°£¿¡ ³Ñ¾î°¡¸é ¾î»öÇÏ¹Ç·Î)
+        if (sceneHandle.Status != AsyncOperationStatus.Succeeded)
+        {
+            Debug.LogError($"[LoadingScene] ì”¬ ë¡œë“œ ì‹¤íŒ¨: {nextSceneName}");
+            return;
+        }
 
-        // Addressables Àü¿ë ¾À È°¼ºÈ­ È£Ãâ
+        // 6. ë¡œë“œ ì™„ë£Œ ì—°ì¶œ ë° ì”¬ í™œì„±í™”
+        _loadingUI.UpdateProgress(1f); // ê²Œì´ì§€ ê½‰ ì±„ìš°ê¸°
+        await UniTask.Delay(500); // 0.5ì´ˆ ëŒ€ê¸° (ë„ˆë¬´ ìˆœì‹ê°„ì— ë„˜ì–´ê°€ë©´ ì–´ìƒ‰í•˜ë¯€ë¡œ)
+
+        // Addressables ì „ìš© ì”¬ í™œì„±í™” í˜¸ì¶œ
         await sceneHandle.Result.ActivateAsync().ToUniTask();
     }
     public override void Clear()

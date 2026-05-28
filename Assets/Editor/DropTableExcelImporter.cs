@@ -6,7 +6,7 @@ using NPOI.XSSF.UserModel;
 using System.Collections.Generic;
 using System;
 using System.Linq;
-using System.Data; // Dictionary.Values.ToList() µî¿¡ »ç¿ë
+using System.Data; // Dictionary.Values.ToList() ë“±ì— ì‚¬ìš©
 
 public class DropTableExcelImporter : EditorWindow
 {
@@ -16,7 +16,7 @@ public class DropTableExcelImporter : EditorWindow
         string excelPath = Application.dataPath + "/ExcelData/DropTable.xlsx";
         if (!File.Exists(excelPath))
         {
-            Debug.LogError("¿¢¼¿ ÆÄÀÏÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù: " + excelPath);
+            Debug.LogError("ì—‘ì…€ íŒŒì¼ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤: " + excelPath);
             return;
         }
 
@@ -28,7 +28,7 @@ public class DropTableExcelImporter : EditorWindow
             //List<DungeonTable> dungeonTables = new List<DungeonTable>();
 
 
-            // 1. DropTable ½ÃÆ® ÆÄ½Ì 
+            // 1. DropTable ì‹œíŠ¸ íŒŒì‹± 
             ISheet dropTableSheet = book.GetSheet("DropTable");
             if (dropTableSheet != null)
             {
@@ -39,7 +39,7 @@ public class DropTableExcelImporter : EditorWindow
                         continue;
 
                     DropTable data = new DropTable();
-                    // --- BaseItemData »ó¼Ó ¼Ó¼º ---
+                    // --- BaseItemData ìƒì† ì†ì„± ---
                     data.DropTableID = GetNumericValue(row.GetCell(0));
                     data.DropTableName = GetCellString(row.GetCell(1));
                     data.Rolls = GetNumericValue(row.GetCell(2));
@@ -48,7 +48,7 @@ public class DropTableExcelImporter : EditorWindow
                 }
             }
 
-            // 2. DropEntry ½ÃÆ® ÆÄ½Ì 
+            // 2. DropEntry ì‹œíŠ¸ íŒŒì‹± 
             ISheet dropEntrySheet = book.GetSheet("DropEntry");
             if (dropEntrySheet != null)
             {
@@ -59,7 +59,7 @@ public class DropTableExcelImporter : EditorWindow
                         continue;
 
                     DropTableEntry data = new DropTableEntry();
-                    // --- BaseItemData »ó¼Ó ¼Ó¼º ---
+                    // --- BaseItemData ìƒì† ì†ì„± ---
 
                     data.DropTableID = GetNumericValue(row.GetCell(0));
                     data.RewardType = ParseRewardType(GetCellString(row.GetCell(1)));
@@ -77,7 +77,7 @@ public class DropTableExcelImporter : EditorWindow
                 }
             }
 
-            //// 3. DungeonTable ½ÃÆ® ÆÄ½Ì 
+            //// 3. DungeonTable ì‹œíŠ¸ íŒŒì‹± 
             //ISheet dungeonTableSheet = book.GetSheet("DungeonTable");
             //if (dungeonTableSheet != null)
             //{
@@ -88,7 +88,7 @@ public class DropTableExcelImporter : EditorWindow
             //            continue;
 
             //        DungeonTable data = new DungeonTable();
-            //        // --- BaseItemData »ó¼Ó ¼Ó¼º ---
+            //        // --- BaseItemData ìƒì† ì†ì„± ---
 
             //        data.DungeonID = GetNumericValue(row.GetCell(0));
             //        data.DungeonName = GetCellString(row.GetCell(1));
@@ -104,18 +104,18 @@ public class DropTableExcelImporter : EditorWindow
 
             SaveToScriptableObject(
                 dropTables
-                ); // ÆÄ¶ó¹ÌÅÍ Ãß°¡
+                ); // íŒŒë¼ë¯¸í„° ì¶”ê°€
         }
     }
-    // --- ÇïÆÛ ÇÔ¼öµé ---
+    // --- í—¬í¼ í•¨ìˆ˜ë“¤ ---
 
-    // ¼ö½Ä(Formula)ÀÌ Àû¿ëµÈ ¼¿ °ªÀ» ¾ÈÀüÇÏ°Ô °¡Á®¿À´Â ÇÔ¼ö
+    // ìˆ˜ì‹(Formula)ì´ ì ìš©ëœ ì…€ ê°’ì„ ì•ˆì „í•˜ê²Œ ê°€ì ¸ì˜¤ëŠ” í•¨ìˆ˜
     private static int GetNumericValue(ICell cell)
     {
         if (cell == null) return 0;
         if (cell.CellType == CellType.Formula)
         {
-            // NPOI¿¡¼­ ¼ö½Ä °á°ú°ªÀ» ÀĞÀ¸·Á¸é NumericCellValue¸¦ ¹Ù·Î ÀĞÀ¸¸é µË´Ï´Ù (¿¢¼¿¿¡¼­ ÀúÀå½Ã °ªÀÌ Ä³½ÃµÇ¾î ÀÖ¾î¾ß ÇÔ)
+            // NPOIì—ì„œ ìˆ˜ì‹ ê²°ê³¼ê°’ì„ ì½ìœ¼ë ¤ë©´ NumericCellValueë¥¼ ë°”ë¡œ ì½ìœ¼ë©´ ë©ë‹ˆë‹¤ (ì—‘ì…€ì—ì„œ ì €ì¥ì‹œ ê°’ì´ ìºì‹œë˜ì–´ ìˆì–´ì•¼ í•¨)
             try { return (int)cell.NumericCellValue; }
             catch { return 0; }
         }
@@ -146,7 +146,7 @@ public class DropTableExcelImporter : EditorWindow
         return DropTableDefine.RewardType.None;
     }
 
-    // statPools ÆÄ¶ó¹ÌÅÍ Ãß°¡
+    // statPools íŒŒë¼ë¯¸í„° ì¶”ê°€
     private static void SaveToScriptableObject(
         List<DropTable> dropTables)
     {

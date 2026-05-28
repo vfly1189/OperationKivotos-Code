@@ -9,14 +9,14 @@ public class BossHPBar : UI_Scene
 
     private BossMonsterController _bossMonsterController;
 
-    // UI_BaseÀÇ Start -> Init Èå¸§Àº UI ÀÚÃ¼ÀÇ ±âº» ¼¼ÆÃ¸¸ ÇÏµµ·Ï µÓ´Ï´Ù.
+    // UI_Baseì˜ Start -> Init íë¦„ì€ UI ìì²´ì˜ ê¸°ë³¸ ì„¸íŒ…ë§Œ í•˜ë„ë¡ ë‘¡ë‹ˆë‹¤.
     public override void Init()
     {
         base.Init();
-        // ½½¶óÀÌ´õ ÃÊ±âÈ­, ÀÌº¥Æ® ¹ÙÀÎµù °°Àº º¸½º¿Í ¹«°üÇÑ UI ¼ÂÆÃ¸¸ ¿©±â¼­ ÁøÇà
+        // ìŠ¬ë¼ì´ë” ì´ˆê¸°í™”, ì´ë²¤íŠ¸ ë°”ì¸ë”© ê°™ì€ ë³´ìŠ¤ì™€ ë¬´ê´€í•œ UI ì…‹íŒ…ë§Œ ì—¬ê¸°ì„œ ì§„í–‰
     }
 
-    //  µ¥ÀÌÅÍ ÁÖÀÔ°ú ÀÌº¥Æ®¸¦ ¿©±â¼­ ÇÑ ¹ø¿¡ Ã³¸®ÇÕ´Ï´Ù.
+    //  ë°ì´í„° ì£¼ì…ê³¼ ì´ë²¤íŠ¸ë¥¼ ì—¬ê¸°ì„œ í•œ ë²ˆì— ì²˜ë¦¬í•©ë‹ˆë‹¤.
     public void SetBoss(GameObject boss)
     {
         if (boss == null) return;
@@ -25,11 +25,11 @@ public class BossHPBar : UI_Scene
 
         if (_bossMonsterController != null)
         {
-            // ±¸µ¶ Áßº¹ ¹æÁö¸¦ À§ÇØ »°´Ù°¡ ³Ö±â
+            // êµ¬ë… ì¤‘ë³µ ë°©ì§€ë¥¼ ìœ„í•´ ëºë‹¤ê°€ ë„£ê¸°
             _bossMonsterController.Stat.OnHpChanged -= UpdateHPBar;
             _bossMonsterController.Stat.OnHpChanged += UpdateHPBar;
 
-            // Ã³À½ º¸¿©ÁÙ Ã¼·Â °»½Å
+            // ì²˜ìŒ ë³´ì—¬ì¤„ ì²´ë ¥ ê°±ì‹ 
             UpdateHPBar(_bossMonsterController.Stat.CurrentHp, _bossMonsterController.Stat.MaxHp.Value);
         }
     }

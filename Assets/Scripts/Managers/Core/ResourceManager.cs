@@ -2,11 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 using Object = UnityEngine.Object;
 
 using Cysharp.Threading.Tasks;
@@ -14,35 +12,35 @@ using UnityEngine.U2D;
 
 public class ResourceManager
 {
-    // Addressables ÇÚµé °ü¸®¿ë µñ¼Å³Ê¸® 2°³ ºĞ¸®
-    // 1. ±Û·Î¹ú: °ÔÀÓ Á¾·á ½Ã±îÁö Àı´ë ÇØÁ¦µÇÁö ¾ÊÀ½ (ÇÃ·¹ÀÌ¾î Ä³¸¯ÅÍ, UI, °øÅë VFX µî)
+    // Addressables í•¸ë“¤ ê´€ë¦¬ìš© ë”•ì…”ë„ˆë¦¬ 2ê°œ ë¶„ë¦¬
+    // 1. ê¸€ë¡œë²Œ: ê²Œì„ ì¢…ë£Œ ì‹œê¹Œì§€ ì ˆëŒ€ í•´ì œë˜ì§€ ì•ŠìŒ (í”Œë ˆì´ì–´ ìºë¦­í„°, UI, ê³µí†µ VFX ë“±)
     private Dictionary<string, AsyncOperationHandle> _globalHandles = new Dictionary<string, AsyncOperationHandle>();
 
-    // 2. ¾À: ¾À ÀÌµ¿(Clear) ½Ã¸¶´Ù ¸ğµÎ ÇØÁ¦µÇ¾î ¸Ş¸ğ¸® È®º¸ (¸Ê, ¸ó½ºÅÍ, È¯°æÀ½ µî)
+    // 2. ì”¬: ì”¬ ì´ë™(Clear) ì‹œë§ˆë‹¤ ëª¨ë‘ í•´ì œë˜ì–´ ë©”ëª¨ë¦¬ í™•ë³´ (ë§µ, ëª¬ìŠ¤í„°, í™˜ê²½ìŒ ë“±)
     private Dictionary<string, AsyncOperationHandle> _sceneHandles = new Dictionary<string, AsyncOperationHandle>();
 
-    //¾ÆÆ²¶ó½º ÆÄÆí(Sprite) º¸È£¿ë °­·ÂÇÑ ±Û·Î¹ú Ä³½Ã
+    //ì•„í‹€ë¼ìŠ¤ íŒŒí¸(Sprite) ë³´í˜¸ìš© ê°•ë ¥í•œ ê¸€ë¡œë²Œ ìºì‹œ
     private Dictionary<string, Sprite> _atlasSpriteCache = new Dictionary<string, Sprite>();
 
 
 
     public void Init()
     {
-        //globalÀº °è¼Ó »ì·ÁµÑ°ÅÀÓ
+        //globalì€ ê³„ì† ì‚´ë ¤ë‘˜ê±°ì„
         _sceneHandles.Clear();
 
         
     }
 
     // =========================================================================
-    // 1. AssetReference¸¦ ÀÎÀÚ·Î ¹Ş´Â LoadAsync (¾À¿¡¼­ ÁÖ·Î »ç¿ë)
+    // 1. AssetReferenceë¥¼ ì¸ìë¡œ ë°›ëŠ” LoadAsync (ì”¬ì—ì„œ ì£¼ë¡œ ì‚¬ìš©)
     // =========================================================================
     public async UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false) where T : UnityEngine.Object
     {
         if (assetRef == null || !assetRef.RuntimeKeyIsValid())
             return null;
 
-        // AssetReferenceÀÇ ·±Å¸ÀÓ Å°¸¦ stringÀ¸·Î º¯È¯ÇØ¼­ ³»ºÎ Ã³¸® ÇÔ¼ö·Î ³Ñ±è
+        // AssetReferenceì˜ ëŸ°íƒ€ì„ í‚¤ë¥¼ stringìœ¼ë¡œ ë³€í™˜í•´ì„œ ë‚´ë¶€ ì²˜ë¦¬ í•¨ìˆ˜ë¡œ ë„˜ê¹€
         return await LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal);
     }
   
@@ -59,19 +57,19 @@ public class ResourceManager
         return LoadAsyncInternal<T>(key, isGlobal);
     }
 
-    // ½ÇÁ¦ ºñµ¿±â ·ÎÁ÷ ºĞ¸®
+    // ì‹¤ì œ ë¹„ë™ê¸° ë¡œì§ ë¶„ë¦¬
     private async UniTask<T> LoadAsyncInternal<T>(string key, bool isGlobal) where T : UnityEngine.Object
     {
 
         bool wasGlobal = false;
         AsyncOperationHandle handleToRelease = default;
 
-        // 1. Å¸ÀÔ ºÒÀÏÄ¡ ÇÚµé Á¦°Å ¹× ¿ø·¡ ±Û·Î¹ú ¼Ò¼ÓÀÌ¾ú´ÂÁö ±â¾ïÇÏ±â
+        // 1. íƒ€ì… ë¶ˆì¼ì¹˜ í•¸ë“¤ ì œê±° ë° ì›ë˜ ê¸€ë¡œë²Œ ì†Œì†ì´ì—ˆëŠ”ì§€ ê¸°ì–µí•˜ê¸°
         if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && !(gh.Result is T))
         {
-            wasGlobal = true; // ¾Æ! ¾ê´Â Ã³À½¿¡ Global·Î ÇÁ¸®·Îµå Çß´ø ¾Ö±¸³ª!
+            wasGlobal = true; // ì•„! ì–˜ëŠ” ì²˜ìŒì— Globalë¡œ í”„ë¦¬ë¡œë“œ í–ˆë˜ ì• êµ¬ë‚˜!
             _globalHandles.Remove(key);
-            handleToRelease = gh; // Áï½Ã ÇØÁ¦ÇÏ¸é ¸Ş¸ğ¸®°¡ ³¯¾Æ°¥ ¼ö ÀÖÀ¸´Ï ÀÓ½Ã º¸°ü
+            handleToRelease = gh; // ì¦‰ì‹œ í•´ì œí•˜ë©´ ë©”ëª¨ë¦¬ê°€ ë‚ ì•„ê°ˆ ìˆ˜ ìˆìœ¼ë‹ˆ ì„ì‹œ ë³´ê´€
         }
         if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && !(sh.Result is T))
         {
@@ -79,7 +77,7 @@ public class ResourceManager
             handleToRelease = sh;
         }
 
-        // ·Îµù ÁßÀÎ ÇÚµé ÀÖÀ¸¸é ±â´Ù¸®±â
+        // ë¡œë”© ì¤‘ì¸ í•¸ë“¤ ìˆìœ¼ë©´ ê¸°ë‹¤ë¦¬ê¸°
         if (_globalHandles.TryGetValue(key, out var pendingGlobal) && !pendingGlobal.IsDone)
         {
             await pendingGlobal.ToUniTask();
@@ -91,7 +89,7 @@ public class ResourceManager
             return pendingScene.Result as T;
         }
 
-        // 2. »õ·Î¿î Å¸ÀÔ(¿¹: Sprite)À¸·Î ´Ù½Ã ·Îµå
+        // 2. ìƒˆë¡œìš´ íƒ€ì…(ì˜ˆ: Sprite)ìœ¼ë¡œ ë‹¤ì‹œ ë¡œë“œ
         var handle = Addressables.LoadAssetAsync<T>(key);
 
 
@@ -100,7 +98,7 @@ public class ResourceManager
 
         await handle.ToUniTask();
 
-        // »õ ÇÚµé ·Îµå°¡ ¿ÏÀüÈ÷ ³¡³­ ÈÄ ¿¹Àü ÇÚµé ÇØÁ¦ 
+        // ìƒˆ í•¸ë“¤ ë¡œë“œê°€ ì™„ì „íˆ ëë‚œ í›„ ì˜ˆì „ í•¸ë“¤ í•´ì œ 
         if (handleToRelease.IsValid())
         {
             Addressables.Release(handleToRelease);
@@ -116,16 +114,16 @@ public class ResourceManager
 
 
     // =========================================================================
-    // 3. NoCache ·Îµå (¹®ÀÚ¿­ string Key ±â¹İ) -> DataManager¿¡¼­ JSON ºÎ¸¦ ¶§ »ç¿ë
+    // 3. NoCache ë¡œë“œ (ë¬¸ìì—´ string Key ê¸°ë°˜) -> DataManagerì—ì„œ JSON ë¶€ë¥¼ ë•Œ ì‚¬ìš©
     // =========================================================================
     public async UniTask<T> LoadAsyncNoCache<T>(string key) where T : UnityEngine.Object
     {
         if (string.IsNullOrEmpty(key)) return null;
 
-        // string key¸¦ »ç¿ëÇØ ·Îµå
+        // string keyë¥¼ ì‚¬ìš©í•´ ë¡œë“œ
         var handle = Addressables.LoadAssetAsync<T>(key);
 
-        // ToUniTask·Î ´ë±âÇÒ ¶§ ¿¡·¯°¡ ³ª¸é ÀâÀ» ¼ö ÀÖµµ·Ï ¾ÈÀüÇÏ°Ô Ã³¸®
+        // ToUniTaskë¡œ ëŒ€ê¸°í•  ë•Œ ì—ëŸ¬ê°€ ë‚˜ë©´ ì¡ì„ ìˆ˜ ìˆë„ë¡ ì•ˆì „í•˜ê²Œ ì²˜ë¦¬
         T result = null;
         try
         {
@@ -144,54 +142,54 @@ public class ResourceManager
         else
         {
             Debug.LogError($"[ResourceManager] Addressable NoCache Load Failed: {key}");
-            // ½ÇÆĞÇßÀ» ¶§µµ ÇÚµéÀÌ À¯È¿ÇÏ¸é ¸Ş¸ğ¸® ÇØÁ¦
+            // ì‹¤íŒ¨í–ˆì„ ë•Œë„ í•¸ë“¤ì´ ìœ íš¨í•˜ë©´ ë©”ëª¨ë¦¬ í•´ì œ
             if (handle.IsValid()) Addressables.Release(handle);
             return null;
         }
     }
 
     // =========================================================================
-    //  SpriteAtlas Æ¯È­ ·Îµå ¹× ÃßÃâ ÇÔ¼ö
+    //  SpriteAtlas íŠ¹í™” ë¡œë“œ ë° ì¶”ì¶œ í•¨ìˆ˜
     // =========================================================================
     public async UniTask<Sprite> GetSpriteFromAtlasAsync(string atlasKey, string spriteName)
     {
         if (string.IsNullOrEmpty(spriteName)) return null;
 
-        // 1. ¹æ¾î Ä³½Ã¿¡ ¾ÈÀüÇÏ°Ô º¸°ü ÁßÀÌ¶ó¸é ¹İÈ¯
+        // 1. ë°©ì–´ ìºì‹œì— ì•ˆì „í•˜ê²Œ ë³´ê´€ ì¤‘ì´ë¼ë©´ ë°˜í™˜
         if (_atlasSpriteCache.TryGetValue(spriteName, out Sprite cachedSprite))
         {
             if (cachedSprite != null) return cachedSprite;
         }
 
-        // 2. Ä³½Ã¿¡ ¾øÀ¸¸é ¾ÆÆ²¶ó½º ÀÚÃ¼¸¦ ¾îµå·¹¼­ºí·Î ·Îµå
+        // 2. ìºì‹œì— ì—†ìœ¼ë©´ ì•„í‹€ë¼ìŠ¤ ìì²´ë¥¼ ì–´ë“œë ˆì„œë¸”ë¡œ ë¡œë“œ
         SpriteAtlas atlas = await LoadAsync<SpriteAtlas>(atlasKey, isGlobal: true);
 
         if (atlas != null)
         {
-            // 3. ¾ÆÆ²¶ó½º¸¦ ¿©´Â ¼ø°£, ³»ºÎÀÇ ¸ğµç Sprite Á¶°¢À» Ä³½Ã¿¡ µî·Ï
+            // 3. ì•„í‹€ë¼ìŠ¤ë¥¼ ì—¬ëŠ” ìˆœê°„, ë‚´ë¶€ì˜ ëª¨ë“  Sprite ì¡°ê°ì„ ìºì‹œì— ë“±ë¡
             Sprite[] allSprites = new Sprite[atlas.spriteCount];
             atlas.GetSprites(allSprites);
 
             foreach (var s in allSprites)
             {
-                // (Clone) ±ÛÀÚ ¶¼±â
+                // (Clone) ê¸€ì ë–¼ê¸°
                 string cleanName = s.name.Replace("(Clone)", "");
 
-                // Ä³½Ã¿¡ µî·Ï
+                // ìºì‹œì— ë“±ë¡
                 if (!_atlasSpriteCache.ContainsKey(cleanName))
                 {
                     _atlasSpriteCache.Add(cleanName, s);
                 }
             }
 
-            // 4. ÀÌÁ¦ ¾ÈÀüÇÏ°Ô Ä³½Ã¿¡¼­ ²¨³»¼­ ¹İÈ¯
+            // 4. ì´ì œ ì•ˆì „í•˜ê²Œ ìºì‹œì—ì„œ êº¼ë‚´ì„œ ë°˜í™˜
             if (_atlasSpriteCache.TryGetValue(spriteName, out Sprite targetSprite))
             {
                 return targetSprite;
             }
             else
             {
-                Debug.LogWarning($"[ResourceManager] '{atlasKey}' ¾ÆÆ²¶ó½º¿¡ '{spriteName}' ÀÌ¹ÌÁö°¡ ¾ø½À´Ï´Ù.");
+                Debug.LogWarning($"[ResourceManager] '{atlasKey}' ì•„í‹€ë¼ìŠ¤ì— '{spriteName}' ì´ë¯¸ì§€ê°€ ì—†ìŠµë‹ˆë‹¤.");
             }
         }
         return null;
@@ -199,7 +197,7 @@ public class ResourceManager
 
 
     // =========================================================================
-    // ÇÁ¸®·Îµù Àü¿ë ÇÔ¼ö
+    // í”„ë¦¬ë¡œë”© ì „ìš© í•¨ìˆ˜
     // =========================================================================
     public async UniTask LoadDependenciesAsync(IEnumerable<string> labels, bool isGlobal = false, System.Action<string, float> onProgress = null)
     {    
@@ -216,16 +214,16 @@ public class ResourceManager
             var location = locations[i];
             string key = location.PrimaryKey;
 
-            Debug.Log($"·Îµù Å° : {key}");
+            Debug.Log($"ë¡œë”© í‚¤ : {key}");
 
-            // ÀÌ¹Ì µñ¼Å³Ê¸®¿¡ ÀÖÀ¸¸é ½ºÅµ (Áßº¹ ·Îµå ¹æÁö)
+            // ì´ë¯¸ ë”•ì…”ë„ˆë¦¬ì— ìˆìœ¼ë©´ ìŠ¤í‚µ (ì¤‘ë³µ ë¡œë“œ ë°©ì§€)
             if (_globalHandles.ContainsKey(key) || _sceneHandles.ContainsKey(key))
             {
                 onProgress?.Invoke(key, (i + 1f) / totalCount);
                 continue;
             }
 
-            //  Object Å¸ÀÔÀ¸·Î ·ÎµåÇÏµÇ µñ¼Å³Ê¸®¿¡ ÀúÀå
+            //  Object íƒ€ì…ìœ¼ë¡œ ë¡œë“œí•˜ë˜ ë”•ì…”ë„ˆë¦¬ì— ì €ì¥
             var handle = Addressables.LoadAssetAsync<Object>(location);
 
             if (isGlobal) _globalHandles[key] = handle;
@@ -245,51 +243,51 @@ public class ResourceManager
 
     public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent = null)
     {
-        // 1. ¿øº» ÇÁ¸®ÆÕÀÇ È°¼ºÈ­ »óÅÂ¸¦ Àá½Ã ²ô°í º¹»ç
-        // (ÀÌ·¸°Ô ÇÏ¸é »ı¼ºµÉ ¶§ Awake´Â µ¹Áö¸¸ OnEnable°ú ¹°¸® Ã³¸®´Â µ¹Áö ¾ÊÀ½)
+        // 1. ì›ë³¸ í”„ë¦¬íŒ¹ì˜ í™œì„±í™” ìƒíƒœë¥¼ ì ì‹œ ë„ê³  ë³µì‚¬
+        // (ì´ë ‡ê²Œ í•˜ë©´ ìƒì„±ë  ë•Œ AwakeëŠ” ëŒì§€ë§Œ OnEnableê³¼ ë¬¼ë¦¬ ì²˜ë¦¬ëŠ” ëŒì§€ ì•ŠìŒ)
         bool wasActive = original.activeSelf;
         if (wasActive) original.SetActive(false);
-        // 1. »ı¼º (Ç®¸µ È¤Àº ÀÎ½ºÅÏ½ºÈ­)
-        GameObject go = Instantiate(original, parent); // ±âÁ¸ Instantiate(GameObject) È°¿ë
+        // 1. ìƒì„± (í’€ë§ í˜¹ì€ ì¸ìŠ¤í„´ìŠ¤í™”)
+        GameObject go = Instantiate(original, parent); // ê¸°ì¡´ Instantiate(GameObject) í™œìš©
 
 
-        // ¿ø»ó º¹±¸
+        // ì›ìƒ ë³µêµ¬
         if (wasActive) original.SetActive(true);
 
 
-        // go°¡ Á¦´ë·Î »ı¼ºµÇ¾úÀ» ¶§¸¸ Ã³¸® (¾ÈÀü¸Á)
+        // goê°€ ì œëŒ€ë¡œ ìƒì„±ë˜ì—ˆì„ ë•Œë§Œ ì²˜ë¦¬ (ì•ˆì „ë§)
         if (go != null)
         {
-            // 2. À§Ä¡/È¸Àü ¼³Á¤
+            // 2. ìœ„ì¹˜/íšŒì „ ì„¤ì •
             var agent = go.GetComponent<UnityEngine.AI.NavMeshAgent>();
 
             if (agent != null)
             {
-                // [Agent°¡ ÀÖ´Â °æ¿ì] 
-                // À§Ä¡´Â ¹«Á¶°Ç Warp·Î ÀÌµ¿½ÃÄÑ¾ß ¾ÃÈ÷Áö ¾ÊÀ½
+                // [Agentê°€ ìˆëŠ” ê²½ìš°] 
+                // ìœ„ì¹˜ëŠ” ë¬´ì¡°ê±´ Warpë¡œ ì´ë™ì‹œì¼œì•¼ ì”¹íˆì§€ ì•ŠìŒ
                 agent.Warp(position);
-                // ´Ü, Warp´Â È¸ÀüÀ» Ã³¸®ÇØÁÖÁö ¾ÊÀ¸¹Ç·Î È¸ÀüÀº µû·Î Àû¿ë
+                // ë‹¨, WarpëŠ” íšŒì „ì„ ì²˜ë¦¬í•´ì£¼ì§€ ì•Šìœ¼ë¯€ë¡œ íšŒì „ì€ ë”°ë¡œ ì ìš©
                 go.transform.rotation = rotation;
             }
             else
             {
-                // [Agent°¡ ¾ø´Â °æ¿ì (ÇÃ·¹ÀÌ¾î µî)] 
-                // ÀÏ¹İÀûÀÎ Transform ¹æ½ÄÀ¸·Î À§Ä¡¿Í È¸Àü ¸ğµÎ Àû¿ë
+                // [Agentê°€ ì—†ëŠ” ê²½ìš° (í”Œë ˆì´ì–´ ë“±)] 
+                // ì¼ë°˜ì ì¸ Transform ë°©ì‹ìœ¼ë¡œ ìœ„ì¹˜ì™€ íšŒì „ ëª¨ë‘ ì ìš©
                 go.transform.position = position;
                 go.transform.rotation = rotation;
             }
 
-            // 3. ¸ğµç ¼¼ÆÃÀÌ ¿Ïº®È÷ ³¡³­ ÈÄ ¿ÀºêÁ§Æ® È°¼ºÈ­
+            // 3. ëª¨ë“  ì„¸íŒ…ì´ ì™„ë²½íˆ ëë‚œ í›„ ì˜¤ë¸Œì íŠ¸ í™œì„±í™”
             go.SetActive(true);
         }
 
         return go;
     }
 
-    //  Addressable Key ¹®ÀÚ¿­À» ¹Ş¾Æ À§Ä¡/È¸Àü±îÁö ¸ÂÃçÁÖ´Â Instantiate ÇÔ¼ö
+    //  Addressable Key ë¬¸ìì—´ì„ ë°›ì•„ ìœ„ì¹˜/íšŒì „ê¹Œì§€ ë§ì¶°ì£¼ëŠ” Instantiate í•¨ìˆ˜
     public GameObject Instantiate(string key, Vector3 position, Quaternion rotation, Transform parent = null)
     {
-        // Ä³½Ã¿¡¼­ Ã£±â (±Û·Î¹ú ¿ì¼±, ±× ´ÙÀ½ ¾À)
+        // ìºì‹œì—ì„œ ì°¾ê¸° (ê¸€ë¡œë²Œ ìš°ì„ , ê·¸ ë‹¤ìŒ ì”¬)
         AsyncOperationHandle handle;
         bool found = _globalHandles.TryGetValue(key, out handle) || _sceneHandles.TryGetValue(key, out handle);
 
@@ -298,42 +296,42 @@ public class ResourceManager
             GameObject original = handle.Result as GameObject;
             if (original != null)
             {
-                // Ã£¾ÒÀ¸¸é ±âÁ¸ ¾ÈÀüÇÑ Instantiate(GameObject) È°¿ë
+                // ì°¾ì•˜ìœ¼ë©´ ê¸°ì¡´ ì•ˆì „í•œ Instantiate(GameObject) í™œìš©
                 return Instantiate(original, position, rotation, parent);
             }
         }
 
-        Debug.LogError($"[ResourceManager] ¿¡¼ÂÀÌ ·ÎµåµÇÁö ¾Ê¾Ò°Å³ª Ã£À» ¼ö ¾ø½À´Ï´Ù. Key: {key}\n" +
-                       $"¹Ì¸® LoadAsync·Î ·ÎµùÇØµÎ¾ú´ÂÁö È®ÀÎÇÏ¼¼¿ä.");
+        Debug.LogError($"[ResourceManager] ì—ì…‹ì´ ë¡œë“œë˜ì§€ ì•Šì•˜ê±°ë‚˜ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤. Key: {key}\n" +
+                       $"ë¯¸ë¦¬ LoadAsyncë¡œ ë¡œë”©í•´ë‘ì—ˆëŠ”ì§€ í™•ì¸í•˜ì„¸ìš”.");
         return null;
     }
 
 
     public GameObject Instantiate(GameObject original, Transform parent = null)
     {
-        // 1. PoolableÀÌ ºÙ¾îÀÖÀ¸¸é Ç® ¸Å´ÏÀú¿¡°Ô À§ÀÓ
+        // 1. Poolableì´ ë¶™ì–´ìˆìœ¼ë©´ í’€ ë§¤ë‹ˆì €ì—ê²Œ ìœ„ì„
         if (original.GetComponent<Poolable>() != null)
         {
             return Managers.Pool.Pop(original, parent).gameObject;
         }
 
-        // 2. ¾Æ´Ï¸é ±×³É »ı¼º
+        // 2. ì•„ë‹ˆë©´ ê·¸ëƒ¥ ìƒì„±
         GameObject go = Object.Instantiate(original, parent);
-        go.name = original.name; // (Clone) ¶¼±â
+        go.name = original.name; // (Clone) ë–¼ê¸°
         return go;
     }
 
 
 
-    // ¸Ş¸ğ¸® Á¤¸® (¾À ÀÌµ¿ ½Ã È£Ãâ)
+    // ë©”ëª¨ë¦¬ ì •ë¦¬ (ì”¬ ì´ë™ ì‹œ í˜¸ì¶œ)
     public void Clear()
     {
-        // _globalHandles´Â °Çµå¸®Áö ¾Ê°í, _sceneHandles¸¸ ReleaseÇÏ¿© ¸Ş¸ğ¸® È®º¸
+        // _globalHandlesëŠ” ê±´ë“œë¦¬ì§€ ì•Šê³ , _sceneHandlesë§Œ Releaseí•˜ì—¬ ë©”ëª¨ë¦¬ í™•ë³´
         foreach (var handle in _sceneHandles.Values)
         {
             if (handle.IsValid())
             {
-                Addressables.Release(handle); // Addressable ·¹ÆÛ·±½º Ä«¿îÆ® °¨¼Ò (¸Ş¸ğ¸® ÇØÁ¦)
+                Addressables.Release(handle); // Addressable ë ˆí¼ëŸ°ìŠ¤ ì¹´ìš´íŠ¸ ê°ì†Œ (ë©”ëª¨ë¦¬ í•´ì œ)
             }
         }
         _sceneHandles.Clear();
@@ -345,7 +343,7 @@ public class ResourceManager
         if (go == null)
             return;
 
-        //¸¸¾à¿¡ Ç®¸µÀÌ ÇÊ¿äÇÑ ¾ÆÀÌ¶ó¸é -> Ç®¸µ ¸Å´ÏÀúÇÑÅ× À§Å¹
+        //ë§Œì•½ì— í’€ë§ì´ í•„ìš”í•œ ì•„ì´ë¼ë©´ -> í’€ë§ ë§¤ë‹ˆì €í•œí…Œ ìœ„íƒ
         Poolable poolable = go.GetComponent<Poolable>();
         if (poolable != null)
         {

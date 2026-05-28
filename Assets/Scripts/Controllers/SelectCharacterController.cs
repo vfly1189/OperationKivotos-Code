@@ -5,17 +5,17 @@ public class SelectCharacterController : MonoBehaviour
 {
     private Animator _animator;
 
-    // »óÅÂ Á¤ÀÇ
+    // ìƒíƒœ ì •ì˜
     private enum State
     {
         None,
-        Select_Start,   // µîÀå ¸ğ¼Ç Áß
-        Select_Idle     // ´ë±â ¸ğ¼Ç Áß
+        Select_Start,   // ë“±ì¥ ëª¨ì…˜ ì¤‘
+        Select_Idle     // ëŒ€ê¸° ëª¨ì…˜ ì¤‘
     }
 
     private State _currentState = State.None;
-    //private float _stateTimer = 0f; // ÇöÀç »óÅÂ°¡ ¾ó¸¶³ª Áö³µ´ÂÁö Ã¼Å©
-    private float _currentAnimLength = 0f; // ÇöÀç Àç»ı ÁßÀÎ ¾Ö´Ï¸ŞÀÌ¼ÇÀÇ ±æÀÌ
+    //private float _stateTimer = 0f; // í˜„ì¬ ìƒíƒœê°€ ì–¼ë§ˆë‚˜ ì§€ë‚¬ëŠ”ì§€ ì²´í¬
+    private float _currentAnimLength = 0f; // í˜„ì¬ ì¬ìƒ ì¤‘ì¸ ì• ë‹ˆë©”ì´ì…˜ì˜ ê¸¸ì´
 
     private static readonly int Hash_SelectStart = Animator.StringToHash("Select_Start");
     private static readonly int Hash_SelectIdle = Animator.StringToHash("Select_Idle");
@@ -27,7 +27,7 @@ public class SelectCharacterController : MonoBehaviour
 
     private void OnEnable()
     {
-        // ÄÑÁú ¶§¸¶´Ù ½ÃÀÛ
+        // ì¼œì§ˆ ë•Œë§ˆë‹¤ ì‹œì‘
         ChangeState(State.Select_Start);
     }
 
@@ -36,12 +36,12 @@ public class SelectCharacterController : MonoBehaviour
         switch (_currentState)
         {
             case State.Select_Start:
-                // 0¹ø ·¹ÀÌ¾îÀÇ ÇöÀç »óÅÂ Á¤º¸ °¡Á®¿À±â
+                // 0ë²ˆ ë ˆì´ì–´ì˜ í˜„ì¬ ìƒíƒœ ì •ë³´ ê°€ì ¸ì˜¤ê¸°
                 AnimatorStateInfo info = _animator.GetCurrentAnimatorStateInfo(0);
 
-                // 1. ÇöÀç Àç»ı ÁßÀÎ ¾Ö´Ï¸ŞÀÌ¼ÇÀÌ 'Select_Start'ÀÎÁö È®ÀÎ (ÇØ½Ã°ª ºñ±³)
-                // 2. ÁøÇà·ü(normalizedTime)ÀÌ 1.0 (100%)À» ³Ñ¾ú´ÂÁö È®ÀÎ
-                // 3. ÇöÀç Transition(ÀüÈ¯) ÁßÀÌ ¾Æ´Ò ¶§¸¸ Ã¼Å© (Áßº¹ ½ÇÇà ¹æÁö)
+                // 1. í˜„ì¬ ì¬ìƒ ì¤‘ì¸ ì• ë‹ˆë©”ì´ì…˜ì´ 'Select_Start'ì¸ì§€ í™•ì¸ (í•´ì‹œê°’ ë¹„êµ)
+                // 2. ì§„í–‰ë¥ (normalizedTime)ì´ 1.0 (100%)ì„ ë„˜ì—ˆëŠ”ì§€ í™•ì¸
+                // 3. í˜„ì¬ Transition(ì „í™˜) ì¤‘ì´ ì•„ë‹ ë•Œë§Œ ì²´í¬ (ì¤‘ë³µ ì‹¤í–‰ ë°©ì§€)
                 if (info.shortNameHash == Hash_SelectStart &&
                     info.normalizedTime >= 0.99f &&
                     !_animator.IsInTransition(0))
@@ -51,7 +51,7 @@ public class SelectCharacterController : MonoBehaviour
                 break;
 
             case State.Select_Idle:
-                // ¹İº¹
+                // ë°˜ë³µ
                 break;
         }
     }
@@ -65,7 +65,7 @@ public class SelectCharacterController : MonoBehaviour
         {
             case State.Select_Start:
                 _animator.CrossFade(Hash_SelectStart, 0.1f);
-                // Áß¿ä: Å¬¸³ ±æÀÌ¸¦ °¡Á®¿Í¼­ ÀúÀå (¸ø °¡Á®¿À¸é ±âº»°ª 2ÃÊ)
+                // ì¤‘ìš”: í´ë¦½ ê¸¸ì´ë¥¼ ê°€ì ¸ì™€ì„œ ì €ì¥ (ëª» ê°€ì ¸ì˜¤ë©´ ê¸°ë³¸ê°’ 2ì´ˆ)
                 _currentAnimLength = GetClipLength("Select_Start");
                 if (_currentAnimLength == 0) _currentAnimLength = 2.0f;
                 break;
@@ -76,21 +76,21 @@ public class SelectCharacterController : MonoBehaviour
         }
     }
 
-    // ¾Ö´Ï¸ŞÀÌ¼Ç Å¬¸³ ÀÌ¸§À¸·Î ±æÀÌ Ã£±â (ÃÊ±âÈ­ ºñ¿ë ÀÖÀ½, Ä³½Ì ±ÇÀå)
+    // ì• ë‹ˆë©”ì´ì…˜ í´ë¦½ ì´ë¦„ìœ¼ë¡œ ê¸¸ì´ ì°¾ê¸° (ì´ˆê¸°í™” ë¹„ìš© ìˆìŒ, ìºì‹± ê¶Œì¥)
     private float GetClipLength(string clipName)
     {
         if (_animator.runtimeAnimatorController == null) return 0f;
 
         foreach (var clip in _animator.runtimeAnimatorController.animationClips)
         {
-            // Å¬¸³ ÀÌ¸§ÀÌ Á¤È®È÷ ÀÏÄ¡ÇÏ°Å³ª, ÀÓÆ÷Æ® ÀÌ¸§ ¹®Á¦·Î ³¡ºÎºĞÀÌ ÀÏÄ¡ÇÏ´Â °æ¿ì
+            // í´ë¦½ ì´ë¦„ì´ ì •í™•íˆ ì¼ì¹˜í•˜ê±°ë‚˜, ì„í¬íŠ¸ ì´ë¦„ ë¬¸ì œë¡œ ëë¶€ë¶„ì´ ì¼ì¹˜í•˜ëŠ” ê²½ìš°
             if (clip.name.EndsWith(clipName))
             {
                 return clip.length;
             }
         }
 
-        Debug.LogWarning($"[SelectCharacterController] '{clipName}' Å¬¸³À» Animator¿¡¼­ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+        Debug.LogWarning($"[SelectCharacterController] '{clipName}' í´ë¦½ì„ Animatorì—ì„œ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
         return 0f;
     }
 }

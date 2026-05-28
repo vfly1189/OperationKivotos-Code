@@ -12,22 +12,22 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     [SerializeField] private Image _itemGradeBackGround;
     [SerializeField] private Image _itemIcon;
     [SerializeField] private TextMeshProUGUI _stackText;
-    [SerializeField] private Button _cancelButton; // °­È­Àç·á Ãë¼Ò ¹öÆ°, ²¨Á®ÀÖÀ¸´Ï »ç¿ëÇÒ°Å¸é ÄÑ¾ßµÊ
+    [SerializeField] private Button _cancelButton; // ê°•í™”ì¬ë£Œ ì·¨ì†Œ ë²„íŠ¼, êº¼ì ¸ìˆìœ¼ë‹ˆ ì‚¬ìš©í• ê±°ë©´ ì¼œì•¼ë¨
 
     private int _slotIndex;
     private IItemSlotHandler _handler;
 
     public ItemCategory CurrentCategory => _currentCategory;
-    private ItemCategory _currentCategory; // Ä«Å×°í¸®µµ ±â¾ïÇØµÎ¸é ÁÁÀ½
+    private ItemCategory _currentCategory; // ì¹´í…Œê³ ë¦¬ë„ ê¸°ì–µí•´ë‘ë©´ ì¢‹ìŒ
     public InventorySlot CurrentSlotData { get; private set; }
 
     public static UI_ItemSlot DraggingSlot = null;
 
-    // ÀÓ½Ã·Î È­¸é¿¡ ¶ç¿ï °¡Â¥(Ghost) ¾ÆÀÌÄÜ
+    // ì„ì‹œë¡œ í™”ë©´ì— ë„ìš¸ ê°€ì§œ(Ghost) ì•„ì´ì½˜
     private static GameObject _dragGhost;
     private static Image _dragGhostImage;
 
-    // _slotIndexÀÇ getter¸¦ ¸¸µé¾î ¿ÜºÎ¿¡¼­ ÀĞÀ» ¼ö ÀÖ°Ô ÇÕ´Ï´Ù.
+    // _slotIndexì˜ getterë¥¼ ë§Œë“¤ì–´ ì™¸ë¶€ì—ì„œ ì½ì„ ìˆ˜ ìˆê²Œ í•©ë‹ˆë‹¤.
     public int SlotIndex => _slotIndex;
 
     private Func<InventorySlot, string> _subTextFormatter;
@@ -35,11 +35,11 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     public override void Init()
     {
         if (_cancelButton != null) _cancelButton.gameObject.SetActive(false);
-        // Å¬¸¯ ÀÌº¥Æ® µîÀ» ¹ÙÀÎµùÇÏ·Á¸é ¿©±â¼­
+        // í´ë¦­ ì´ë²¤íŠ¸ ë“±ì„ ë°”ì¸ë”©í•˜ë ¤ë©´ ì—¬ê¸°ì„œ
         //_cancelButton.onClick.AddListener(onSlotClick);
     }
 
-    // ½Å±Ô ¸Ş¼­µå Ãß°¡
+    // ì‹ ê·œ ë©”ì„œë“œ ì¶”ê°€
     public void SetCancelActive(bool active, Action onCancel = null)
     {
         if (_cancelButton == null) return;
@@ -63,7 +63,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
             return;
         }
 
-        // ¾ÆÀÌÅÛ Á¤º¸°¡ ÀÖÀ» ¶§ ¼ÂÆÃ
+        // ì•„ì´í…œ ì •ë³´ê°€ ìˆì„ ë•Œ ì…‹íŒ…
         _itemIcon.gameObject.SetActive(true);
         _itemGradeBackGround.gameObject.SetActive(true);
 
@@ -78,7 +78,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
             //else
             //    SetStackText(slotData.Amount);
 
-            RefreshSubText(slotData); // ¡ç ºĞ±â Á¦°Å, Æ÷¸ËÅÍ È£Ãâ·Î ÀÏ¿øÈ­
+            RefreshSubText(slotData); // â† ë¶„ê¸° ì œê±°, í¬ë§·í„° í˜¸ì¶œë¡œ ì¼ì›í™”
 
         }
     }
@@ -107,23 +107,23 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     {
         if (itemData == null) return;
 
-        // 1. Å¸ÀÔ ÆĞÅÏ ¸ÅÄªÀ» ÅëÇØ ¾ÆÆ²¶ó½º Å°¿Í ¾ÆÀÌÄÜ ÀÌ¸§ ºĞ±â Ã³¸®
+        // 1. íƒ€ì… íŒ¨í„´ ë§¤ì¹­ì„ í†µí•´ ì•„í‹€ë¼ìŠ¤ í‚¤ì™€ ì•„ì´ì½˜ ì´ë¦„ ë¶„ê¸° ì²˜ë¦¬
         (string atlasKey, string iconName) = itemData switch
         {
-            // itemData°¡ EquipmentData Å¸ÀÔÀÌ¸é equip º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ EquipmentData íƒ€ì…ì´ë©´ equip ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             EquipmentData equip => ("EquipmentIconAtlas", equip.IconKey),
 
-            // itemData°¡ ConsumableData Å¸ÀÔÀÌ¸é cons º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ ConsumableData íƒ€ì…ì´ë©´ cons ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             ConsumableData cons => ("ConsumablesAtlas", cons.IconKey),
 
-            // itemData°¡ MaterialData Å¸ÀÔÀÌ¸é mat º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ MaterialData íƒ€ì…ì´ë©´ mat ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             MaterialData mat => ("MaterialIconAtlas", mat.IconKey),
 
-            // ¾î¶² Å¸ÀÔ¿¡µµ ¸ÂÁö ¾Ê°Å³ª ¿¡·¯ ¹æÁö¿ë (±âº»°ª)
+            // ì–´ë–¤ íƒ€ì…ì—ë„ ë§ì§€ ì•Šê±°ë‚˜ ì—ëŸ¬ ë°©ì§€ìš© (ê¸°ë³¸ê°’)
             _ => ("CommonAtlas", itemData.IconKey)
         };
 
-        // ResourceManager¸¦ ÅëÇØ ºñµ¿±â·Î Sprite ·Îµå
+        // ResourceManagerë¥¼ í†µí•´ ë¹„ë™ê¸°ë¡œ Sprite ë¡œë“œ
         //Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey, isGlobal:true);
         Sprite sprite = await Managers.Resource.GetSpriteFromAtlasAsync(atlasKey, iconName);
 
@@ -136,8 +136,8 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
 
     private async void SetGradeBackGround(ItemGrade grade)
     {
-        // µî±Ş¿¡ ¸Â´Â Addressable Key ¹®ÀÚ¿­ Á¶ÇÕ (¿¹: "Common_Gray", "Rare_Blue")
-        string gradeKey = $"GradeBg_{grade.ToString()}"; // ¿¹½Ã
+        // ë“±ê¸‰ì— ë§ëŠ” Addressable Key ë¬¸ìì—´ ì¡°í•© (ì˜ˆ: "Common_Gray", "Rare_Blue")
+        string gradeKey = $"GradeBg_{grade.ToString()}"; // ì˜ˆì‹œ
 
         //Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey, isGlobal:true);
         Sprite bgSprite = await Managers.Resource.GetSpriteFromAtlasAsync("ItemGradeAtlas", gradeKey);
@@ -160,7 +160,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
         _stackText.color = style.Color;
     }
 
-    // ¿ÜºÎ¿¡¼­ ÀçÈ£Ãâµµ °¡´É (¿¹: ¼±ÅÃ¼ö º¯°æ ½Ã °»½Å)
+    // ì™¸ë¶€ì—ì„œ ì¬í˜¸ì¶œë„ ê°€ëŠ¥ (ì˜ˆ: ì„ íƒìˆ˜ ë³€ê²½ ì‹œ ê°±ì‹ )
     public void RefreshSubText(InventorySlot slotData = null)
     {
         var data = slotData ?? CurrentSlotData;
@@ -175,7 +175,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
         }
         else
         {
-            // Æ÷¸ËÅÍ ¾øÀ¸¸é ±âº» µ¿ÀÛ À¯Áö (ÇÏÀ§ È£È¯)
+            // í¬ë§·í„° ì—†ìœ¼ë©´ ê¸°ë³¸ ë™ì‘ ìœ ì§€ (í•˜ìœ„ í˜¸í™˜)
             if (data.IsEquipment)
                 SetEquipmentUpgradeLevelText(data.EquipInstance.UpgradeLevel);
             else
@@ -186,34 +186,34 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     public void CancelButtonOn() { _cancelButton.gameObject.SetActive(true); }
     public void CancelButtonOff() {  _cancelButton.gameObject.SetActive(false); }
 
-    // --- Drag & Drop ±¸ÇöºÎ ---
+    // --- Drag & Drop êµ¬í˜„ë¶€ ---
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        // ºóÄ­ÀÌ¸é µå·¡±× ºÒ°¡
+        // ë¹ˆì¹¸ì´ë©´ ë“œë˜ê·¸ ë¶ˆê°€
         if (CurrentSlotData == null || CurrentSlotData.IsEmpty) return;
 
         DraggingSlot = this;
 
-        // 1. °í½ºÆ®(ÀÓ½Ã) ¾ÆÀÌÄÜ »ı¼º
+        // 1. ê³ ìŠ¤íŠ¸(ì„ì‹œ) ì•„ì´ì½˜ ìƒì„±
         if (_dragGhost == null)
         {
             _dragGhost = new GameObject("DragGhost");
             _dragGhostImage = _dragGhost.AddComponent<Image>();
-            _dragGhostImage.raycastTarget = false; // ÀÚ½ÅÀÌ ÀÌº¥Æ®¸¦ ¸·Áö ¾Ê°Ô ¼³Á¤
+            _dragGhostImage.raycastTarget = false; // ìì‹ ì´ ì´ë²¤íŠ¸ë¥¼ ë§‰ì§€ ì•Šê²Œ ì„¤ì •
 
-            // UI ¸Ç À§¿¡ ±×·ÁÁöµµ·Ï ÃÖ»ó´Ü Canvas¸¦ Ã£¾Æ ÀÚ½ÄÀ¸·Î ¼³Á¤
+            // UI ë§¨ ìœ„ì— ê·¸ë ¤ì§€ë„ë¡ ìµœìƒë‹¨ Canvasë¥¼ ì°¾ì•„ ìì‹ìœ¼ë¡œ ì„¤ì •
             Canvas canvas = GetComponentInParent<Canvas>();
             _dragGhost.transform.SetParent(canvas.transform, false);
-            _dragGhost.transform.SetAsLastSibling(); // ¸Ç ¾ÕÀ¸·Î »©±â
+            _dragGhost.transform.SetAsLastSibling(); // ë§¨ ì•ìœ¼ë¡œ ë¹¼ê¸°
         }
 
-        // 2. °¡Â¥ ¾ÆÀÌÄÜ¿¡ ÇöÀç ³» ¾ÆÀÌÄÜ ÀÌ¹ÌÁö ÀÔÈ÷±â
+        // 2. ê°€ì§œ ì•„ì´ì½˜ì— í˜„ì¬ ë‚´ ì•„ì´ì½˜ ì´ë¯¸ì§€ ì…íˆê¸°
         _dragGhost.SetActive(true);
         _dragGhostImage.sprite = _itemIcon.sprite;
         _dragGhostImage.rectTransform.sizeDelta = _itemIcon.rectTransform.sizeDelta;
 
-        // 3. ¿øº» ½½·Ô ¾ÆÀÌÄÜÀº µå·¡±× ÁßÀÓÀ» ¾Ë ¼ö ÀÖ°Ô »ìÂ¦ Åõ¸íÇÏ°Ô Ã³¸®
+        // 3. ì›ë³¸ ìŠ¬ë¡¯ ì•„ì´ì½˜ì€ ë“œë˜ê·¸ ì¤‘ì„ì„ ì•Œ ìˆ˜ ìˆê²Œ ì‚´ì§ íˆ¬ëª…í•˜ê²Œ ì²˜ë¦¬
         _itemIcon.color = new Color(1, 1, 1, 0.5f);
     }
 
@@ -221,7 +221,7 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     {
         if (DraggingSlot != this || _dragGhost == null) return;
 
-        // °¡Â¥ ¾ÆÀÌÄÜÀÌ ¸¶¿ì½º¸¦ µû¶ó´Ù´Ô
+        // ê°€ì§œ ì•„ì´ì½˜ì´ ë§ˆìš°ìŠ¤ë¥¼ ë”°ë¼ë‹¤ë‹˜
         _dragGhost.transform.position = eventData.position;
     }
 
@@ -229,10 +229,10 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     {
         if (DraggingSlot != this) return;
 
-        // °¡Â¥ ¾ÆÀÌÄÜ ¼û±â±â
+        // ê°€ì§œ ì•„ì´ì½˜ ìˆ¨ê¸°ê¸°
         if (_dragGhost != null) _dragGhost.SetActive(false);
 
-        // ¿øº» ¾ÆÀÌÄÜ Åõ¸íµµ ¿ø»óº¹±¸
+        // ì›ë³¸ ì•„ì´ì½˜ íˆ¬ëª…ë„ ì›ìƒë³µêµ¬
         _itemIcon.color = new Color(1, 1, 1, 1f);
 
         DraggingSlot = null;
@@ -247,10 +247,10 @@ public class UI_ItemSlot : UI_Base, IBeginDragHandler
     {
         if (CurrentSlotData == null || CurrentSlotData.IsEmpty) return;
 
-        //  Å¬¸¯ È½¼ö °ü°è¾øÀÌ ¸Å Å¬¸¯¸¶´Ù OnSlotClicked È£Ãâ
+        //  í´ë¦­ íšŸìˆ˜ ê´€ê³„ì—†ì´ ë§¤ í´ë¦­ë§ˆë‹¤ OnSlotClicked í˜¸ì¶œ
         _handler?.OnSlotClicked(this);
 
-        // ´õºíÅ¬¸¯Àº Ãß°¡·Î ¹ßÈ­
+        // ë”ë¸”í´ë¦­ì€ ì¶”ê°€ë¡œ ë°œí™”
         if (eventData.clickCount == 2)
             _handler?.OnSlotDoubleClicked(this);
     }

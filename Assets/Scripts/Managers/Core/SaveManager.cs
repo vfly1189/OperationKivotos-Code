@@ -10,21 +10,21 @@ using UnityEngine;
 
 public class SaveManager
 {
-    // AES Å°/IV´Â °íÁ¤°ª (Æ÷Æ®Æú¸®¿À ¼öÁØ)
-    // ½ÇÁ¦ ¼­ºñ½º¶ó¸é Å°¸¦ ÇÏµåÄÚµùÇÏ¸é ¾È µÇÁö¸¸, ´ÜÀÏ ±â±â ·ÎÄÃ ÀúÀå¿£ ÃæºĞ
-    private static readonly string _aesKey = "AbydosRPG_Key128";  // Á¤È®È÷ 16ÀÚ (128bit)
-    private static readonly string _aesIV = "AbydosRPG_IV1234"; // Á¤È®È÷ 16ÀÚ
+    // AES í‚¤/IVëŠ” ê³ ì •ê°’ (í¬íŠ¸í´ë¦¬ì˜¤ ìˆ˜ì¤€)
+    // ì‹¤ì œ ì„œë¹„ìŠ¤ë¼ë©´ í‚¤ë¥¼ í•˜ë“œì½”ë”©í•˜ë©´ ì•ˆ ë˜ì§€ë§Œ, ë‹¨ì¼ ê¸°ê¸° ë¡œì»¬ ì €ì¥ì—” ì¶©ë¶„
+    private static readonly string _aesKey = "AbydosRPG_Key128";  // ì •í™•íˆ 16ì (128bit)
+    private static readonly string _aesIV = "AbydosRPG_IV1234"; // ì •í™•íˆ 16ì
 
 
     private string _currentPartyId = "Abydos";
     // SaveManager.cs
     public bool IsReady => !string.IsNullOrEmpty(_currentPartyId);
 
-    // JsonConvert ¼³Á¤ ÇÑ °÷¿¡¼­ °ü¸®
+    // JsonConvert ì„¤ì • í•œ ê³³ì—ì„œ ê´€ë¦¬
     private static readonly JsonSerializerSettings _settings = new JsonSerializerSettings
     {
-        Formatting = Newtonsoft.Json.Formatting.None,         // ÆÄÀÏ Å©±â ÃÖ¼ÒÈ­ (µğ¹ö±× ½Ã Indented·Î º¯°æ)
-        NullValueHandling = NullValueHandling.Ignore,  // null ÇÊµå´Â ÆÄÀÏ¿¡ ¾È ¾¸
+        Formatting = Newtonsoft.Json.Formatting.None,         // íŒŒì¼ í¬ê¸° ìµœì†Œí™” (ë””ë²„ê·¸ ì‹œ Indentedë¡œ ë³€ê²½)
+        NullValueHandling = NullValueHandling.Ignore,  // null í•„ë“œëŠ” íŒŒì¼ì— ì•ˆ ì”€
         Converters = { new Newtonsoft.Json.Converters.StringEnumConverter() }
     };
 
@@ -38,90 +38,75 @@ public class SaveManager
         _currentPartyId = partyId;
     }
 
-    //// ÇöÀç ÆÄÆ¼ ÀúÀå
-    //public void SaveCurrentParty()
-    //{
-    //    if (string.IsNullOrEmpty(_currentPartyId))
-    //    {
-    //        Debug.LogError("[SaveManager] CurrentPartyId°¡ ¼³Á¤µÇÁö ¾Ê¾Ò½À´Ï´Ù.");
-    //        return;
-    //    }
-
-    //    var data = CollectCurrentSaveData();
-    //    WriteToFile(_currentPartyId, data);
-
-    //    Debug.Log($"[SaveManager] ÀúÀå ¿Ï·á: {GetPath(_currentPartyId)}");
-    //}
-
     // ==========================================
-    // [Áß¿ä] ºñµ¿±â ¼¼ÀÌºê (Safe Save & ThreadPool)
+    // [ì¤‘ìš”] ë¹„ë™ê¸° ì„¸ì´ë¸Œ (Safe Save & ThreadPool)
     // ==========================================
     public async UniTask SaveCurrentPartyAsync()
     {
         if (string.IsNullOrEmpty(_currentPartyId))
         {
-            Debug.LogError("[SaveManager] CurrentPartyId°¡ ¼³Á¤µÇÁö ¾Ê¾Ò½À´Ï´Ù.");
+            Debug.LogError("[SaveManager] CurrentPartyIdê°€ ì„¤ì •ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
             return;
         }
 
-        // 1. ¸ŞÀÎ ½º·¹µå¿¡¼­ µ¥ÀÌÅÍ ±Ü¾î¿À±â (À¯´ÏÆ¼ API´Â ¸ŞÀÎ ½º·¹µå¿¡¼­¸¸ Á¢±Ù °¡´É)
+        // 1. ë©”ì¸ ìŠ¤ë ˆë“œì—ì„œ ë°ì´í„° ê¸ì–´ì˜¤ê¸° (ìœ ë‹ˆí‹° APIëŠ” ë©”ì¸ ìŠ¤ë ˆë“œì—ì„œë§Œ ì ‘ê·¼ ê°€ëŠ¥)
         PartySaveData data = CollectCurrentSaveData();
 
         string finalPath = GetPath(_currentPartyId);
-        string tempPath = finalPath + ".tmp"; // ÀÓ½Ã ÆÄÀÏ °æ·Î
-        string backupPath = finalPath + ".bak"; // ¹é¾÷ ÆÄÀÏ °æ·Î (¼±ÅÃ»çÇ×)
+        string tempPath = finalPath + ".tmp"; // ì„ì‹œ íŒŒì¼ ê²½ë¡œ
+        string backupPath = finalPath + ".bak"; // ë°±ì—… íŒŒì¼ ê²½ë¡œ (ì„ íƒì‚¬í•­)
 
         try
         {
-            // 2. ¹«°Å¿î ÀÛ¾÷(JSON º¯È¯, ¾ÏÈ£È­, ÆÄÀÏ ¾²±â)À» ¹é±×¶ó¿îµå ½º·¹µå·Î ³Ñ±è
+            // 2. ë¬´ê±°ìš´ ì‘ì—…(JSON ë³€í™˜, ì•”í˜¸í™”, íŒŒì¼ ì“°ê¸°)ì„ ë°±ê·¸ë¼ìš´ë“œ ìŠ¤ë ˆë“œë¡œ ë„˜ê¹€
             await UniTask.RunOnThreadPool(() =>
             {
-                // JSON Á÷·ÄÈ­
+                // JSON ì§ë ¬í™”
                 string json = JsonConvert.SerializeObject(data, _settings);
-                // AES ¾ÏÈ£È­
+                // AES ì•”í˜¸í™”
                 byte[] encrypted = Encrypt(json);
 
-                // [Safe Save 1´Ü°è] ÀÓ½Ã ÆÄÀÏ(temp)¿¡ ¸ÕÀú ¾¸
+                // [Safe Save 1ë‹¨ê³„] ì„ì‹œ íŒŒì¼(temp)ì— ë¨¼ì € ì”€
                 File.WriteAllBytes(tempPath, encrypted);
 
-                // [Safe Save 2´Ü°è] ±âÁ¸ ¼¼ÀÌºê ÆÄÀÏÀÌ ÀÖ´Ù¸é ±³Ã¼ ÀÛ¾÷ ÁøÇà
+                // [Safe Save 2ë‹¨ê³„] ê¸°ì¡´ ì„¸ì´ë¸Œ íŒŒì¼ì´ ìˆë‹¤ë©´ êµì²´ ì‘ì—… ì§„í–‰
                 if (File.Exists(finalPath))
                 {
-                    // File.Replace´Â temp¸¦ final·Î µ¤¾î¾²°í, ±âÁ¸ finalÀ» backupÀ¸·Î »­
-                    // (ÇÃ·§Æû¿¡ µû¶ó Replace°¡ ¾È ÅëÇÒ ¼ö ÀÖÀ¸¹Ç·Î try-catch·Î ´ëºñ)
+                    // File.ReplaceëŠ” tempë¥¼ finalë¡œ ë®ì–´ì“°ê³ , ê¸°ì¡´ finalì„ backupìœ¼ë¡œ ëºŒ
+                    // (í”Œë«í¼ì— ë”°ë¼ Replaceê°€ ì•ˆ í†µí•  ìˆ˜ ìˆìœ¼ë¯€ë¡œ try-catchë¡œ ëŒ€ë¹„)
                     File.Replace(tempPath, finalPath, backupPath, ignoreMetadataErrors: true);
                 }
                 else
                 {
-                    // ±âÁ¸ ÆÄÀÏÀÌ ¾øÀ¸¸é ±×³É temp¸¦ final·Î ÀÌ¸§ º¯°æ
+                    // ê¸°ì¡´ íŒŒì¼ì´ ì—†ìœ¼ë©´ ê·¸ëƒ¥ tempë¥¼ finalë¡œ ì´ë¦„ ë³€ê²½
                     File.Move(tempPath, finalPath);
                 }
             });
 
-            Debug.Log($"[SaveManager] ºñµ¿±â ¾ÈÀü ÀúÀå ¿Ï·á: {finalPath}");
+            Debug.Log($"[SaveManager] ë¹„ë™ê¸° ì•ˆì „ ì €ì¥ ì™„ë£Œ: {finalPath}");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[SaveManager] ¼¼ÀÌºê ÀúÀå Áß ¿À·ù ¹ß»ı: {ex.Message}");
-            // ÀúÀåÀÌ ½ÇÆĞÇß´Ù¸é Âî²¨±â temp ÆÄÀÏ »èÁ¦
+            Debug.LogError($"[SaveManager] ì„¸ì´ë¸Œ ì €ì¥ ì¤‘ ì˜¤ë¥˜ ë°œìƒ: {ex.Message}");
+            // ì €ì¥ì´ ì‹¤íŒ¨í–ˆë‹¤ë©´ ì°Œêº¼ê¸° temp íŒŒì¼ ì‚­ì œ
             if (File.Exists(tempPath)) File.Delete(tempPath);
         }
     }
 
-    // Æ¯Á¤ ÆÄÆ¼ ·Îµå
+    // íŠ¹ì • íŒŒí‹° ë¡œë“œ
     public bool TryLoadParty(string partyId, out PartySaveData data)
     {
         string path = GetPath(partyId);
         if (!File.Exists(path)) { data = null; return false; }
 
-        byte[] encrypted = File.ReadAllBytes(path);                // ReadAllText ¡æ ReadAllBytes
-        string json = Decrypt(encrypted);                          // ¡ç º¹È£È­ Ãß°¡
+        byte[] encrypted = File.ReadAllBytes(path);                // ReadAllText â†’ ReadAllBytes
+        string json = Decrypt(encrypted);                          // â† ë³µí˜¸í™” ì¶”ê°€
         data = JsonConvert.DeserializeObject<PartySaveData>(json, _settings);
         return data != null;
     }
 
     // ==========================================
-    // ºñµ¿±â ·Îµå (½º·¹µå ºĞ¸®)
+    // ë¹„ë™ê¸° ë¡œë“œ (ìŠ¤ë ˆë“œ ë¶„ë¦¬)
     // ==========================================
     public async UniTask<PartySaveData> LoadPartyAsync(string partyId)
     {
@@ -130,10 +115,10 @@ public class SaveManager
 
         if (!File.Exists(finalPath))
         {
-            // ¸ŞÀÎ ÆÄÀÏÀÌ ¾ø´Âµ¥ ¹é¾÷ ÆÄÀÏÀÌ ÀÖ´Ù¸é (ÀúÀå Áß Æ¨°åÀ» ¶§ º¹±¸)
+            // ë©”ì¸ íŒŒì¼ì´ ì—†ëŠ”ë° ë°±ì—… íŒŒì¼ì´ ìˆë‹¤ë©´ (ì €ì¥ ì¤‘ íŠ•ê²¼ì„ ë•Œ ë³µêµ¬)
             if (File.Exists(backupPath))
             {
-                Debug.LogWarning("[SaveManager] ¸ŞÀÎ ¼¼ÀÌºê°¡ ¾ø¾î ¹é¾÷ ÆÄÀÏ¿¡¼­ º¹±¸ÇÕ´Ï´Ù.");
+                Debug.LogWarning("[SaveManager] ë©”ì¸ ì„¸ì´ë¸Œê°€ ì—†ì–´ ë°±ì—… íŒŒì¼ì—ì„œ ë³µêµ¬í•©ë‹ˆë‹¤.");
                 File.Copy(backupPath, finalPath);
             }
             else
@@ -144,7 +129,7 @@ public class SaveManager
 
         try
         {
-            // ·Îµùµµ ½º·¹µå Ç®¿¡¼­ ¼öÇà
+            // ë¡œë”©ë„ ìŠ¤ë ˆë“œ í’€ì—ì„œ ìˆ˜í–‰
             PartySaveData resultData = null;
             await UniTask.RunOnThreadPool(() =>
             {
@@ -157,12 +142,12 @@ public class SaveManager
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[SaveManager] ¼¼ÀÌºê ·Îµå ½ÇÆĞ: {ex.Message}");
+            Debug.LogError($"[SaveManager] ì„¸ì´ë¸Œ ë¡œë“œ ì‹¤íŒ¨: {ex.Message}");
             return null;
         }
     }
 
-    // »õ ÆÄÆ¼ ¼¼ÀÌºê »ı¼º
+    // ìƒˆ íŒŒí‹° ì„¸ì´ë¸Œ ìƒì„±
     public PartySaveData CreateNewSave(string partyId)
     {
         return new PartySaveData
@@ -176,14 +161,14 @@ public class SaveManager
         };
     }
 
-    // ¼¼ÀÌºê ÆÄÀÏ »èÁ¦ (ÆÄÆ¼ ÃÊ±âÈ­ ±â´É µî¿¡¼­ »ç¿ë)
+    // ì„¸ì´ë¸Œ íŒŒì¼ ì‚­ì œ (íŒŒí‹° ì´ˆê¸°í™” ê¸°ëŠ¥ ë“±ì—ì„œ ì‚¬ìš©)
     public void DeleteSave(string partyId)
     {
         string path = GetPath(partyId);
         if (File.Exists(path))
         {
             File.Delete(path);
-            Debug.Log($"[SaveManager] ¼¼ÀÌºê »èÁ¦: {path}");
+            Debug.Log($"[SaveManager] ì„¸ì´ë¸Œ ì‚­ì œ: {path}");
         }
     }
 
@@ -196,7 +181,7 @@ public class SaveManager
     // Private
     // ==========================================
 
-    // ÇöÀç °¢ Manager¿¡¼­ µ¥ÀÌÅÍ¸¦ ±Ü¾î PartySaveData·Î Á¶¸³
+    // í˜„ì¬ ê° Managerì—ì„œ ë°ì´í„°ë¥¼ ê¸ì–´ PartySaveDataë¡œ ì¡°ë¦½
     private PartySaveData CollectCurrentSaveData()
     {
         return new PartySaveData
@@ -216,23 +201,10 @@ public class SaveManager
         };
     }
 
-    private void WriteToFile(string partyId, PartySaveData data)
-    {
-        string json = JsonConvert.SerializeObject(data, _settings);
-        byte[] encrypted = Encrypt(json);                          // ¡ç ¾ÏÈ£È­ Ãß°¡
-        File.WriteAllBytes(GetPath(partyId), encrypted);           // WriteAllText ¡æ WriteAllBytes
-
-
-        //string json = JsonConvert.SerializeObject(data, _settings);
-        //File.WriteAllText(GetPath(partyId), json);
-
-    }
-
-
     private string GetPath(string partyId) => Path.Combine(Application.persistentDataPath, $"save_{partyId}.json");
 
     // ==========================================
-    // AES ¾ÏÈ£È­ / º¹È£È­
+    // AES ì•”í˜¸í™” / ë³µí˜¸í™”
     // ==========================================
     private byte[] Encrypt(string plainText)
     {
@@ -244,7 +216,7 @@ public class SaveManager
         using var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write);
         using var sw = new StreamWriter(cs);
         sw.Write(plainText);
-        sw.Close();         // cs.FlushFinalBlock() Æ÷ÇÔ
+        sw.Close();         // cs.FlushFinalBlock() í¬í•¨
 
         return ms.ToArray();
     }
@@ -293,7 +265,7 @@ public class SaveManager
         {
             int id = member.Stat.GetID();
 
-            // ÀúÀåµÈ µ¥ÀÌÅÍ¿¡¼­ ID ÀÏÄ¡ÇÏ´Â Ä³¸¯ÅÍ Ã£±â
+            // ì €ì¥ëœ ë°ì´í„°ì—ì„œ ID ì¼ì¹˜í•˜ëŠ” ìºë¦­í„° ì°¾ê¸°
             CharacterSaveData saved = savedCharacters.Find(c => c.characterId == id);
             if (saved == null) continue;
 
@@ -307,8 +279,8 @@ public class SaveManager
 
         Managers.Inventory.LoadSaveData(save.inventory);
         Managers.Wallet.LoadSaveData(save.wallet);
-        Managers.Party.InitFromContext(save.party);      // ¡ç ¸ÕÀú: MaxHp ·¹º§ ±âÁØ ¼¼ÆÃ
-        LoadCharacterData(save.characters);              // ¡ç ±× ´ÙÀ½: ¿Ã¹Ù¸¥ MaxHp ±âÁØÀ¸·Î HP Clamp
-        Managers.Equipment.LoadSaveData(save.equipment); // ¡ç ¸¶Áö¸·: Àåºñ ½ºÅÈ Ãß°¡
+        Managers.Party.InitFromContext(save.party);      // â† ë¨¼ì €: MaxHp ë ˆë²¨ ê¸°ì¤€ ì„¸íŒ…
+        LoadCharacterData(save.characters);              // â† ê·¸ ë‹¤ìŒ: ì˜¬ë°”ë¥¸ MaxHp ê¸°ì¤€ìœ¼ë¡œ HP Clamp
+        Managers.Equipment.LoadSaveData(save.equipment); // â† ë§ˆì§€ë§‰: ì¥ë¹„ ìŠ¤íƒ¯ ì¶”ê°€
     }
 }

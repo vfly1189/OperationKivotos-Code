@@ -7,7 +7,7 @@ using UnityEngine;
 public class MonsterData
 {
     public int monsterId;
-    public string addressableKey; // AddressablesÀÇ ¾îµå·¹½º(Å°) ÀÌ¸§
+    public string addressableKey; // Addressablesì˜ ì–´ë“œë ˆìŠ¤(í‚¤) ì´ë¦„
     public string monsterName;
     public float hp;
     public float attack;

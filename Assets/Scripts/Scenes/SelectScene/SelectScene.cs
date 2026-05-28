@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-// [Ãß°¡] UniTask ³×ÀÓ½ºÆäÀÌ½º
+// [ì¶”ê°€] UniTask ë„¤ì„ìŠ¤í˜ì´ìŠ¤
 using Cysharp.Threading.Tasks;
 
 public class SelectScene : BaseScene
@@ -9,7 +9,7 @@ public class SelectScene : BaseScene
     private Dictionary<int, List<GameObject>> _schoolModels
         = new Dictionary<int, List<GameObject>>();
 
-    [SerializeField] private GameObject _loadingCover; // ÀÏ¹İ ÇÁ¸®ÆÕ (AddressableÀÌ ¾Æ´Ñ Inspector ¿¬°á)
+    [SerializeField] private GameObject _loadingCover; // ì¼ë°˜ í”„ë¦¬íŒ¹ (Addressableì´ ì•„ë‹Œ Inspector ì—°ê²°)
     [SerializeField] private SelectScenePreloadSO _preloadData;
     [SerializeField] private SchoolDataSO[] _schoolDatas;
 
@@ -17,13 +17,13 @@ public class SelectScene : BaseScene
     private int _currentSchoolIdx = -1;
     private GameObject _loadingCoverInstance;
 
-    // [ÇÙ½É º¯°æ 1] async UniTaskVoid·Î ¼±¾ğ (À¯´ÏÆ¼ »ı¸íÁÖ±â¿¡ ¸ÂÃã)
+    // [í•µì‹¬ ë³€ê²½ 1] async UniTaskVoidë¡œ ì„ ì–¸ (ìœ ë‹ˆí‹° ìƒëª…ì£¼ê¸°ì— ë§ì¶¤)
     protected override async void Init()
     {
         base.Init();
         _sceneType = Define.Scene.Select;
 
-        // [¼öÁ¤Á¡ 1] µ¿±â Instantiate ´ë½Å À¯´ÏÆ¼ ±âº» Instantiate »ç¿ë
+        // [ìˆ˜ì •ì  1] ë™ê¸° Instantiate ëŒ€ì‹  ìœ ë‹ˆí‹° ê¸°ë³¸ Instantiate ì‚¬ìš©
         if (_loadingCover != null)
         {
             _loadingCoverInstance = Instantiate(_loadingCover);
@@ -34,14 +34,14 @@ public class SelectScene : BaseScene
         }
 
 
-        // ºñµ¿±â ÀÛ¾÷µé ´ë±â (await)
+        // ë¹„ë™ê¸° ì‘ì—…ë“¤ ëŒ€ê¸° (await)
         await CreateModelCamera();
         await CreateMainUI();
         await LoadAllSchoolModels();
 
-        // [Ãß°¡] 3D ¸ğµ¨°ú UI ·ÎµùÀÌ ¿Ïº®È÷ ³¡³­ ÈÄ, ÃÊ±â ÇĞ±³(0¹ø)¸¦ ¼±ÅÃ »óÅÂ·Î ¸¸µê
+        // [ì¶”ê°€] 3D ëª¨ë¸ê³¼ UI ë¡œë”©ì´ ì™„ë²½íˆ ëë‚œ í›„, ì´ˆê¸° í•™êµ(0ë²ˆ)ë¥¼ ì„ íƒ ìƒíƒœë¡œ ë§Œë“¦
         SelectSchool(0);
-        // [¼öÁ¤Á¡ 2] ÄÚ·çÆ¾ Á¦°Å -> UniTaskVoid È£Ãâ (Fire and Forget)
+        // [ìˆ˜ì •ì  2] ì½”ë£¨í‹´ ì œê±° -> UniTaskVoid í˜¸ì¶œ (Fire and Forget)
         FadeInSequence().Forget();
     }
 
@@ -61,7 +61,7 @@ public class SelectScene : BaseScene
                 if (go != null) go.SetActive(true);
         }
 
-        // ºñµ¿±â »ç¿îµå Àç»ı (Fire and Forget)
+        // ë¹„ë™ê¸° ì‚¬ìš´ë“œ ì¬ìƒ (Fire and Forget)
         PlaySchoolSoundAsync(index).Forget();
 
         _currentSchoolIdx = index;
@@ -72,7 +72,7 @@ public class SelectScene : BaseScene
         _uiCanvas.UpdateUIState(index, _schoolDatas[index]);
     }
 
-    // [ÇÙ½É º¯°æ 3] async void -> async UniTaskVoid ·Î º¯°æ
+    // [í•µì‹¬ ë³€ê²½ 3] async void -> async UniTaskVoid ë¡œ ë³€ê²½
     private async UniTaskVoid PlaySchoolSoundAsync(int schoolIndex)
     {
         Managers.Sound.StopAll();
@@ -91,7 +91,7 @@ public class SelectScene : BaseScene
 
                 if (voiceRef != null && voiceRef.RuntimeKeyIsValid())
                 {
-                    // [¼öÁ¤Á¡ 3] Addressables Á÷Á¢ ·Îµå Á¦°Å -> ResourceManager À§ÀÓ
+                    // [ìˆ˜ì •ì  3] Addressables ì§ì ‘ ë¡œë“œ ì œê±° -> ResourceManager ìœ„ì„
                     AudioClip clip = await Managers.Resource.LoadAsync<AudioClip>(voiceRef);
 
                     if (clip != null) Managers.Sound.Play(clip, Define.Sound.Voice);
@@ -100,7 +100,7 @@ public class SelectScene : BaseScene
         }
     }
 
-    // [ÇÙ½É º¯°æ 4] Task -> UniTask ·Î ¹İÈ¯Çü º¯°æ
+    // [í•µì‹¬ ë³€ê²½ 4] Task -> UniTask ë¡œ ë°˜í™˜í˜• ë³€ê²½
     private async UniTask LoadAllSchoolModels()
     {
         string[] spawnPointNames = { "SpawnPoint1", "SpawnPoint2", "SpawnPoint3", "SpawnPoint4" };
@@ -111,7 +111,7 @@ public class SelectScene : BaseScene
                 points[i] = _modelCamera.transform.Find(spawnPointNames[i]);
         }
 
-        // UniTask.WhenAll »ç¿ë
+        // UniTask.WhenAll ì‚¬ìš©
         var loadingTasks = new List<UniTask>();
 
         for (int i = 0; i < _schoolDatas.Length; i++)
@@ -131,7 +131,7 @@ public class SelectScene : BaseScene
         {
             if (k >= chars.Length) break;
 
-            // [¼öÁ¤Á¡ 4] ResourceManager·Î À§ÀÓÇÏ¿© ¾À ´ÜÀ§ ¸Ş¸ğ¸® °ü¸® º¸Àå
+            // [ìˆ˜ì •ì  4] ResourceManagerë¡œ ìœ„ì„í•˜ì—¬ ì”¬ ë‹¨ìœ„ ë©”ëª¨ë¦¬ ê´€ë¦¬ ë³´ì¥
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(chars[k].selectPrefab);
 
             if (prefab != null)
@@ -154,7 +154,7 @@ public class SelectScene : BaseScene
 
     private async UniTask CreateModelCamera()
     {
-        // [¼öÁ¤Á¡ 5] Handle ·ÎÁ÷ Á¦°Å
+        // [ìˆ˜ì •ì  5] Handle ë¡œì§ ì œê±°
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.modelCamera);
 
         if (prefab != null)
@@ -166,16 +166,16 @@ public class SelectScene : BaseScene
 
     private async UniTask CreateMainUI()
     {
-        // 1. ¸®¼Ò½º ¸Å´ÏÀú¸¦ ÅëÇØ UI ÇÁ¸®ÆÕÀ» ¸Ş¸ğ¸®¿¡ ºñµ¿±â ·Îµå
-        // (ShowSceneUIÀÇ µ¿±â Instantiate°¡ ½ÇÆĞÇÏÁö ¾Êµµ·Ï º¸Àå)
+        // 1. ë¦¬ì†ŒìŠ¤ ë§¤ë‹ˆì €ë¥¼ í†µí•´ UI í”„ë¦¬íŒ¹ì„ ë©”ëª¨ë¦¬ì— ë¹„ë™ê¸° ë¡œë“œ
+        // (ShowSceneUIì˜ ë™ê¸° Instantiateê°€ ì‹¤íŒ¨í•˜ì§€ ì•Šë„ë¡ ë³´ì¥)
         await Managers.Resource.LoadAsync<GameObject>("SelectSceneCanvas_New");
 
-        // 2. UIManager¸¦ ÅëÇØ SceneUI »ı¼º 
-        // Å¬·¡½º¸í("SelectSceneCanvas")°ú Addressable Key°¡ °°´Ù¸é ÀÎÀÚ »ı·« °¡´É.
-        // ¸¸¾à Key°¡ ´Ù¸£´Ù¸é ShowSceneUI<SelectSceneCanvas>("SelectSceneCanvas_New") Ã³·³ ¹®ÀÚ¿­À» ³ÖÀ¸¼¼¿ä.
+        // 2. UIManagerë¥¼ í†µí•´ SceneUI ìƒì„± 
+        // í´ë˜ìŠ¤ëª…("SelectSceneCanvas")ê³¼ Addressable Keyê°€ ê°™ë‹¤ë©´ ì¸ì ìƒëµ ê°€ëŠ¥.
+        // ë§Œì•½ Keyê°€ ë‹¤ë¥´ë‹¤ë©´ ShowSceneUI<SelectSceneCanvas>("SelectSceneCanvas_New") ì²˜ëŸ¼ ë¬¸ìì—´ì„ ë„£ìœ¼ì„¸ìš”.
         _uiCanvas = Managers.UI.ShowSceneUI<SelectSceneCanvas>("SelectSceneCanvas_New");
 
-        // 3. »ı¼ºµÈ UI¿¡ Scene °´Ã¼ ÁÖÀÔ ¹× ÀÌº¥Æ® ¹ÙÀÎµù
+        // 3. ìƒì„±ëœ UIì— Scene ê°ì²´ ì£¼ì… ë° ì´ë²¤íŠ¸ ë°”ì¸ë”©
         if (_uiCanvas != null)
         {
             _uiCanvas.Setup(this);
@@ -194,7 +194,7 @@ public class SelectScene : BaseScene
         Managers.Context.SchoolIdx = _currentSchoolIdx;
         Managers.Context.SelectedSchool = _schoolDatas[_currentSchoolIdx];
 
-        // [¼öÁ¤] ÀÌ¾îÇÏ±â ·ÎÁ÷ È£Ãâ
+        // [ìˆ˜ì •] ì´ì–´í•˜ê¸° ë¡œì§ í˜¸ì¶œ
         Managers.Context.LoadSchool(partyID);
 
         Managers.Save.SetCurrentParty(partyID);
@@ -207,13 +207,13 @@ public class SelectScene : BaseScene
         Managers.Context.SchoolIdx = _currentSchoolIdx;
         Managers.Context.SelectedSchool = _schoolDatas[_currentSchoolIdx];
 
-        // [¼öÁ¤] »õ·ÎÇÏ±â ·ÎÁ÷ È£Ãâ (±âÁ¸ ¼¼ÀÌºê ³¯¸®°í ±ú²ıÇÑ »óÅÂ·Î µ¤¾î¾º¿ò)
+        // [ìˆ˜ì •] ìƒˆë¡œí•˜ê¸° ë¡œì§ í˜¸ì¶œ (ê¸°ì¡´ ì„¸ì´ë¸Œ ë‚ ë¦¬ê³  ê¹¨ë—í•œ ìƒíƒœë¡œ ë®ì–´ì”Œì›€)
         Managers.Context.CreateNewSchool(partyID);
 
         Managers.Save.SetCurrentParty(partyID);
     }
 
-    // (½ºÀ§Ä¡¹® Áßº¹ Á¦°Å¿ë ÇïÆÛ ÇÔ¼ö)
+    // (ìŠ¤ìœ„ì¹˜ë¬¸ ì¤‘ë³µ ì œê±°ìš© í—¬í¼ í•¨ìˆ˜)
     private string GetPartyIdByIndex(int index)
     {
         return index switch
@@ -242,7 +242,7 @@ public class SelectScene : BaseScene
         CanvasGroup coverCG = _loadingCoverInstance.GetComponent<CanvasGroup>();
         if (coverCG == null)
         {
-            Destroy(_loadingCoverInstance); // ÀÚÃ¼ ÀÎ½ºÅÏ½ºÈ­ÀÌ¹Ç·Î ÀÏ¹İ Destroy »ç¿ë
+            Destroy(_loadingCoverInstance); // ìì²´ ì¸ìŠ¤í„´ìŠ¤í™”ì´ë¯€ë¡œ ì¼ë°˜ Destroy ì‚¬ìš©
             return;
         }
 
@@ -253,7 +253,7 @@ public class SelectScene : BaseScene
         {
             timer += Time.deltaTime;
             coverCG.alpha = Mathf.Lerp(1f, 0f, timer / duration);
-            await UniTask.Yield(); // yield return null ´ëÃ¼
+            await UniTask.Yield(); // yield return null ëŒ€ì²´
         }
 
         Destroy(_loadingCoverInstance);

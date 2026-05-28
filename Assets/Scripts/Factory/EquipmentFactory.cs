@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class EquipmentFactory
 {
-    // ·£´ı ½ºÅÈÀÌ ºÎ¿©µÈ ¿Ï¼ºµÈ InventorySlot °´Ã¼¸¦ ¹İÈ¯
+    // ëœë¤ ìŠ¤íƒ¯ì´ ë¶€ì—¬ëœ ì™„ì„±ëœ InventorySlot ê°ì²´ë¥¼ ë°˜í™˜
     public static InventorySlot CreateEquipment(int itemID)
     {
         EquipmentData data = Managers.Data.GetData<int, EquipmentData>(itemID);
@@ -38,11 +38,11 @@ public static class EquipmentFactory
 
     private static void ApplySubStats(EquipmentData data, EquipmentInstance instance)
     {
-        // (±âÁ¸ InventoryManager¿¡ ÀÛ¼ºÇÏ½Å ·ÎÁ÷°ú µ¿ÀÏÇÏ°Ô À¯Áö)
+        // (ê¸°ì¡´ InventoryManagerì— ì‘ì„±í•˜ì‹  ë¡œì§ê³¼ ë™ì¼í•˜ê²Œ ìœ ì§€)
         StatPoolData subPool = Managers.Data.GetData<int, StatPoolData>(data.SubStatPoolID);
         if (subPool == null || subPool.Entries.Count == 0) return;
 
-        // ¾ÆÀÌÅÛ µî±Şº° ¼­ºê ½ºÅÈ °³¼ö ¼³Á¤ (·Î½ºÆ®¾ÆÅ©³ª ¿ø½Å ½ºÅ¸ÀÏ)
+        // ì•„ì´í…œ ë“±ê¸‰ë³„ ì„œë¸Œ ìŠ¤íƒ¯ ê°œìˆ˜ ì„¤ì • (ë¡œìŠ¤íŠ¸ì•„í¬ë‚˜ ì›ì‹  ìŠ¤íƒ€ì¼)
         int subStatCount = Managers.Data.GetData<ItemGrade, GradeConfig>(data.Grade).InitialSubStatCount;
 
         //switch (data.Grade)
@@ -52,10 +52,10 @@ public static class EquipmentFactory
         //    case ItemGrade.Rare: subStatCount = 2; break;
         //    case ItemGrade.Epic: subStatCount = 3; break;
         //    case ItemGrade.Legendary: subStatCount = 4; break;
-        //    case ItemGrade.Mythic: subStatCount = 4; break; // MythicÀº ¼öÄ¡°¡ ´õ ³ô°Å³ª °íÁ¤¿ÉÀÏ ¼ö ÀÖÀ½
+        //    case ItemGrade.Mythic: subStatCount = 4; break; // Mythicì€ ìˆ˜ì¹˜ê°€ ë” ë†’ê±°ë‚˜ ê³ ì •ì˜µì¼ ìˆ˜ ìˆìŒ
         //}
 
-        // Áßº¹ ½ºÅÈ ¹æÁö¸¦ À§ÇÑ ¸®½ºÆ® º¹»ç
+        // ì¤‘ë³µ ìŠ¤íƒ¯ ë°©ì§€ë¥¼ ìœ„í•œ ë¦¬ìŠ¤íŠ¸ ë³µì‚¬
         List<StatPoolEntry> availableEntries = new List<StatPoolEntry>(subPool.Entries);
 
         for (int i = 0; i < subStatCount; i++)
@@ -71,7 +71,7 @@ public static class EquipmentFactory
                     Value = pickedEntry.BaseValue
                 });
 
-                // µ¿ÀÏÇÑ ½ºÅÈÀÌ Áßº¹À¸·Î ¶ß´Â °ÍÀ» ¸·À¸·Á¸é ¸®½ºÆ®¿¡¼­ Á¦°Å
+                // ë™ì¼í•œ ìŠ¤íƒ¯ì´ ì¤‘ë³µìœ¼ë¡œ ëœ¨ëŠ” ê²ƒì„ ë§‰ìœ¼ë ¤ë©´ ë¦¬ìŠ¤íŠ¸ì—ì„œ ì œê±°
                 availableEntries.Remove(pickedEntry);
             }
         }
@@ -79,14 +79,14 @@ public static class EquipmentFactory
 
     private static StatPoolEntry PickRandomEntryByWeight(List<StatPoolEntry> entries)
     {
-        // (±âÁ¸ InventoryManager¿¡ ÀÛ¼ºÇÏ½Å ·ÎÁ÷°ú µ¿ÀÏÇÏ°Ô À¯Áö)
+        // (ê¸°ì¡´ InventoryManagerì— ì‘ì„±í•˜ì‹  ë¡œì§ê³¼ ë™ì¼í•˜ê²Œ ìœ ì§€)
         int totalWeight = 0;
         foreach (var entry in entries)
         {
             totalWeight += entry.Weight;
         }
 
-        // 1ºÎÅÍ totalWeight »çÀÌÀÇ ³­¼ö ¹ß»ı
+        // 1ë¶€í„° totalWeight ì‚¬ì´ì˜ ë‚œìˆ˜ ë°œìƒ
         int randomValue = UnityEngine.Random.Range(1, totalWeight + 1);
         int currentWeight = 0;
 
@@ -99,6 +99,6 @@ public static class EquipmentFactory
             }
         }
 
-        return null; // ³í¸®»ó ¿©±â±îÁö ¿ÀÁö ¾ÊÀ½
+        return null; // ë…¼ë¦¬ìƒ ì—¬ê¸°ê¹Œì§€ ì˜¤ì§€ ì•ŠìŒ
     }
 }

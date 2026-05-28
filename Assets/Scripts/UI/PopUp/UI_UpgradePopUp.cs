@@ -18,22 +18,22 @@ public class UI_UpgradePopUp : UI_PopUp
     [SerializeField] public Button[] _partyButtons;
     [SerializeField] public Button _upgradeButton;
 
-    [Header("·¹º§ ÅØ½ºÆ®")]
+    [Header("ë ˆë²¨ í…ìŠ¤íŠ¸")]
     [SerializeField] public TextMeshProUGUI _currentWeaponLevelText;
     [SerializeField] public TextMeshProUGUI _nextWeaponLevelText;
 
-    [Header("°­È­ ºñ¿ë ÅØ½ºÆ®")]
+    [Header("ê°•í™” ë¹„ìš© í…ìŠ¤íŠ¸")]
     [SerializeField] public TextMeshProUGUI _requireCreditText;
     [SerializeField] public TextMeshProUGUI[] _requrieStoneTexts;
 
-    [Header("º¸À¯ ÀçÈ­ ÅØ½ºÆ®")]
+    [Header("ë³´ìœ  ì¬í™” í…ìŠ¤íŠ¸")]
     [SerializeField] public TextMeshProUGUI _havingCreditText;
     [SerializeField] public TextMeshProUGUI[] _havingStoneTexts;
 
-    [Header("°­È­ È®·ü ÅØ½ºÆ®")]
+    [Header("ê°•í™” í™•ë¥  í…ìŠ¤íŠ¸")]
     [SerializeField] public TextMeshProUGUI _enhancementRateText;
 
-    [Header("¹«±â ÀÌ¹ÌÁö")]
+    [Header("ë¬´ê¸° ì´ë¯¸ì§€")]
     [SerializeField] public Image _weaponImage;
 
     private WeaponUpgradeService _upgradeService;
@@ -88,13 +88,13 @@ public class UI_UpgradePopUp : UI_PopUp
         switch (result)
         {
             case WeaponUpgradeService.UpgradeResult.Success:
-                Debug.Log($"°­È­ ¼º°ø! Lv.{prevLevel} ¡æ Lv.{prevLevel + 1}");
+                Debug.Log($"ê°•í™” ì„±ê³µ! Lv.{prevLevel} â†’ Lv.{prevLevel + 1}");
                 break;
             case WeaponUpgradeService.UpgradeResult.Fail:
-                Debug.Log($"°­È­ ½ÇÆĞ... Lv.{prevLevel} À¯Áö");
+                Debug.Log($"ê°•í™” ì‹¤íŒ¨... Lv.{prevLevel} ìœ ì§€");
                 break;
             case WeaponUpgradeService.UpgradeResult.NotEnoughCurrency:
-                Debug.Log("ÀçÈ­°¡ ºÎÁ·ÇÕ´Ï´Ù.");
+                Debug.Log("ì¬í™”ê°€ ë¶€ì¡±í•©ë‹ˆë‹¤.");
                 break;
         }
     }
@@ -129,7 +129,7 @@ public class UI_UpgradePopUp : UI_PopUp
         if (weaponData == null)
         {
             SetMaxLevelUI();
-            _currentWeaponLevelText.text = "¹«±â µ¥ÀÌÅÍ ¾øÀ½";
+            _currentWeaponLevelText.text = "ë¬´ê¸° ë°ì´í„° ì—†ìŒ";
             _nextWeaponLevelText.text = "-";
             return;
         }
@@ -141,7 +141,7 @@ public class UI_UpgradePopUp : UI_PopUp
 
         bool isMaxLevel = weaponLevel >= maxWeaponLevel;
 
-        // ¾ÆÀÌÄÜ ·Îµå (AssetReferenceSprite)
+        // ì•„ì´ì½˜ ë¡œë“œ (AssetReferenceSprite)
         if (_weaponImage != null)
         {
             Sprite icon = null;
@@ -154,9 +154,9 @@ public class UI_UpgradePopUp : UI_PopUp
         }
 
         _currentWeaponLevelText.text = isMaxLevel
-            ? "ÇöÀç ·¹º§ : MAX"
-            : $"ÇöÀç ·¹º§ : Lv. {weaponLevel}";
-        _nextWeaponLevelText.text = isMaxLevel ? "-" : $"´ÙÀ½ ·¹º§ : Lv. {weaponLevel + 1}";
+            ? "í˜„ì¬ ë ˆë²¨ : MAX"
+            : $"í˜„ì¬ ë ˆë²¨ : Lv. {weaponLevel}";
+        _nextWeaponLevelText.text = isMaxLevel ? "-" : $"ë‹¤ìŒ ë ˆë²¨ : Lv. {weaponLevel + 1}";
 
         if (isMaxLevel)
         {
@@ -166,7 +166,7 @@ public class UI_UpgradePopUp : UI_PopUp
 
         int targetLevel = weaponLevel + 1;
 
-        // ºñ¿ë Å×ÀÌºí¿¡¼­ ´ÙÀ½ ·¹º§ ºñ¿ë °¡Á®¿À±â
+        // ë¹„ìš© í…Œì´ë¸”ì—ì„œ ë‹¤ìŒ ë ˆë²¨ ë¹„ìš© ê°€ì ¸ì˜¤ê¸°
         WeaponEnhanceCost cost = Managers.Data.GetData<int, WeaponEnhanceCost>(targetLevel);
         if (cost == null)
         {
@@ -175,12 +175,12 @@ public class UI_UpgradePopUp : UI_PopUp
         }
 
         RefreshCurrencyInfo(cost);
-        RefreshRateInfo(weaponLevel); // Å×ÀÌºí Å° Á¤Ã¥¿¡ µû¶ó weaponLevel·Î ¹Ù²ãµµ µÊ
+        RefreshRateInfo(weaponLevel); // í…Œì´ë¸” í‚¤ ì •ì±…ì— ë”°ë¼ weaponLevelë¡œ ë°”ê¿”ë„ ë¨
     }
 
     private void RefreshCurrencyInfo(WeaponEnhanceCost cost)
     {
-        // 1. °ñµå UI °»½Å
+        // 1. ê³¨ë“œ UI ê°±ì‹ 
         int haveGold = Managers.Wallet.GetCurrency(CurrencyType.Credit);
         _requireCreditText.text = cost.RequireGold.ToString("N0");
         _havingCreditText.text = haveGold.ToString("N0");
@@ -188,7 +188,7 @@ public class UI_UpgradePopUp : UI_PopUp
 
         bool canUpgrade = haveGold >= cost.RequireGold;
 
-        // 2. Àç·á UI °»½Å (¹è¿­ È°¿ë)
+        // 2. ì¬ë£Œ UI ê°±ì‹  (ë°°ì—´ í™œìš©)
         int[] reqMats = { cost.Material1Count, cost.Material2Count, cost.Material3Count };
         int[] matIDs = { (int)UpgradeStone_ID.Common, (int)UpgradeStone_ID.Uncommon, (int)UpgradeStone_ID.Rare };
 
@@ -201,12 +201,12 @@ public class UI_UpgradePopUp : UI_PopUp
             _havingStoneTexts[i].text = haveCount.ToString("N0");
             _requrieStoneTexts[i].color = haveCount >= reqCount ? Color.white : Color.red;
 
-            // ÇÏ³ª¶óµµ ºÎÁ·ÇÏ¸é °­È­ ºÒ°¡ Ã³¸®
+            // í•˜ë‚˜ë¼ë„ ë¶€ì¡±í•˜ë©´ ê°•í™” ë¶ˆê°€ ì²˜ë¦¬
             if (haveCount < reqCount)
                 canUpgrade = false;
         }
 
-        // 3. ¹öÆ° È°¼ºÈ­ »óÅÂ Àû¿ë
+        // 3. ë²„íŠ¼ í™œì„±í™” ìƒíƒœ ì ìš©
         _upgradeButton.interactable = canUpgrade;
     }
 
@@ -215,13 +215,13 @@ public class UI_UpgradePopUp : UI_PopUp
         EnhancementRateData rateData = Managers.Data.GetData<int, EnhancementRateData>(targetLevel);
         if (rateData == null)
         {
-            _enhancementRateText.text = "¼º°ø È®·ü: -";
+            _enhancementRateText.text = "ì„±ê³µ í™•ë¥ : -";
             _enhancementRateText.color = Color.white;
             return;
         }
 
         float successPercent = rateData.successRate * 100f;
-        _enhancementRateText.text = $"¼º°ø È®·ü: {successPercent:0.#}%";
+        _enhancementRateText.text = $"ì„±ê³µ í™•ë¥ : {successPercent:0.#}%";
         _enhancementRateText.color = successPercent >= 80 ? Color.white
                                    : successPercent >= 50 ? Color.yellow
                                    : Color.red;

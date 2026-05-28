@@ -5,10 +5,10 @@ public class Define
     public enum Scene
     {
         Unknown,        //Default
-        Start,          //½ÃÀÛÈ­¸é
-        Loading,        //·Îµù Àü¿ë ¾À
-        Select,         //Ä³¸¯ÅÍ ¼±ÅÃ
-        Game,           //ÀÎ°ÔÀÓ
+        Start,          //ì‹œì‘í™”ë©´
+        Loading,        //ë¡œë”© ì „ìš© ì”¬
+        Select,         //ìºë¦­í„° ì„ íƒ
+        Game,           //ì¸ê²Œì„
         NormalDungeon,
         BossDungeon,
     }

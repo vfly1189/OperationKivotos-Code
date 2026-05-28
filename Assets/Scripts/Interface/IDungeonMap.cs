@@ -3,5 +3,5 @@ using UnityEngine;
 public interface IDungeonMap
 {
     Transform GetEndingCameraPoint();
-    Transform[] GetEndingTransforms(); // ¿£µù Æ÷Áö¼Ç ¹è¿­
+    Transform[] GetEndingTransforms(); // ì—”ë”© í¬ì§€ì…˜ ë°°ì—´
 }

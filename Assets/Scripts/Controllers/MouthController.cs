@@ -13,7 +13,7 @@ public class MouthController : MonoBehaviour
         if (targetRenderer == null)
             targetRenderer = GetComponent<Renderer>();
 
-        // EyeMouth ÀÌ¸§ÀÌ Æ÷ÇÔµÈ Material Ã£±â
+        // EyeMouth ì´ë¦„ì´ í¬í•¨ëœ Material ì°¾ê¸°
         Material[] materials = targetRenderer.materials;
         for (int i = 0; i < materials.Length; i++)
         {
@@ -31,16 +31,16 @@ public class MouthController : MonoBehaviour
         }
     }
 
-    // ¾Ö´Ï¸ŞÀÌ¼Ç ÀÌº¥Æ®¿¡¼­ È£Ãâ
+    // ì• ë‹ˆë©”ì´ì…˜ ì´ë²¤íŠ¸ì—ì„œ í˜¸ì¶œ
     public void SetMouthTile(int index)
     {
-        //Debug.Log("È£ÃâµÊ");
+        //Debug.Log("í˜¸ì¶œë¨");
         if (material == null)
         {
-            //Debug.Log("MaterialÀÌ ¾øÀ½");
+            //Debug.Log("Materialì´ ì—†ìŒ");
             return;
         }
-        //Debug.Log("MaterialÀÌ ÀÖÀ½");
+        //Debug.Log("Materialì´ ìˆìŒ");
         int x = index % 8;
         int y = index / 8;
 

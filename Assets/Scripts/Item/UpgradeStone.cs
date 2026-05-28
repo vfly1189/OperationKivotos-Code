@@ -5,7 +5,7 @@ public class UpgradeStone : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // Space.Self ±âÁØÀ¸·Î µ¹¾Æ¾ß ´¯ÇôÁø °¢µµ¸¦ À¯ÁöÇÑ Ã¤·Î È¸ÀüÇÕ´Ï´Ù.
+        // Space.Self ê¸°ì¤€ìœ¼ë¡œ ëŒì•„ì•¼ ëˆ•í˜€ì§„ ê°ë„ë¥¼ ìœ ì§€í•œ ì±„ë¡œ íšŒì „í•©ë‹ˆë‹¤.
         transform.Rotate(0, 180f * Time.deltaTime, 0, Space.Self);
     }
 }

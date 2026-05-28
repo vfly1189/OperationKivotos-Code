@@ -4,15 +4,15 @@ using UnityEngine;
 [System.Serializable]
 public class EnhancementRateData
 {
-    // JSONÀÇ Å° ÀÌ¸§°ú ÀÏÄ¡ÇØ¾ß ÇÕ´Ï´Ù.
-    public int currentLevel;          // ÇöÀç ¹«±â ·¹º§ (1 -> 2·Î °¥ ¶§ÀÇ µ¥ÀÌÅÍ´Â Level: 1)
-    public float successRate;  // ¼º°ø È®·ü (0.0 ~ 1.0)
+    // JSONì˜ í‚¤ ì´ë¦„ê³¼ ì¼ì¹˜í•´ì•¼ í•©ë‹ˆë‹¤.
+    public int currentLevel;          // í˜„ì¬ ë¬´ê¸° ë ˆë²¨ (1 -> 2ë¡œ ê°ˆ ë•Œì˜ ë°ì´í„°ëŠ” Level: 1)
+    public float successRate;  // ì„±ê³µ í™•ë¥  (0.0 ~ 1.0)
 }
 
-[System.Serializable] // <<<<< ¿©±âµµ È®ÀÎ!
+[System.Serializable] // <<<<< ì—¬ê¸°ë„ í™•ì¸!
 public class WeaponEnhanceMentDataLoader : ILoader<int, EnhancementRateData>
 {
-    // JSONÀÇ ÃÖ»óÀ§ ¹è¿­ ÀÌ¸§("rates" µî)°ú µ¿ÀÏÇØ¾ß ÇÕ´Ï´Ù.
+    // JSONì˜ ìµœìƒìœ„ ë°°ì—´ ì´ë¦„("rates" ë“±)ê³¼ ë™ì¼í•´ì•¼ í•©ë‹ˆë‹¤.
     public List<EnhancementRateData> rates = new List<EnhancementRateData>();
 
     public Dictionary<int, EnhancementRateData> MakeDict()
@@ -21,7 +21,7 @@ public class WeaponEnhanceMentDataLoader : ILoader<int, EnhancementRateData>
 
         foreach (EnhancementRateData rateData in rates)
         {
-            // LevelÀ» Key·Î »ç¿ë
+            // Levelì„ Keyë¡œ ì‚¬ìš©
             if (!dict.ContainsKey(rateData.currentLevel))
             {
                 dict.Add(rateData.currentLevel, rateData);

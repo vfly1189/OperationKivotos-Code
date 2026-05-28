@@ -4,30 +4,30 @@ using UnityEngine.AddressableAssets;
 [CreateAssetMenu(menuName = "Preload/GameScenePreloadData")]
 public class GameScenePreloadSO : SceneDataSO
 {
-    [Header("¸Ê")]
+    [Header("ë§µ")]
     public AssetReferenceGameObject mainVillage;
 
-    [Header("¸ŞÀÎ UI")]
+    [Header("ë©”ì¸ UI")]
     public AssetReferenceGameObject gameSceneCanvas;
     //public AssetReferenceGameObject effectStage;
 
-    [Header("ÀÔ±¸ Æ÷Å»")]
+    [Header("ì…êµ¬ í¬íƒˆ")]
     public AssetReferenceGameObject normalDungeonPortal;
     public AssetReferenceGameObject bossDungeonPortal;
 
-    [Header("»óÁ¡ Ä³¸¯ÅÍ")]
+    [Header("ìƒì  ìºë¦­í„°")]
     public AssetReferenceGameObject shopMaster;
 
-    [Header("¸ŞÀÎ ºê±İ")]
+    [Header("ë©”ì¸ ë¸Œê¸ˆ")]
     //public AudioClip[] mainBGMs;
     public AssetReferenceT<AudioClip>[] mainBGMs;
 
-    [Header("Pooling ¿ÀºêÁ§Æ®")]
+    [Header("Pooling ì˜¤ë¸Œì íŠ¸")]
     public AssetReferenceGameObject bullet;
     public AssetReferenceGameObject monsterAR;
     public AssetReferenceGameObject monsterRL;
     public AssetReferenceGameObject monsterTank;
 
-    [Header("¸ğµ¨µé ÂïÀ» Ä«¸Ş¶ó")]
+    [Header("ëª¨ë¸ë“¤ ì°ì„ ì¹´ë©”ë¼")]
     public AssetReferenceGameObject modelCamera;
 }

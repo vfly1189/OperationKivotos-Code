@@ -5,7 +5,7 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Collections.Generic;
 using System;
-using System.Linq; // Dictionary.Values.ToList() µî¿¡ »ç¿ë
+using System.Linq; // Dictionary.Values.ToList() ë“±ì— ì‚¬ìš©
 
 public class DungeonExcelImporter : EditorWindow
 {
@@ -15,7 +15,7 @@ public class DungeonExcelImporter : EditorWindow
         string excelPath = Application.dataPath + "/ExcelData/DungeonTable.xlsx";
         if (!File.Exists(excelPath))
         {
-            Debug.LogError("¿¢¼¿ ÆÄÀÏÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù: " + excelPath);
+            Debug.LogError("ì—‘ì…€ íŒŒì¼ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤: " + excelPath);
             return;
         }
 
@@ -25,7 +25,7 @@ public class DungeonExcelImporter : EditorWindow
 
             List<DungeonGroup> dungeonGroups = new List<DungeonGroup>();
             
-            // 1. DungeonGroup ½ÃÆ® ÆÄ½Ì
+            // 1. DungeonGroup ì‹œíŠ¸ íŒŒì‹±
             ISheet dungeonGroupSheet = book.GetSheet("DungeonGroup");
             if (dungeonGroupSheet != null)
             {
@@ -44,7 +44,7 @@ public class DungeonExcelImporter : EditorWindow
                 }
             }
 
-            // 2. DungeonTable ½ÃÆ® ÆÄ½Ì
+            // 2. DungeonTable ì‹œíŠ¸ íŒŒì‹±
             ISheet dungeonTableSheet = book.GetSheet("DungeonTable");
             if (dungeonTableSheet != null)
             {
@@ -67,7 +67,7 @@ public class DungeonExcelImporter : EditorWindow
                     {
                         if (item.GroupID == data.GroupID)
                         {
-                            // µñ¼Å³Ê¸®°¡ ¾Æ´Ñ ¸®½ºÆ®¿¡ Ãß°¡ÇØ¾ß SO ÆÄÀÏ¿¡ ÀúÀåµË´Ï´Ù.
+                            // ë”•ì…”ë„ˆë¦¬ê°€ ì•„ë‹Œ ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€í•´ì•¼ SO íŒŒì¼ì— ì €ì¥ë©ë‹ˆë‹¤.
                             item.DungeonDataList.Add(data);
                             break;
                         }
@@ -79,19 +79,19 @@ public class DungeonExcelImporter : EditorWindow
 
             SaveToScriptableObject(
                 dungeonGroups
-            ); // ÆÄ¶ó¹ÌÅÍ Ãß°¡
+            ); // íŒŒë¼ë¯¸í„° ì¶”ê°€
         }
     }
 
-    // --- ÇïÆÛ ÇÔ¼öµé ---
+    // --- í—¬í¼ í•¨ìˆ˜ë“¤ ---
 
-    // ¼ö½Ä(Formula)ÀÌ Àû¿ëµÈ ¼¿ °ªÀ» ¾ÈÀüÇÏ°Ô °¡Á®¿À´Â ÇÔ¼ö
+    // ìˆ˜ì‹(Formula)ì´ ì ìš©ëœ ì…€ ê°’ì„ ì•ˆì „í•˜ê²Œ ê°€ì ¸ì˜¤ëŠ” í•¨ìˆ˜
     private static int GetNumericValue(ICell cell)
     {
         if (cell == null) return 0;
         if (cell.CellType == CellType.Formula)
         {
-            // NPOI¿¡¼­ ¼ö½Ä °á°ú°ªÀ» ÀĞÀ¸·Á¸é NumericCellValue¸¦ ¹Ù·Î ÀĞÀ¸¸é µË´Ï´Ù (¿¢¼¿¿¡¼­ ÀúÀå½Ã °ªÀÌ Ä³½ÃµÇ¾î ÀÖ¾î¾ß ÇÔ)
+            // NPOIì—ì„œ ìˆ˜ì‹ ê²°ê³¼ê°’ì„ ì½ìœ¼ë ¤ë©´ NumericCellValueë¥¼ ë°”ë¡œ ì½ìœ¼ë©´ ë©ë‹ˆë‹¤ (ì—‘ì…€ì—ì„œ ì €ì¥ì‹œ ê°’ì´ ìºì‹œë˜ì–´ ìˆì–´ì•¼ í•¨)
             try { return (int)cell.NumericCellValue; }
             catch { return 0; }
         }
@@ -122,7 +122,7 @@ public class DungeonExcelImporter : EditorWindow
         return Define.DungeonDifficulty.Easy;
     }
 
-    // statPools ÆÄ¶ó¹ÌÅÍ Ãß°¡
+    // statPools íŒŒë¼ë¯¸í„° ì¶”ê°€
     private static void SaveToScriptableObject(List<DungeonGroup> dungeonGroups)
     {
         string assetPath = "Assets/Resources_moved/Data/DungeonDatabase.asset";

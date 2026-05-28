@@ -8,22 +8,22 @@ public class SectorManager
 
     public void RegisterSector(Sector sector)
     {
-        // ÀÌ¹Ì °°Àº IDÀÇ ¼½ÅÍ°¡ µî·ÏµÇ¾î ÀÖ´Ù¸é µ¤¾î¾²°Å³ª °æ°í 
+        // ì´ë¯¸ ê°™ì€ IDì˜ ì„¹í„°ê°€ ë“±ë¡ë˜ì–´ ìˆë‹¤ë©´ ë®ì–´ì“°ê±°ë‚˜ ê²½ê³  
         if (_sectors.ContainsKey(sector._sectorID))
         {
-            Debug.LogWarning($"[SectorManager] Áßº¹µÈ SectorId({sector._sectorID})°¡ µî·ÏµÇ¾ú½À´Ï´Ù.");
+            Debug.LogWarning($"[SectorManager] ì¤‘ë³µëœ SectorId({sector._sectorID})ê°€ ë“±ë¡ë˜ì—ˆìŠµë‹ˆë‹¤.");
         }
 
         _sectors[sector._sectorID] = sector;
     }
 
-    // ÇÃ·¹ÀÌ¾î°¡ Æ¯Á¤ ±¸¿ª¿¡ ÁøÀÔÇßÀ» ¶§ È£Ãâ
+    // í”Œë ˆì´ì–´ê°€ íŠ¹ì • êµ¬ì—­ì— ì§„ì…í–ˆì„ ë•Œ í˜¸ì¶œ
     public void OnPlayerEnterSector(int sectorId)
     {
-        // µñ¼Å³Ê¸®¿¡ ¾ø°Å³ª Á×Àº ¼½ÅÍ¸é ¹«½Ã 
+        // ë”•ì…”ë„ˆë¦¬ì— ì—†ê±°ë‚˜ ì£½ì€ ì„¹í„°ë©´ ë¬´ì‹œ 
         if (!_sectors.ContainsKey(sectorId) || _sectors[sectorId] == null) return;
 
-        Debug.Log($"{_sectors[sectorId].gameObject.name}¿¡ ÁøÀÔ");
+        Debug.Log($"{_sectors[sectorId].gameObject.name}ì— ì§„ì…");
 
         if (_currentActiveSector != null && _currentActiveSector._sectorID == sectorId)
             return;
@@ -37,7 +37,7 @@ public class SectorManager
         _currentActiveSector?.ActivateSector();
     }
 
-    // ¸ğµç ¼½ÅÍ¸¦ µ¿½Ã¿¡ È°¼ºÈ­
+    // ëª¨ë“  ì„¹í„°ë¥¼ ë™ì‹œì— í™œì„±í™”
     public void ActivateAllSectors()
     {
         foreach (var kvp in _sectors)
@@ -46,11 +46,11 @@ public class SectorManager
                 kvp.Value.ActivateSector();
         }
 
-        // ÀüÃ¼ È°¼ºÈ­ »óÅÂ¿¡¼­´Â ´ÜÀÏ ÃßÀû ´ë»óÀÌ ¾øÀ¸¹Ç·Î ÃÊ±âÈ­
+        // ì „ì²´ í™œì„±í™” ìƒíƒœì—ì„œëŠ” ë‹¨ì¼ ì¶”ì  ëŒ€ìƒì´ ì—†ìœ¼ë¯€ë¡œ ì´ˆê¸°í™”
         _currentActiveSector = null;
     }
 
-    // ¸ğµç ¼½ÅÍ¸¦ µ¿½Ã¿¡ ºñÈ°¼ºÈ­
+    // ëª¨ë“  ì„¹í„°ë¥¼ ë™ì‹œì— ë¹„í™œì„±í™”
     public void DeactivateAllSectors()
     {
         foreach (var kvp in _sectors)
@@ -65,6 +65,6 @@ public class SectorManager
     public void Clear()
     {
         _sectors.Clear();
-        _currentActiveSector = null; //¾À ÀüÈ¯ ½Ã ÇöÀç ¼½ÅÍµµ ¹İµå½Ã ºñ¿öÁà¾ß ÇÕ´Ï´Ù.
+        _currentActiveSector = null; //ì”¬ ì „í™˜ ì‹œ í˜„ì¬ ì„¹í„°ë„ ë°˜ë“œì‹œ ë¹„ì›Œì¤˜ì•¼ í•©ë‹ˆë‹¤.
     }
 }

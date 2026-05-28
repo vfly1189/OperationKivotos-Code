@@ -26,7 +26,7 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
     {
         _currentSlotData = slotData;
 
-        // slotData ÀÚÃ¼°¡ nullÀÏ ¶§ÀÇ ¹æ¾î ÄÚµå°¡ ÇÊ¿äÇÕ´Ï´Ù.
+        // slotData ìì²´ê°€ nullì¼ ë•Œì˜ ë°©ì–´ ì½”ë“œê°€ í•„ìš”í•©ë‹ˆë‹¤.
         if (slotData == null || slotData.IsEmpty)
         {
             _itemIcon.gameObject.SetActive(false);
@@ -34,7 +34,7 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
             return;
         }
 
-        // ¾ÆÀÌÅÛ Á¤º¸°¡ ÀÖÀ» ¶§ ¼ÂÆÃ
+        // ì•„ì´í…œ ì •ë³´ê°€ ìˆì„ ë•Œ ì…‹íŒ…
         _itemIcon.gameObject.SetActive(true);
         _itemGradeBackGround.gameObject.SetActive(true);
 
@@ -50,7 +50,7 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
         if (string.IsNullOrEmpty(iconKey)) return;
 
         Debug.Log($"Test : {iconKey}");
-        // ResourceManager¸¦ ÅëÇØ ºñµ¿±â·Î Sprite ·Îµå
+        // ResourceManagerë¥¼ í†µí•´ ë¹„ë™ê¸°ë¡œ Sprite ë¡œë“œ
         //Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);
         Sprite icon = await Managers.Resource.GetSpriteFromAtlasAsync("EquipmentIconAtlas", iconKey);
 
@@ -63,8 +63,8 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
     }
     private async void SetGradeBackGround(ItemGrade grade)
     {
-        // µî±Ş¿¡ ¸Â´Â Addressable Key ¹®ÀÚ¿­ Á¶ÇÕ (¿¹: "Common_Gray", "Rare_Blue")
-        string gradeKey = $"GradeBg_{grade.ToString()}"; // ¿¹½Ã
+        // ë“±ê¸‰ì— ë§ëŠ” Addressable Key ë¬¸ìì—´ ì¡°í•© (ì˜ˆ: "Common_Gray", "Rare_Blue")
+        string gradeKey = $"GradeBg_{grade.ToString()}"; // ì˜ˆì‹œ
         Debug.Log($"GradeKey : {gradeKey}");
         //Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey);
         Sprite bgSprite = await Managers.Resource.GetSpriteFromAtlasAsync("ItemGradeAtlas", gradeKey);
@@ -76,28 +76,28 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
         }
     }
 
-    // 2. ÀåÂøµÈ Àåºñ¸¦ ´õºí Å¬¸¯ÇÏ¿© ÇØÁ¦ÇÒ ¶§
+    // 2. ì¥ì°©ëœ ì¥ë¹„ë¥¼ ë”ë¸” í´ë¦­í•˜ì—¬ í•´ì œí•  ë•Œ
     public void OnPointerClick(PointerEventData eventData)
     {
         if (eventData.clickCount == 2)
         {
             if (_currentSlotData != null && !_currentSlotData.IsEmpty)
             {
-                Debug.Log("EquipSlot OnPointerClick È£Ãâ!");
+                Debug.Log("EquipSlot OnPointerClick í˜¸ì¶œ!");
                 Managers.Equipment.UnEquip(_equipType);
             }
         }
     }
 
-    // ÀÎº¥Åä¸® ½½·Ô (UI_ItemSlot) ³»ºÎÀÇ ÀÌº¥Æ®
+    // ì¸ë²¤í† ë¦¬ ìŠ¬ë¡¯ (UI_ItemSlot) ë‚´ë¶€ì˜ ì´ë²¤íŠ¸
     public void OnPointerEnter(PointerEventData eventData)
     {
-        Debug.Log($"OnPointerEnter ½ÃÀÛ");
+        Debug.Log($"OnPointerEnter ì‹œì‘");
         if (_currentSlotData != null && !_currentSlotData.IsEmpty)
         {
-            Debug.Log($"OnPointerEnter ÅøÆÁ ½ÃÀÛ");
+            Debug.Log($"OnPointerEnter íˆ´íŒ ì‹œì‘");
 
-            // ÅøÆÁ È°¼ºÈ­ ¹× Á¤º¸ ¼ÂÆÃ
+            // íˆ´íŒ í™œì„±í™” ë° ì •ë³´ ì…‹íŒ…
             //Managers.UI.ShowItemTooltip(_currentSlotData, eventData.position);
             UI_ItemInfo.ShowTooltip(_currentSlotData, eventData.position);
         }

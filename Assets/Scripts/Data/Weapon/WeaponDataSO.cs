@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-[System.Serializable] // <<<<< ÀÌ°Å ÇÊ¼ö!
+[System.Serializable] // <<<<< ì´ê±° í•„ìˆ˜!
 public class WeaponLevelStat
 {
     public int Level;
@@ -20,23 +20,23 @@ public class WeaponDataSO : ScriptableObject
     [Header("Excel Data - Info")]
     public int id;              // 2000
     public string key;          // wpn_Hoshino
-    public string weaponName;   // È£·ç½ºÀÇ ´«
+    public string weaponName;   // í˜¸ë£¨ìŠ¤ì˜ ëˆˆ
     public int ownerCharID;     // 1000
 
     [Header("Assets - Visuals & Prefabs")]
     public AssetReferenceSprite weaponIcon;
 
     [Header("Excel Data - Stats Array (Lv.1 ~ Max)")]
-    // ¿¢¼¿ ÆÄ½Ì ½ÃÁ¡¿¡ Base ½ºÅÈ + Growth ½ºÅÈÀ» ¹Ì¸® °è»êÇØ¼­ 25°³ Ä­¿¡ ²Ë Ã¤¿ö³Ö½À´Ï´Ù.
-    // ÀÎµ¦½º 0 = 1·¹º§, ÀÎµ¦½º 1 = 2·¹º§ ...
+    // ì—‘ì…€ íŒŒì‹± ì‹œì ì— Base ìŠ¤íƒ¯ + Growth ìŠ¤íƒ¯ì„ ë¯¸ë¦¬ ê³„ì‚°í•´ì„œ 25ê°œ ì¹¸ì— ê½‰ ì±„ì›Œë„£ìŠµë‹ˆë‹¤.
+    // ì¸ë±ìŠ¤ 0 = 1ë ˆë²¨, ì¸ë±ìŠ¤ 1 = 2ë ˆë²¨ ...
     public WeaponLevelStat[] levelStats;
 
     // ==========================================
-    // ·±Å¸ÀÓ¿¡¼­ Æ¯Á¤ ·¹º§ ½ºÅÈ »©¿À±â¿ë ÇÔ¼ö
+    // ëŸ°íƒ€ìž„ì—ì„œ íŠ¹ì • ë ˆë²¨ ìŠ¤íƒ¯ ë¹¼ì˜¤ê¸°ìš© í•¨ìˆ˜
     // ==========================================
     public WeaponLevelStat GetStatByLevel(int level)
     {
-        // ¹è¿­ ÀÎµ¦½º´Â 0ºÎÅÍ ½ÃÀÛÇÏ¹Ç·Î (level - 1)
+        // ë°°ì—´ ì¸ë±ìŠ¤ëŠ” 0ë¶€í„° ì‹œìž‘í•˜ë¯€ë¡œ (level - 1)
         int index = level - 1;
 
         if (levelStats != null && index >= 0 && index < levelStats.Length)
@@ -44,7 +44,7 @@ public class WeaponDataSO : ScriptableObject
             return levelStats[index];
         }
 
-        Debug.LogError($"[{weaponName}] {level} ·¹º§ÀÇ ½ºÅÈ µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù.");
+        Debug.LogError($"[{weaponName}] {level} ë ˆë²¨ì˜ ìŠ¤íƒ¯ ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.");
         return default;
     }
 
@@ -52,19 +52,19 @@ public class WeaponDataSO : ScriptableObject
     {
         if (string.IsNullOrEmpty(key))
         {
-            Debug.LogWarning($"[WeaponDataSO] ¹«±â ID {id}ÀÇ key°¡ ºñ¾îÀÖ½À´Ï´Ù!");
-            return "Weapon_Icon_Default"; // ºó ÇÏ¾á»ö ´ë½Å ¶ç¿öÁÙ ±âº» ¾ÆÀÌÄÜ ÀÌ¸§
+            Debug.LogWarning($"[WeaponDataSO] ë¬´ê¸° ID {id}ì˜ keyê°€ ë¹„ì–´ìžˆìŠµë‹ˆë‹¤!");
+            return "Weapon_Icon_Default"; // ë¹ˆ í•˜ì–€ìƒ‰ ëŒ€ì‹  ë„ì›Œì¤„ ê¸°ë³¸ ì•„ì´ì½˜ ì´ë¦„
         }
 
-        // 2. Çü½ÄÀÌ ¾È ¸ÂÀ» ¶§ (¾ð´õ¹Ù°¡ ¾øÀ» ¶§) ¹æ¾î
+        // 2. í˜•ì‹ì´ ì•ˆ ë§žì„ ë•Œ (ì–¸ë”ë°”ê°€ ì—†ì„ ë•Œ) ë°©ì–´
         string[] splitData = key.Split('_');
         if (splitData.Length < 2)
         {
-            Debug.LogWarning($"[WeaponDataSO] ¹«±â key Çü½ÄÀÌ Àß¸øµÇ¾ú½À´Ï´Ù. (ÇöÀç: {key}, ¿¹»ó: wpn_Name)");
+            Debug.LogWarning($"[WeaponDataSO] ë¬´ê¸° key í˜•ì‹ì´ ìž˜ëª»ë˜ì—ˆìŠµë‹ˆë‹¤. (í˜„ìž¬: {key}, ì˜ˆìƒ: wpn_Name)");
             return "Weapon_Icon_Default";
         }
 
-        // 3. ¹®ÀÚ¿­ º¸°£À» »ç¿ëÇÏ¿© ±ò²ûÇÏ°Ô Á¶ÇÕ
+        // 3. ë¬¸ìžì—´ ë³´ê°„ì„ ì‚¬ìš©í•˜ì—¬ ê¹”ë”í•˜ê²Œ ì¡°í•©
         string characterName = splitData[1];
         return $"Weapon_Icon_{characterName}";
     }

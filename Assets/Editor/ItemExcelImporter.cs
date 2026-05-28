@@ -5,7 +5,7 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Collections.Generic;
 using System;
-using System.Linq; // Dictionary.Values.ToList() µî¿¡ »ç¿ë
+using System.Linq; // Dictionary.Values.ToList() ë“±ì— ì‚¬ìš©
 
 public class ExcelImporter : EditorWindow
 {
@@ -15,7 +15,7 @@ public class ExcelImporter : EditorWindow
         string excelPath = Application.dataPath + "/ExcelData/ItemTable.xlsx";
         if (!File.Exists(excelPath))
         {
-            Debug.LogError("¿¢¼¿ ÆÄÀÏÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù: " + excelPath);
+            Debug.LogError("ì—‘ì…€ íŒŒì¼ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤: " + excelPath);
             return;
         }
 
@@ -26,7 +26,7 @@ public class ExcelImporter : EditorWindow
             List<EquipmentData> equipList = new List<EquipmentData>();
             List<ConsumableData> consumeList = new List<ConsumableData>();
             List<MaterialData> matList = new List<MaterialData>();
-            List<StatPoolData> statPoolList = new List<StatPoolData>(); // Ãß°¡µÊ
+            List<StatPoolData> statPoolList = new List<StatPoolData>(); // ì¶”ê°€ë¨
 
             List<EquipmentDecompositionData> decompositionDatas = new List<EquipmentDecompositionData>();
             List<EquipmentUpgradeBookExpData> equipmentUpgradeBookExpDatas = new List<EquipmentUpgradeBookExpData>();
@@ -35,7 +35,7 @@ public class ExcelImporter : EditorWindow
 
             List<GradeConfig> gradeConfigData = new List<GradeConfig>();
 
-            // 1. Equipment ½ÃÆ® ÆÄ½Ì (¼öÁ¤µÊ)
+            // 1. Equipment ì‹œíŠ¸ íŒŒì‹± (ìˆ˜ì •ë¨)
             ISheet equipSheet = book.GetSheet("Equipment");
             if (equipSheet != null)
             {
@@ -46,31 +46,31 @@ public class ExcelImporter : EditorWindow
                         continue;
 
                     EquipmentData data = new EquipmentData();
-                    // --- BaseItemData »ó¼Ó ¼Ó¼º ---
+                    // --- BaseItemData ìƒì† ì†ì„± ---
                     data.ID = (int)row.GetCell(0).NumericCellValue;
                     data.IconKey = row.GetCell(1)?.StringCellValue ?? "";
                     data.Grade = ParseGrade(row.GetCell(2)?.StringCellValue);
                     data.Name = GetCellString(row.GetCell(3));
 
-                    // --- Equipment Àü¿ë ¼Ó¼º ---
+                    // --- Equipment ì „ìš© ì†ì„± ---
                     data.EquipPart = GetCellString(row.GetCell(4));
                     data.Tier = (int)(row.GetCell(5)?.NumericCellValue ?? 0);
 
-                    // ¼ö½ÄÀÌ Àû¿ëµÈ ¼¿ÀÇ °á°ú°ªÀ» ÆÄ½Ì
+                    // ìˆ˜ì‹ì´ ì ìš©ëœ ì…€ì˜ ê²°ê³¼ê°’ì„ íŒŒì‹±
                     data.MainStatPoolID = GetNumericValue(row.GetCell(6));
                     data.SubStatPoolID = GetNumericValue(row.GetCell(7));
 
-                    data.Description = GetCellString(row.GetCell(8)); // ¿¢¼¿ ±¸Á¶»ó 8¹øÂ°(I¿­)·Î DescriptionÀÌ ´ç°ÜÁü
+                    data.Description = GetCellString(row.GetCell(8)); // ì—‘ì…€ êµ¬ì¡°ìƒ 8ë²ˆì§¸(Iì—´)ë¡œ Descriptionì´ ë‹¹ê²¨ì§
 
                     equipList.Add(data);
                 }
             }
 
-            // 2. StatPool ½ÃÆ® ÆÄ½Ì (Ãß°¡µÊ)
+            // 2. StatPool ì‹œíŠ¸ íŒŒì‹± (ì¶”ê°€ë¨)
             ISheet statSheet = book.GetSheet("StatPool");
             if (statSheet != null)
             {
-                // PoolID¸¦ Key·Î ¹­¾îÁÖ±â À§ÇÑ ÀÓ½Ã µñ¼Å³Ê¸®
+                // PoolIDë¥¼ Keyë¡œ ë¬¶ì–´ì£¼ê¸° ìœ„í•œ ì„ì‹œ ë”•ì…”ë„ˆë¦¬
                 Dictionary<int, StatPoolData> poolDict = new Dictionary<int, StatPoolData>();
 
                 for (int i = 1; i <= statSheet.LastRowNum; i++)
@@ -81,24 +81,24 @@ public class ExcelImporter : EditorWindow
 
                     int poolId = (int)row.GetCell(0).NumericCellValue;
 
-                    // µñ¼Å³Ê¸®¿¡ ¾øÀ¸¸é »õ·Î »ı¼º
+                    // ë”•ì…”ë„ˆë¦¬ì— ì—†ìœ¼ë©´ ìƒˆë¡œ ìƒì„±
                     if (!poolDict.ContainsKey(poolId))
                     {
                         poolDict[poolId] = new StatPoolData()
                         {
                             PoolID = poolId,
-                            Note = GetCellString(row.GetCell(5)) // Note°¡ 5¹øÂ°(F¿­)¿¡ ÀÖÀ½
+                            Note = GetCellString(row.GetCell(5)) // Noteê°€ 5ë²ˆì§¸(Fì—´)ì— ìˆìŒ
                         };
                     }
 
-                    // Entry »ı¼º ¹× ÆÄ½Ì
+                    // Entry ìƒì„± ë° íŒŒì‹±
                     StatPoolEntry entry = new StatPoolEntry();
                     string statTypeStr = GetCellString(row.GetCell(1));
 
                     if (Enum.TryParse(statTypeStr, true, out EStatType parsedType))
                         entry.StatType = parsedType;
                     else
-                        Debug.LogWarning($"[StatPool] ¾Ë ¼ö ¾ø´Â StatType: {statTypeStr} (Row: {i})");
+                        Debug.LogWarning($"[StatPool] ì•Œ ìˆ˜ ì—†ëŠ” StatType: {statTypeStr} (Row: {i})");
 
                     entry.Weight = (int)(row.GetCell(2)?.NumericCellValue ?? 0);
                     entry.BaseValue = (float)(row.GetCell(3)?.NumericCellValue ?? 0f);
@@ -106,19 +106,19 @@ public class ExcelImporter : EditorWindow
                     entry.UpgradeMaxValue = (float)(row.GetCell(5)?.NumericCellValue ?? 0f);
 
 
-                    // ÇØ´ç PoolÀÇ ¸®½ºÆ®¿¡ Ãß°¡
+                    // í•´ë‹¹ Poolì˜ ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
                     poolDict[poolId].Entries.Add(entry);
                 }
 
-                // µñ¼Å³Ê¸® Values¸¦ List·Î º¯È¯
+                // ë”•ì…”ë„ˆë¦¬ Valuesë¥¼ Listë¡œ ë³€í™˜
                 statPoolList = poolDict.Values.ToList();
             }
 
-            // 3. Consumable ½ÃÆ® ÆÄ½Ì (±âÁ¸°ú µ¿ÀÏ)
+            // 3. Consumable ì‹œíŠ¸ íŒŒì‹± (ê¸°ì¡´ê³¼ ë™ì¼)
             ISheet consumeSheet = book.GetSheet("Consumable");
             if (consumeSheet != null)
             {
-                // ... ±âÁ¸ Consumable ÆÄ½Ì ·ÎÁ÷ ...
+                // ... ê¸°ì¡´ Consumable íŒŒì‹± ë¡œì§ ...
                 for (int i = 1; i <= consumeSheet.LastRowNum; i++)
                 {
                     IRow row = consumeSheet.GetRow(i);
@@ -139,11 +139,11 @@ public class ExcelImporter : EditorWindow
                 }
             }
 
-            // 4. Material ½ÃÆ® ÆÄ½Ì (±âÁ¸°ú µ¿ÀÏ)
+            // 4. Material ì‹œíŠ¸ íŒŒì‹± (ê¸°ì¡´ê³¼ ë™ì¼)
             ISheet matSheet = book.GetSheet("Material");
             if (matSheet != null)
             {
-                // ... ±âÁ¸ Material ÆÄ½Ì ·ÎÁ÷ ...
+                // ... ê¸°ì¡´ Material íŒŒì‹± ë¡œì§ ...
                 for (int i = 1; i <= matSheet.LastRowNum; i++)
                 {
                     IRow row = matSheet.GetRow(i);
@@ -163,7 +163,7 @@ public class ExcelImporter : EditorWindow
                 }
             }
 
-            // 5. EquipmentDecompositionData ½ÃÆ® ÆÄ½Ì (±âÁ¸°ú µ¿ÀÏ)
+            // 5. EquipmentDecompositionData ì‹œíŠ¸ íŒŒì‹± (ê¸°ì¡´ê³¼ ë™ì¼)
             ISheet equipmentDecompositionSheet = book.GetSheet("EquipmentDecomposition");
             if (equipmentDecompositionSheet != null)
             {
@@ -189,7 +189,7 @@ public class ExcelImporter : EditorWindow
                 }
             }
 
-            // 6. upgradeBookExpSheet ½ÃÆ® ÆÄ½Ì (±âÁ¸°ú µ¿ÀÏ)
+            // 6. upgradeBookExpSheet ì‹œíŠ¸ íŒŒì‹± (ê¸°ì¡´ê³¼ ë™ì¼)
             ISheet upgradeBookExpSheet = book.GetSheet("EquipmentUpgradeBookExp");
             if (upgradeBookExpSheet != null)
             {
@@ -208,7 +208,7 @@ public class ExcelImporter : EditorWindow
             }
 
 
-            // 7. EquipmentLevelExpData ½ÃÆ® ÆÄ½Ì (±âÁ¸°ú µ¿ÀÏ)
+            // 7. EquipmentLevelExpData ì‹œíŠ¸ íŒŒì‹± (ê¸°ì¡´ê³¼ ë™ì¼)
             ISheet equipmentLevelExpSheet = book.GetSheet("EquipmentLevelExpData");
             if (equipmentLevelExpSheet != null)
             {
@@ -226,7 +226,7 @@ public class ExcelImporter : EditorWindow
                 }
             }
 
-            // 8. EquipmentUpgradeCostData ½ÃÆ® ÆÄ½Ì (±âÁ¸°ú µ¿ÀÏ)
+            // 8. EquipmentUpgradeCostData ì‹œíŠ¸ íŒŒì‹± (ê¸°ì¡´ê³¼ ë™ì¼)
             ISheet equipmentUpgradeCostSheet = book.GetSheet("EquipmentUpgradeCost");
             if (equipmentUpgradeCostSheet != null)
             {
@@ -244,7 +244,7 @@ public class ExcelImporter : EditorWindow
                 }
             }
 
-            // 9. GradeConfig ½ÃÆ® ÆÄ½Ì (±âÁ¸°ú µ¿ÀÏ)
+            // 9. GradeConfig ì‹œíŠ¸ íŒŒì‹± (ê¸°ì¡´ê³¼ ë™ì¼)
             ISheet gradeConfigSheet = book.GetSheet("GradeConfig");
             if (gradeConfigSheet != null)
             {
@@ -261,7 +261,7 @@ public class ExcelImporter : EditorWindow
                     if (Enum.TryParse(gradeTypeStr, true, out ItemGrade parsedType))
                         data.Grade = parsedType;
                     else
-                        Debug.LogWarning($"[StatPool] ¾Ë ¼ö ¾ø´Â StatType: {data.Grade} (Row: {i})");
+                        Debug.LogWarning($"[StatPool] ì•Œ ìˆ˜ ì—†ëŠ” StatType: {data.Grade} (Row: {i})");
 
                     data.MaxLevel = (int)row.GetCell(1).NumericCellValue;
                     data.InitialSubStatCount = (int)row.GetCell(2).NumericCellValue;
@@ -275,19 +275,19 @@ public class ExcelImporter : EditorWindow
                 equipList, consumeList, matList, 
                 statPoolList, decompositionDatas, equipmentUpgradeBookExpDatas, equipmentLevelExpData, 
                 equipmentUpgradeCostData, gradeConfigData
-                ); // ÆÄ¶ó¹ÌÅÍ Ãß°¡
+                ); // íŒŒë¼ë¯¸í„° ì¶”ê°€
         }
     }
 
-    // --- ÇïÆÛ ÇÔ¼öµé ---
+    // --- í—¬í¼ í•¨ìˆ˜ë“¤ ---
 
-    // ¼ö½Ä(Formula)ÀÌ Àû¿ëµÈ ¼¿ °ªÀ» ¾ÈÀüÇÏ°Ô °¡Á®¿À´Â ÇÔ¼ö
+    // ìˆ˜ì‹(Formula)ì´ ì ìš©ëœ ì…€ ê°’ì„ ì•ˆì „í•˜ê²Œ ê°€ì ¸ì˜¤ëŠ” í•¨ìˆ˜
     private static int GetNumericValue(ICell cell)
     {
         if (cell == null) return 0;
         if (cell.CellType == CellType.Formula)
         {
-            // NPOI¿¡¼­ ¼ö½Ä °á°ú°ªÀ» ÀĞÀ¸·Á¸é NumericCellValue¸¦ ¹Ù·Î ÀĞÀ¸¸é µË´Ï´Ù (¿¢¼¿¿¡¼­ ÀúÀå½Ã °ªÀÌ Ä³½ÃµÇ¾î ÀÖ¾î¾ß ÇÔ)
+            // NPOIì—ì„œ ìˆ˜ì‹ ê²°ê³¼ê°’ì„ ì½ìœ¼ë ¤ë©´ NumericCellValueë¥¼ ë°”ë¡œ ì½ìœ¼ë©´ ë©ë‹ˆë‹¤ (ì—‘ì…€ì—ì„œ ì €ì¥ì‹œ ê°’ì´ ìºì‹œë˜ì–´ ìˆì–´ì•¼ í•¨)
             try { return (int)cell.NumericCellValue; }
             catch { return 0; }
         }
@@ -311,7 +311,7 @@ public class ExcelImporter : EditorWindow
         return ItemGrade.Common;
     }
 
-    // statPools ÆÄ¶ó¹ÌÅÍ Ãß°¡
+    // statPools íŒŒë¼ë¯¸í„° ì¶”ê°€
     private static void SaveToScriptableObject(
         List<EquipmentData> equips, List<ConsumableData> consumes, List<MaterialData> mats, 
         List<StatPoolData> statPools, List<EquipmentDecompositionData> equipmentDecompositionDatas,
@@ -334,7 +334,7 @@ public class ExcelImporter : EditorWindow
         database.Equipments = equips;
         database.Consumables = consumes;
         database.Materials = mats;
-        database.StatPools = statPools; // ÇÒ´ç
+        database.StatPools = statPools; // í• ë‹¹
         database.DecompositionData = equipmentDecompositionDatas;
         database.UpgradeBookExpData = equipmentUpgradeBookExpDatas;
         database.EquipmentLevelExpData = equipmentLevelExpDatas;
@@ -345,13 +345,13 @@ public class ExcelImporter : EditorWindow
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log($"[¸ÖÆ¼ ½ÃÆ® ÆÄ½Ì ¿Ï·á] Àåºñ: " +
-            $"{equips.Count}°³, ½ºÅÈÇ®: {statPools.Count}°³, " +
-            $"¼Ò¸ğÇ°: {consumes.Count}°³, Àç·á: {mats.Count}°³," +
-            $"ÀåºñºĞÇØ Á¤º¸: {equipmentDecompositionDatas.Count}°³," +
-            $"Àåºñ°­È­Àç·á Á¤º¸: {equipmentUpgradeBookExpDatas.Count}°³," +
-            $"Àåºñ °­È­·¹º§ º° °æÇèÄ¡ : {equipmentLevelExpDatas.Count}°³," +
-            $"Àåºñ ·¹º§º° ¼Ò¸ğ ºñ¿ë : {equipmentUpgradeCostData.Count}°³ º¯È¯ ¿Ï·á!"
+        Debug.Log($"[ë©€í‹° ì‹œíŠ¸ íŒŒì‹± ì™„ë£Œ] ì¥ë¹„: " +
+            $"{equips.Count}ê°œ, ìŠ¤íƒ¯í’€: {statPools.Count}ê°œ, " +
+            $"ì†Œëª¨í’ˆ: {consumes.Count}ê°œ, ì¬ë£Œ: {mats.Count}ê°œ," +
+            $"ì¥ë¹„ë¶„í•´ ì •ë³´: {equipmentDecompositionDatas.Count}ê°œ," +
+            $"ì¥ë¹„ê°•í™”ì¬ë£Œ ì •ë³´: {equipmentUpgradeBookExpDatas.Count}ê°œ," +
+            $"ì¥ë¹„ ê°•í™”ë ˆë²¨ ë³„ ê²½í—˜ì¹˜ : {equipmentLevelExpDatas.Count}ê°œ," +
+            $"ì¥ë¹„ ë ˆë²¨ë³„ ì†Œëª¨ ë¹„ìš© : {equipmentUpgradeCostData.Count}ê°œ ë³€í™˜ ì™„ë£Œ!"
             );
     }
 }

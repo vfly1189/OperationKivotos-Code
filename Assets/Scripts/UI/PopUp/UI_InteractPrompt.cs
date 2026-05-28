@@ -8,7 +8,7 @@ public class UI_InteractPrompt : UI_Base
 
     public override void Init()
     {
-        // Init ½ÃÁ¡¿¡ ÇöÀç ÇÒ´çµÈ Å°¸¦ °¡Á®¿Í¼­ ÅØ½ºÆ® ¼¼ÆÃ
+        // Init ì‹œì ì— í˜„ì¬ í• ë‹¹ëœ í‚¤ë¥¼ ê°€ì ¸ì™€ì„œ í…ìŠ¤íŠ¸ ì„¸íŒ…
         RefreshKeyText();
     }
    
@@ -17,7 +17,7 @@ public class UI_InteractPrompt : UI_Base
         _pressKey.text = Managers.Input.GetKeyName("Interact");
     }
 
-    // NPC¸¶´Ù "´ëÈ­ÇÏ±â", "´ëÀåÀåÀÌ ¾Õ" µî ÅØ½ºÆ®°¡ ´Ù¸¦ ¼ö ÀÖÀ¸´Ï º¯°æ ÇÔ¼ö
+    // NPCë§ˆë‹¤ "ëŒ€í™”í•˜ê¸°", "ëŒ€ì¥ì¥ì´ ì•" ë“± í…ìŠ¤íŠ¸ê°€ ë‹¤ë¥¼ ìˆ˜ ìˆìœ¼ë‹ˆ ë³€ê²½ í•¨ìˆ˜
     public void SetPromptText(string message)
     {
         _promptText.text = message;

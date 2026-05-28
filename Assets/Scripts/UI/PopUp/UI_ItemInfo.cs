@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 public class UI_ItemInfo : UI_Base
 {
-    // 1. ÀÚ±â ÀÚ½ÅÀ» ÀúÀåÇÒ ½ºÅÂÆ½ º¯¼ö
+    // 1. ìê¸° ìì‹ ì„ ì €ì¥í•  ìŠ¤íƒœí‹± ë³€ìˆ˜
     private static UI_ItemInfo _instance;
     private static bool _isLoading = false;
 
@@ -30,7 +30,7 @@ public class UI_ItemInfo : UI_Base
     private List<UI_MainStatInfo> _mainStatSlots = new();
     private List<UI_SubStatInfo> _subStatSlots = new();
 
-    //  Init¿¡¼­ ÃÖÃÊ 1È¸ »ı¼º
+    //  Initì—ì„œ ìµœì´ˆ 1íšŒ ìƒì„±
     public override async void Init()
     {
         for (int i = 0; i < MAX_STAT_COUNT; i++)
@@ -60,7 +60,7 @@ public class UI_ItemInfo : UI_Base
         SetGrade(inventorySlot.itemID, ItemCategory.Equipment);
         SetTier(inventorySlot.itemID, ItemCategory.Equipment);
 
-        //  Destroy/»ı¼º ¾øÀÌ SetActive¸¸
+        //  Destroy/ìƒì„± ì—†ì´ SetActiveë§Œ
         SetMainStat(inventorySlot.EquipInstance);
         SetSubStat(inventorySlot.EquipInstance);
     }
@@ -74,12 +74,12 @@ public class UI_ItemInfo : UI_Base
         SetTier(inventorySlot.itemID, ItemCategory.Material);
         _itemUpgradeLevel.text = "";
 
-        //  Àç·á ¾ÆÀÌÅÛÀº ½ºÅÈ ¾øÀ¸¹Ç·Î ÀüºÎ ¼û±â±â
+        //  ì¬ë£Œ ì•„ì´í…œì€ ìŠ¤íƒ¯ ì—†ìœ¼ë¯€ë¡œ ì „ë¶€ ìˆ¨ê¸°ê¸°
         _mainStatSlots.ForEach(s => s.gameObject.SetActive(false));
         _subStatSlots.ForEach(s => s.gameObject.SetActive(false));
     }
 
-    //  ¿ÏÀü µ¿±â - Destroy/»ı¼º ¾øÀ½
+    //  ì™„ì „ ë™ê¸° - Destroy/ìƒì„± ì—†ìŒ
     private void SetMainStat(EquipmentInstance instance)
     {
         var stats = instance.MainStats;
@@ -141,18 +141,18 @@ public class UI_ItemInfo : UI_Base
     }
 
 
-    // 2. ÀÎ½ºÅÏ½º¸¦ °¡Á®¿À°Å³ª »ı¼ºÇÏ´Â ÇïÆÛ ÇÔ¼ö
+    // 2. ì¸ìŠ¤í„´ìŠ¤ë¥¼ ê°€ì ¸ì˜¤ê±°ë‚˜ ìƒì„±í•˜ëŠ” í—¬í¼ í•¨ìˆ˜
     private static async UniTask<UI_ItemInfo> GetInstanceAsync()
     {
         if (_instance != null) return _instance;
-        if (_isLoading) // ´©±º°¡ ÀÌ¹Ì ·Îµù ÁßÀÌ¶ó¸é ³¡³¯ ¶§±îÁö ´ë±â
+        if (_isLoading) // ëˆ„êµ°ê°€ ì´ë¯¸ ë¡œë”© ì¤‘ì´ë¼ë©´ ëë‚  ë•Œê¹Œì§€ ëŒ€ê¸°
         {
             await UniTask.WaitUntil(() => _instance != null);
             return _instance;
         }
 
         _isLoading = true;
-        // UIManager´Â »ı¼º¸¸ µ½½À´Ï´Ù.
+        // UIManagerëŠ” ìƒì„±ë§Œ ë•ìŠµë‹ˆë‹¤.
         _instance = await Managers.UI.MakeSubItemAsync<UI_ItemInfo>("UI_ItemInfo", Managers.UI.CanvasSystem.transform);
         _instance.gameObject.SetActive(false);
         _isLoading = false;
@@ -160,7 +160,7 @@ public class UI_ItemInfo : UI_Base
         return _instance;
     }
 
-    // 3. ¿ÜºÎ¿¡¼­ Á¢±ÙÇÏ´Â Á¤Àû(Static) ¸Ş¼­µå
+    // 3. ì™¸ë¶€ì—ì„œ ì ‘ê·¼í•˜ëŠ” ì •ì (Static) ë©”ì„œë“œ
     public static async void ShowTooltip(InventorySlot slot, Vector2 screenPos)
     {
         if (slot == null || slot.IsEmpty) return;
@@ -169,7 +169,7 @@ public class UI_ItemInfo : UI_Base
         tooltip.gameObject.SetActive(true);
         tooltip.SetInfo(slot);
 
-        // À§Ä¡ Á¶Á¤ ·ÎÁ÷
+        // ìœ„ì¹˜ ì¡°ì • ë¡œì§
         RectTransform tooltipRect = tooltip.GetComponent<RectTransform>();
         RectTransform canvasRect = Managers.UI.CanvasSystem.GetComponent<RectTransform>();
 
@@ -188,27 +188,27 @@ public class UI_ItemInfo : UI_Base
 
     public static void RefreshItemTooltip()
     {
-        // ÅøÆÁÀÌ ÄÑÁ®ÀÖÁö ¾Ê´Ù¸é ¹«½Ã
+        // íˆ´íŒì´ ì¼œì ¸ìˆì§€ ì•Šë‹¤ë©´ ë¬´ì‹œ
         if (_instance == null || !_instance.gameObject.activeSelf) return;
 
-        // ¹æ±İ ¾ÆÀÌÅÛÀÌ ±³Ã¼/¼Ò¸ğµÇ¾î ºó ½½·ÔÀÌ µÇ¾úÀ» ¼ö ÀÖÀ¸¹Ç·Î 
-        // ÀÏ´Ü ¹«Á¶°Ç ÅøÆÁÀ» ²ü´Ï´Ù.
+        // ë°©ê¸ˆ ì•„ì´í…œì´ êµì²´/ì†Œëª¨ë˜ì–´ ë¹ˆ ìŠ¬ë¡¯ì´ ë˜ì—ˆì„ ìˆ˜ ìˆìœ¼ë¯€ë¡œ 
+        // ì¼ë‹¨ ë¬´ì¡°ê±´ íˆ´íŒì„ ë•ë‹ˆë‹¤.
         HideTooltip();
 
-        // ²ô°í ³­ µÚ, À¯´ÏÆ¼ÀÇ EventSystemÀ» ÀÌ¿ëÇØ ÇöÀç ¸¶¿ì½º(Æ÷ÀÎÅÍ) ¾Æ·¡¿¡ 
-        // ¾î¶² UI°¡ ÀÖ´ÂÁö °Ë»çÇÏ¿© ´Ù½Ã OnPointerEnter ÀÌº¥Æ®¸¦ ¹ß»ı½ÃÅµ´Ï´Ù.
-        // (¸¶¿ì½º°¡ ¿©ÀüÈ÷ ¾ÆÀÌÅÛ ½½·Ô À§¿¡ ÀÖ´Ù¸é ÅøÆÁÀÌ Áï½Ã ´Ù½Ã ÄÑÁü)
+        // ë„ê³  ë‚œ ë’¤, ìœ ë‹ˆí‹°ì˜ EventSystemì„ ì´ìš©í•´ í˜„ì¬ ë§ˆìš°ìŠ¤(í¬ì¸í„°) ì•„ë˜ì— 
+        // ì–´ë–¤ UIê°€ ìˆëŠ”ì§€ ê²€ì‚¬í•˜ì—¬ ë‹¤ì‹œ OnPointerEnter ì´ë²¤íŠ¸ë¥¼ ë°œìƒì‹œí‚µë‹ˆë‹¤.
+        // (ë§ˆìš°ìŠ¤ê°€ ì—¬ì „íˆ ì•„ì´í…œ ìŠ¬ë¡¯ ìœ„ì— ìˆë‹¤ë©´ íˆ´íŒì´ ì¦‰ì‹œ ë‹¤ì‹œ ì¼œì§)
 
-        // 3. New Input SystemÀÇ ¸¶¿ì½º ¿¬°á »óÅÂ¸¦ Ã¼Å©ÇÕ´Ï´Ù.
+        // 3. New Input Systemì˜ ë§ˆìš°ìŠ¤ ì—°ê²° ìƒíƒœë¥¼ ì²´í¬í•©ë‹ˆë‹¤.
         if (Mouse.current == null) return;
 
-        // 4. ÃÖ½Å Input SystemÀÇ ¸¶¿ì½º ÁÂÇ¥¸¦ °¡Á®¿É´Ï´Ù. (Vector2 ¹İÈ¯)
+        // 4. ìµœì‹  Input Systemì˜ ë§ˆìš°ìŠ¤ ì¢Œí‘œë¥¼ ê°€ì ¸ì˜µë‹ˆë‹¤. (Vector2 ë°˜í™˜)
         Vector2 mousePos = Mouse.current.position.ReadValue();
 
-        // 5. ¸¶¿ì½º À§Ä¡¸¦ ±â¹İÀ¸·Î UI Raycast¸¦ ½õ´Ï´Ù.
+        // 5. ë§ˆìš°ìŠ¤ ìœ„ì¹˜ë¥¼ ê¸°ë°˜ìœ¼ë¡œ UI Raycastë¥¼ ì©ë‹ˆë‹¤.
         PointerEventData pointerData = new PointerEventData(EventSystem.current)
         {
-            position = mousePos // <- ¿©±â¼­ Input.mousePosition ´ë½Å ÃÖ½Å ÁÂÇ¥¸¦ ³Ö½À´Ï´Ù.
+            position = mousePos // <- ì—¬ê¸°ì„œ Input.mousePosition ëŒ€ì‹  ìµœì‹  ì¢Œí‘œë¥¼ ë„£ìŠµë‹ˆë‹¤.
         };
 
         List<RaycastResult> results = new List<RaycastResult>();
@@ -216,17 +216,17 @@ public class UI_ItemInfo : UI_Base
 
         if (results.Count > 0)
         {
-            // ¸¶¿ì½º ¾Æ·¡¿¡ ÀÖ´Â Ã¹ ¹øÂ° UI ¿ÀºêÁ§Æ®¸¦ °¡Á®¿È
+            // ë§ˆìš°ìŠ¤ ì•„ë˜ì— ìˆëŠ” ì²« ë²ˆì§¸ UI ì˜¤ë¸Œì íŠ¸ë¥¼ ê°€ì ¸ì˜´
             GameObject hoveredObject = results[0].gameObject;
 
-            // ±× ¿ÀºêÁ§Æ®(¶Ç´Â ºÎ¸ğ)¿¡ UI_ItemSlot ÄÄÆ÷³ÍÆ®°¡ ÀÖ´Ù¸é Enter ÀÌº¥Æ®¸¦ ¼öµ¿ È£Ãâ
+            // ê·¸ ì˜¤ë¸Œì íŠ¸(ë˜ëŠ” ë¶€ëª¨)ì— UI_ItemSlot ì»´í¬ë„ŒíŠ¸ê°€ ìˆë‹¤ë©´ Enter ì´ë²¤íŠ¸ë¥¼ ìˆ˜ë™ í˜¸ì¶œ
             UI_ItemSlot slot = hoveredObject.GetComponentInParent<UI_ItemSlot>();
             if (slot != null)
             {
                 slot.OnPointerEnter(pointerData);
             }
 
-            // [Ãß°¡] UI_EquipSlot À§¿¡¼­ ´õºíÅ¬¸¯À¸·Î ÇØÁ¦ÇßÀ» ¶§¸¦ ´ëºñÇØ EquipSlotµµ Ã¼Å©
+            // [ì¶”ê°€] UI_EquipSlot ìœ„ì—ì„œ ë”ë¸”í´ë¦­ìœ¼ë¡œ í•´ì œí–ˆì„ ë•Œë¥¼ ëŒ€ë¹„í•´ EquipSlotë„ ì²´í¬
             UI_EquipSlot equipSlot = hoveredObject.GetComponentInParent<UI_EquipSlot>();
             if (equipSlot != null)
             {

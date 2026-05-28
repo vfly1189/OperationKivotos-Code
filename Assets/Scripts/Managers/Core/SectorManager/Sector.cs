@@ -5,18 +5,18 @@ public class Sector : MonoBehaviour
 {
     [SerializeField] public int _sectorID;
 
-    // ÀÚ±â ±¸¿ª ³»ÀÇ ½ºÆ÷³ÊµéÀ» ¸®½ºÆ®·Î °ü¸®
+    // ìê¸° êµ¬ì—­ ë‚´ì˜ ìŠ¤í¬ë„ˆë“¤ì„ ë¦¬ìŠ¤íŠ¸ë¡œ ê´€ë¦¬
     private List<MonsterSpawner> _spawners = new List<MonsterSpawner>();
     private bool _isInitialized = false;
 
     private void Start()
     {
-        // TODO : ÇÏÀ§ ¿ÀºêÁ§Æ®¿¡ ÀÖ´Â ½ºÆ÷³ÊµéÀ» ÀÚµ¿ µî·Ï
+        // TODO : í•˜ìœ„ ì˜¤ë¸Œì íŠ¸ì— ìˆëŠ” ìŠ¤í¬ë„ˆë“¤ì„ ìë™ ë“±ë¡
         InitSpawners();
         Managers.Sector.RegisterSector(this);
     }
 
-    //  ¿ÜºÎ¿¡¼­ È£ÃâµÉ ¼öµµ ÀÖÀ¸¹Ç·Î ÃÊ±âÈ­ ¿©ºÎ Ã¼Å©
+    //  ì™¸ë¶€ì—ì„œ í˜¸ì¶œë  ìˆ˜ë„ ìˆìœ¼ë¯€ë¡œ ì´ˆê¸°í™” ì—¬ë¶€ ì²´í¬
     private void InitSpawners()
     {
         if (_isInitialized) return;
@@ -28,7 +28,7 @@ public class Sector : MonoBehaviour
 
     public void ActivateSector()
     {
-        Debug.Log($"{_sectorID} ActiveSector ½ÇÇà");
+        Debug.Log($"{_sectorID} ActiveSector ì‹¤í–‰");
         foreach (var spawner in _spawners)
         {
             spawner.SpawnMonsters();
@@ -39,11 +39,11 @@ public class Sector : MonoBehaviour
     {
         foreach (var spawner in _spawners)
         {
-            spawner.DespawnMonsters(); // È¤Àº Á¦ÀÚ¸® º¹±Í ¸í·É
+            spawner.DespawnMonsters(); // í˜¹ì€ ì œìë¦¬ ë³µê·€ ëª…ë ¹
         }
     }
 
-    // ÇÃ·¹ÀÌ¾î ÁøÀÔ °¨Áö (±¸¿ª È°¼ºÈ­)
+    // í”Œë ˆì´ì–´ ì§„ì… ê°ì§€ (êµ¬ì—­ í™œì„±í™”)
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -53,7 +53,7 @@ public class Sector : MonoBehaviour
         }
     }
 
-    // ÇÃ·¹ÀÌ¾î ÀÌÅ» °¨Áö (±¸¿ª ºñÈ°¼ºÈ­)
+    // í”Œë ˆì´ì–´ ì´íƒˆ ê°ì§€ (êµ¬ì—­ ë¹„í™œì„±í™”)
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -64,13 +64,13 @@ public class Sector : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    // ¾À ºä¿¡¼­ SectorÀÇ ¿µ¿ªÀ» ½Ã°¢ÀûÀ¸·Î È®ÀÎÇÏ±â À§ÇÑ ±âÁî¸ğ
+    // ì”¬ ë·°ì—ì„œ Sectorì˜ ì˜ì—­ì„ ì‹œê°ì ìœ¼ë¡œ í™•ì¸í•˜ê¸° ìœ„í•œ ê¸°ì¦ˆëª¨
     private void OnDrawGizmos()
     {
         BoxCollider col = GetComponent<BoxCollider>();
         if (col != null)
         {
-            Gizmos.color = new Color(0, 1, 0, 0.2f); // ¹İÅõ¸í ÃÊ·Ï»ö
+            Gizmos.color = new Color(0, 1, 0, 0.2f); // ë°˜íˆ¬ëª… ì´ˆë¡ìƒ‰
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.DrawCube(col.center, col.size);
             Gizmos.color = Color.green;

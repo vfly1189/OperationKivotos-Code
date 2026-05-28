@@ -15,9 +15,9 @@ public class UIManager
     Stack<UI_PopUp> _popupStack = new Stack<UI_PopUp>();
     UI_Scene _sceneUI = null;
 
-    private Canvas _canvasScene;    // ¾À¸¶´Ù °íÁ¤À¸·Î ¶ß´Â UIµé
-    private Canvas _canvasPopup;    // popupµé
-    private Canvas _canvasSystem;   // order 100 ÀÌ»óÀÇ Àı´ë·Î ¸ÕÀú º¸¿©Á®¾ß µÇ´Â°Íµé...
+    private Canvas _canvasScene;    // ì”¬ë§ˆë‹¤ ê³ ì •ìœ¼ë¡œ ëœ¨ëŠ” UIë“¤
+    private Canvas _canvasPopup;    // popupë“¤
+    private Canvas _canvasSystem;   // order 100 ì´ìƒì˜ ì ˆëŒ€ë¡œ ë¨¼ì € ë³´ì—¬ì ¸ì•¼ ë˜ëŠ”ê²ƒë“¤...
     private Canvas _canvasWorld;
 
     private bool _isLoadingPopup = false;
@@ -41,7 +41,7 @@ public class UIManager
     }
 
     // =========================================================
-    // ¿ªÇÒº° Äµ¹ö½º¸¦ ÀÚµ¿À¸·Î Ã£¾Æ¿À°Å³ª »ı¼ºÇÏ´Â ÇÁ·ÎÆÛÆ¼
+    // ì—­í• ë³„ ìº”ë²„ìŠ¤ë¥¼ ìë™ìœ¼ë¡œ ì°¾ì•„ì˜¤ê±°ë‚˜ ìƒì„±í•˜ëŠ” í”„ë¡œí¼í‹°
     // =========================================================
     public Canvas CanvasScene => GetOrMakeCanvas(ref _canvasScene, "@Canvas_Scene", 0);
     public Canvas CanvasWorld => GetOrMakeCanvas(ref _canvasWorld, "@Canvas_World", 5);
@@ -67,7 +67,7 @@ public class UIManager
 
         CanvasScaler scaler = Util.GetOrAddComponent<CanvasScaler>(go);
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080); // ÇÁ·ÎÁ§Æ® ÇØ»óµµ¿¡ ¸Â°Ô ¼öÁ¤
+        scaler.referenceResolution = new Vector2(1920, 1080); // í”„ë¡œì íŠ¸ í•´ìƒë„ì— ë§ê²Œ ìˆ˜ì •
 
         Util.GetOrAddComponent<GraphicRaycaster>(go);
 
@@ -77,18 +77,18 @@ public class UIManager
 
 
     // =========================================================
-    // Canvas ¼¼ÆÃ (°³º° ÆË¾÷/¾À UI¿ë Nested Canvas)
+    // Canvas ì„¸íŒ… (ê°œë³„ íŒì—…/ì”¬ UIìš© Nested Canvas)
     // =========================================================
     public void SetCanvas(GameObject go, bool sort = true)
     {
         Canvas canvas = Util.GetOrAddComponent<Canvas>(go);
 
-        // ÁßÃ¸ Canvas´Â ºÎ¸ğÀÇ RenderMode¸¦ »ó¼Ó¹ŞÀ¸¹Ç·Î ¿©±â¼­ ¼öÁ¤ÇÏ¸é ¿¡·¯¹ß»ı
-        // canvas.renderMode = RenderMode.ScreenSpaceOverlay; <- Á¦°ÅµÊ
+        // ì¤‘ì²© CanvasëŠ” ë¶€ëª¨ì˜ RenderModeë¥¼ ìƒì†ë°›ìœ¼ë¯€ë¡œ ì—¬ê¸°ì„œ ìˆ˜ì •í•˜ë©´ ì—ëŸ¬ë°œìƒ
+        // canvas.renderMode = RenderMode.ScreenSpaceOverlay; <- ì œê±°ë¨
         canvas.overrideSorting = true;
         canvas.sortingOrder = sort ? _order++ : 0;
 
-        // Å¬¸¯ ÀÌº¥Æ®¸¦ ¹Ş±â À§ÇØ ÇÊ¼ö
+        // í´ë¦­ ì´ë²¤íŠ¸ë¥¼ ë°›ê¸° ìœ„í•´ í•„ìˆ˜
         Util.GetOrAddComponent<GraphicRaycaster>(go);
     }
 
@@ -114,7 +114,7 @@ public class UIManager
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, isGlobal: true);
         if (prefab == null) return null;
 
-        // ÇÏµåÄÚµùµÈ @GameSceneCanvas ´ë½Å CanvasPopup ¾Æ·¡¿¡ ¹èÄ¡
+        // í•˜ë“œì½”ë”©ëœ @GameSceneCanvas ëŒ€ì‹  CanvasPopup ì•„ë˜ì— ë°°ì¹˜
         GameObject go = Managers.Resource.Instantiate(prefab, CanvasPopup.transform);
         go.transform.SetParent(CanvasPopup.transform, false);
         go.SetActive(true);
@@ -126,7 +126,7 @@ public class UIManager
         T popup = Util.GetOrAddComponent<T>(go);
         _popupStack.Push(popup);
 
-        Debug.Log($"ÆË¾÷ ½ºÅÃ : {_popupStack.Count}");
+        Debug.Log($"íŒì—… ìŠ¤íƒ : {_popupStack.Count}");
 
        
         SetCanvas(go, true);
@@ -136,7 +136,7 @@ public class UIManager
 
 
     // =========================================================
-    // ÆË¾÷ ´İ±â
+    // íŒì—… ë‹«ê¸°
     // =========================================================
     public void ClosePopupUI(UI_PopUp popup)
     {
@@ -144,7 +144,7 @@ public class UIManager
 
         if (_popupStack.Peek() != popup)
         {
-            Debug.LogWarning("[UIManager] ClosePopupUI ½ÇÆĞ - °¡Àå À§¿¡ ÀÖ´Â ÆË¾÷ÀÌ ¾Æ´Õ´Ï´Ù.");
+            Debug.LogWarning("[UIManager] ClosePopupUI ì‹¤íŒ¨ - ê°€ì¥ ìœ„ì— ìˆëŠ” íŒì—…ì´ ì•„ë‹™ë‹ˆë‹¤.");
             return;
         }
 
@@ -157,13 +157,13 @@ public class UIManager
 
         UI_PopUp popup = _popupStack.Pop();
 
-        // ÆË¾÷ÀÌ ´İÈú ¶§ È¤½Ã ¿­·ÁÀÖÀ»Áö ¸ğ¸£´Â ÅøÆÁÀ» ¹«Á¶°Ç ÇÔ²² ²ü´Ï´Ù.
+        // íŒì—…ì´ ë‹«í ë•Œ í˜¹ì‹œ ì—´ë ¤ìˆì„ì§€ ëª¨ë¥´ëŠ” íˆ´íŒì„ ë¬´ì¡°ê±´ í•¨ê»˜ ë•ë‹ˆë‹¤.
         //HideItemTooltip();
 
-        // ÅøÆÁ ²ô´Â ·ÎÁ÷Àº Á¤Àû ÇÔ¼ö·Î È£Ãâ
+        // íˆ´íŒ ë„ëŠ” ë¡œì§ì€ ì •ì  í•¨ìˆ˜ë¡œ í˜¸ì¶œ
         UI_ItemInfo.HideTooltip();
 
-        // ResourceManager.Destroy·Î À§ÀÓ (Ç®¸µ ¿©ºÎ ÀÚµ¿ Ã³¸®)
+        // ResourceManager.Destroyë¡œ ìœ„ì„ (í’€ë§ ì—¬ë¶€ ìë™ ì²˜ë¦¬)
         Managers.Resource.Destroy(popup.gameObject);
 
         _order--;
@@ -177,7 +177,7 @@ public class UIManager
     }
 
     // =========================================================
-    // SceneUI ¼¼ÆÃ (¾À¸¶´Ù °íÁ¤À¸·Î ¶°ÀÖ´Â UI, ¿¹: UI_GameScene)
+    // SceneUI ì„¸íŒ… (ì”¬ë§ˆë‹¤ ê³ ì •ìœ¼ë¡œ ë– ìˆëŠ” UI, ì˜ˆ: UI_GameScene)
     // =========================================================
     public T ShowSceneUI<T>(string addressableKey = null) where T : UI_Scene
     {
@@ -185,7 +185,7 @@ public class UIManager
             addressableKey = typeof(T).Name;
 
         Debug.Log($"SelectScene : {addressableKey}");
-        // [¼öÁ¤] Root°¡ ¾Æ´Ï¶ó CanvasScene ¾Æ·¡¿¡ ¹èÄ¡ÇØ¾ß ÇÔ
+        // [ìˆ˜ì •] Rootê°€ ì•„ë‹ˆë¼ CanvasScene ì•„ë˜ì— ë°°ì¹˜í•´ì•¼ í•¨
         GameObject go = Managers.Resource.Instantiate(addressableKey, Vector3.zero, Quaternion.identity, CanvasScene.transform);
         if (go == null) return null;
 
@@ -195,7 +195,7 @@ public class UIManager
         rect.localScale = Vector3.one;
 
         _sceneUI = Util.GetOrAddComponent<T>(go);
-        SetCanvas(go, sort: false); // SceneUI´Â ÆË¾÷ µÚ¿¡ ÀÖ¾î¾ß ÇÏ¹Ç·Î °íÁ¤ order(0)
+        SetCanvas(go, sort: false); // SceneUIëŠ” íŒì—… ë’¤ì— ìˆì–´ì•¼ í•˜ë¯€ë¡œ ê³ ì • order(0)
 
         return _sceneUI as T;
     }
@@ -212,7 +212,7 @@ public class UIManager
 
     public bool IsOpened<T>() where T : UI_PopUp
     {
-        // ½ºÅÃÀ» ¼øÈ¸ÇÏ¸ç Å¸ÀÔÀÌ T¿Í ÀÏÄ¡ÇÏ´Â °ÍÀÌ ÀÖ´ÂÁö °Ë»ç
+        // ìŠ¤íƒì„ ìˆœíšŒí•˜ë©° íƒ€ì…ì´ Tì™€ ì¼ì¹˜í•˜ëŠ” ê²ƒì´ ìˆëŠ”ì§€ ê²€ì‚¬
         foreach (var popup in _popupStack)
         {
             if (popup is T)
@@ -223,7 +223,7 @@ public class UIManager
 
 
     // =========================================================
-    // Á¤¸®
+    // ì •ë¦¬
     // =========================================================
     public void Clear()
     {

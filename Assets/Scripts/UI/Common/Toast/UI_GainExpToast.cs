@@ -13,19 +13,19 @@ public class UI_GainExpToast : MonoBehaviour
 
     private void Awake()
     {
-        _canvasGroup.alpha = 0f; // Ã³À½¿£ Åõ¸íÇÏ°Ô ¼û±è
+        _canvasGroup.alpha = 0f; // ì²˜ìŒì—” íˆ¬ëª…í•˜ê²Œ ìˆ¨ê¹€
     }
 
     public void AddAmount(int amount)
     {
-        // 1. °ª ´©Àû ¹× ÅØ½ºÆ® °»½Å (N0´Â Ãµ ´ÜÀ§ ÄŞ¸¶ Ãß°¡)
+        // 1. ê°’ ëˆ„ì  ë° í…ìŠ¤íŠ¸ ê°±ì‹  (N0ëŠ” ì²œ ë‹¨ìœ„ ì½¤ë§ˆ ì¶”ê°€)
         _accumulatedAmount += amount;
         _amountText.text = $"+ {_accumulatedAmount:N0}";
 
-        // 2. Áï½Ã È­¸é¿¡ Ç¥½Ã
+        // 2. ì¦‰ì‹œ í™”ë©´ì— í‘œì‹œ
         _canvasGroup.alpha = 1f;
 
-        // 3. ±âÁ¸¿¡ µ¹°í ÀÖ´ø '¼û±è Å¸ÀÌ¸Ó'°¡ ÀÖ´Ù¸é Ãë¼ÒÇÏ°í ¸®¼Â (½Ã°£ ¿¬Àå È¿°ú)
+        // 3. ê¸°ì¡´ì— ëŒê³  ìˆë˜ 'ìˆ¨ê¹€ íƒ€ì´ë¨¸'ê°€ ìˆë‹¤ë©´ ì·¨ì†Œí•˜ê³  ë¦¬ì…‹ (ì‹œê°„ ì—°ì¥ íš¨ê³¼)
         if (_hideCts != null)
         {
             _hideCts.Cancel();
@@ -38,12 +38,12 @@ public class UI_GainExpToast : MonoBehaviour
 
     private async UniTaskVoid WaitAndHideAsync(CancellationToken token)
     {
-        // 1. È­¸é¿¡ À¯ÁöµÇ´Â ½Ã°£ (2.5ÃÊ)
-        // SuppressCancellationThrow¸¦ ¾²¸é, µµÁß¿¡ »õ·Î¿î °ªÀ» ¸Ô¾î¼­ Ãë¼ÒµÇ¾îµµ ¿¡·¯ ·Î±×°¡ ¾È ¶å´Ï´Ù.
+        // 1. í™”ë©´ì— ìœ ì§€ë˜ëŠ” ì‹œê°„ (2.5ì´ˆ)
+        // SuppressCancellationThrowë¥¼ ì“°ë©´, ë„ì¤‘ì— ìƒˆë¡œìš´ ê°’ì„ ë¨¹ì–´ì„œ ì·¨ì†Œë˜ì–´ë„ ì—ëŸ¬ ë¡œê·¸ê°€ ì•ˆ ëœ¹ë‹ˆë‹¤.
         bool isCanceled = await UniTask.Delay(2500, cancellationToken: token).SuppressCancellationThrow();
         if (isCanceled) return;
 
-        // 2. ½Ã°£ÀÌ Áö³ª¸é ¼­¼­È÷ Åõ¸íÇØÁü (0.5ÃÊ)
+        // 2. ì‹œê°„ì´ ì§€ë‚˜ë©´ ì„œì„œíˆ íˆ¬ëª…í•´ì§ (0.5ì´ˆ)
         float fadeTime = 0.5f;
         float timer = 0f;
 
@@ -56,7 +56,7 @@ public class UI_GainExpToast : MonoBehaviour
             if (isCanceled) return;
         }
 
-        // 3. ¿ÏÀüÈ÷ »ç¶óÁö¸é ´©Àû °ª ÃÊ±âÈ­
+        // 3. ì™„ì „íˆ ì‚¬ë¼ì§€ë©´ ëˆ„ì  ê°’ ì´ˆê¸°í™”
         _canvasGroup.alpha = 0f;
         _accumulatedAmount = 0;
     }

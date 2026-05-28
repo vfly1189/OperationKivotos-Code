@@ -7,63 +7,63 @@ public class FieldManager
     private Transform _currentSpawnPoint;
     private bool _isRespawning = false;
 
-    // ÇÊµå ÁøÀÔ ½Ã (GameScene.Init µî¿¡¼­) È£Ãâ
+    // í•„ë“œ ì§„ì… ì‹œ (GameScene.Init ë“±ì—ì„œ) í˜¸ì¶œ
     public void Init(Transform spawnPoint)
     {
         _currentSpawnPoint = spawnPoint;
         _isRespawning = false;
 
-        // ÇÊµå Àü¿ë ÆÄÆ¼ Àü¸ê ÀÌº¥Æ® ±¸µ¶
+        // í•„ë“œ ì „ìš© íŒŒí‹° ì „ë©¸ ì´ë²¤íŠ¸ êµ¬ë…
         Managers.Party.OnPartyWiped -= HandleFieldPartyWipe;
         Managers.Party.OnPartyWiped += HandleFieldPartyWipe;
 
-        Debug.Log("[FieldManager] ÇÊµå ¸Å´ÏÀú ÃÊ±âÈ­ ¿Ï·á");
+        Debug.Log("[FieldManager] í•„ë“œ ë§¤ë‹ˆì € ì´ˆê¸°í™” ì™„ë£Œ");
     }
 
     private void HandleFieldPartyWipe()
     {
         if (_isRespawning) return;
 
-        // Àü¸ê ½Ã ºñµ¿±â ºÎÈ° ½ÃÄö½º ½ÃÀÛ
+        // ì „ë©¸ ì‹œ ë¹„ë™ê¸° ë¶€í™œ ì‹œí€€ìŠ¤ ì‹œì‘
         RespawnSequenceAsync().Forget();
     }
 
     private async UniTaskVoid RespawnSequenceAsync()
     {
         _isRespawning = true;
-        Debug.Log("[FieldManager] ÆÄÆ¼ Àü¸ê. ½ºÆù ÁöÁ¡À¸·Î ºÎÈ° ½ÃÄö½º ½ÃÀÛ...");
+        Debug.Log("[FieldManager] íŒŒí‹° ì „ë©¸. ìŠ¤í° ì§€ì ìœ¼ë¡œ ë¶€í™œ ì‹œí€€ìŠ¤ ì‹œì‘...");
 
-        // 1. È¤½Ã ¿­·ÁÀÖ´Â ÆË¾÷ UI°¡ ÀÖ´Ù¸é ¸ğµÎ ´İ±â (¼±ÅÃ»çÇ×)
+        // 1. í˜¹ì‹œ ì—´ë ¤ìˆëŠ” íŒì—… UIê°€ ìˆë‹¤ë©´ ëª¨ë‘ ë‹«ê¸° (ì„ íƒì‚¬í•­)
         Managers.UI.CloseAllPopupUI();
 
-        // 2. È­¸é ¾ÏÀü (Fade Out) ´ë±â
-        // TODO: UI ¸Å´ÏÀú µî¿¡ Fade Äµ¹ö½º¸¦ ¸¸µé¾î È£ÃâÇÏ½Ã¸é µË´Ï´Ù.
+        // 2. í™”ë©´ ì•”ì „ (Fade Out) ëŒ€ê¸°
+        // TODO: UI ë§¤ë‹ˆì € ë“±ì— Fade ìº”ë²„ìŠ¤ë¥¼ ë§Œë“¤ì–´ í˜¸ì¶œí•˜ì‹œë©´ ë©ë‹ˆë‹¤.
         // await Managers.UI.FadeOutAsync(1.0f);
         await UniTask.Delay(TimeSpan.FromSeconds(1.0f));
 
-        // 3. ÆÄÆ¼ ºÎÈ° ¹× À§Ä¡ ÀÌµ¿ (ResetPartyForNewSceneÀÌ Ã¼·Â È¸º¹°ú ºÎÈ°À» ¸ğµÎ Ã³¸®ÇÔ)
+        // 3. íŒŒí‹° ë¶€í™œ ë° ìœ„ì¹˜ ì´ë™ (ResetPartyForNewSceneì´ ì²´ë ¥ íšŒë³µê³¼ ë¶€í™œì„ ëª¨ë‘ ì²˜ë¦¬í•¨)
         if (_currentSpawnPoint != null)
         {
             Managers.Party.ResetPartyForNewScene(_currentSpawnPoint);
         }
         else
         {
-            Debug.LogWarning("[FieldManager] ½ºÆù ÁöÁ¡ÀÌ ¾ø½À´Ï´Ù! ¿øÀ§Ä¡¿¡¼­ ºÎÈ°ÇÕ´Ï´Ù.");
-            // ½ºÆù ÁöÁ¡ÀÌ ¾øÀ¸¸é ÇöÀç ¸®´õÀÇ À§Ä¡¿¡¼­ Á¦ÀÚ¸® ºÎÈ°
+            Debug.LogWarning("[FieldManager] ìŠ¤í° ì§€ì ì´ ì—†ìŠµë‹ˆë‹¤! ì›ìœ„ì¹˜ì—ì„œ ë¶€í™œí•©ë‹ˆë‹¤.");
+            // ìŠ¤í° ì§€ì ì´ ì—†ìœ¼ë©´ í˜„ì¬ ë¦¬ë”ì˜ ìœ„ì¹˜ì—ì„œ ì œìë¦¬ ë¶€í™œ
             var leader = Managers.Party.GetCurrentCharacter();
             if (leader != null)
                 Managers.Party.ResetPartyForNewScene(leader.transform);
         }
 
-        // 4. È­¸é ¹à¾ÆÁü (Fade In) ´ë±â
+        // 4. í™”ë©´ ë°ì•„ì§ (Fade In) ëŒ€ê¸°
         // await Managers.UI.FadeInAsync(1.0f);
         await UniTask.Delay(TimeSpan.FromSeconds(1.0f));
 
-        Debug.Log("[FieldManager] ºÎÈ° ½ÃÄö½º Á¾·á");
+        Debug.Log("[FieldManager] ë¶€í™œ ì‹œí€€ìŠ¤ ì¢…ë£Œ");
         _isRespawning = false;
     }
 
-    // ÇÊµå¸¦ ¶°³¯ ¶§ (´øÀü ÁøÀÔ µî) È£Ãâ
+    // í•„ë“œë¥¼ ë– ë‚  ë•Œ (ë˜ì „ ì§„ì… ë“±) í˜¸ì¶œ
     public void Clear()
     {
         Managers.Party.OnPartyWiped -= HandleFieldPartyWipe;

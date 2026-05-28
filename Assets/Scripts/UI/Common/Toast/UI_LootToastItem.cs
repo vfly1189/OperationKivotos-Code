@@ -38,7 +38,7 @@ public class UI_LootToastItem : MonoBehaviour
         _canvasGroup.alpha = 0f;
         _rectTransform.localScale = new Vector3(1f, 0.5f, 1f);
 
-        // 2. Fade In +  Ä¿Áö´Â ¿¬Ãâ (0.2ÃÊ)
+        // 2. Fade In +  ì»¤ì§€ëŠ” ì—°ì¶œ (0.2ì´ˆ)
         float fadeInTime = 0.2f;
         float timer = 0f;
         while (timer < fadeInTime)
@@ -48,7 +48,7 @@ public class UI_LootToastItem : MonoBehaviour
 
             _canvasGroup.alpha = Mathf.Lerp(0f, 1f, t);
 
-            // YÃà ½ºÄÉÀÏÀ» 0.5 -> 1.0À¸·Î Å°¿ì¸é¼­ ºÎµå·´°Ô ÀÚ¸®°¡ ¹Ğ·Á³ª´Â ´À³¦À» ÁÜ
+            // Yì¶• ìŠ¤ì¼€ì¼ì„ 0.5 -> 1.0ìœ¼ë¡œ í‚¤ìš°ë©´ì„œ ë¶€ë“œëŸ½ê²Œ ìë¦¬ê°€ ë°€ë ¤ë‚˜ëŠ” ëŠë‚Œì„ ì¤Œ
             float scaleY = Mathf.Lerp(0.5f, 1f, t);
             _rectTransform.localScale = new Vector3(1f, scaleY, 1f);
 
@@ -58,10 +58,10 @@ public class UI_LootToastItem : MonoBehaviour
         _canvasGroup.alpha = 1f;
         _rectTransform.localScale = Vector3.one;
 
-        // 3. À¯Áö ½Ã°£ (2.5ÃÊ ´ë±â)
+        // 3. ìœ ì§€ ì‹œê°„ (2.5ì´ˆ ëŒ€ê¸°)
         await UniTask.Delay(2500, cancellationToken: this.GetCancellationTokenOnDestroy());
 
-        // 4. Fade Out ¿¬Ãâ (0.5ÃÊ)
+        // 4. Fade Out ì—°ì¶œ (0.5ì´ˆ)
         float fadeOutTime = 0.5f;
         timer = 0f;
         while (timer < fadeOutTime)
@@ -71,7 +71,7 @@ public class UI_LootToastItem : MonoBehaviour
             await UniTask.Yield(PlayerLoopTiming.Update, this.GetCancellationTokenOnDestroy());
         }
 
-        // 5. ¿ÏÀüÈ÷ Åõ¸íÇØÁö¸é »èÁ¦
+        // 5. ì™„ì „íˆ íˆ¬ëª…í•´ì§€ë©´ ì‚­ì œ
         Destroy(gameObject);
     }
 }

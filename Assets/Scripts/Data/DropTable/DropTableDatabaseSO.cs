@@ -46,7 +46,7 @@ public class DropTable
 
     public List<DropTableEntry> Entries = new List<DropTableEntry>();
 
-    // ·±Å¸ÀÓ È®·ü ±¼¸²À» À§ÇÑ °¡ÁßÄ¡ ÇÕ (Á÷·ÄÈ­ ¾È ÇØµµ µÊ)
+    // ëŸ°íƒ€ì„ í™•ë¥  êµ´ë¦¼ì„ ìœ„í•œ ê°€ì¤‘ì¹˜ í•© (ì§ë ¬í™” ì•ˆ í•´ë„ ë¨)
     [NonSerialized] public int TotalWeight;
 }
 
@@ -77,7 +77,7 @@ public class DropTableDatabaseSO : ScriptableObject, IDataCacheable
 
         foreach (var item in DropTables)
         {
-            // Ä³½ÌÇÒ ¶§ TotalWeightµµ °°ÀÌ °è»êÇØÁİ´Ï´Ù.
+            // ìºì‹±í•  ë•Œ TotalWeightë„ ê°™ì´ ê³„ì‚°í•´ì¤ë‹ˆë‹¤.
             item.TotalWeight = 0;
             foreach (var entry in item.Entries)
             {

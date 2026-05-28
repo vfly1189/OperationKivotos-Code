@@ -16,14 +16,14 @@ public class UI_MainStatInfo : UI_Base
 
     public async void SetInfo(StatOption stat)
     {
-        // ½ºÅÈ ÅØ½ºÆ® ¼³Á¤ (¿¹: MaxHP_Percent -> "HP")
+        // ìŠ¤íƒ¯ í…ìŠ¤íŠ¸ ì„¤ì • (ì˜ˆ: MaxHP_Percent -> "HP")
         _statType.text = GetStatNameKorean(stat.StatType);
 
-        // ¼öÄ¡ ÅØ½ºÆ® ¼³Á¤
-        _statValue.text = stat.GetStatString(); // StatOption Å¬·¡½º¿¡ ¸¸µé¾îµĞ ÇÁ·ÎÆÛÆ¼ È°¿ë
+        // ìˆ˜ì¹˜ í…ìŠ¤íŠ¸ ì„¤ì •
+        _statValue.text = stat.GetStatString(); // StatOption í´ë˜ìŠ¤ì— ë§Œë“¤ì–´ë‘” í”„ë¡œí¼í‹° í™œìš©
 
-        // ¾ÆÀÌÄÜ  ·Îµå 
-        // (ÀÌÀü¿¡ ¸¸µç ¾ÆÀÌÄÜµéÀÇ ÀÌ¸§À» "Icon_MaxHP", "Icon_Attack" µîÀ¸·Î Addressable¿¡ µî·ÏÇØµÎ¾ú´Ù°í °¡Á¤)
+        // ì•„ì´ì½˜  ë¡œë“œ 
+        // (ì´ì „ì— ë§Œë“  ì•„ì´ì½˜ë“¤ì˜ ì´ë¦„ì„ "Icon_MaxHP", "Icon_Attack" ë“±ìœ¼ë¡œ Addressableì— ë“±ë¡í•´ë‘ì—ˆë‹¤ê³  ê°€ì •)
         string iconKey = GetIconNameByStat(stat.StatType);
         //Sprite iconSprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);
         Sprite iconSprite = await Managers.Resource.GetSpriteFromAtlasAsync("StatIconAtlas", iconKey);
@@ -36,21 +36,21 @@ public class UI_MainStatInfo : UI_Base
         }
     }
 
-    // ¿µ¹® EnumÀ» ÇÑ±Û·Î ¿¹»Ú°Ô ¹Ù²ãÁÖ´Â ÇïÆÛ ÇÔ¼ö
+    // ì˜ë¬¸ Enumì„ í•œê¸€ë¡œ ì˜ˆì˜ê²Œ ë°”ê¿”ì£¼ëŠ” í—¬í¼ í•¨ìˆ˜
     private string GetStatNameKorean(EStatType type)
     {
         switch (type)
         {
             case EStatType.MaxHP_Flat:
-            case EStatType.MaxHP_Percent: return "ÃÖ´ë Ã¼·Â";
+            case EStatType.MaxHP_Percent: return "ìµœëŒ€ ì²´ë ¥";
             case EStatType.Attack_Flat:
-            case EStatType.Attack_Percent: return "°ø°İ·Â";
+            case EStatType.Attack_Percent: return "ê³µê²©ë ¥";
             case EStatType.Defense_Flat:
-            case EStatType.Defense_Percent: return "¹æ¾î·Â";
-            case EStatType.MoveSpeed: return "ÀÌµ¿ ¼Óµµ";
-            case EStatType.CritRate: return "Ä¡¸íÅ¸ È®·ü";
-            case EStatType.CritDamage: return "Ä¡¸íÅ¸ ÇÇÇØ";
-            case EStatType.EnergyRegen: return "¿¡³ÊÁö È¸º¹";
+            case EStatType.Defense_Percent: return "ë°©ì–´ë ¥";
+            case EStatType.MoveSpeed: return "ì´ë™ ì†ë„";
+            case EStatType.CritRate: return "ì¹˜ëª…íƒ€ í™•ë¥ ";
+            case EStatType.CritDamage: return "ì¹˜ëª…íƒ€ í”¼í•´";
+            case EStatType.EnergyRegen: return "ì—ë„ˆì§€ íšŒë³µ";
             default: return type.ToString();
         }
     }

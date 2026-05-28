@@ -17,18 +17,18 @@ public class WeaponUpgradeService
 
         int targetLevel = currentLevel + 1;
 
-        // 1. µ¥ÀÌÅÍ ·Îµå
+        // 1. ë°ì´í„° ë¡œë“œ
         EnhancementRateData rateData = Managers.Data.GetData<int, EnhancementRateData>(currentLevel);
         WeaponEnhanceCost costData = Managers.Data.GetData<int, WeaponEnhanceCost>(targetLevel);
 
         if (rateData == null || costData == null)
             return UpgradeResult.AlreadyMaxLevel;
 
-        // 2. ÀçÈ­ ¼Ò¸ğ ½Ãµµ
+        // 2. ì¬í™” ì†Œëª¨ ì‹œë„
         if (!TryConsume(costData))
             return UpgradeResult.NotEnoughCurrency;
 
-        // 3. È®·ü ÆÇÁ¤
+        // 3. í™•ë¥  íŒì •
         if (UnityEngine.Random.value <= rateData.successRate)
         {
             target.Stat.WeaponLevelUp();
@@ -44,7 +44,7 @@ public class WeaponUpgradeService
         int[] reqMats = { cost.Material1Count, cost.Material2Count, cost.Material3Count };
         int[] matIDs = { (int)UpgradeStone_ID.Common, (int)UpgradeStone_ID.Uncommon, (int)UpgradeStone_ID.Rare };
 
-        // 1. º¸À¯·® È®ÀÎ (ºÎÁ·ÇÏ¸é Áï½Ã false)
+        // 1. ë³´ìœ ëŸ‰ í™•ì¸ (ë¶€ì¡±í•˜ë©´ ì¦‰ì‹œ false)
         if (Managers.Wallet.GetCurrency(CurrencyType.Credit) < reqGold) return false;
 
         for (int i = 0; i < 3; i++)
@@ -53,7 +53,7 @@ public class WeaponUpgradeService
                 return false;
         }
 
-        // 2. ½ÇÁ¦ ÀçÈ­ ¼Ò¸ğ
+        // 2. ì‹¤ì œ ì¬í™” ì†Œëª¨
         Managers.Wallet.ConsumeCurrency(CurrencyType.Credit, reqGold);
 
         for (int i = 0; i < 3; i++)

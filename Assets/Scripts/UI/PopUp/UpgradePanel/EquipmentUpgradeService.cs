@@ -22,16 +22,16 @@ public readonly struct UpgradeResult
 
 public class EquipmentUpgradeService
 {
-    //°­È­ Àç·á µî·ÏÇÏ´Â ½½·ÔÀÇ ÃÖ´ë °¹¼ö
+    //ê°•í™” ì¬ë£Œ ë“±ë¡í•˜ëŠ” ìŠ¬ë¡¯ì˜ ìµœëŒ€ ê°¯ìˆ˜
     public const int MAX_MATERIAL_SLOTS = 8;
 
-    // UI°¡ ±¸µ¶ÇÒ ÀÌº¥Æ®
+    // UIê°€ êµ¬ë…í•  ì´ë²¤íŠ¸
     public event Action<InventorySlot> OnEquipmentSelected;
-    public event Action<int, MaterialEntry> OnMaterialSlotChanged; // (½½·ÔÀÎµ¦½º, µ¥ÀÌÅÍ)
+    public event Action<int, MaterialEntry> OnMaterialSlotChanged; // (ìŠ¬ë¡¯ì¸ë±ìŠ¤, ë°ì´í„°)
     
     public InventorySlot SelectedEquipment { get; private set; }
 
-    //InventorySlotÀ¸·Î °­È­Ã¥ÀÎÁö ÀåºñÀÎÁö ÆÇº°ÇÏ°Ô ±ÍÂú¾Æ¼­ »õ·ÎÆÊ
+    //InventorySlotìœ¼ë¡œ ê°•í™”ì±…ì¸ì§€ ì¥ë¹„ì¸ì§€ íŒë³„í•˜ê²Œ ê·€ì°®ì•„ì„œ ìƒˆë¡œíŒœ
     private readonly MaterialEntry[] _materialSlots;
     public IReadOnlyList<MaterialEntry> MaterialSlots => _materialSlots;
 
@@ -39,7 +39,7 @@ public class EquipmentUpgradeService
 
     public event Action<ExpPreviewResult> OnExpPreviewChanged;
     public event Action<InventorySlot, UpgradeResult> OnUpgradeExecuted;
-    //»ı¼ºÀÚ
+    //ìƒì„±ì
     public EquipmentUpgradeService()
     {
         _materialSlots = new MaterialEntry[MAX_MATERIAL_SLOTS];
@@ -58,17 +58,17 @@ public class EquipmentUpgradeService
     }
 
     // =========================================================
-    // Àåºñ ¼±ÅÃ
+    // ì¥ë¹„ ì„ íƒ
     // =========================================================
     public void SelectEquipment(InventorySlot slot)
     {
         SelectedEquipment = slot;
-        ClearMaterials(); // Àåºñ ±³Ã¼ ½Ã Àç·á ÃÊ±âÈ­
+        ClearMaterials(); // ì¥ë¹„ êµì²´ ì‹œ ì¬ë£Œ ì´ˆê¸°í™”
         OnEquipmentSelected?.Invoke(slot);
     }
 
     // =========================================================
-    // Àç·á °ü¸®
+    // ì¬ë£Œ ê´€ë¦¬
     // =========================================================
     public bool TryAddMaterial(InventorySlot slot)
     {
@@ -77,28 +77,28 @@ public class EquipmentUpgradeService
 
         if (MaterialEntry.IsUpgradeBook(slot.itemID))
         {
-            // °°Àº Ã¥ Å¸ÀÔ ÀÌ¹Ì ÀÖÀ¸¸é Ä«¿îÆ®++
+            // ê°™ì€ ì±… íƒ€ì… ì´ë¯¸ ìˆìœ¼ë©´ ì¹´ìš´íŠ¸++
             for (int i = 0; i < MAX_MATERIAL_SLOTS; i++)
             {
                 if (!_materialSlots[i].IsEmpty && _materialSlots[i].Slot.itemID == slot.itemID)
                 {
-                    if (_materialSlots[i].Count >= slot.Amount) return false; // ÀÎº¥ ¼ö·® ÃÊ°ú
+                    if (_materialSlots[i].Count >= slot.Amount) return false; // ì¸ë²¤ ìˆ˜ëŸ‰ ì´ˆê³¼
                     _materialSlots[i].Count++;
                     OnMaterialSlotChanged?.Invoke(i, _materialSlots[i]);
                     NotifyExpPreview();
                     return true;
                 }
             }
-            // °°Àº Ã¥ ¾øÀ¸¸é »õ ½½·Ô¿¡ µî·Ï
+            // ê°™ì€ ì±… ì—†ìœ¼ë©´ ìƒˆ ìŠ¬ë¡¯ì— ë“±ë¡
         }
         else
         {
-            //  Àåºñ´Â ÀÌ¹Ì µî·ÏµÈ °ÍÀÌ¸é Áßº¹ Â÷´Ü
+            //  ì¥ë¹„ëŠ” ì´ë¯¸ ë“±ë¡ëœ ê²ƒì´ë©´ ì¤‘ë³µ ì°¨ë‹¨
             for (int i = 0; i < MAX_MATERIAL_SLOTS; i++)
                 if (!_materialSlots[i].IsEmpty && _materialSlots[i].Slot == slot) return false;
         }
 
-        // ºó ½½·Ô¿¡ ½Å±Ô µî·Ï
+        // ë¹ˆ ìŠ¬ë¡¯ì— ì‹ ê·œ ë“±ë¡
         for (int i = 0; i < MAX_MATERIAL_SLOTS; i++)
         {
             if (_materialSlots[i].IsEmpty)
@@ -110,17 +110,17 @@ public class EquipmentUpgradeService
                 return true;
             }
         }
-        return false; // ½½·Ô °¡µæ Âü
+        return false; // ìŠ¬ë¡¯ ê°€ë“ ì°¸
     }
 
-    // - ¹öÆ°À» ´­·¯¼­ Àç·á µî·ÏÀ» ÇØÁ¦
+    // - ë²„íŠ¼ì„ ëˆŒëŸ¬ì„œ ì¬ë£Œ ë“±ë¡ì„ í•´ì œ
     public void RemoveMaterial(int slotIndex)
     {
         if (slotIndex < 0 || slotIndex >= MAX_MATERIAL_SLOTS) return;
         var entry = _materialSlots[slotIndex];
         if (entry.IsEmpty) return;
 
-        //  Ã¥Àº 1°³¾¿ °¨¼Ò, Àåºñ or Ã¥ ¸¶Áö¸· 1°³´Â ½½·Ô ºñ¿ò
+        //  ì±…ì€ 1ê°œì”© ê°ì†Œ, ì¥ë¹„ or ì±… ë§ˆì§€ë§‰ 1ê°œëŠ” ìŠ¬ë¡¯ ë¹„ì›€
         if (entry.IsBook && entry.Count > 1)
         {
             entry.Count--;
@@ -134,7 +134,7 @@ public class EquipmentUpgradeService
         NotifyExpPreview();
     }
 
-    // ÆË¾÷¿¡¼­ Ãë¼Ò ¹öÆ° ¿¬°á¿ë - slotÀ¸·Î ÀÎµ¦½º ¿ªÁ¶È¸
+    // íŒì—…ì—ì„œ ì·¨ì†Œ ë²„íŠ¼ ì—°ê²°ìš© - slotìœ¼ë¡œ ì¸ë±ìŠ¤ ì—­ì¡°íšŒ
     public int FindMaterialSlotIndex(InventorySlot slot)
     {
         for (int i = 0; i < MAX_MATERIAL_SLOTS; i++)
@@ -160,7 +160,7 @@ public class EquipmentUpgradeService
     public int GetSelectedCount(InventorySlot slot)
     {
         int count = 0;
-        foreach (MaterialEntry entry in _materialSlots) // ³»ºÎ Àç·á ¸®½ºÆ®
+        foreach (MaterialEntry entry in _materialSlots) // ë‚´ë¶€ ì¬ë£Œ ë¦¬ìŠ¤íŠ¸
         {
             if (entry != null && entry.Slot == slot)
                 count+=entry.Count;
@@ -221,7 +221,7 @@ public class EquipmentUpgradeService
         int requireExp = instance.NextLevelRequireExp;
         int currentLevel = instance.UpgradeLevel;
 
-        // ·¹º§¾÷ ½Ã¹Ä·¹ÀÌ¼Ç
+        // ë ˆë²¨ì—… ì‹œë®¬ë ˆì´ì…˜
         int simulatedExp = currentExp + totalGainExp;
         int simulatedLevel = currentLevel;
         int simulatedRequire = requireExp;
@@ -240,7 +240,7 @@ public class EquipmentUpgradeService
             }
             else 
             {
-                simulatedRequire = Managers.Data.GetData<int, EquipmentLevelExpData>(simulatedLevel + 1).RequireExp; // µ¥ÀÌÅÍ ÂüÁ¶              
+                simulatedRequire = Managers.Data.GetData<int, EquipmentLevelExpData>(simulatedLevel + 1).RequireExp; // ë°ì´í„° ì°¸ì¡°              
             }       
         }
 
@@ -264,7 +264,7 @@ public class EquipmentUpgradeService
 
     private int GetEquipmentDecompositionExp(InventorySlot slot)
     {
-        // Àåºñ µî±Ş/·¹º§¿¡ µû¶ó Á¦°ø °æÇèÄ¡ °è»ê
+        // ì¥ë¹„ ë“±ê¸‰/ë ˆë²¨ì— ë”°ë¼ ì œê³µ ê²½í—˜ì¹˜ ê³„ì‚°
         EquipmentData data = Managers.Data.GetData<int, EquipmentData>(slot.itemID);
 
         EquipmentDecompositionData decomposeData = Managers.Data.GetData<int, EquipmentDecompositionData>(data.Tier);
@@ -290,7 +290,7 @@ public class EquipmentUpgradeService
 
         if (targetLevel == GetItemMaxLevel(SelectedEquipment.itemID)) 
         {
-            //³²Àº°Ô
+            //ë‚¨ì€ê²Œ
             int rest = preview.SimulatedExp;
 
             List<int> upgradeBookExp = new List<int>();
@@ -349,7 +349,7 @@ public class EquipmentUpgradeService
             if (entry.IsBook)
                 Managers.Inventory.ConsumeMaterial(entry.Slot.itemID, entry.Count);
             else
-                Managers.Inventory.RemoveSlot(entry.Slot); // ¡ç ½½·Ô ÂüÁ¶ ±â¹İÀ¸·Î ±³Ã¼
+                Managers.Inventory.RemoveSlot(entry.Slot); // â† ìŠ¬ë¡¯ ì°¸ì¡° ê¸°ë°˜ìœ¼ë¡œ êµì²´
         }
     }
 
@@ -362,7 +362,7 @@ public class EquipmentUpgradeService
         StatPoolData pool = Managers.Data.GetData<int, StatPoolData>(equipData.MainStatPoolID);
         StatPoolEntry entry = pool?.Entries.Find(e => e.StatType == mainStat.StatType);
 
-        // MainStatÀº Min = Max = °íÁ¤°ªÀÌ¹Ç·Î MinValue ±×´ë·Î »ç¿ë
+        // MainStatì€ Min = Max = ê³ ì •ê°’ì´ë¯€ë¡œ MinValue ê·¸ëŒ€ë¡œ ì‚¬ìš©
         if (entry != null)
             mainStat.Value += entry.UpgradeMinValue;
     }

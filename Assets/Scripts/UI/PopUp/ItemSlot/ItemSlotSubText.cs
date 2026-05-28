@@ -9,7 +9,7 @@ public struct SlotSubTextStyle
     public TextAlignmentOptions Alignment;
     public Color Color;
 
-    // ÀÚÁÖ ¾²´Â ÇÁ¸®¼Â Á¤ÀÇ
+    // ìì£¼ ì“°ëŠ” í”„ë¦¬ì…‹ ì •ì˜
     public static SlotSubTextStyle Default => new SlotSubTextStyle
     {
         FontSize = 14f,
@@ -41,35 +41,35 @@ public struct SlotSubTextStyle
 
 public static class ItemSlotSubText
 {
-    // °­È­ ¼öÄ¡ (+3)
-    // ±âÁ¸¿¡ ¿¡·¯ ³ª´ø ºÎºĞ (¾Æ¸¶ slot.ItemData.EnhanceLevel °°Àº ÄÚµå°¡ ÀÖÀ» °Ì´Ï´Ù)
+    // ê°•í™” ìˆ˜ì¹˜ (+3)
+    // ê¸°ì¡´ì— ì—ëŸ¬ ë‚˜ë˜ ë¶€ë¶„ (ì•„ë§ˆ slot.ItemData.EnhanceLevel ê°™ì€ ì½”ë“œê°€ ìˆì„ ê²ë‹ˆë‹¤)
     public static Func<InventorySlot, string> UpgradeLevel => slot =>
     {
-        // ¹æ¾î ÄÚµå Ãß°¡!
+        // ë°©ì–´ ì½”ë“œ ì¶”ê°€!
         if (slot == null || slot.IsEmpty || slot.EquipInstance == null)
             return string.Empty;
 
-        // ¿¹½Ã: Àåºñ µ¥ÀÌÅÍ·Î Ä³½ºÆÃ ÈÄ ·¹º§ °¡Á®¿À±â
+        // ì˜ˆì‹œ: ì¥ë¹„ ë°ì´í„°ë¡œ ìºìŠ¤íŒ… í›„ ë ˆë²¨ ê°€ì ¸ì˜¤ê¸°
         if (slot.EquipInstance == null || slot.EquipInstance.UpgradeLevel < 0)
             return string.Empty;
 
         return $"+{slot.EquipInstance.UpgradeLevel}";
     };
 
-    // ½ºÅÃ ¼ö (x5)
+    // ìŠ¤íƒ ìˆ˜ (x5)
     public static Func<InventorySlot, string> StackCount => slot =>
     {
-        // ¹æ¾î ÄÚµå Ãß°¡!
+        // ë°©ì–´ ì½”ë“œ ì¶”ê°€!
         if (slot == null || slot.IsEmpty)
             return string.Empty;
 
         return slot.Amount > 1 ? "x" + slot.Amount.ToString() : string.Empty;
     };
 
-    // °­È­Àç·á ¼±ÅÃ ÆË¾÷  ¿ÜºÎ »óÅÂ(selectedCount)¸¦ Å¬·ÎÀú·Î Ä¸Ã³
+    // ê°•í™”ì¬ë£Œ ì„ íƒ íŒì—…  ì™¸ë¶€ ìƒíƒœ(selectedCount)ë¥¼ í´ë¡œì €ë¡œ ìº¡ì²˜
     public static Func<InventorySlot, string> EnhanceMaterial(Func<int> getSelectedCount) =>
         slot => $"{getSelectedCount()}/{slot.Amount}";
 
-    // ¾Æ¹«°Íµµ ¾È º¸¿©ÁÖ°í ½ÍÀ» ¶§
+    // ì•„ë¬´ê²ƒë„ ì•ˆ ë³´ì—¬ì£¼ê³  ì‹¶ì„ ë•Œ
     public static Func<InventorySlot, string> None => _ => string.Empty;
 }

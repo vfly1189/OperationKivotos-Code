@@ -18,7 +18,7 @@ public class CameraController : MonoBehaviour
 
     private void Awake()
     {
-        // [¼öÁ¤] Áßº¹ ±¸µ¶ ¹æÁö
+        // [ìˆ˜ì •] ì¤‘ë³µ êµ¬ë… ë°©ì§€
         if (Managers.Party != null)
         {
             Managers.Party.OnActiveCharacterChanged -= SetTarget;
@@ -32,8 +32,8 @@ public class CameraController : MonoBehaviour
         {
             //RaycastHit hit;
 
-            ////[Ä«¸Ş¶ó - º® - Ä³¸¯ÅÍ] ÀÌ·¸°Ô ÀÖ´Â°æ¿ì
-            ////Ä«¸Ş¶ó¸¦ [º® - Ä«¸Ş¶ó - Ä³¸¯ÅÍ] ±¸Á¶°¡ µÇ°Ô ÀÌµ¿
+            ////[ì¹´ë©”ë¼ - ë²½ - ìºë¦­í„°] ì´ë ‡ê²Œ ìˆëŠ”ê²½ìš°
+            ////ì¹´ë©”ë¼ë¥¼ [ë²½ - ì¹´ë©”ë¼ - ìºë¦­í„°] êµ¬ì¡°ê°€ ë˜ê²Œ ì´ë™
             //if (Physics.Raycast(_player.transform.position, _delta, out hit, _delta.magnitude, LayerMask.GetMask("Wall")))
             //{
             //    float dist = (hit.point - _player.transform.position).magnitude * 0.8f;
@@ -41,8 +41,8 @@ public class CameraController : MonoBehaviour
             //}
             //else
             //{
-            //    //Update() -> LateUpdate() ´ú´ú°Å¸®´Â°Ô ¾ø¾îÁü
-            //    //Ä³¸¯ÅÍ ÀÌµ¿¸ÕÀú ÇÏ°í -> Ä«¸Ş¶ó ÀÌµ¿
+            //    //Update() -> LateUpdate() ëœëœê±°ë¦¬ëŠ”ê²Œ ì—†ì–´ì§
+            //    //ìºë¦­í„° ì´ë™ë¨¼ì € í•˜ê³  -> ì¹´ë©”ë¼ ì´ë™
             //    transform.position = _player.transform.position + _delta;
             //    transform.LookAt(_player.transform);
             //}
@@ -59,11 +59,11 @@ public class CameraController : MonoBehaviour
 
     public void SetTarget(GameObject target)
     {
-        Debug.Log($"Ä«¸Ş¶ó Å¸°Ù ¼³Á¤ : {target.name}");
+        Debug.Log($"ì¹´ë©”ë¼ íƒ€ê²Ÿ ì„¤ì • : {target.name}");
         _player = target;
     }
 
-    // [Ãß°¡] ÆÄ±« ½Ã ÀÌº¥Æ® ÇØÁ¦
+    // [ì¶”ê°€] íŒŒê´´ ì‹œ ì´ë²¤íŠ¸ í•´ì œ
     private void OnDestroy()
     {
         if (Managers.Party != null)

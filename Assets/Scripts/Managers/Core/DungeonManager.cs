@@ -21,26 +21,26 @@ public class DungeonManager
 
     public void AddClearCondition(BaseCondition condition)
     {
-        condition.OnConditionMet -= HandleClearMet; // Áßº¹ ±¸µ¶ ¹æÁö
+        condition.OnConditionMet -= HandleClearMet; // ì¤‘ë³µ êµ¬ë… ë°©ì§€
         condition.OnConditionMet += HandleClearMet;
         clearConditions.Add(condition);
     }
 
     public void AddFailCondition(BaseCondition condition)
     {
-        condition.OnConditionMet -= HandleFailMet; // Áßº¹ ±¸µ¶ ¹æÁö
+        condition.OnConditionMet -= HandleFailMet; // ì¤‘ë³µ êµ¬ë… ë°©ì§€
         condition.OnConditionMet += HandleFailMet;
         failConditions.Add(condition);
     }
 
     private void HandleClearMet()
     {
-        Debug.Log($"[DungeonManager] Å¬¸®¾î Á¶°Ç ´Ş¼ºµÊ! ÇöÀç »óÅÂ: {CurrentState}");
+        Debug.Log($"[DungeonManager] í´ë¦¬ì–´ ì¡°ê±´ ë‹¬ì„±ë¨! í˜„ì¬ ìƒíƒœ: {CurrentState}");
 
-        // [ÇÙ½É] ¶ô(Lock) Ã³¸®
+        // [í•µì‹¬] ë½(Lock) ì²˜ë¦¬
         if (CurrentState != DungeonState.Playing)
         {
-            Debug.LogWarning("[DungeonManager] ÇöÀç »óÅÂ°¡ PlayingÀÌ ¾Æ´Ï¶ó¼­ Å¬¸®¾î¸¦ ¹«½ÃÇÕ´Ï´Ù!");
+            Debug.LogWarning("[DungeonManager] í˜„ì¬ ìƒíƒœê°€ Playingì´ ì•„ë‹ˆë¼ì„œ í´ë¦¬ì–´ë¥¼ ë¬´ì‹œí•©ë‹ˆë‹¤!");
             return;
         }
 
@@ -52,17 +52,17 @@ public class DungeonManager
 
     private void HandleFailMet()
     {
-        // [ÇÙ½É] ¶ô(Lock) Ã³¸®
+        // [í•µì‹¬] ë½(Lock) ì²˜ë¦¬
         if (CurrentState != DungeonState.Playing) return;
 
         CurrentState = DungeonState.Failed;
         OnDungeonFailed?.Invoke();
     }
 
-    // ¾À ÀüÈ¯ ½Ã ¿Ïº®ÇÑ Âî²¨±â Ã»¼Ò
+    // ì”¬ ì „í™˜ ì‹œ ì™„ë²½í•œ ì°Œêº¼ê¸° ì²­ì†Œ
     public void ClearDungeonData()
     {
-        // 2. ´ÙÁß Á¶°Ç ¸®½ºÆ® Ã»¼Ò ¹× ±¸µ¶ ÇØÁ¦ (¸Ş¸ğ¸® ´©¼ö ¹æÁö)
+        // 2. ë‹¤ì¤‘ ì¡°ê±´ ë¦¬ìŠ¤íŠ¸ ì²­ì†Œ ë° êµ¬ë… í•´ì œ (ë©”ëª¨ë¦¬ ëˆ„ìˆ˜ ë°©ì§€)
         foreach (var condition in clearConditions)
         {
             if (condition != null) condition.OnConditionMet -= HandleClearMet;
@@ -75,11 +75,11 @@ public class DungeonManager
         }
         failConditions.Clear();
 
-        // 3. ¿ÜºÎ ±¸µ¶ÀÚ ³¯¸®±â
+        // 3. ì™¸ë¶€ êµ¬ë…ì ë‚ ë¦¬ê¸°
         OnDungeonCleared = null;
         OnDungeonFailed = null;
 
-        // 4. »óÅÂ ÃÊ±âÈ­
+        // 4. ìƒíƒœ ì´ˆê¸°í™”
         CurrentState = DungeonState.None;
     }
 }

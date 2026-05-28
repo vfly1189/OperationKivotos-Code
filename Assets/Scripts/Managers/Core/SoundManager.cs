@@ -7,8 +7,8 @@ public class SoundManager
 
 
     // MP3 player     -> AudioSource
-    // MP3 À½¿ø       -> AudioClip
-    // °ü°´(±Í)       -> AudioListener
+    // MP3 ìŒì›       -> AudioClip
+    // ê´€ê°(ê·€)       -> AudioListener
 
     float _bgmVolume = 0.2f;
     float _voiceVolume = 0.7f;
@@ -44,22 +44,22 @@ public class SoundManager
     {
         _bgmVolume = Mathf.Clamp01(volume);
 
-        // ÇöÀç Àç»ı ÁßÀÎ BGM AudioSource¿¡µµ Áï½Ã ¹İ¿µ
+        // í˜„ì¬ ì¬ìƒ ì¤‘ì¸ BGM AudioSourceì—ë„ ì¦‰ì‹œ ë°˜ì˜
         AudioSource bgmSource = _audioSources[(int)Define.Sound.Bgm];
         if (bgmSource != null)
         {
             bgmSource.volume = _bgmVolume;
         }
 
-        // (¼±ÅÃ) ÀúÀå: PlayerPrefs.SetFloat("BGM_VOL", _bgmVolume);
+        // (ì„ íƒ) ì €ì¥: PlayerPrefs.SetFloat("BGM_VOL", _bgmVolume);
     }
 
-    // SFX (È¿°úÀ½) º¼·ı Á¶Àı
+    // SFX (íš¨ê³¼ìŒ) ë³¼ë¥¨ ì¡°ì ˆ
     public void SetSfxVolume(float volume)
     {
         _sfxVolume = Mathf.Clamp01(volume);
 
-        // SFX´Â PlayOneShotÀ¸·Î Àç»ıµÇ¹Ç·Î AudioSourceÀÇ º¼·ı ÀÚÃ¼¸¦ ¹Ì¸® ¹Ù²ãµÒ
+        // SFXëŠ” PlayOneShotìœ¼ë¡œ ì¬ìƒë˜ë¯€ë¡œ AudioSourceì˜ ë³¼ë¥¨ ìì²´ë¥¼ ë¯¸ë¦¬ ë°”ê¿”ë‘ 
         AudioSource sfxSource = _audioSources[(int)Define.Sound.Effect];
         if (sfxSource != null)
         {
@@ -71,7 +71,7 @@ public class SoundManager
     {
         _voiceVolume = Mathf.Clamp01(volume);
 
-        // SFX´Â PlayOneShotÀ¸·Î Àç»ıµÇ¹Ç·Î AudioSourceÀÇ º¼·ı ÀÚÃ¼¸¦ ¹Ì¸® ¹Ù²ãµÒ
+        // SFXëŠ” PlayOneShotìœ¼ë¡œ ì¬ìƒë˜ë¯€ë¡œ AudioSourceì˜ ë³¼ë¥¨ ìì²´ë¥¼ ë¯¸ë¦¬ ë°”ê¿”ë‘ 
         AudioSource voiceSource = _audioSources[(int)Define.Sound.Voice];
         if (voiceSource != null)
         {
@@ -135,7 +135,7 @@ public class SoundManager
         }
     }
 
-    // Æ¯Á¤ Å¸ÀÔ¸¸ Á¤Áö
+    // íŠ¹ì • íƒ€ì…ë§Œ ì •ì§€
     public void Stop(Define.Sound type)
     {
         AudioSource audioSource = _audioSources[(int)type];
@@ -147,7 +147,7 @@ public class SoundManager
         }
     }
 
-    // ¸ğµç »ç¿îµå Á¤Áö (Ä³½Ã´Â À¯Áö)
+    // ëª¨ë“  ì‚¬ìš´ë“œ ì •ì§€ (ìºì‹œëŠ” ìœ ì§€)
     public void StopAll()
     {
         foreach (AudioSource audioSource in _audioSources)
@@ -155,6 +155,6 @@ public class SoundManager
             if (audioSource.isPlaying)
                 audioSource.Stop();
         }
-        // Ä³½Ã´Â À¯Áö
+        // ìºì‹œëŠ” ìœ ì§€
     }
 }

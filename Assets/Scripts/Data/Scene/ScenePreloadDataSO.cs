@@ -1,14 +1,14 @@
 using UnityEngine;
 
 
-//Á¤ÀûÀÎ °Íµé preloading¿ë SO
+//ì •ì ì¸ ê²ƒë“¤ preloadingìš© SO
 
 [CreateAssetMenu(menuName = "Game/ScenePreloadData")]
 public class ScenePreloadDataSO : ScriptableObject
 {
-    [Header("ÇÊ¼ö ·Îµå ÇÁ¸®ÆÕ (¸Ê, ½Ã½ºÅÛ µî)")]
+    [Header("í•„ìˆ˜ ë¡œë“œ í”„ë¦¬íŒ¹ (ë§µ, ì‹œìŠ¤í…œ ë“±)")]
     public GameObject[] _preloadingObjects;
 
-    [Header("ÇÊ¼ö ·Îµå ½ºÇÁ¶óÀÌÆ®")]
+    [Header("í•„ìˆ˜ ë¡œë“œ ìŠ¤í”„ë¼ì´íŠ¸")]
     public Sprite[] _preloadingSprites;
 }

@@ -9,26 +9,26 @@ using UnityEngine.UI;
 
 public class UI_MaterialSelectPopup : UI_PopUp, IItemSlotHandler
 {
-    [Header("µî·Ï & Ãë¼Ò ¹öÆ°")]
+    [Header("ë“±ë¡ & ì·¨ì†Œ ë²„íŠ¼")]
     [SerializeField] Button _confirmButton;
     [SerializeField] Button _cancelButton;
 
-    [Header("ÄÁÅÙÃ÷ ºä")]
+    [Header("ì»¨í…ì¸  ë·°")]
     [SerializeField] Transform _contents;
 
     private List<UI_ItemSlot> _uiSlots = new List<UI_ItemSlot>();
 
 
-    private EquipmentUpgradeService _upgradeService; //  °°Àº Service °øÀ¯
+    private EquipmentUpgradeService _upgradeService; //  ê°™ì€ Service ê³µìœ 
 
-    //  slot µ¥ÀÌÅÍ ¡æ UI_ItemSlot ¿ªÁ¶È¸¿ë
+    //  slot ë°ì´í„° â†’ UI_ItemSlot ì—­ì¡°íšŒìš©
     private Dictionary<InventorySlot, UI_ItemSlot> _slotMap = new();
     public override void Init()
     {
         _cancelButton.onClick.AddListener(ClosePopupUI);
     }
 
-    //  Panel¿¡¼­ Service¸¦ ÁÖÀÔ¹ŞÀ½
+    //  Panelì—ì„œ Serviceë¥¼ ì£¼ì…ë°›ìŒ
     public void SetService(EquipmentUpgradeService service)
     {
         _upgradeService = service;
@@ -36,11 +36,11 @@ public class UI_MaterialSelectPopup : UI_PopUp, IItemSlotHandler
         InitContentView().Forget();
     }
 
-    //  »ı¼º ¿Ï·á ÈÄ ÇöÀç µî·Ï »óÅÂ Áï½Ã ¹İ¿µ
+    //  ìƒì„± ì™„ë£Œ í›„ í˜„ì¬ ë“±ë¡ ìƒíƒœ ì¦‰ì‹œ ë°˜ì˜
     private async UniTask InitContentView()
     {
         await SetContentView();
-        RefreshCancelButtons(); // ÆË¾÷ Àç¿ÀÇÂ ½Ã ÀÌ¹Ì µî·ÏµÈ °Íµé Ãë¼Ò¹öÆ° ON
+        RefreshCancelButtons(); // íŒì—… ì¬ì˜¤í”ˆ ì‹œ ì´ë¯¸ ë“±ë¡ëœ ê²ƒë“¤ ì·¨ì†Œë²„íŠ¼ ON
     }
 
     private async UniTask SetContentView()
@@ -52,7 +52,7 @@ public class UI_MaterialSelectPopup : UI_PopUp, IItemSlotHandler
 
             ItemCategory category = slot.IsEquipment ? ItemCategory.Equipment : ItemCategory.Material;
             var capturedSlot = slot;
-            // Ä«Å×°í¸® ´ç ÇÑ ¹ø¸¸ °áÁ¤  ·çÇÁ ¹ÛÀ¸·Î
+            // ì¹´í…Œê³ ë¦¬ ë‹¹ í•œ ë²ˆë§Œ ê²°ì •  ë£¨í”„ ë°–ìœ¼ë¡œ
             (Func<InventorySlot, string> formatter, SlotSubTextStyle style) = category switch
             {
                 ItemCategory.Equipment => (ItemSlotSubText.UpgradeLevel, SlotSubTextStyle.UpgradeLevel),
@@ -69,10 +69,10 @@ public class UI_MaterialSelectPopup : UI_PopUp, IItemSlotHandler
         }
     }
 
-    // Service ÀÌº¥Æ® ¼ö½Å ¡æ ÆË¾÷ ³» Ãë¼Ò¹öÆ° °»½Å
+    // Service ì´ë²¤íŠ¸ ìˆ˜ì‹  â†’ íŒì—… ë‚´ ì·¨ì†Œë²„íŠ¼ ê°±ì‹ 
     private void OnMaterialSlotChanged(int index, MaterialEntry entry)
     {
-        // ¸ğµç ½½·ÔÀÇ ÅØ½ºÆ® °»½Å (¼±ÅÃ¼ö º¯È­ ¹İ¿µ)
+        // ëª¨ë“  ìŠ¬ë¡¯ì˜ í…ìŠ¤íŠ¸ ê°±ì‹  (ì„ íƒìˆ˜ ë³€í™” ë°˜ì˜)
         foreach (var uiSlot in _uiSlots)
             uiSlot.RefreshSubText();
 
@@ -86,12 +86,12 @@ public class UI_MaterialSelectPopup : UI_PopUp, IItemSlotHandler
             if (idx >= 0)
             {
                 int capturedIdx = idx;
-                //  µî·ÏµÈ ½½·Ô ¡æ Ãë¼Ò¹öÆ° ON
+                //  ë“±ë¡ëœ ìŠ¬ë¡¯ â†’ ì·¨ì†Œë²„íŠ¼ ON
                 uiSlot.SetCancelActive(true, () => _upgradeService.RemoveMaterial(capturedIdx));
             }
             else
             {
-                //  µî·Ï ÇØÁ¦µÈ ½½·Ô ¡æ Ãë¼Ò¹öÆ° OFF
+                //  ë“±ë¡ í•´ì œëœ ìŠ¬ë¡¯ â†’ ì·¨ì†Œë²„íŠ¼ OFF
                 uiSlot.SetCancelActive(false);
             }
         }

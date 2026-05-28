@@ -56,7 +56,7 @@ public class MapMonsterConfig
     public int EliteMonsterLevel;
 }
 
-// AddressableKey µñ¼Å³Ê¸®¸¦ ±¸ºĞÇÏ±â À§ÇÑ ºó ¸¶Ä¿ Å¬·¡½º - MonsterBaseData
+// AddressableKey ë”•ì…”ë„ˆë¦¬ë¥¼ êµ¬ë¶„í•˜ê¸° ìœ„í•œ ë¹ˆ ë§ˆì»¤ í´ë˜ìŠ¤ - MonsterBaseData
 public class MonsterAddressableMarker { }
 
 [CreateAssetMenu(fileName = "MonsterDatabase", menuName = "Data/MonsterDatabase")]
@@ -73,13 +73,13 @@ public class MonsterDatabaseSO : ScriptableObject, IDataCacheable
         return dict;
     }
 
-    // [Ãß°¡] AddressableKey(string)¸¦ Key·Î ÇÏ´Â µñ¼Å³Ê¸® »ı¼º
+    // [ì¶”ê°€] AddressableKey(string)ë¥¼ Keyë¡œ í•˜ëŠ” ë”•ì…”ë„ˆë¦¬ ìƒì„±
     public Dictionary<string, MonsterBaseData> MakeMonsterAddressableDict()
     {
         Dictionary<string, MonsterBaseData> dict = new Dictionary<string, MonsterBaseData>();
         foreach (var item in MonsterBaseDatas)
         {
-            // ºñ¾îÀÖÁö ¾ÊÀº °æ¿ì¿¡¸¸ Ãß°¡
+            // ë¹„ì–´ìˆì§€ ì•Šì€ ê²½ìš°ì—ë§Œ ì¶”ê°€
             if (!string.IsNullOrEmpty(item.AddressableKey))
             {
                 dict[item.AddressableKey] = item;
@@ -105,7 +105,7 @@ public class MonsterDatabaseSO : ScriptableObject, IDataCacheable
     public void CacheData(Dictionary<Type, object> dataDicts)
     {
         dataDicts[typeof(MonsterBaseData)] = MakeMonsterBaseDataDict();
-        // 2. [Ãß°¡] AddressableKey(string) ±âÁØ µñ¼Å³Ê¸® Ä³½Ì (Marker »ç¿ë)
+        // 2. [ì¶”ê°€] AddressableKey(string) ê¸°ì¤€ ë”•ì…”ë„ˆë¦¬ ìºì‹± (Marker ì‚¬ìš©)
         dataDicts[typeof(MonsterAddressableMarker)] = MakeMonsterAddressableDict();
 
 

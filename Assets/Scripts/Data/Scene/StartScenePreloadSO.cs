@@ -7,7 +7,7 @@ using UnityEngine.AddressableAssets;
 [CreateAssetMenu(menuName = "Preload/StartScenePreloadData")]
 public class StartScenePreloadSO : SceneDataSO
 {
-    [Header("UI ÇÁ¸®ÆÕ")]
+    [Header("UI í”„ë¦¬íŒ¹")]
     public AssetReferenceGameObject backgroundSlideShow;
     public AssetReferenceGameObject tapToStart;
     public AssetReferenceGameObject logo;
@@ -15,7 +15,7 @@ public class StartScenePreloadSO : SceneDataSO
     public AssetReferenceGameObject exitPopup;
     public AssetReferenceGameObject soundSettingPopup;
 
-    [Header("»ç¿îµå")]
+    [Header("ì‚¬ìš´ë“œ")]
     public AssetReferenceT<AudioClip> mainTitleBgm;
 
     public AssetReferenceT<AudioClip>[] titleVoices;

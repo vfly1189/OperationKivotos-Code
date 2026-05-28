@@ -3,10 +3,10 @@ using UnityEngine;
 [System.Serializable]
 public class CharacterRuntimeData
 {
-    public int id;           // Ä³¸¯ÅÍ ½Äº°ÀÚ
-    public int level;           // ÇöÀç ·¹º§
-    public float currentExp;    // ÇöÀç °æÇèÄ¡
-    // public float currentHp;  // (¼±ÅÃ) ´øÀü ½ÇÆĞ ÈÄ Ã¼·Âµµ À¯ÁöÇÒÁö? º¸ÅëÀº Ç®ÇÇ·Î ¸®¼Â
+    public int id;           // ìºë¦­í„° ì‹ë³„ì
+    public int level;           // í˜„ì¬ ë ˆë²¨
+    public float currentExp;    // í˜„ì¬ ê²½í—˜ì¹˜
+    // public float currentHp;  // (ì„ íƒ) ë˜ì „ ì‹¤íŒ¨ í›„ ì²´ë ¥ë„ ìœ ì§€í• ì§€? ë³´í†µì€ í’€í”¼ë¡œ ë¦¬ì…‹
 
     public int weaponLevel;
 }

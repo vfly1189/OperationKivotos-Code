@@ -7,8 +7,8 @@ using UnityEngine.UI;
 
 public class UI_Inventory : UI_PopUp, IItemSlotHandler
 {
-    [SerializeField] private Transform _contentParent; // ScrollViewÀÇ Content
-    [SerializeField] private Button[] _tabButtons; // 0:Àåºñ, 1:¼Òºñ, 2:Àç·á
+    [SerializeField] private Transform _contentParent; // ScrollViewì˜ Content
+    [SerializeField] private Button[] _tabButtons; // 0:ì¥ë¹„, 1:ì†Œë¹„, 2:ì¬ë£Œ
     [SerializeField] private Button _arrangeButton;
 
     [SerializeField] private TextMeshProUGUI _creditNum;
@@ -21,14 +21,14 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
         base.Init();
 
         ItemCategory[] tabCategories = { ItemCategory.Equipment, ItemCategory.Consumable, ItemCategory.Material };
-        // 1. ÅÇ ¹öÆ° ÀÌº¥Æ® ¿¬°á
+        // 1. íƒ­ ë²„íŠ¼ ì´ë²¤íŠ¸ ì—°ê²°
         for (int i = 0; i < _tabButtons.Length; i++)
         {
             int index = i;
             _tabButtons[i].onClick.AddListener(() => OnClickTab(tabCategories[index]));
         }
 
-        // 2. InventoryManagerÀÇ °»½Å ÀÌº¥Æ® ±¸µ¶
+        // 2. InventoryManagerì˜ ê°±ì‹  ì´ë²¤íŠ¸ êµ¬ë…
         Managers.Inventory.OnInventoryUpdated -= RefreshUI;
         Managers.Inventory.OnInventoryUpdated += RefreshUI;
 
@@ -36,7 +36,7 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
         _arrangeButton.onClick.AddListener(ArrangeCurrentInventory);
 
 
-        // ÃÊ±â È­¸é ±×¸®±â
+        // ì´ˆê¸° í™”ë©´ ê·¸ë¦¬ê¸°
         RefreshUI(_currentCategory);
     }
 
@@ -56,7 +56,7 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
     private async void RefreshUI(ItemCategory category)
     {
         if (_currentCategory != category) return;
-        if (_isRefreshing) return; // Áßº¹ ÁøÀÔ Â÷´Ü
+        if (_isRefreshing) return; // ì¤‘ë³µ ì§„ì… ì°¨ë‹¨
         _isRefreshing = true;
 
         var invenArray = Managers.Inventory.Inventory[category];
@@ -92,17 +92,17 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
 
     private void SetCredit()
     {
-        Debug.Log($"ÇöÀç Å©·¹µ÷ : {Managers.Wallet.GetCurrency(CurrencyType.Credit)}");
+        Debug.Log($"í˜„ì¬ í¬ë ˆë”§ : {Managers.Wallet.GetCurrency(CurrencyType.Credit)}");
         _creditNum.text = Managers.Wallet.GetCurrency(CurrencyType.Credit).ToString("N0");
     }
 
-    // ÀÎº¥Åä¸®¿¡¼­ ´Ü¼ø Å¬¸¯Àº ÅøÆÁ °»½Å Á¤µµ
+    // ì¸ë²¤í† ë¦¬ì—ì„œ ë‹¨ìˆœ í´ë¦­ì€ íˆ´íŒ ê°±ì‹  ì •ë„
     public void OnSlotClicked(UI_ItemSlot slot)
     {
-        // ÇÊ¿ä ¾øÀ¸¸é ºó ±¸ÇöÀÌ¶óµµ ¸í½Ã
+        // í•„ìš” ì—†ìœ¼ë©´ ë¹ˆ êµ¬í˜„ì´ë¼ë„ ëª…ì‹œ
     }
 
-    //ÀÎº¥Åä¸®¿¡¼­ ´õºíÅ¬¸¯ = ÀåÂø
+    //ì¸ë²¤í† ë¦¬ì—ì„œ ë”ë¸”í´ë¦­ = ì¥ì°©
     public void OnSlotDoubleClicked(UI_ItemSlot slot)
     {
         if (slot.CurrentCategory == ItemCategory.Equipment)
@@ -113,7 +113,7 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
         }
     }
 
-    //ÀÎº¥Åä¸®¿¡¼­ µå·Ó = ½½·Ô ½º¿Ò
+    //ì¸ë²¤í† ë¦¬ì—ì„œ ë“œë¡­ = ìŠ¬ë¡¯ ìŠ¤ì™‘
     public void OnSlotDrop(UI_ItemSlot from, UI_ItemSlot to)
     {
         Managers.Inventory.SwapItems(from.CurrentCategory, from.SlotIndex, to.SlotIndex);
@@ -123,7 +123,7 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
     {
         if (slot.CurrentSlotData != null && !slot.CurrentSlotData.IsEmpty)
         {
-            // ÅøÆÁ È°¼ºÈ­ ¹× Á¤º¸ ¼ÂÆÃ
+            // íˆ´íŒ í™œì„±í™” ë° ì •ë³´ ì…‹íŒ…
             //Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
             UI_ItemInfo.ShowTooltip(slot.CurrentSlotData, screenPos);
         }

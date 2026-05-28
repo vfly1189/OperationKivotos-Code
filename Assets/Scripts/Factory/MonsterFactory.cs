@@ -8,18 +8,18 @@ public static class MonsterFactory
 
     public static GameObject CreateMonsterByAddressableKey(string monsterAddressableKey, int mapId, Transform spawnPoint)
     {
-        // 1. µ¥ÀÌÅÍ ·Îµå
+        // 1. ë°ì´í„° ë¡œë“œ
         MonsterBaseData monsterBaseData = Managers.Data.GetData<string, MonsterBaseData, MonsterAddressableMarker>(monsterAddressableKey);
         MapMonsterConfig mapConfig = Managers.Data.GetDict<int, MapMonsterConfig>()[mapId];
 
         if (monsterBaseData == null || mapConfig == null) return null;
 
-        // 2. ·¹º§ ¹× ½ºÅÈ °è»ê
+        // 2. ë ˆë²¨ ë° ìŠ¤íƒ¯ ê³„ì‚°
         int spawnLevel = monsterBaseData.Grade == MonsterDefine.MonsterGrade.Elite
             ? mapConfig.EliteMonsterLevel : mapConfig.NormalMonsterLevel;
         var levelStat = Managers.Data.GetDict<int, MonsterLevelByStat>()[spawnLevel];
 
-        // 3. °ÔÀÓ ¿ÀºêÁ§Æ® ºñµ¿±â »ı¼º (¾îµå·¹¼­ºí ·Îµå)
+        // 3. ê²Œì„ ì˜¤ë¸Œì íŠ¸ ë¹„ë™ê¸° ìƒì„± (ì–´ë“œë ˆì„œë¸” ë¡œë“œ)
         GameObject monsterObj = Managers.Resource.Instantiate(
             monsterBaseData.AddressableKey,
             spawnPoint.position,
@@ -28,7 +28,7 @@ public static class MonsterFactory
 
         if (monsterObj == null) return null;
 
-        // 4. ÄÄÆ÷³ÍÆ® ÃÊ±âÈ­
+        // 4. ì»´í¬ë„ŒíŠ¸ ì´ˆê¸°í™”
         MonsterController monsterCtrl = monsterObj.GetComponent<MonsterController>();
         MonsterStat monsterStat = monsterObj.GetComponent<MonsterStat>();
 
@@ -40,19 +40,19 @@ public static class MonsterFactory
         return monsterObj;
     }
 
-    // [ÇÙ½É] ¾îµå·¹¼­ºí ·Îµå´Â ¹«Á¶°Ç ºñµ¿±âÀÌ¹Ç·Î ÆÑÅä¸® ÇÔ¼öµµ UniTask¸¦ ¹İÈ¯ÇØ¾ß ÇÕ´Ï´Ù.
+    // [í•µì‹¬] ì–´ë“œë ˆì„œë¸” ë¡œë“œëŠ” ë¬´ì¡°ê±´ ë¹„ë™ê¸°ì´ë¯€ë¡œ íŒ©í† ë¦¬ í•¨ìˆ˜ë„ UniTaskë¥¼ ë°˜í™˜í•´ì•¼ í•©ë‹ˆë‹¤.
     public static async UniTask<GameObject> CreateMonsterByAddressableKeyAsync(
         string monsterAddressableKey,
         int mapId,
         Transform spawnPoint)
     {
-        // 1. µ¥ÀÌÅÍ ·Îµå (µ¿±â µñ¼Å³Ê¸® Á¢±Ù)
+        // 1. ë°ì´í„° ë¡œë“œ (ë™ê¸° ë”•ì…”ë„ˆë¦¬ ì ‘ê·¼)
         MonsterBaseData monsterBaseData = Managers.Data.GetData<string, MonsterBaseData, MonsterAddressableMarker>(monsterAddressableKey);
         MapMonsterConfig mapConfig = Managers.Data.GetDict<int, MapMonsterConfig>()[mapId];
 
         if (monsterBaseData == null || mapConfig == null)
         {
-            Debug.LogError($"[MonsterFactory] µ¥ÀÌÅÍ ·Îµå ½ÇÆĞ. Key: {monsterAddressableKey}, MapID: {mapId}");
+            Debug.LogError($"[MonsterFactory] ë°ì´í„° ë¡œë“œ ì‹¤íŒ¨. Key: {monsterAddressableKey}, MapID: {mapId}");
             return null;
         }
 
@@ -60,24 +60,24 @@ public static class MonsterFactory
             (monsterBaseData.Grade == MonsterDefine.MonsterGrade.Elite) ||
             (monsterBaseData.Grade == MonsterDefine.MonsterGrade.Boss);
 
-        // 2. ·¹º§ ¹× ½ºÅÈ °è»ê
+        // 2. ë ˆë²¨ ë° ìŠ¤íƒ¯ ê³„ì‚°
         int spawnLevel = isBossElite ? mapConfig.EliteMonsterLevel : mapConfig.NormalMonsterLevel;
         var levelStat = Managers.Data.GetDict<int, MonsterLevelByStat>()[spawnLevel];
 
-        // 3. °ÔÀÓ ¿ÀºêÁ§Æ® ºñµ¿±â »ı¼º 
-        // ¹æ¹ı: ¿øº» ÇÁ¸®ÆÕ ¿¡¼ÂÀ» ºñµ¿±â·Î ¸ÕÀú ¸Ş¸ğ¸®¿¡ ·Îµå(LoadAsync) ÇÕ´Ï´Ù.
+        // 3. ê²Œì„ ì˜¤ë¸Œì íŠ¸ ë¹„ë™ê¸° ìƒì„± 
+        // ë°©ë²•: ì›ë³¸ í”„ë¦¬íŒ¹ ì—ì…‹ì„ ë¹„ë™ê¸°ë¡œ ë¨¼ì € ë©”ëª¨ë¦¬ì— ë¡œë“œ(LoadAsync) í•©ë‹ˆë‹¤.
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(monsterAddressableKey);
 
         if (prefab == null)
         {
-            Debug.LogError($"[MonsterFactory] ÇÁ¸®ÆÕ ·Îµå ½ÇÆĞ. Key: {monsterAddressableKey}");
+            Debug.LogError($"[MonsterFactory] í”„ë¦¬íŒ¹ ë¡œë“œ ì‹¤íŒ¨. Key: {monsterAddressableKey}");
             return null;
         }
 
-        // 4. ·ÎµåµÈ ÇÁ¸®ÆÕÀ» À¯´ÏÆ¼ ±âº» Instantiate·Î ¾À¿¡ »ı¼ºÇÕ´Ï´Ù. (µ¿±â »ı¼ºÀÌ¶ó ¾ÈÀüÇÔ)
+        // 4. ë¡œë“œëœ í”„ë¦¬íŒ¹ì„ ìœ ë‹ˆí‹° ê¸°ë³¸ Instantiateë¡œ ì”¬ì— ìƒì„±í•©ë‹ˆë‹¤. (ë™ê¸° ìƒì„±ì´ë¼ ì•ˆì „í•¨)
         GameObject monsterObj = Object.Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
 
-        // 5. ÄÄÆ÷³ÍÆ® ÃÊ±âÈ­ ¹× ½ºÅÈ ÁÖÀÔ
+        // 5. ì»´í¬ë„ŒíŠ¸ ì´ˆê¸°í™” ë° ìŠ¤íƒ¯ ì£¼ì…
         MonsterStat monsterStat = monsterObj.GetComponent<MonsterStat>();
         if (monsterStat != null)
         {
@@ -92,13 +92,13 @@ public static class MonsterFactory
         int mapId,
         Transform spawnPoint)
     {
-        // 1. µ¥ÀÌÅÍ ·Îµå (µ¿±â µñ¼Å³Ê¸® Á¢±Ù)
+        // 1. ë°ì´í„° ë¡œë“œ (ë™ê¸° ë”•ì…”ë„ˆë¦¬ ì ‘ê·¼)
         MonsterBaseData monsterBaseData = Managers.Data.GetData<int, MonsterBaseData>(monsterID);
         MapMonsterConfig mapConfig = Managers.Data.GetDict<int, MapMonsterConfig>()[mapId];
 
         if (monsterBaseData == null || mapConfig == null)
         {
-            Debug.LogError($"[MonsterFactory] µ¥ÀÌÅÍ ·Îµå ½ÇÆĞ. Key: {monsterID}, MapID: {mapId}");
+            Debug.LogError($"[MonsterFactory] ë°ì´í„° ë¡œë“œ ì‹¤íŒ¨. Key: {monsterID}, MapID: {mapId}");
             return null;
         }
 
@@ -106,24 +106,24 @@ public static class MonsterFactory
             (monsterBaseData.Grade == MonsterDefine.MonsterGrade.Elite) ||
             (monsterBaseData.Grade == MonsterDefine.MonsterGrade.Boss);
 
-        // 2. ·¹º§ ¹× ½ºÅÈ °è»ê
+        // 2. ë ˆë²¨ ë° ìŠ¤íƒ¯ ê³„ì‚°
         int spawnLevel = isBossElite ? mapConfig.EliteMonsterLevel : mapConfig.NormalMonsterLevel;
         var levelStat = Managers.Data.GetDict<int, MonsterLevelByStat>()[spawnLevel];
 
-        // 3. °ÔÀÓ ¿ÀºêÁ§Æ® ºñµ¿±â »ı¼º 
-        // ¹æ¹ı: ¿øº» ÇÁ¸®ÆÕ ¿¡¼ÂÀ» ºñµ¿±â·Î ¸ÕÀú ¸Ş¸ğ¸®¿¡ ·Îµå(LoadAsync) ÇÕ´Ï´Ù.
+        // 3. ê²Œì„ ì˜¤ë¸Œì íŠ¸ ë¹„ë™ê¸° ìƒì„± 
+        // ë°©ë²•: ì›ë³¸ í”„ë¦¬íŒ¹ ì—ì…‹ì„ ë¹„ë™ê¸°ë¡œ ë¨¼ì € ë©”ëª¨ë¦¬ì— ë¡œë“œ(LoadAsync) í•©ë‹ˆë‹¤.
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(monsterBaseData.AddressableKey);
 
         if (prefab == null)
         {
-            Debug.LogError($"[MonsterFactory] ÇÁ¸®ÆÕ ·Îµå ½ÇÆĞ. Key: {monsterBaseData.AddressableKey}");
+            Debug.LogError($"[MonsterFactory] í”„ë¦¬íŒ¹ ë¡œë“œ ì‹¤íŒ¨. Key: {monsterBaseData.AddressableKey}");
             return null;
         }
 
-        // 4. ·ÎµåµÈ ÇÁ¸®ÆÕÀ» À¯´ÏÆ¼ ±âº» Instantiate·Î ¾À¿¡ »ı¼ºÇÕ´Ï´Ù. (µ¿±â »ı¼ºÀÌ¶ó ¾ÈÀüÇÔ)
+        // 4. ë¡œë“œëœ í”„ë¦¬íŒ¹ì„ ìœ ë‹ˆí‹° ê¸°ë³¸ Instantiateë¡œ ì”¬ì— ìƒì„±í•©ë‹ˆë‹¤. (ë™ê¸° ìƒì„±ì´ë¼ ì•ˆì „í•¨)
         GameObject monsterObj = Object.Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
 
-        // 5. ÄÄÆ÷³ÍÆ® ÃÊ±âÈ­ ¹× ½ºÅÈ ÁÖÀÔ
+        // 5. ì»´í¬ë„ŒíŠ¸ ì´ˆê¸°í™” ë° ìŠ¤íƒ¯ ì£¼ì…
         MonsterStat monsterStat = monsterObj.GetComponent<MonsterStat>();
         if (monsterStat != null)
         {

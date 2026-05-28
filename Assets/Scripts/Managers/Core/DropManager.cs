@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class DropManager
 {
-    // ¹İÈ¯ÇüÀ» List<RewardInfo>·Î º¯°æ
+    // ë°˜í™˜í˜•ì„ List<RewardInfo>ë¡œ ë³€ê²½
     public List<InventorySlot> RollAndGiveDropItems(int dropTableId, bool showToast = true)
     {
         List<InventorySlot> results = new List<InventorySlot>();
@@ -19,7 +19,7 @@ public class DropManager
             DropTableEntry pickedEntry = PickRandomEntry(table);
             if (pickedEntry != null)
             {
-                // ½ÇÁ¦ ÀÎº¥Åä¸®¿¡ ³Ö°í °á°ú¸¦ ¹Ş¾Æ¿È
+                // ì‹¤ì œ ì¸ë²¤í† ë¦¬ì— ë„£ê³  ê²°ê³¼ë¥¼ ë°›ì•„ì˜´
                 InventorySlot info = GiveReward(pickedEntry, showToast);
                 if (info.itemID > 0)
                 {
@@ -30,10 +30,10 @@ public class DropManager
         return results;
     }
 
-    // °¡ÁßÄ¡(Weight) ±â¹İÀ¸·Î ¾ÆÀÌÅÛ ÇÏ³ª¸¦ »Ì´Â ÇÙ½É ÇÔ¼ö
+    // ê°€ì¤‘ì¹˜(Weight) ê¸°ë°˜ìœ¼ë¡œ ì•„ì´í…œ í•˜ë‚˜ë¥¼ ë½‘ëŠ” í•µì‹¬ í•¨ìˆ˜
     private DropTableEntry PickRandomEntry(DropTable table)
     {
-        // TotalWeight´Â ¾Õ¼­ DataManager(¶Ç´Â SO)¿¡¼­ ¹Ì¸® °è»êÇØµĞ °ªÀ» »ç¿ë
+        // TotalWeightëŠ” ì•ì„œ DataManager(ë˜ëŠ” SO)ì—ì„œ ë¯¸ë¦¬ ê³„ì‚°í•´ë‘” ê°’ì„ ì‚¬ìš©
         int totalWeight = table.TotalWeight;
         if (totalWeight <= 0) return null;
 
@@ -45,30 +45,30 @@ public class DropManager
             currentWeight += entry.Weight;
             if (randomValue < currentWeight)
             {
-                return entry; // ´çÃ·!
+                return entry; // ë‹¹ì²¨!
             }
         }
 
         return null;
     }
 
-    // »ÌÈù ¿£Æ®¸®¸¦ ºĞ¼®ÇØ¼­ ½ÇÁ¦ ÀÎº¥Åä¸®¿¡ ³Ö¾îÁÖ°í UI ¶ç¿ì±â
+    // ë½‘íŒ ì—”íŠ¸ë¦¬ë¥¼ ë¶„ì„í•´ì„œ ì‹¤ì œ ì¸ë²¤í† ë¦¬ì— ë„£ì–´ì£¼ê³  UI ë„ìš°ê¸°
     private InventorySlot GiveReward(DropTableEntry entry, bool showToast)
     {
         InventorySlot result = new InventorySlot();
 
-        // 1. °³¼ö °áÁ¤ (Min ~ Max)
+        // 1. ê°œìˆ˜ ê²°ì • (Min ~ Max)
         int amount = Random.Range(entry.MinCount, entry.MaxCount + 1);
 
-        // 2. Å¸ÀÔ¿¡ µû¶ó Ã³¸®
+        // 2. íƒ€ì…ì— ë”°ë¼ ì²˜ë¦¬
         if (entry.RewardType == DropTableDefine.RewardType.Equipment)
         {
-            // ÀåºñÀÇ °æ¿ì Å×ÀÌºí¿¡ ItemID°¡ -1ÀÌ°í Tier¸¸ ÀÖ´Ù¸é,
-            // ÇØ´ç Tier¿¡ ¸Â´Â Àåºñ ¸ñ·Ï Áß¿¡¼­ ·£´ıÀ¸·Î ÇÏ³ª¸¦ ´Ù½Ã °ñ¶ó¾ß ÇÔ
+            // ì¥ë¹„ì˜ ê²½ìš° í…Œì´ë¸”ì— ItemIDê°€ -1ì´ê³  Tierë§Œ ìˆë‹¤ë©´,
+            // í•´ë‹¹ Tierì— ë§ëŠ” ì¥ë¹„ ëª©ë¡ ì¤‘ì—ì„œ ëœë¤ìœ¼ë¡œ í•˜ë‚˜ë¥¼ ë‹¤ì‹œ ê³¨ë¼ì•¼ í•¨
             int finalItemId = DetermineEquipmentIdByTier(entry.Tier);
             if (finalItemId > 0)
             {
-                // ÀÎº¥Åä¸®¿¡ Ãß°¡
+                // ì¸ë²¤í† ë¦¬ì— ì¶”ê°€
                 Managers.Inventory.AddEquipmentSlot(EquipmentFactory.CreateEquipment(finalItemId));
 
                 result.itemID = finalItemId;
@@ -81,7 +81,7 @@ public class DropManager
                     EquipmentData data = baseData as EquipmentData;
                     UnityEngine.Color backgroundColor = ColorDict.GetGradeColor(data.Grade);
 
-                    // UI ¾Ë¸² ¶ç¿ì±â
+                    // UI ì•Œë¦¼ ë„ìš°ê¸°
                     //Managers.UI.ShowLootToast(data.Name, amount, icon, backgroundColor);
                     UI_LootNotification.ShowToast(ItemCategory.Equipment, data.Name, amount, data.IconKey, backgroundColor).Forget();
                 }
@@ -89,7 +89,7 @@ public class DropManager
         }
         else if (entry.RewardType == DropTableDefine.RewardType.Material)
         {
-            // Àç·á´Â ItemID°¡ ¸íÈ®ÇÏ°Ô µé¾îÀÖÀ½
+            // ì¬ë£ŒëŠ” ItemIDê°€ ëª…í™•í•˜ê²Œ ë“¤ì–´ìˆìŒ
             Managers.Inventory.AddItem(entry.ItemID, ItemCategory.Material, amount);
 
             result.itemID = entry.ItemID;
@@ -102,7 +102,7 @@ public class DropManager
                 MaterialData data = baseData as MaterialData;
                 UnityEngine.Color backgroundColor = ColorDict.GetGradeColor(data.Grade);
 
-                // UI ¾Ë¸² ¶ç¿ì±â
+                // UI ì•Œë¦¼ ë„ìš°ê¸°
                 //Managers.UI.ShowLootToast(data.Name, amount, icon, backgroundColor);
                 UI_LootNotification.ShowToast(ItemCategory.Material, data.Name, amount, data.IconKey, backgroundColor).Forget();
             }
@@ -111,25 +111,25 @@ public class DropManager
         return result;
     }
 
-    // Æ¼¾î ±â¹İÀ¸·Î ¹«ÀÛÀ§ Àåºñ¸¦ ÇÏ³ª »Ì¾Æ¿À´Â ÇÔ¼ö
+    // í‹°ì–´ ê¸°ë°˜ìœ¼ë¡œ ë¬´ì‘ìœ„ ì¥ë¹„ë¥¼ í•˜ë‚˜ ë½‘ì•„ì˜¤ëŠ” í•¨ìˆ˜
     private int DetermineEquipmentIdByTier(int tier)
     {
-        // 1. DataManager¿¡¼­ ¹Ì¸® ¸¸µé¾îµĞ 'Æ¼¾îº° Àåºñ ÀÎµ¦½º'¸¦ °¡Á®¿È
-        //    (Å¸ÀÔ ½Äº°ÀÚ·Î ¾Æ±î ¸¸µç ¸¶Ä¿ Å¬·¡½º »ç¿ë)
+        // 1. DataManagerì—ì„œ ë¯¸ë¦¬ ë§Œë“¤ì–´ë‘” 'í‹°ì–´ë³„ ì¥ë¹„ ì¸ë±ìŠ¤'ë¥¼ ê°€ì ¸ì˜´
+        //    (íƒ€ì… ì‹ë³„ìë¡œ ì•„ê¹Œ ë§Œë“  ë§ˆì»¤ í´ë˜ìŠ¤ ì‚¬ìš©)
         var tierIndexDict = Managers.Data.GetDict<int, List<int>, EquipmentTierIndex>();
 
 
-        // 2. O(1) °Ë»öÀ¸·Î ÇØ´ç Æ¼¾îÀÇ Àåºñ ID ¸®½ºÆ®¸¦ ¹Ù·Î È¹µæ
+        // 2. O(1) ê²€ìƒ‰ìœ¼ë¡œ í•´ë‹¹ í‹°ì–´ì˜ ì¥ë¹„ ID ë¦¬ìŠ¤íŠ¸ë¥¼ ë°”ë¡œ íšë“
         if (tierIndexDict != null && tierIndexDict.TryGetValue(tier, out List<int> candidateIds))
         {
             if (candidateIds.Count > 0)
             {
-                // 3. ¸®½ºÆ® ¾È¿¡¼­ ·£´ıÀ¸·Î ÇÏ³ª »Ì±â (¿ª½Ã O(1))
+                // 3. ë¦¬ìŠ¤íŠ¸ ì•ˆì—ì„œ ëœë¤ìœ¼ë¡œ í•˜ë‚˜ ë½‘ê¸° (ì—­ì‹œ O(1))
                 return candidateIds[Random.Range(0, candidateIds.Count)];
             }
         }
 
-        Debug.LogWarning($"[DropManager] Tier {tier}¿¡ ÇØ´çÇÏ´Â Àåºñ°¡ ¾ø½À´Ï´Ù.");
+        Debug.LogWarning($"[DropManager] Tier {tier}ì— í•´ë‹¹í•˜ëŠ” ì¥ë¹„ê°€ ì—†ìŠµë‹ˆë‹¤.");
         return -1;
     }
 }

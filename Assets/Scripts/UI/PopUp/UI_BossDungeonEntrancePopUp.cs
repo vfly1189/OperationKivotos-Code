@@ -17,16 +17,16 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
     [SerializeField] private TextMeshProUGUI _dungeonNameText;
     [SerializeField] private TextMeshProUGUI _requireLevelText;
 
-    // ÅØ½ºÆ® ÄÄÆ÷³ÍÆ® Ä³½Ì¿ë (¹öÆ° ÀÚ½Ä¿¡ ÀÖ´Â ÅØ½ºÆ®)
+    // í…ìŠ¤íŠ¸ ì»´í¬ë„ŒíŠ¸ ìºì‹±ìš© (ë²„íŠ¼ ìì‹ì— ìˆëŠ” í…ìŠ¤íŠ¸)
     private TextMeshProUGUI _easyText;
     private TextMeshProUGUI _normalText;
     private TextMeshProUGUI _hardText;
 
-    // »ö»ó Á¤ÀÇ (ColorUtility·Î ÆÄ½Ì)
+    // ìƒ‰ìƒ ì •ì˜ (ColorUtilityë¡œ íŒŒì‹±)
     private Color _colEasy;
     private Color _colNormal;
     private Color _colHard;
-    private Color _colDeactive = new Color(0.7f, 0.7f, 0.7f, 1f); // ºñÈ°¼º »ö»ó (È¸»ö)
+    private Color _colDeactive = new Color(0.7f, 0.7f, 0.7f, 1f); // ë¹„í™œì„± ìƒ‰ìƒ (íšŒìƒ‰)
 
     private int _dungeonGroupID = -1;
 
@@ -34,12 +34,12 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
     {
        base.Init();
 
-        // 1. ÄÄÆ÷³ÍÆ® Ã£±â (¹öÆ° ¾Æ·¡ÀÇ ÅØ½ºÆ®)
+        // 1. ì»´í¬ë„ŒíŠ¸ ì°¾ê¸° (ë²„íŠ¼ ì•„ë˜ì˜ í…ìŠ¤íŠ¸)
         _easyText = _easyButton.GetComponentInChildren<TextMeshProUGUI>();
         _normalText = _normalButton.GetComponentInChildren<TextMeshProUGUI>();
         _hardText = _hardButton.GetComponentInChildren<TextMeshProUGUI>();
 
-        // 2. »ö»ó ÆÄ½Ì (# ÄÚµå¸¦ Color °´Ã¼·Î º¯È¯)
+        // 2. ìƒ‰ìƒ íŒŒì‹± (# ì½”ë“œë¥¼ Color ê°ì²´ë¡œ ë³€í™˜)
         ColorUtility.TryParseHtmlString("#00C800", out _colEasy);   // Easy (Green)
         ColorUtility.TryParseHtmlString("#D4B200", out _colNormal); // Normal (Gold)
         ColorUtility.TryParseHtmlString("#FF4500", out _colHard);   // Hard (Red)
@@ -51,7 +51,7 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
         _normalButton.onClick.AddListener(() => OnDifficultySelected(Define.DungeonDifficulty.Normal));
         _hardButton.onClick.AddListener(() => OnDifficultySelected(Define.DungeonDifficulty.Hard));
 
-        // 4. ÃÊ±â°ª ¼³Á¤ (Easy ¼±ÅÃ »óÅÂ·Î ½ÃÀÛ)
+        // 4. ì´ˆê¸°ê°’ ì„¤ì • (Easy ì„ íƒ ìƒíƒœë¡œ ì‹œì‘)
         OnDifficultySelected(0);
     }
     public void SetDungeonGroupID(int groupID)
@@ -59,26 +59,26 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
         _dungeonGroupID = groupID;
     }
 
-    // ³­ÀÌµµ ¼±ÅÃ Ã³¸® (0: Easy, 1: Normal, 2: Hard)
+    // ë‚œì´ë„ ì„ íƒ ì²˜ë¦¬ (0: Easy, 1: Normal, 2: Hard)
     void OnDifficultySelected(Define.DungeonDifficulty difficulty)
     {
-        // 1. ¸Å´ÏÀú¿¡ ÀúÀå
+        // 1. ë§¤ë‹ˆì €ì— ì €ì¥
         Managers.Context.SelectedDifficulty = difficulty;
 
         Managers.Context.CurrentDungeonGroupID = _dungeonGroupID;
         Managers.Context.CurrentDungeonID =
             Managers.Data.GetData<int, DungeonGroup>(_dungeonGroupID).DungeonDataByDifficulty[difficulty].DungeonID;
 
-        // 2. ¹öÆ° »ö»ó °»½Å
+        // 2. ë²„íŠ¼ ìƒ‰ìƒ ê°±ì‹ 
         UpdateButtonColors(difficulty);
         UpdateRequireLevelText(difficulty);
     }
 
     void UpdateButtonColors(Define.DungeonDifficulty selectedDifficulty)
     {
-        // ·ÎÁ÷: ¼±ÅÃµÈ ³ğÀº ÀÚ±â »ö±ò, ¾È µÈ ³ğÀº È¸»ö(_colDeactive)
+        // ë¡œì§: ì„ íƒëœ ë†ˆì€ ìê¸° ìƒ‰ê¹”, ì•ˆ ëœ ë†ˆì€ íšŒìƒ‰(_colDeactive)
 
-        // Easy ¹öÆ°
+        // Easy ë²„íŠ¼
         if (selectedDifficulty == Define.DungeonDifficulty.Easy)
         {
             SetButtonColor(_easyButton, _easyText, _colEasy, true);
@@ -88,7 +88,7 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
             SetButtonColor(_easyButton, _easyText, _colDeactive, false);
         }
 
-        // Normal ¹öÆ°
+        // Normal ë²„íŠ¼
         if (selectedDifficulty == Define.DungeonDifficulty.Normal)
         {
             SetButtonColor(_normalButton, _normalText, _colNormal, true);
@@ -98,7 +98,7 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
             SetButtonColor(_normalButton, _normalText, _colDeactive, false);
         }
 
-        // Hard ¹öÆ°
+        // Hard ë²„íŠ¼
         if (selectedDifficulty == Define.DungeonDifficulty.Hard)
         {
             SetButtonColor(_hardButton, _hardText, _colHard, true);
@@ -115,7 +115,7 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
 
         DungeonData data = Managers.Data.GetData<int, DungeonGroup>(_dungeonGroupID).GetDungeonData(difficulty);
 
-        _requireLevelText.text = $"±ÇÀå·¹º§ : " + data.RequiredLevel.ToString();
+        _requireLevelText.text = $"ê¶Œì¥ë ˆë²¨ : " + data.RequiredLevel.ToString();
 
         if (data.RequiredLevel <= Managers.Party.PartyLevel)
             _requireLevelText.color = _colEasy;
@@ -123,12 +123,12 @@ public class UI_BossDungeonEntrancePopUp : UI_PopUp
             _requireLevelText.color = _colHard;
     }
 
-    // ¹öÆ°°ú ÅØ½ºÆ® »ö»ó ÀÏ°ı Àû¿ë ÇÔ¼ö
+    // ë²„íŠ¼ê³¼ í…ìŠ¤íŠ¸ ìƒ‰ìƒ ì¼ê´„ ì ìš© í•¨ìˆ˜
     void SetButtonColor(Button btn, TextMeshProUGUI txt, Color color, bool isSelected)
     {
         if (txt != null)
         {
-            txt.color = color; // ÅØ½ºÆ® »ö»ó º¯°æ
+            txt.color = color; // í…ìŠ¤íŠ¸ ìƒ‰ìƒ ë³€ê²½
         }
     }
 

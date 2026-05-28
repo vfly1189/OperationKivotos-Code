@@ -9,16 +9,16 @@ using UnityEngine.UI;
 public class StartSceneBackGroundSlideShow : MonoBehaviour
 {
     [Header("Timing")]
-    [SerializeField]  private float _displayDuration = 5.0f; // °¢ ÀÌ¹ÌÁö Ç¥½Ã ½Ã°£
+    [SerializeField]  private float _displayDuration = 5.0f; // ê° ì´ë¯¸ì§€ í‘œì‹œ ì‹œê°„
 
     [Header("Pan Settings")]
-    [SerializeField] private float _panSpeed = 20f; // ÀÌµ¿ ¼Óµµ
-    [SerializeField] private Vector2 _panDirection = new Vector2(1f, 0.5f); // ÀÌµ¿ ¹æÇâ
-    [SerializeField] private float _panRange = 50f; // ÀÌµ¿ °Å¸®
+    [SerializeField] private float _panSpeed = 20f; // ì´ë™ ì†ë„
+    [SerializeField] private Vector2 _panDirection = new Vector2(1f, 0.5f); // ì´ë™ ë°©í–¥
+    [SerializeField] private float _panRange = 50f; // ì´ë™ ê±°ë¦¬
 
 
-    private int _currentSpriteIndex = 0; // ÇöÀç Ç¥½Ã ÁßÀÎ ½ºÇÁ¶óÀÌÆ® ÀÎµ¦½º
-    private int _currentLayerIndex = 0; // ÇöÀç È°¼º ·¹ÀÌ¾î ÀÎµ¦½º (0~6)
+    private int _currentSpriteIndex = 0; // í˜„ì¬ í‘œì‹œ ì¤‘ì¸ ìŠ¤í”„ë¼ì´íŠ¸ ì¸ë±ìŠ¤
+    private int _currentLayerIndex = 0; // í˜„ì¬ í™œì„± ë ˆì´ì–´ ì¸ë±ìŠ¤ (0~6)
 
     private RectTransform[] _rectTransforms;
     private Vector2[] _initialPositions;
@@ -28,7 +28,7 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
     void Start()
     {
         int childCount = _backGroundImages.Length;
-        // RectTransform ¹è¿­ ÃÊ±âÈ­
+        // RectTransform ë°°ì—´ ì´ˆê¸°í™”
         _rectTransforms = new RectTransform[childCount];
         _initialPositions = new Vector2[childCount];
 
@@ -37,16 +37,16 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
             _rectTransforms[i] = _backGroundImages[i].GetComponent<RectTransform>();
             _initialPositions[i] = _rectTransforms[i].anchoredPosition;
 
-            // ¸ğµç ·¹ÀÌ¾î ÃÊ±âÈ­ (Åõ¸íÇÏ°Ô)
+            // ëª¨ë“  ë ˆì´ì–´ ì´ˆê¸°í™” (íˆ¬ëª…í•˜ê²Œ)
             _backGroundImages[i].GetComponent<CanvasGroup>().alpha = 0f;
         }
 
-        //Ã¹¹øÂ° ÀÌ¹ÌÁö¸¸ ÄÑÁÜ
+        //ì²«ë²ˆì§¸ ì´ë¯¸ì§€ë§Œ ì¼œì¤Œ
         _backGroundImages[0].GetComponent<CanvasGroup>().alpha = 1.0f;
 
 
 
-        // ½½¶óÀÌµå¼î ½ÃÀÛ
+        // ìŠ¬ë¼ì´ë“œì‡¼ ì‹œì‘
         SlideshowRoutineAsync(this.GetCancellationTokenOnDestroy()).Forget();
     }
     
@@ -54,7 +54,7 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
 
     void Update()
     {
-        // ÇöÀç È°¼º ·¹ÀÌ¾î¿¡ ÆĞ´× È¿°ú Àû¿ë
+        // í˜„ì¬ í™œì„± ë ˆì´ì–´ì— íŒ¨ë‹ íš¨ê³¼ ì ìš©
         ApplyPanEffect(_currentLayerIndex);
     }
 
@@ -64,35 +64,35 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
         //{
         //    yield return new WaitForSeconds(_displayDuration);
 
-        //    // ÀÌÀü ·¹ÀÌ¾î ¼û±â±â
+        //    // ì´ì „ ë ˆì´ì–´ ìˆ¨ê¸°ê¸°
         //    _backGroundImages[_currentLayerIndex].GetComponent<CanvasGroup>().alpha = 0f;
 
-        //    // ´ÙÀ½ ÀÎµ¦½º °è»ê
+        //    // ë‹¤ìŒ ì¸ë±ìŠ¤ ê³„ì‚°
         //    _currentSpriteIndex = (_currentSpriteIndex + 1) % _backGroundImages.Length;
         //    _currentLayerIndex = (_currentLayerIndex + 1) % _backGroundImages.Length;
 
-        //    // »õ ÀÌ¹ÌÁö ¼³Á¤ ¹× Ç¥½Ã
+        //    // ìƒˆ ì´ë¯¸ì§€ ì„¤ì • ë° í‘œì‹œ
         //    _rectTransforms[_currentLayerIndex].anchoredPosition = _initialPositions[_currentLayerIndex];
         //    _backGroundImages[_currentLayerIndex].GetComponent<CanvasGroup>().alpha = 1f;
         //}
 
-        // ¹«ÇÑ ·çÇÁÁö¸¸ ÅäÅ«ÀÌ Ãë¼ÒµÇ¸é ¾ÈÀüÇÏ°Ô ºüÁ®³ª¿È
+        // ë¬´í•œ ë£¨í”„ì§€ë§Œ í† í°ì´ ì·¨ì†Œë˜ë©´ ì•ˆì „í•˜ê²Œ ë¹ ì ¸ë‚˜ì˜´
         while (!token.IsCancellationRequested)
         {
-            // [ÇÙ½É º¯°æ] ÄÚ·çÆ¾ ´ë½Å UniTask.Delay »ç¿ë. Ãë¼Ò ½Ã ¿¡·¯ ¾øÀÌ ºÎµå·´°Ô Á¾·áµÇ°Ô Suppress »ç¿ë
+            // [í•µì‹¬ ë³€ê²½] ì½”ë£¨í‹´ ëŒ€ì‹  UniTask.Delay ì‚¬ìš©. ì·¨ì†Œ ì‹œ ì—ëŸ¬ ì—†ì´ ë¶€ë“œëŸ½ê²Œ ì¢…ë£Œë˜ê²Œ Suppress ì‚¬ìš©
             bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(_displayDuration), cancellationToken: token).SuppressCancellationThrow();
 
-            // ´ë±â µµÁß ¾À ÀÌµ¿À¸·Î ¿ÀºêÁ§Æ® ÆÄ±« ½Ã ·çÇÁ Å»Ãâ
+            // ëŒ€ê¸° ë„ì¤‘ ì”¬ ì´ë™ìœ¼ë¡œ ì˜¤ë¸Œì íŠ¸ íŒŒê´´ ì‹œ ë£¨í”„ íƒˆì¶œ
             if (isCanceled) return;
 
-            // ÀÌÀü ·¹ÀÌ¾î ¼û±â±â
+            // ì´ì „ ë ˆì´ì–´ ìˆ¨ê¸°ê¸°
             _backGroundImages[_currentLayerIndex].GetComponent<CanvasGroup>().alpha = 0f;
 
-            // ´ÙÀ½ ÀÎµ¦½º °è»ê
+            // ë‹¤ìŒ ì¸ë±ìŠ¤ ê³„ì‚°
             _currentSpriteIndex = (_currentSpriteIndex + 1) % _backGroundImages.Length;
             _currentLayerIndex = (_currentLayerIndex + 1) % _backGroundImages.Length;
 
-            // »õ ÀÌ¹ÌÁö ¼³Á¤ ¹× Ç¥½Ã
+            // ìƒˆ ì´ë¯¸ì§€ ì„¤ì • ë° í‘œì‹œ
             _rectTransforms[_currentLayerIndex].anchoredPosition = _initialPositions[_currentLayerIndex];
             _backGroundImages[_currentLayerIndex].GetComponent<CanvasGroup>().alpha = 1f;
         }
@@ -104,7 +104,7 @@ public class StartSceneBackGroundSlideShow : MonoBehaviour
 
         float time = Time.time * _panSpeed * 0.01f;
 
-        // Sin/Cos·Î ºÎµå·¯¿î ¿òÁ÷ÀÓ
+        // Sin/Cosë¡œ ë¶€ë“œëŸ¬ìš´ ì›€ì§ì„
         Vector2 offset = new Vector2(
             Mathf.Sin(time) * _panRange * _panDirection.x,
             Mathf.Cos(time * 0.7f) * _panRange * _panDirection.y

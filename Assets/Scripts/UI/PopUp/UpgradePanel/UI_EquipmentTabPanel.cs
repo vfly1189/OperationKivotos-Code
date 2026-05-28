@@ -6,19 +6,19 @@ public class UI_EquipmentTabPanel : UI_Base
 {
     [SerializeField] private Button[] _tabButtons;
 
-    // ºÎ¸ğ¿¡°Ô ÅÇ º¯°æÀ» ¾Ë¸± Äİ¹é ÀÌº¥Æ®
+    // ë¶€ëª¨ì—ê²Œ íƒ­ ë³€ê²½ì„ ì•Œë¦´ ì½œë°± ì´ë²¤íŠ¸
     public Action<EquipmentTabType> OnTabClicked;
 
     public override void Init()
     {
         for (int i = 0; i < _tabButtons.Length; i++)
         {
-            int index = i; //ÁÖÀÇ: for¹® ¾È¿¡¼­ ¶÷´Ù »ç¿ë ½Ã Å¬·ÎÀú(Closure) ¹®Á¦ ¹æÁö¸¦ À§ÇØ Áö¿ª º¯¼ö·Î º¹»ç
+            int index = i; //ì£¼ì˜: forë¬¸ ì•ˆì—ì„œ ëŒë‹¤ ì‚¬ìš© ì‹œ í´ë¡œì €(Closure) ë¬¸ì œ ë°©ì§€ë¥¼ ìœ„í•´ ì§€ì—­ ë³€ìˆ˜ë¡œ ë³µì‚¬
 
-            _tabButtons[i].onClick.RemoveAllListeners(); // Áßº¹ ±¸µ¶ ¹æÁö
+            _tabButtons[i].onClick.RemoveAllListeners(); // ì¤‘ë³µ êµ¬ë… ë°©ì§€
             _tabButtons[i].onClick.AddListener(() =>
             {
-                // ¹öÆ°ÀÌ ´­¸®¸é ÇØ´ç ÀÎµ¦½º¸¦ EnumÀ¸·Î Ä³½ºÆÃÇØ¼­ ÀÌº¥Æ® ¹ß»ı
+                // ë²„íŠ¼ì´ ëˆŒë¦¬ë©´ í•´ë‹¹ ì¸ë±ìŠ¤ë¥¼ Enumìœ¼ë¡œ ìºìŠ¤íŒ…í•´ì„œ ì´ë²¤íŠ¸ ë°œìƒ
                 OnTabClicked?.Invoke((EquipmentTabType)index);
             });
         }

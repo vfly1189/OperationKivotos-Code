@@ -1,28 +1,28 @@
 using UnityEngine;
-using UnityEngine.AddressableAssets; // ÇÊ¼ö
+using UnityEngine.AddressableAssets; // í•„ìˆ˜
 
 [CreateAssetMenu(fileName = "NewCharacterData", menuName = "Data/CharacterData")]
 public class CharacterDataSO : ScriptableObject
 {
     // ==========================================
-    // [1] ¿¢¼¿¿¡¼­ ÀÚµ¿ ÁÖÀÔµÉ µ¥ÀÌÅÍ (¼öµ¿ ¼öÁ¤ X)
-    // ¿¢¼¿ÀÇ ÄÃ·³¸í°ú 1:1 ¸ÅÄªµÇ´Â º¯¼öµéÀÔ´Ï´Ù.
+    // [1] ì—‘ì…€ì—ì„œ ìë™ ì£¼ì…ë  ë°ì´í„° (ìˆ˜ë™ ìˆ˜ì • X)
+    // ì—‘ì…€ì˜ ì»¬ëŸ¼ëª…ê³¼ 1:1 ë§¤ì¹­ë˜ëŠ” ë³€ìˆ˜ë“¤ì…ë‹ˆë‹¤.
     // ==========================================
     [Header("Excel Data - Info")]
     public int id;              // int_ID
-    public string key;           // ¿¹: char_Hoshino -> string_ID
-    public string nameKR;       // ¿¹: È£½Ã³ë
-    public string nameKey;      // ´Ü¼ø Ä³¸¯ÅÍ ÀÌ¸§, Hoshino, Ako, Aru ...
-    // (nameENÀº ¿¢¼¿¿¡ ¾øÀ¸¹Ç·Î ÀÏ´Ü Á¦¿ÜÇÏ°Å³ª ³ªÁß¿¡ ¿¢¼¿¿¡ Ãß°¡ÇÏ½Ã¸é µË´Ï´Ù)
+    public string key;           // ì˜ˆ: char_Hoshino -> string_ID
+    public string nameKR;       // ì˜ˆ: í˜¸ì‹œë…¸
+    public string nameKey;      // ë‹¨ìˆœ ìºë¦­í„° ì´ë¦„, Hoshino, Ako, Aru ...
+    // (nameENì€ ì—‘ì…€ì— ì—†ìœ¼ë¯€ë¡œ ì¼ë‹¨ ì œì™¸í•˜ê±°ë‚˜ ë‚˜ì¤‘ì— ì—‘ì…€ì— ì¶”ê°€í•˜ì‹œë©´ ë©ë‹ˆë‹¤)
 
     [Header("Excel Data - Base Stats (Lv.1)")]
     public float baseHp;              // Base_HP
     public float baseAttack;          // Base_ATK
     public float baseDefense;         // Base_DEF
-    public float baseCritRate;        // Base_CritRate (¿¹: 0.05)
-    public float baseCritDamage;      // Base_CritDMG (¿¹: 1.5)
-    public float baseEnergyRecharge;  // Base_EnergyRecharge (¿¹: 1)
-    public float baseMoveSpeed;       // Base_MoveSpeed (¿¹: 4.5)
+    public float baseCritRate;        // Base_CritRate (ì˜ˆ: 0.05)
+    public float baseCritDamage;      // Base_CritDMG (ì˜ˆ: 1.5)
+    public float baseEnergyRecharge;  // Base_EnergyRecharge (ì˜ˆ: 1)
+    public float baseMoveSpeed;       // Base_MoveSpeed (ì˜ˆ: 4.5)
 
     [Header("Excel Data - Growth Stats (Per Level)")]
     public float hpGrowth;            // Growth_HP
@@ -46,7 +46,7 @@ public class CharacterDataSO : ScriptableObject
     public AssetReferenceT<AudioClip>[] battleInVoices;
     public AssetReferenceT<AudioClip>[] battleVictoryVocies;
 
-    // (ÄğÅ¸ÀÓÀÌ³ª °ø°İ¼Óµµ´Â ¹«±â³ª ½ºÅ³ ÂÊ¿¡ Á¾¼Ó½ÃÅ³Áö, Ä³¸¯ÅÍ SO¿¡ ³²±æÁö ±âÈ¹¿¡ µû¶ó Ãß°¡ÇÏ½Ã¸é µË´Ï´Ù)
+    // (ì¿¨íƒ€ì„ì´ë‚˜ ê³µê²©ì†ë„ëŠ” ë¬´ê¸°ë‚˜ ìŠ¤í‚¬ ìª½ì— ì¢…ì†ì‹œí‚¬ì§€, ìºë¦­í„° SOì— ë‚¨ê¸¸ì§€ ê¸°íšì— ë”°ë¼ ì¶”ê°€í•˜ì‹œë©´ ë©ë‹ˆë‹¤)
     [Header("Assets - Combat Settings")]
     public float AttackSpeed = 1.0f;
     public float QSkillCoolTime = 15f;
@@ -54,7 +54,7 @@ public class CharacterDataSO : ScriptableObject
 
 
     // ==========================================
-    // ÆíÀÇ¼º ÇÔ¼ö (ÇØ´ç Ä³¸¯ÅÍÀÇ Æ¯Á¤ ·¹º§ ¼ø¼ö '±âº» ½ºÅÈ' ±¸ÇÏ±â)
+    // í¸ì˜ì„± í•¨ìˆ˜ (í•´ë‹¹ ìºë¦­í„°ì˜ íŠ¹ì • ë ˆë²¨ ìˆœìˆ˜ 'ê¸°ë³¸ ìŠ¤íƒ¯' êµ¬í•˜ê¸°)
     // ==========================================
     public float GetLevelHp(int level) => baseHp + (hpGrowth * (level - 1));
     public float GetLevelAttack(int level) => baseAttack + (attackGrowth * (level - 1));

@@ -40,7 +40,7 @@ public class UI_EscapeMenu : UI_PopUp
                 "Left", "Middle", "Right"
             };
 
-            // 0 1 2 ¼ø¼­´ë·Î Left, Middle, Right
+            // 0 1 2 ìˆœì„œëŒ€ë¡œ Left, Middle, Right
             string schoolName = Managers.Context.SelectedSchool.schoolNameEN;
             for(int i= 0; i < 3; i++)
             {
@@ -87,7 +87,7 @@ public class UI_EscapeMenu : UI_PopUp
 
     private void OnGameExit()
     {
-        // °ÔÀÓ Á¾·á
+        // ê²Œìž„ ì¢…ë£Œ
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

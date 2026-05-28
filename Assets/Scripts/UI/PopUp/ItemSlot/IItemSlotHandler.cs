@@ -4,8 +4,8 @@ using UnityEngine;
 // IItemSlotHandler.cs
 public interface IItemSlotHandler
 {
-    void OnSlotClicked(UI_ItemSlot slot) { }       // C# 8 default ±∏«ˆ
-    void OnSlotDoubleClicked(UI_ItemSlot slot) { }  //  «◊ªÛ void
+    void OnSlotClicked(UI_ItemSlot slot) { }       // C# 8 default Íµ¨ÌòÑ
+    void OnSlotDoubleClicked(UI_ItemSlot slot) { }  //  Ìï≠ÏÉÅ void
     void OnSlotDrop(UI_ItemSlot from, UI_ItemSlot to) { }
     void OnSlotPointerEnter(UI_ItemSlot slot, Vector2 screenPos) { }
     void OnSlotPointerExit(UI_ItemSlot slot) { }

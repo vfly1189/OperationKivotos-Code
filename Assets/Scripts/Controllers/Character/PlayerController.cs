@@ -1,0 +1,144 @@
+using System.Threading.Tasks;
+using UnityEngine;
+
+public class PlayerController
+{
+    // 현재 조작해야 할 대상(PartyManager가 꽂아줌)
+    private BaseCharacter _currentTarget;
+
+    // 마우스 상태 저장 (누르고 있는지 여부)
+    private bool _isMousePressed = false;
+    private Vector2 _currentMoveInput;
+
+    public bool VictoryTime { get; set; }
+
+    // 생성자에서 입력 이벤트 등록
+    public PlayerController()
+    {
+        RegisterInputEvents();
+    }
+
+    // Start() 대신 생성자에서 호출
+    private void RegisterInputEvents()
+    {
+        // 기존 구독이 있다면 먼저 해제 (중복 방지)
+        Managers.Input.OnMoveInput -= HandleMove;
+        Managers.Input.OnMoveInput += HandleMove;
+
+        Managers.Input.MouseAction -= HandleMouse;
+        Managers.Input.MouseAction += HandleMouse;
+
+        Managers.Input.RegisterAction("Info", HandleInfo);
+        Managers.Input.RegisterAction("Inventory", HandleInventory);
+        Managers.Input.RegisterAction("Q_Skill", HandleSkillQ);
+        Managers.Input.RegisterAction("E_Skill", HandleSkillE);
+        Managers.Input.RegisterAction("Interact", HandleInteract);
+    }
+
+    // PartyManager가 호출해줄 함수
+    public void SetControlTarget(BaseCharacter newTarget)
+    {
+        _currentTarget = newTarget;
+
+        // 타겟이 바뀌면 마우스 누름 상태 초기화
+        _isMousePressed = false;
+
+        // 타겟 설정 시 현재 입력값이 있으면 즉시 적용
+        if (_currentTarget != null && _currentMoveInput.sqrMagnitude > 0.01f)
+        {
+            _currentTarget.Move(_currentMoveInput);
+        }
+    }
+
+    // 매 프레임 이동 입력 처리
+    private void HandleMove(Vector2 dir)
+    {
+        _currentMoveInput = dir;
+        if (_currentTarget == null) return;
+
+        // 입력값이 있으면 이동 명령, 없으면 정지 명령
+        if (dir.sqrMagnitude > 0.01f)
+        {
+            _currentTarget.Move(dir);
+        }
+        else
+        {
+            _currentTarget.StopMove();
+        }
+    }
+
+    // 마우스 입력 처리 (공격)
+    private void HandleMouse(Define.MouseEvent evt)
+    {  
+        //팝업이 열려있다면 입력을 무시하되, 누름 상태는 강제로 취소(초기화)해야 합니다!
+        if (Managers.UI.IsPopupOpen)
+        {
+            _isMousePressed = false;
+            return;
+        }
+
+        if (_currentTarget == null) return;
+
+        if (evt == Define.MouseEvent.Press)
+        {
+            _isMousePressed = true;
+        }
+        else if (evt == Define.MouseEvent.Click)
+        {
+            _isMousePressed = false;
+        }
+    }
+
+    // 스킬 입력 처리
+    private void HandleSkillQ() => _currentTarget?.UseSkillQ();
+    private void HandleSkillE() => _currentTarget?.UseSkillE();
+
+    private void HandleInteract()
+    {
+        if (_currentTarget == null || _currentTarget.Stat.IsDead) return;
+
+        // 현재 컨트롤 중인 캐릭터 주변에 상호작용 가능한 NPC가 있다면
+        if (_currentTarget.CurrentInteractable != null)
+        {
+            // 상호작용 실행! (NoahController.Interact 호출됨)
+            _currentTarget.CurrentInteractable.Interact();
+        }
+    }
+    
+    private async void HandleInventory()
+    {
+        if (Managers.UI.IsPopupOpen && Managers.UI.IsOpened<UI_Inventory>())
+            return;
+
+        UI_Inventory inventory = await Managers.UI.ShowPopupUIAsync<UI_Inventory>("UI_Inventory");
+    }
+
+    private async void HandleInfo()
+    {
+        if (Managers.UI.IsPopupOpen && Managers.UI.IsOpened<UI_Info>())
+            return;
+
+        UI_Info info = await Managers.UI.ShowPopupUIAsync<UI_Info>("UI_Info");
+    }
+
+    // Update 로직 -> Managers.Update에서 호출
+    public void OnUpdate()
+    {
+        if (_currentTarget == null || _currentTarget.Stat.IsDead) return;
+
+        _currentTarget.Attack(_isMousePressed);
+    }
+
+    // PlayerController.cs
+    public void ClearMouseState()
+    {
+        _isMousePressed = false;
+    }
+
+    // 정리 메서드 (Dispose 시 호출)
+    public void Dispose()
+    {
+        Managers.Input.OnMoveInput -= HandleMove;
+        Managers.Input.MouseAction -= HandleMouse;
+    }
+}

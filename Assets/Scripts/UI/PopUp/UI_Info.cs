@@ -10,7 +10,7 @@ public class UI_Info : UI_PopUp
     //HP, ATK, DEF, SPD, CR, CD, ERR
     [SerializeField] TextMeshProUGUI[] _statTexts;
 
-    //¹«±âÁ¤º¸
+    //ë¬´ê¸°ì •ë³´
     [SerializeField] Image _weaponImage;
     [SerializeField] TextMeshProUGUI _weaponLevel;
     [SerializeField] TextMeshProUGUI _weaponName;
@@ -19,7 +19,7 @@ public class UI_Info : UI_PopUp
     [SerializeField] UI_EquipSlot[] _equipSlots;
 
 
-    //Ä³½Ì¿ë
+    //ìºì‹±ìš©
     private BaseCharacter _curCharacter;
 
     const float _standingImageWidthOriginal = 250.0f;
@@ -31,12 +31,12 @@ public class UI_Info : UI_PopUp
         base.Init();
 
         //Managers.UI.PreloadTooltip().Forget();
-        // [ÃÖÀûÈ­ 2] ¼öµ¿ ºñÀ² °è»ê ´ë½Å À¯´ÏÆ¼ ³»Àå ±â´É »ç¿ë
-        // Image ÄÄÆ÷³ÍÆ®ÀÇ Preserve Aspect¸¦ ÄÑ¸é ºÎ¸ğ Rect ³»¿¡¼­ ºñÀ²À» ½º½º·Î À¯ÁöÇÔ
+        // [ìµœì í™” 2] ìˆ˜ë™ ë¹„ìœ¨ ê³„ì‚° ëŒ€ì‹  ìœ ë‹ˆí‹° ë‚´ì¥ ê¸°ëŠ¥ ì‚¬ìš©
+        // Image ì»´í¬ë„ŒíŠ¸ì˜ Preserve Aspectë¥¼ ì¼œë©´ ë¶€ëª¨ Rect ë‚´ì—ì„œ ë¹„ìœ¨ì„ ìŠ¤ìŠ¤ë¡œ ìœ ì§€í•¨
         //_standingImage.preserveAspect = true;
 
 
-        // ÃÊ±â È­¸é ±×¸®±â
+        // ì´ˆê¸° í™”ë©´ ê·¸ë¦¬ê¸°
         RefreshUI();
 
         Managers.Equipment.OnEquipmentChanged -= RefreshEquipSlot;
@@ -46,16 +46,16 @@ public class UI_Info : UI_PopUp
     private void SetStat()
     {
         _curCharacter = Managers.Party.GetCurrentCharacter();
-        CharacterStat stat = _curCharacter.Stat; // Á¢±Ù µª½º ÁÙÀÌ±â (Ä³½Ì)
+        CharacterStat stat = _curCharacter.Stat; // ì ‘ê·¼ ëìŠ¤ ì¤„ì´ê¸° (ìºì‹±)
 
-        // [ÃÖÀûÈ­ 1] $"..."¿Í ToString() ÀÌÁß ÇÒ´ç ¹æÁö ¹× Æ÷¸ËÆÃ °£¼ÒÈ­
+        // [ìµœì í™” 1] $"..."ì™€ ToString() ì´ì¤‘ í• ë‹¹ ë°©ì§€ ë° í¬ë§·íŒ… ê°„ì†Œí™”
         _statTexts[0].text = stat.MaxHp.Value.ToString("N0");
         _statTexts[1].text = stat.Attack.Value.ToString("N0");
         _statTexts[2].text = stat.Defense.Value.ToString("N0");
         _statTexts[3].text = stat.MoveSpeed.Value.ToString("N0");
 
-        // ¹éºĞÀ²(%) Ç¥½Ã´Â °öÇÏ±â 100 ´ë½Å "P0"(¼Ò¼öÁ¡ ¾ø´Â ÆÛ¼¾Æ®) Æ÷¸ËÀ» ¾²¸é GC ¹ß»ıÀ» ÁÙÀÌ°í ±ò²ûÇÕ´Ï´Ù.
-        // ¿¹: 0.15 -> "15%"
+        // ë°±ë¶„ìœ¨(%) í‘œì‹œëŠ” ê³±í•˜ê¸° 100 ëŒ€ì‹  "P0"(ì†Œìˆ˜ì  ì—†ëŠ” í¼ì„¼íŠ¸) í¬ë§·ì„ ì“°ë©´ GC ë°œìƒì„ ì¤„ì´ê³  ê¹”ë”í•©ë‹ˆë‹¤.
+        // ì˜ˆ: 0.15 -> "15%"
         _statTexts[4].text = stat.CritRate.Value.ToString("P0");
         _statTexts[5].text = stat.CritDamage.Value.ToString("P0");
         _statTexts[6].text = stat.EnergyRecharge.Value.ToString("P0");
@@ -66,7 +66,7 @@ public class UI_Info : UI_PopUp
         WeaponDataSO weaponData = _curCharacter.Stat.WeaponData;
         if (weaponData == null) return;
 
-        // [ÃÖÀûÈ­ 3] ÆË¾÷ÀÌ ·Îµù Áß ´İÈú ¶§¸¦ ´ëºñÇØ Cancellation Token ÁÖÀÔ
+        // [ìµœì í™” 3] íŒì—…ì´ ë¡œë”© ì¤‘ ë‹«í ë•Œë¥¼ ëŒ€ë¹„í•´ Cancellation Token ì£¼ì…
         var token = this.GetCancellationTokenOnDestroy();
 
         Sprite icon = await Managers.Resource.GetSpriteFromAtlasAsync("WeaponIconAtlas", weaponData.GetWeaponIconName())
@@ -74,14 +74,14 @@ public class UI_Info : UI_PopUp
 
         _weaponImage.sprite = icon;
 
-        // ¸Ş¸ğ¸® ÇÒ´ç ÃÖ¼ÒÈ­¸¦ À§ÇØ + ±âÈ£¸¦ Á÷Á¢ ºÙÀÌ°Å³ª Concat »ç¿ë
+        // ë©”ëª¨ë¦¬ í• ë‹¹ ìµœì†Œí™”ë¥¼ ìœ„í•´ + ê¸°í˜¸ë¥¼ ì§ì ‘ ë¶™ì´ê±°ë‚˜ Concat ì‚¬ìš©
         _weaponLevel.text = string.Concat("+", _curCharacter.Stat.WeaponLevel.ToString());
         _weaponName.text = weaponData.weaponName;
     }
 
     private async UniTask SetCharacterStandingImage()
     {
-        // string.ConcatÀÌ + ¿¬»êÀÚº¸´Ù °¡ºñÁö(GC)¸¦ ´ú ¸¸µì´Ï´Ù.
+        // string.Concatì´ + ì—°ì‚°ìë³´ë‹¤ ê°€ë¹„ì§€(GC)ë¥¼ ëœ ë§Œë“­ë‹ˆë‹¤.
         string key = string.Concat("Img_", _curCharacter.Stat.GetNameKey(), "_Standing");
 
         var token = this.GetCancellationTokenOnDestroy();
@@ -102,14 +102,14 @@ public class UI_Info : UI_PopUp
         _standingImage.rectTransform.sizeDelta = new Vector2(pixelWidth / maxRatio, pixelHeight / maxRatio);
 
 
-        // [ÃÖÀûÈ­ 2-1] ±âÁ¸ÀÇ º¹ÀâÇß´ø Å©±â/ºñÀ² ¼öÇĞ °è»ê Á¦°Å! 
-        // Inspector¿¡¼­ Image ÄÄÆ÷³ÍÆ®ÀÇ Preserve Aspect¸¦ Ã¼Å©ÇÏ°Å³ª Init()¿¡¼­ ÄÑµÎ¸é,
-        // _standingImageÀÇ RectTransform Å©±â(¿¹: 250x310) ³»¿¡¼­ Âî±×·¯ÁöÁö ¾Ê°í °¡Àå ¿¹»Ú°Ô ²Ë Âı´Ï´Ù.
+        // [ìµœì í™” 2-1] ê¸°ì¡´ì˜ ë³µì¡í–ˆë˜ í¬ê¸°/ë¹„ìœ¨ ìˆ˜í•™ ê³„ì‚° ì œê±°! 
+        // Inspectorì—ì„œ Image ì»´í¬ë„ŒíŠ¸ì˜ Preserve Aspectë¥¼ ì²´í¬í•˜ê±°ë‚˜ Init()ì—ì„œ ì¼œë‘ë©´,
+        // _standingImageì˜ RectTransform í¬ê¸°(ì˜ˆ: 250x310) ë‚´ì—ì„œ ì°Œê·¸ëŸ¬ì§€ì§€ ì•Šê³  ê°€ì¥ ì˜ˆì˜ê²Œ ê½‰ ì°¹ë‹ˆë‹¤.
     }
 
     private void SetEquipment()
     {
-        // Ä³½ÌÇÏ¿© ¸Å ¹İº¹¹®¸¶´Ù Managers.Equipment¿¡ Á¢±ÙÇÏ´Â ¿À¹öÇìµå ¹æÁö
+        // ìºì‹±í•˜ì—¬ ë§¤ ë°˜ë³µë¬¸ë§ˆë‹¤ Managers.Equipmentì— ì ‘ê·¼í•˜ëŠ” ì˜¤ë²„í—¤ë“œ ë°©ì§€
         var equippedItems = Managers.Equipment._equippedItem;
 
         for (int i = 0; i < _equipSlots.Length; i++)
@@ -122,17 +122,17 @@ public class UI_Info : UI_PopUp
 
     private void RefreshEquipSlot(EquipType equipType, InventorySlot newSlot, InventorySlot oldSlot)
     {
-        // ÀåÂøÀÌµç, ÇØÁ¦µç, ±³Ã¼µç 
-        // ±×³É ÃÖÁ¾ÀûÀ¸·Î Âø¿ëÇÏ°Ô µÈ Àåºñ(newSlot)ÀÇ »óÅÂ·Î UI ½½·ÔÀ» µ¤¾î¾º¿ì¸é ³¡ÀÔ´Ï´Ù. (nullÀÌ¸é ¾Ë¾Æ¼­ ºó ¾ÆÀÌÄÜ Ã³¸®µÊ)
+        // ì¥ì°©ì´ë“ , í•´ì œë“ , êµì²´ë“  
+        // ê·¸ëƒ¥ ìµœì¢…ì ìœ¼ë¡œ ì°©ìš©í•˜ê²Œ ëœ ì¥ë¹„(newSlot)ì˜ ìƒíƒœë¡œ UI ìŠ¬ë¡¯ì„ ë®ì–´ì”Œìš°ë©´ ëì…ë‹ˆë‹¤. (nullì´ë©´ ì•Œì•„ì„œ ë¹ˆ ì•„ì´ì½˜ ì²˜ë¦¬ë¨)
         _equipSlots[(int)equipType].SetInfo(newSlot);
 
-        // Àåºñ°¡ ¹Ù²î¾úÀ¸´Ï ½ºÅÈ UIµµ °»½Å
+        // ì¥ë¹„ê°€ ë°”ë€Œì—ˆìœ¼ë‹ˆ ìŠ¤íƒ¯ UIë„ ê°±ì‹ 
         SetStat();
     }
 
     private void RefreshUI()
     {
-        //Ä³½Ì ÇØ³ö¼­ ¼ø¼­ Áß¿ä
+        //ìºì‹± í•´ë†”ì„œ ìˆœì„œ ì¤‘ìš”
         SetStat();
         SetEquipment();
 
@@ -142,7 +142,7 @@ public class UI_Info : UI_PopUp
 
     private void OnDestroy()
     {
-        // ¸Å´ÏÀú ÀÌº¥Æ® ÇØÁ¦ ½Ã ¾ÈÀüÇÏ°Ô Ã¼Å©
+        // ë§¤ë‹ˆì € ì´ë²¤íŠ¸ í•´ì œ ì‹œ ì•ˆì „í•˜ê²Œ ì²´í¬
         if (Managers.Equipment != null)
         {
             Managers.Equipment.OnEquipmentChanged -= RefreshEquipSlot;

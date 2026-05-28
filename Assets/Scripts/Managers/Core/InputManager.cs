@@ -5,14 +5,14 @@ using UnityEngine.InputSystem;
 
 public class InputManager
 {
-    // °íÁ¤ Å° (ÀÚÁÖ »ç¿ë, ÆÄ¶ó¹ÌÅÍ ÀÖÀ½)
+    // ê³ ì • í‚¤ (ìì£¼ ì‚¬ìš©, íŒŒë¼ë¯¸í„° ìˆìŒ)
     public event Action OnEscapePressed;        //ESC
-    public event Action<Vector2> OnMoveInput;   //ÀÌµ¿ <- ³ªÁß¿¡ ¹Ù²Ü¼öµµ ÀÖÀ½
+    public event Action<Vector2> OnMoveInput;   //ì´ë™ <- ë‚˜ì¤‘ì— ë°”ê¿€ìˆ˜ë„ ìˆìŒ
     public event Action<Define.MouseEvent> MouseAction;
 
     bool _pressed = false;
 
-    // µ¿Àû Å° (¸®¸ÊÇÎ °¡´É)
+    // ë™ì  í‚¤ (ë¦¬ë§µí•‘ ê°€ëŠ¥)
     private Dictionary<string, Key> _keyMap = new Dictionary<string, Key>()
     {
         {"Info",Key.T },
@@ -30,13 +30,13 @@ public class InputManager
 
     public void OnUpdate()
     {
-        if (Keyboard.current == null) return; // Å°º¸µå ¿¬°á Ã¼Å©
+        if (Keyboard.current == null) return; // í‚¤ë³´ë“œ ì—°ê²° ì²´í¬
 
-        // °íÁ¤ Å° (ÃÖÀûÈ­)
+        // ê³ ì • í‚¤ (ìµœì í™”)
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
             OnEscapePressed?.Invoke();
 
-        // 2. ÀÌµ¿ ÀÔ·Â (WASD) Ã¼Å© -> BasePlayerController·Î Àü¼Û
+        // 2. ì´ë™ ì…ë ¥ (WASD) ì²´í¬ -> BasePlayerControllerë¡œ ì „ì†¡
         if (OnMoveInput != null)
         {
             Vector2 moveDir = Vector2.zero;
@@ -45,11 +45,11 @@ public class InputManager
             if (Keyboard.current.aKey.isPressed) moveDir.x -= 1;
             if (Keyboard.current.dKey.isPressed) moveDir.x += 1;
 
-            // ÀÔ·ÂÀÌ ¾ø¾îµµ (0,0)À» º¸³»¾ß ¸ØÃâ ¼ö ÀÖÀ½
+            // ì…ë ¥ì´ ì—†ì–´ë„ (0,0)ì„ ë³´ë‚´ì•¼ ë©ˆì¶œ ìˆ˜ ìˆìŒ
             OnMoveInput.Invoke(moveDir.normalized);
         }
 
-        // µ¿Àû Å° (À¯¿¬¼º)
+        // ë™ì  í‚¤ (ìœ ì—°ì„±)
         foreach (var pair in _actionMap)
         {
             if (_keyMap.TryGetValue(pair.Key, out Key key))
@@ -79,24 +79,24 @@ public class InputManager
         }
     }
 
-    // ¾×¼Ç ÀÌ¸§À» ÁÖ¸é, ÇÒ´çµÈ Å°ÀÇ ¹®ÀÚ¿­À» ¹İÈ¯ ("F", "1", "Tab" µî)
+    // ì•¡ì…˜ ì´ë¦„ì„ ì£¼ë©´, í• ë‹¹ëœ í‚¤ì˜ ë¬¸ìì—´ì„ ë°˜í™˜ ("F", "1", "Tab" ë“±)
     public string GetKeyName(string actionName)
     {
         if (_keyMap.TryGetValue(actionName, out Key key))
         {
             if (Keyboard.current != null)
             {
-                // New Input System¿¡¼­ Á¦°øÇÏ´Â ±ò²ûÇÑ ¹®ÀÚ¿­ º¯È¯ ±â´É (¿¹: Key.Digit1 -> "1")
+                // New Input Systemì—ì„œ ì œê³µí•˜ëŠ” ê¹”ë”í•œ ë¬¸ìì—´ ë³€í™˜ ê¸°ëŠ¥ (ì˜ˆ: Key.Digit1 -> "1")
                 return Keyboard.current[key].displayName;
             }
 
-            // Å°º¸µå°¡ ¿¬°á ¾È µÈ ¿¹¿Ü »óÈ² ½Ã Enum ÀÌ¸§ ±×´ë·Î ¹İÈ¯
+            // í‚¤ë³´ë“œê°€ ì—°ê²° ì•ˆ ëœ ì˜ˆì™¸ ìƒí™© ì‹œ Enum ì´ë¦„ ê·¸ëŒ€ë¡œ ë°˜í™˜
             return key.ToString();
         }
         return "?";
     }
 
-    // µ¿Àû Å° µî·Ï (ÀÌ¸§ ±â¹İ)
+    // ë™ì  í‚¤ ë“±ë¡ (ì´ë¦„ ê¸°ë°˜)
     public void RegisterAction(string actionName, Action callback)
     {
         if (_actionMap.ContainsKey(actionName))
@@ -111,7 +111,7 @@ public class InputManager
             _actionMap[actionName] -= callback;
     }
 
-    // Å° ¸®¸ÊÇÎ
+    // í‚¤ ë¦¬ë§µí•‘
     public void RemapKey(string actionName, Key newKey)
     {
         if (_keyMap.ContainsKey(actionName))
@@ -129,7 +129,7 @@ public class InputManager
         _actionMap.Clear();
 
         OnEscapePressed = null;        //ESC
-        OnMoveInput = null;            //ÀÌµ¿
+        OnMoveInput = null;            //ì´ë™
         MouseAction = null;
     }
 }

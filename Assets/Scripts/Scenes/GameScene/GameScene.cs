@@ -1,4 +1,4 @@
-// [Ãß°¡] UniTask ³×ÀÓ½ºÆäÀÌ½º
+// [ì¶”ê°€] UniTask ë„¤ì„ìŠ¤í˜ì´ìŠ¤
 using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ public class GameScene : BaseScene
     private GameObject _map;
     private AudioClip _mainBGM;
 
-    // [ÇÙ½É º¯°æ 1] async void »ç¿ë
+    // [í•µì‹¬ ë³€ê²½ 1] async void ì‚¬ìš©
     protected override async void Init()
     {
         base.Init();
@@ -40,8 +40,8 @@ public class GameScene : BaseScene
         await UniTask.WhenAll(poolTask, mapTask, bgmTask);
 
         await CreateCharacters();
-        // Party.Init() ÀÌÈÄ¿¡ ÇÏ´Â°Ô ³ªÀ½.
-        // ÇöÀç CreateCharacters¿¡¼­ ÇÏ°í ÀÖÀ½.
+        // Party.Init() ì´í›„ì— í•˜ëŠ”ê²Œ ë‚˜ìŒ.
+        // í˜„ì¬ CreateCharactersì—ì„œ í•˜ê³  ìˆìŒ.
         ApplySaveOrTestData(); 
 
         await SetupUI();
@@ -101,7 +101,7 @@ public class GameScene : BaseScene
             ui.SetPartyManager();
         }
 
-        // ÀÓ½Ã
+        // ì„ì‹œ
         //await Managers.UI.GetOrMakeLootPanelAsync();
     }
 
@@ -169,7 +169,7 @@ public class GameScene : BaseScene
 
     private async UniTask LoadCharacterSequential(CharacterDataSO data, Transform parent, List<BaseCharacter> list, Transform spawnPoint)
     {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(data.inGamePrefab);
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(data.inGamePrefab, isGlobal: true);
 
         if (prefab != null)
         {
@@ -235,7 +235,7 @@ public class GameScene : BaseScene
         CanvasGroup coverCG = _loadingCoverInstance.GetComponent<CanvasGroup>();
         if (coverCG == null)
         {
-            Destroy(_loadingCoverInstance); // ÀÚÃ¼ ÀÎ½ºÅÏ½ºÈ­ÇßÀ¸¹Ç·Î ÀÏ¹İ Destroy »ç¿ë
+            Destroy(_loadingCoverInstance); // ìì²´ ì¸ìŠ¤í„´ìŠ¤í™”í–ˆìœ¼ë¯€ë¡œ ì¼ë°˜ Destroy ì‚¬ìš©
             return;
         }
 
@@ -246,7 +246,7 @@ public class GameScene : BaseScene
         {
             timer += Time.deltaTime;
             coverCG.alpha = Mathf.Lerp(1f, 0f, timer / duration);
-            await UniTask.Yield(); // 1ÇÁ·¹ÀÓ ´ë±â
+            await UniTask.Yield(); // 1í”„ë ˆì„ ëŒ€ê¸°
         }
 
         Destroy(_loadingCoverInstance);
@@ -257,55 +257,55 @@ public class GameScene : BaseScene
 
     private void ApplySaveOrTestData()
     {
-        //¹æ±İ °ÔÀÓÀ» ÄÑ¼­ ÆÄÀÏ¿¡¼­ µ¥ÀÌÅÍ¸¦ ÀĞ¾î¾ß ÇÒ ¶§¸¸ ½ÇÇà
+        //ë°©ê¸ˆ ê²Œì„ì„ ì¼œì„œ íŒŒì¼ì—ì„œ ë°ì´í„°ë¥¼ ì½ì–´ì•¼ í•  ë•Œë§Œ ì‹¤í–‰
         if (Managers.Context.ShouldLoadSaveData)
         {
             PartySaveData saveData = Managers.Context.SelectedSavedData;
 
             if (saveData != null)
             {
-                // ÀúÀåµÈ µ¥ÀÌÅÍ º¹¿ø
+                // ì €ì¥ëœ ë°ì´í„° ë³µì›
                 Managers.Save.ApplySaveDataToManagers(saveData);
             }
             else
             {
-                // ¼¼ÀÌºê µ¥ÀÌÅÍ°¡ ¾ø´Â »õ °ÔÀÓ(Fresh Start)ÀÏ °æ¿ì
+                // ì„¸ì´ë¸Œ ë°ì´í„°ê°€ ì—†ëŠ” ìƒˆ ê²Œì„(Fresh Start)ì¼ ê²½ìš°
                 Managers.Party.InitFromContext(null);
             }
 
-            // ÇÙ½É: ÇÑ ¹ø ·ÎµåÇßÀ¸¸é ÇÃ·¡±×¸¦ ²ô±â (´øÀü¿¡¼­ µ¹¾Æ¿Ã ¶© ¾È ÀĞ°Ô µÊ)
+            // í•µì‹¬: í•œ ë²ˆ ë¡œë“œí–ˆìœ¼ë©´ í”Œë˜ê·¸ë¥¼ ë„ê¸° (ë˜ì „ì—ì„œ ëŒì•„ì˜¬ ë• ì•ˆ ì½ê²Œ ë¨)
             Managers.Context.ShouldLoadSaveData = false;
         }
         else
         {
-            // ´øÀü¿¡¼­ µ¹¾Æ¿Â °æ¿ì (¸Ş¸ğ¸®¿¡ ÀÖ´Â Managers.Party »óÅÂ¸¦ ±×´ë·Î À¯Áö)
-            Debug.Log("[GameScene] ´øÀü¿¡¼­ ±ÍÈ¯: ±âÁ¸ ¸Ş¸ğ¸® »óÅÂ À¯Áö");
+            // ë˜ì „ì—ì„œ ëŒì•„ì˜¨ ê²½ìš° (ë©”ëª¨ë¦¬ì— ìˆëŠ” Managers.Party ìƒíƒœë¥¼ ê·¸ëŒ€ë¡œ ìœ ì§€)
+            Debug.Log("[GameScene] ë˜ì „ì—ì„œ ê·€í™˜: ê¸°ì¡´ ë©”ëª¨ë¦¬ ìƒíƒœ ìœ ì§€");
 
-            // ÁÖÀÇ: ÆÄÆ¼ ½ºÆù À§Ä¡ µî ¹°¸®Àû ¸®¼ÂÀÌ ÇÊ¿äÇÏ´Ù¸é ¿©±â¼­ Ã³¸® (ÀÌ¹Ì CreateCharacters¿¡¼­ ÇÏ°í °è½Ã±ä ÇÕ´Ï´Ù)
+            // ì£¼ì˜: íŒŒí‹° ìŠ¤í° ìœ„ì¹˜ ë“± ë¬¼ë¦¬ì  ë¦¬ì…‹ì´ í•„ìš”í•˜ë‹¤ë©´ ì—¬ê¸°ì„œ ì²˜ë¦¬ (ì´ë¯¸ CreateCharactersì—ì„œ í•˜ê³  ê³„ì‹œê¸´ í•©ë‹ˆë‹¤)
         }
     }
 
     private void SetupFieldConditions()
     {
-        // 1. ½ÇÆĞ Á¶°Ç(ÆÄÆ¼ Àü¸ê) »ı¼º
+        // 1. ì‹¤íŒ¨ ì¡°ê±´(íŒŒí‹° ì „ë©¸) ìƒì„±
         PartyWipeCondition failCondition = _map.AddComponent<PartyWipeCondition>();
-        failCondition.SetUp(); // Manager ÀÌº¥Æ® ±¸µ¶
+        failCondition.SetUp(); // Manager ì´ë²¤íŠ¸ êµ¬ë…
 
-        // 2. ¸Å´ÏÀú¿¡ ½ÇÆĞ Á¶°Ç µî·Ï
+        // 2. ë§¤ë‹ˆì €ì— ì‹¤íŒ¨ ì¡°ê±´ ë“±ë¡
         Managers.Dungeon.AddFailCondition(failCondition);
 
-        // 3. ÇÊµå Àü¿ë ½ÇÆĞ ¿¬Ãâ µî·Ï (½ºÆù ÁöÁ¡À¸·Î ºÎÈ°)
+        // 3. í•„ë“œ ì „ìš© ì‹¤íŒ¨ ì—°ì¶œ ë“±ë¡ (ìŠ¤í° ì§€ì ìœ¼ë¡œ ë¶€í™œ)
         Managers.Dungeon.OnDungeonFailed += HandleFieldPartyWipe;
     }
 
     private void HandleFieldPartyWipe()
     {
-        // ½ºÆù ÁöÁ¡ °¡Á®¿À±â
+        // ìŠ¤í° ì§€ì  ê°€ì ¸ì˜¤ê¸°
         Transform spawnPoint = _map.GetComponent<BaseMap>().GetPlayerSpawnPoint();
 
-        // ÆÄÆ¼ ºÎÈ° ¹× ½ºÆù ÁöÁ¡À¸·Î ÀÌµ¿ Ã³¸®
+        // íŒŒí‹° ë¶€í™œ ë° ìŠ¤í° ì§€ì ìœ¼ë¡œ ì´ë™ ì²˜ë¦¬
         Managers.Party.ResetPartyForNewScene(spawnPoint);
-        // (¼±ÅÃ) ¿©±â¿¡ ÆäÀÌµåÀÎ/¾Æ¿ô ¿¬ÃâÀ» Ãß°¡ÇÒ ¼ö ÀÖ½À´Ï´Ù.
+        // (ì„ íƒ) ì—¬ê¸°ì— í˜ì´ë“œì¸/ì•„ì›ƒ ì—°ì¶œì„ ì¶”ê°€í•  ìˆ˜ ìˆìŠµë‹ˆë‹¤.
     }
 
     private void ApplyTestData()

@@ -10,9 +10,9 @@ public class UI_ConsumeMaterialSlot : UI_Base
     [SerializeField] private Image _itemIcon;
 
     [SerializeField] private TextMeshProUGUI _stackText;
-    [SerializeField] private Button _cancelButton; // °­È­Àç·á Ãë¼Ò ¹öÆ°, ²¨Á®ÀÖÀ¸´Ï »ç¿ëÇÒ°Å¸é ÄÑ¾ßµÊ
+    [SerializeField] private Button _cancelButton; // ê°•í™”ì¬ë£Œ ì·¨ì†Œ ë²„íŠ¼, êº¼ì ¸ìˆìœ¼ë‹ˆ ì‚¬ìš©í• ê±°ë©´ ì¼œì•¼ë¨
 
-    // Å¬¸¯ ½Ã ½ÇÇàÇÒ Äİ¹é ÀÌº¥Æ®
+    // í´ë¦­ ì‹œ ì‹¤í–‰í•  ì½œë°± ì´ë²¤íŠ¸
     private Action _onClickCallback;
     private Action _onCancelCallback;
 
@@ -40,12 +40,12 @@ public class UI_ConsumeMaterialSlot : UI_Base
         _itemGrade.gameObject.SetActive(true);
         _itemIcon.gameObject.SetActive(true);
 
-        //  Ã¥¸¸ ½ºÅÃ Ä«¿îÆ® Ç¥½Ã
+        //  ì±…ë§Œ ìŠ¤íƒ ì¹´ìš´íŠ¸ í‘œì‹œ
         bool showStack = entry.IsBook && entry.Count > 1;
         _stackText.gameObject.SetActive(showStack);
         if (showStack) _stackText.text = $"x{entry.Count}";
 
-        //  µî·ÏµÇ¸é Ãë¼Ò ¹öÆ° È°¼ºÈ­
+        //  ë“±ë¡ë˜ë©´ ì·¨ì†Œ ë²„íŠ¼ í™œì„±í™”
         _cancelButton.gameObject.SetActive(true);
     }
 
@@ -67,26 +67,26 @@ public class UI_ConsumeMaterialSlot : UI_Base
     {
         if (itemData == null) return;
 
-        // 1. Å¸ÀÔ ÆĞÅÏ ¸ÅÄªÀ» ÅëÇØ ¾ÆÆ²¶ó½º Å°¿Í ¾ÆÀÌÄÜ ÀÌ¸§ ºĞ±â Ã³¸®
+        // 1. íƒ€ì… íŒ¨í„´ ë§¤ì¹­ì„ í†µí•´ ì•„í‹€ë¼ìŠ¤ í‚¤ì™€ ì•„ì´ì½˜ ì´ë¦„ ë¶„ê¸° ì²˜ë¦¬
         (string atlasKey, string iconName) = itemData switch
         {
-            // itemData°¡ EquipmentData Å¸ÀÔÀÌ¸é equip º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ EquipmentData íƒ€ì…ì´ë©´ equip ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             EquipmentData equip => ("EquipmentIconAtlas", equip.IconKey),
 
-            // itemData°¡ ConsumableData Å¸ÀÔÀÌ¸é cons º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ ConsumableData íƒ€ì…ì´ë©´ cons ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             ConsumableData cons => ("ConsumablesAtlas", cons.IconKey),
 
-            // itemData°¡ MaterialData Å¸ÀÔÀÌ¸é mat º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ MaterialData íƒ€ì…ì´ë©´ mat ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             MaterialData mat => ("MaterialIconAtlas", mat.IconKey),
 
-            // ¾î¶² Å¸ÀÔ¿¡µµ ¸ÂÁö ¾Ê°Å³ª ¿¡·¯ ¹æÁö¿ë (±âº»°ª)
+            // ì–´ë–¤ íƒ€ì…ì—ë„ ë§ì§€ ì•Šê±°ë‚˜ ì—ëŸ¬ ë°©ì§€ìš© (ê¸°ë³¸ê°’)
             _ => ("CommonAtlas", itemData.IconKey)
         };
 
-        // 2. °áÁ¤µÈ ¾ÆÆ²¶ó½º¿Í ÀÌ¸§À¸·Î ½ºÇÁ¶óÀÌÆ® ºñµ¿±â ·Îµå
+        // 2. ê²°ì •ëœ ì•„í‹€ë¼ìŠ¤ì™€ ì´ë¦„ìœ¼ë¡œ ìŠ¤í”„ë¼ì´íŠ¸ ë¹„ë™ê¸° ë¡œë“œ
         Sprite sprite = await Managers.Resource.GetSpriteFromAtlasAsync(atlasKey, iconName);
 
-        // 3. UI Àû¿ë
+        // 3. UI ì ìš©
         if (sprite != null && _itemIcon != null)
         {
             _itemIcon.sprite = sprite;

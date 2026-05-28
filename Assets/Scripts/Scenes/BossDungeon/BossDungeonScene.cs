@@ -1,4 +1,4 @@
-// [Ãß°¡] UniTask ³×ÀÓ½ºÆäÀÌ½º
+// [ì¶”ê°€] UniTask ë„¤ì„ìŠ¤í˜ì´ìŠ¤
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using UnityEngine;
@@ -61,7 +61,7 @@ public class BossDungeonScene : BaseScene
         }
 
       
-        // ¾À ÀÚÃ¼ÀûÀ¸·Î ´øÀü ¸Å´ÏÀúÀÇ °á°ú¸¦ ±¸µ¶
+        // ì”¬ ìì²´ì ìœ¼ë¡œ ë˜ì „ ë§¤ë‹ˆì €ì˜ ê²°ê³¼ë¥¼ êµ¬ë…
         Managers.Dungeon.OnDungeonCleared -= OnDungeonSuccess;
         Managers.Dungeon.OnDungeonCleared += OnDungeonSuccess;
 
@@ -86,7 +86,7 @@ public class BossDungeonScene : BaseScene
     {
         GameObject root = new GameObject { name = "@Map" };
 
-        // ResourceManager¿¡ À§ÀÓ
+        // ResourceManagerì— ìœ„ì„
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bossDungeon);
 
         if (prefab != null)
@@ -113,11 +113,11 @@ public class BossDungeonScene : BaseScene
     private async UniTask SetupUI()
     {
         await Managers.Resource.LoadAsync<GameObject>("GameSceneCanvas_New");
-        // 3. UIManager¸¦ ÅëÇØ Scene UI »ı¼º
-        // @Canvas_Scene ÇÏÀ§·Î ÀÚµ¿ ¹èÄ¡ ¹× SetCanvas µÊ
+        // 3. UIManagerë¥¼ í†µí•´ Scene UI ìƒì„±
+        // @Canvas_Scene í•˜ìœ„ë¡œ ìë™ ë°°ì¹˜ ë° SetCanvas ë¨
         GameSceneCanvas ui = Managers.UI.ShowSceneUI<GameSceneCanvas>("GameSceneCanvas_New");
         _mainUI = ui;
-        // 4. Party Manager ¿¬µ¿
+        // 4. Party Manager ì—°ë™
         if (ui != null)
         {
             ui.SetPartyManager();
@@ -203,7 +203,7 @@ public class BossDungeonScene : BaseScene
             _boss.transform.SetParent(_bossSpawnPoint);
             _boss.transform.localPosition = Vector3.zero;
 
-            // (SetStatÀº ÀÌÁ¦ ÆÑÅä¸®¿¡¼­ ÇØÁáÀ¸¹Ç·Î ¿©±â¼­ Áßº¹À¸·Î ÇÒ ÇÊ¿ä ¾ø½À´Ï´Ù! ÄÚµå°¡ ÈÎ¾À Âª¾ÆÁı´Ï´Ù.)
+            // (SetStatì€ ì´ì œ íŒ©í† ë¦¬ì—ì„œ í•´ì¤¬ìœ¼ë¯€ë¡œ ì—¬ê¸°ì„œ ì¤‘ë³µìœ¼ë¡œ í•  í•„ìš” ì—†ìŠµë‹ˆë‹¤! ì½”ë“œê°€ í›¨ì”¬ ì§§ì•„ì§‘ë‹ˆë‹¤.)
 
             if (_curMap != null)
             {
@@ -220,20 +220,20 @@ public class BossDungeonScene : BaseScene
 
     async UniTask CreateBossHPBarUI()
     {
-        // [ÇÙ½É 6] Task.Yield() ´ë½Å ¾ÈÀüÇÑ UniTask.Yield() »ç¿ë (¿¡µğÅÍ ¸ØÃã ¿øÃµ Â÷´Ü)
+        // [í•µì‹¬ 6] Task.Yield() ëŒ€ì‹  ì•ˆì „í•œ UniTask.Yield() ì‚¬ìš© (ì—ë””í„° ë©ˆì¶¤ ì›ì²œ ì°¨ë‹¨)
         while (_boss == null) await UniTask.Yield();
 
-        // 1. ÀÌ¹Ì BossHPBar ÄÄÆ÷³ÍÆ® Å¸ÀÔÀ¸·Î ¹Ş¾Æ¿È
+        // 1. ì´ë¯¸ BossHPBar ì»´í¬ë„ŒíŠ¸ íƒ€ì…ìœ¼ë¡œ ë°›ì•„ì˜´
         BossHPBar hpScript = Managers.UI.ShowSceneUI<BossHPBar>("UI_BossHPBar_New");
         _bossHPBar = hpScript.gameObject;
-        // 2. ¹Ş¾Æ¿Â ÄÄÆ÷³ÍÆ®°¡ ³ÎÀÌ ¾Æ´Ï¶ó¸é Áï½Ã µ¥ÀÌÅÍ ÁÖÀÔ
+        // 2. ë°›ì•„ì˜¨ ì»´í¬ë„ŒíŠ¸ê°€ ë„ì´ ì•„ë‹ˆë¼ë©´ ì¦‰ì‹œ ë°ì´í„° ì£¼ì…
         if (hpScript != null)
         {
             hpScript.SetBoss(_boss);
         }
         else
         {
-            Debug.LogError("BossHPBar UI¸¦ ·ÎµåÇÏ´Âµ¥ ½ÇÆĞÇß½À´Ï´Ù! Addressable Key³ª Prefab »óÅÂ¸¦ È®ÀÎÇÏ¼¼¿ä.");
+            Debug.LogError("BossHPBar UIë¥¼ ë¡œë“œí•˜ëŠ”ë° ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤! Addressable Keyë‚˜ Prefab ìƒíƒœë¥¼ í™•ì¸í•˜ì„¸ìš”.");
         }
     }
 
@@ -259,7 +259,7 @@ public class BossDungeonScene : BaseScene
 
     private async UniTaskVoid CoSafeTeleport()
     {
-        await UniTask.Yield(); // 1ÇÁ·¹ÀÓ ´ë±â
+        await UniTask.Yield(); // 1í”„ë ˆì„ ëŒ€ê¸°
 
         Managers.Party.TeleportParty(_spawnPoint.position);
         Camera.main.transform.position = _cameraPoint.position;
@@ -268,20 +268,20 @@ public class BossDungeonScene : BaseScene
 
     private void OnDungeonSuccess()
     {
-        // º¸»óÀ» ÁÖ°í UI¸¦ ¶ç¿ì´Â ºñµ¿±â ÇÔ¼ö È£Ãâ
+        // ë³´ìƒì„ ì£¼ê³  UIë¥¼ ë„ìš°ëŠ” ë¹„ë™ê¸° í•¨ìˆ˜ í˜¸ì¶œ
         ShowSuccessUIAsync().Forget();
         Managers.Party.FinishGame(true);
     }
 
     private async UniTaskVoid ShowSuccessUIAsync()
     {
-        // [ÇÙ½É] DirectorÀÇ ÄÆ½Å ¿¬ÃâÀÌ ³¡³¯ ¶§±îÁö ¾À¿¡¼­ ´ë±â (¿¹: 3.5ÃÊ)
-        // ÀÌº¥Æ®·Î Äİ¹é ¹ŞÁö ¾Ê°í, ¾ÀÀÌ ¿¬Ãâ ½Ã°£À» ¾Ë°í ±â´Ù¸®´Â ¹æ½ÄÀÌ ÈÎ¾À À¯Áöº¸¼ö°¡ ÁÁ½À´Ï´Ù.
+        // [í•µì‹¬] Directorì˜ ì»·ì‹  ì—°ì¶œì´ ëë‚  ë•Œê¹Œì§€ ì”¬ì—ì„œ ëŒ€ê¸° (ì˜ˆ: 3.5ì´ˆ)
+        // ì´ë²¤íŠ¸ë¡œ ì½œë°± ë°›ì§€ ì•Šê³ , ì”¬ì´ ì—°ì¶œ ì‹œê°„ì„ ì•Œê³  ê¸°ë‹¤ë¦¬ëŠ” ë°©ì‹ì´ í›¨ì”¬ ìœ ì§€ë³´ìˆ˜ê°€ ì¢‹ìŠµë‹ˆë‹¤.
         await UniTask.Delay(System.TimeSpan.FromSeconds(3.0f));
 
         BaseClearUI();
 
-        // ´øÀü º¸»ó ·ÎÁ÷
+        // ë˜ì „ ë³´ìƒ ë¡œì§
         DungeonGroup dungeonGroup = Managers.Data.GetData<int, DungeonGroup>(Managers.Context.CurrentDungeonGroupID);
         DungeonData dungeonData = dungeonGroup.DungeonDataByDifficulty[Managers.Context.SelectedDifficulty];
 
@@ -297,7 +297,7 @@ public class BossDungeonScene : BaseScene
             finalRewards = Managers.Drop.RollAndGiveDropItems(dungeonData.ClearDropTableID, false);
         }
 
-        // ¼º°ø UI ¶ç¿ì±â
+        // ì„±ê³µ UI ë„ìš°ê¸°
         UI_DungeonClear clearUI = Managers.UI.ShowSceneUI<UI_DungeonClear>("UI_DungeonClear");
         if (clearUI != null) clearUI.SetInfo(clearCredit, clearExp, finalRewards);
     }
@@ -305,7 +305,7 @@ public class BossDungeonScene : BaseScene
     private async void OnDungeonFail()
     {
         Managers.Party.FinishGame(false);
-        // ½ÇÆĞ´Â ÄÆ½Å ´ë±â ¾øÀÌ ¹Ù·Î ½ÇÆĞ ÆË¾÷ ¶ç¿ì±â
+        // ì‹¤íŒ¨ëŠ” ì»·ì‹  ëŒ€ê¸° ì—†ì´ ë°”ë¡œ ì‹¤íŒ¨ íŒì—… ë„ìš°ê¸°
         await UniTask.Delay(System.TimeSpan.FromSeconds(3.5f));
         BaseClearUI();
     }
@@ -329,16 +329,16 @@ public class BossDungeonScene : BaseScene
 
     private void SetupDungeonConditions()
     {
-        // 1. º¸½º Ã³Ä¡ (½Â¸®) Á¶°Ç ¼³Á¤
+        // 1. ë³´ìŠ¤ ì²˜ì¹˜ (ìŠ¹ë¦¬) ì¡°ê±´ ì„¤ì •
         KillBossCondition clearCondition = _curMap.AddComponent<KillBossCondition>();
         clearCondition.SetBoss(_boss);
         clearCondition.SetUp();
 
-        // 2. ÆÄÆ¼ Àü¸ê (ÆĞ¹è) Á¶°Ç ¼³Á¤
+        // 2. íŒŒí‹° ì „ë©¸ (íŒ¨ë°°) ì¡°ê±´ ì„¤ì •
         PartyWipeCondition failCondition = _curMap.AddComponent<PartyWipeCondition>();
         failCondition.SetUp();
 
-        // 3. ¸Å´ÏÀú¿¡ °¢°¢ µî·Ï
+        // 3. ë§¤ë‹ˆì €ì— ê°ê° ë“±ë¡
         Managers.Dungeon.AddClearCondition(clearCondition);
         Managers.Dungeon.AddFailCondition(failCondition);
 

@@ -37,7 +37,7 @@ public class MonsterSpawner : MonoBehaviour
         {
             if (info.pointIndex >= _spawnPoints.Count) continue;
 
-            // ÀÌ¹Ì »ì¾ÆÀÖ°Å³ª ½ºÆù ´ë±â ÁßÀÌ¸é ¹«½Ã
+            // ì´ë¯¸ ì‚´ì•„ìˆê±°ë‚˜ ìŠ¤í° ëŒ€ê¸° ì¤‘ì´ë©´ ë¬´ì‹œ
             if (_spawnedMonsters[info.pointIndex] != null || _respawnCts[info.pointIndex] != null) continue;
 
             _respawnCts[info.pointIndex] = new CancellationTokenSource();
@@ -87,18 +87,18 @@ public class MonsterSpawner : MonoBehaviour
         int pointIdx = info.pointIndex;
         Transform spawnPoint = _spawnPoints[pointIdx];
 
-        //  ¸ó½ºÅÍ BaseData¸¸ °¡Á®¿À±â (AddressableKey¸¦ ¾ò±â À§ÇÔ)
+        //  ëª¬ìŠ¤í„° BaseDataë§Œ ê°€ì ¸ì˜¤ê¸° (AddressableKeyë¥¼ ì–»ê¸° ìœ„í•¨)
         MonsterBaseData monsterBaseData = Managers.Data.GetData<int, MonsterBaseData>(info.monsterId);
         if (monsterBaseData == null)
         {
-            Debug.LogError($"[MonsterSpawner] monsterId({info.monsterId}) µ¥ÀÌÅÍ ¾øÀ½.");
+            Debug.LogError($"[MonsterSpawner] monsterId({info.monsterId}) ë°ì´í„° ì—†ìŒ.");
             DisposeCts(pointIdx);
             return;
         }
 
         try
         {
-            // ½ºÆù µô·¹ÀÌ ´ë±â
+            // ìŠ¤í° ë”œë ˆì´ ëŒ€ê¸°
             if (info.delay > 0)
             {
                 bool isCanceled = await UniTask.Delay(
@@ -109,7 +109,7 @@ public class MonsterSpawner : MonoBehaviour
                 if (isCanceled) return;
             }
 
-            //  ¸ğµç »ı¼º ·ÎÁ÷°ú µ¥ÀÌÅÍ ÁÖÀÔÀ» Factory¿¡ À§ÀÓ
+            //  ëª¨ë“  ìƒì„± ë¡œì§ê³¼ ë°ì´í„° ì£¼ì…ì„ Factoryì— ìœ„ì„
             GameObject monsterObj = await MonsterFactory.CreateMonsterByMonsterIDAsync(
                 info.monsterId,
                 _mapId,
@@ -127,11 +127,11 @@ public class MonsterSpawner : MonoBehaviour
                 return;
             }
 
-            // µñ¼Å³Ê¸® ¹× »óÅÂ Ä³½Ì
+            // ë”•ì…”ë„ˆë¦¬ ë° ìƒíƒœ ìºì‹±
             _monsterToPointIndex[monsterCtrl] = pointIdx;
             _monsterToSpawnInfo[monsterCtrl] = info;
 
-            // »ç¸Á ÀÌº¥Æ® ±¸µ¶
+            // ì‚¬ë§ ì´ë²¤íŠ¸ êµ¬ë…
             monsterStat.OnMonsterDead -= HandleMonsterDead;
             monsterStat.OnMonsterDead += HandleMonsterDead;
 
@@ -171,7 +171,7 @@ public class MonsterSpawner : MonoBehaviour
 
         if (gameObject.activeInHierarchy)
         {
-            // µğ½ºÆù ¾Ö´Ï¸ŞÀÌ¼Ç±îÁö ³¡³­ µÚ¿¡ ¸®½ºÆù Å¸ÀÌ¸Ó¸¦ µ¹¸²
+            // ë””ìŠ¤í° ì• ë‹ˆë©”ì´ì…˜ê¹Œì§€ ëë‚œ ë’¤ì— ë¦¬ìŠ¤í° íƒ€ì´ë¨¸ë¥¼ ëŒë¦¼
             deadMonster.OnDespawned += () => StartRespawn(pointIdx, info);
         }
     }

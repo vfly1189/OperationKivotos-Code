@@ -7,8 +7,8 @@ public class BasePortal : MonoBehaviour
     [SerializeField] protected GameObject _entranceUI;
 
 
-    //´øÀüÀº Ç×»ó Easy Normal Hard ³­ÀÌµµ·Î Á¸ÀçÇÔ.
-    //°¢ ´øÀüÀÇ ±âº» MapID´Â Easy¶û µ¿ÀÏÇÏ°Ô ¼³Á¤ÇÏ°í +1, +2 ÇÑ°ªÀ¸·Î Normal°ú Hard¸¦ ±¸ºĞÁş°Ô ÇÔ.
+    //ë˜ì „ì€ í•­ìƒ Easy Normal Hard ë‚œì´ë„ë¡œ ì¡´ì¬í•¨.
+    //ê° ë˜ì „ì˜ ê¸°ë³¸ MapIDëŠ” Easyë‘ ë™ì¼í•˜ê²Œ ì„¤ì •í•˜ê³  +1, +2 í•œê°’ìœ¼ë¡œ Normalê³¼ Hardë¥¼ êµ¬ë¶„ì§“ê²Œ í•¨.
     [SerializeField] protected int _dungeonGroupID;
 
 

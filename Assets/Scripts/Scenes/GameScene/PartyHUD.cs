@@ -20,13 +20,13 @@ public class PartyHUD : MonoBehaviour
 
             //if (charDataSO.Emblem != null && charDataSO.Emblem.RuntimeKeyIsValid())
             //{
-            //    int index = i; // ≈¨∑Œ¿˙ ƒ∏√≥
+            //    int index = i; // ÌÅ¥Î°úÏ†Ä Ï∫°Ï≤ò
             //    loadTasks.Add(LoadEmblemAsync(charDataSO.Emblem, index));
             //}
 
             if (!string.IsNullOrEmpty(charDataSO.nameKey))
             {
-                // ±‘ƒ¢: "ƒ≥∏Ø≈ÕID_Emblem"
+                // Í∑úÏπô: "Ï∫êÎ¶≠ÌÑ∞ID_Emblem"
                 string emblemName = $"Emblem_Icon_Favor_{charDataSO.nameKey}";
                 loadTasks.Add(LoadEmblemFromAtlasAsync(emblemName, i));
             }

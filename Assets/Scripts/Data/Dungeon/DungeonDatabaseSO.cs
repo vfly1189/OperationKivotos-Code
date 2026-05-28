@@ -15,12 +15,12 @@ public enum DungeonType
 public class DungeonData
 {
     public int GroupID;
-    public int DungeonID;               // ½ÇÁ¦ ¸Ê ·Îµå¿¡ ¾²ÀÏ ID
+    public int DungeonID;               // ì‹¤ì œ ë§µ ë¡œë“œì— ì“°ì¼ ID
     public Define.DungeonDifficulty Difficulty;
 
-    //±âÈ¹ Ãß°¡ ´ëºñ¿ë
-    public int EnterCost;               // ÀÔÀå ÀçÈ­(Çàµ¿·Â)
-    public int RequiredLevel;           // ±ÇÀå ·¹º§
+    //ê¸°íš ì¶”ê°€ ëŒ€ë¹„ìš©
+    public int EnterCost;               // ì…ì¥ ì¬í™”(í–‰ë™ë ¥)
+    public int RequiredLevel;           // ê¶Œì¥ ë ˆë²¨
 
     public int ClearExp;
     public int ClearCredit;
@@ -31,13 +31,13 @@ public class DungeonData
 public class DungeonGroup
 {
     public int GroupID;
-    public string DungeonName;          // ´Ù±¹¾î Àû¿ë½Ã int NameKey ·Î º¯°æ ±ÇÀå
+    public string DungeonName;          // ë‹¤êµ­ì–´ ì ìš©ì‹œ int NameKey ë¡œ ë³€ê²½ ê¶Œì¥
     public DungeonType Type;
 
-    // 1. ¿¡µğÅÍ ÀúÀå ¹× ÀÎ½ºÆåÅÍ ³ëÃâ¿ë ¸®½ºÆ® (Á÷·ÄÈ­ µÊ)
+    // 1. ì—ë””í„° ì €ì¥ ë° ì¸ìŠ¤í™í„° ë…¸ì¶œìš© ë¦¬ìŠ¤íŠ¸ (ì§ë ¬í™” ë¨)
     public List<DungeonData> DungeonDataList = new List<DungeonData>();
 
-    // 2. ·±Å¸ÀÓ ÀĞ±â¿ë µñ¼Å³Ê¸® (Á÷·ÄÈ­ ¾ÈµÊ)
+    // 2. ëŸ°íƒ€ì„ ì½ê¸°ìš© ë”•ì…”ë„ˆë¦¬ (ì§ë ¬í™” ì•ˆë¨)
     [NonSerialized]
     public Dictionary<Define.DungeonDifficulty, DungeonData> DungeonDataByDifficulty 
         = new Dictionary<Define.DungeonDifficulty, DungeonData>();
@@ -62,7 +62,7 @@ public class DungeonDatabaseSO : ScriptableObject, IDataCacheable
 
         foreach (var group in DungeonGroups)
         {
-            // ·±Å¸ÀÓ Á¶È¸¸¦ À§ÇØ ListÀÇ µ¥ÀÌÅÍ¸¦ Dictionary·Î º¯È¯ (Ä³½Ì)
+            // ëŸ°íƒ€ì„ ì¡°íšŒë¥¼ ìœ„í•´ Listì˜ ë°ì´í„°ë¥¼ Dictionaryë¡œ ë³€í™˜ (ìºì‹±)
             group.DungeonDataByDifficulty = new Dictionary<Define.DungeonDifficulty, DungeonData>();
             foreach (var data in group.DungeonDataList)
             {

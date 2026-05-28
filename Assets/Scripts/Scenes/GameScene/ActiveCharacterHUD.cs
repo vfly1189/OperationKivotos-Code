@@ -43,23 +43,23 @@ public class ActiveCharacterHUD : MonoBehaviour
         stat.OnUltimateStateChanged += HandleActiveSkillReady;
     }
 
-    // ºñµ¿±â ½ºÅ³ ¾ÆÀÌÄÜ °»½Å ÇÔ¼ö
+    // ë¹„ë™ê¸° ìŠ¤í‚¬ ì•„ì´ì½˜ ê°±ì‹  í•¨ìˆ˜
     public async UniTask ChangeStaticDataAsync(CharacterDataSO charData)
     {
         if (charData == null) return;
 
-        Debug.Log($"[ActiveHUD] ChangeStaticDataAsync È£Ãâ: {charData.nameKey}");
+        Debug.Log($"[ActiveHUD] ChangeStaticDataAsync í˜¸ì¶œ: {charData.nameKey}");
 
         _qSkill.SetEnergyFillColor(charData.energyFillColor);
         _qSkill.SetReadyGlowColor(charData.ultimateGlowColor);
 
 
-        // ±ÔÄ¢: "Ä³¸¯ÅÍID_Q_Icon"
+        // ê·œì¹™: "ìºë¦­í„°ID_Q_Icon"
         string qIconName = $"{charData.nameKey}_Q_Icon";
         Sprite qIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", qIconName);      
         if (qIcon != null) _qSkill.SetIcon(qIcon);
 
-        // ±ÔÄ¢: "Ä³¸¯ÅÍID_E_Icon"
+        // ê·œì¹™: "ìºë¦­í„°ID_E_Icon"
         string eIconName = $"{charData.nameKey}_E_Icon";
         Sprite eIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", eIconName);
         if (eIcon != null) _eSkill.SetIcon(eIcon);
@@ -71,7 +71,7 @@ public class ActiveCharacterHUD : MonoBehaviour
         _eSkill.UpdateCooldown(stat.CurrentESkillCoolTime, stat.ESkillCoolTime.Value);
     }
 
-    // ·¡ÆÛ ÇÔ¼öµé
+    // ëž˜í¼ í•¨ìˆ˜ë“¤
     private void HandleLevelChanged(int level) => _statUI.SetLevel(level);
     private void HandleActiveSkillEnergy(float cur, float max) => _qSkill.UpdateEnergy(cur, max);
     private void HandleActiveSkillReady(bool isReady) => _qSkill.SetUltimateReady(isReady);

@@ -17,7 +17,7 @@ public class PoolManager
         public void Init(GameObject original, int count = 5)
         {
             Original = original;
-            //_handle = handle; // ÇÚµé ÀúÀå
+            //_handle = handle; // í•¸ë“¤ ì €ì¥
             Root = new GameObject().transform;
             Root.name = $"{original.name}_Pool_Root";
 
@@ -29,7 +29,7 @@ public class PoolManager
         {
             GameObject go = Object.Instantiate(Original);
 
-            // ¸¸¾à È°¼ºÈ­ »óÅÂ·Î »ı¼ºµÇ¾ú´Ù¸é, À§Ä¡¸¦ Àâ±â Àü¿¡ Agent¸¦ ²¨¹ö¸³´Ï´Ù.
+            // ë§Œì•½ í™œì„±í™” ìƒíƒœë¡œ ìƒì„±ë˜ì—ˆë‹¤ë©´, ìœ„ì¹˜ë¥¼ ì¡ê¸° ì „ì— Agentë¥¼ êº¼ë²„ë¦½ë‹ˆë‹¤.
             NavMeshAgent agent = go.GetComponent<NavMeshAgent>();
             if (agent != null)
             {
@@ -62,11 +62,11 @@ public class PoolManager
             else
                 poolable = Create();
 
-            // À§Ä¡ ÃÊ±âÈ­ ºÎºĞ ¼öÁ¤
+            // ìœ„ì¹˜ ì´ˆê¸°í™” ë¶€ë¶„ ìˆ˜ì •
             poolable.transform.SetParent(parent ?? Managers.SceneEx.CurrentScene.transform);
             poolable.transform.localScale = Vector3.one;
 
-            // NavMeshAgent°¡ ºÙ¾îÀÖ´Ù¸é, À§Ä¡¸¦ ¿Å±â±â Àü¿¡ ¹İµå½Ã ²¨¾ß ÇÕ´Ï´Ù.
+            // NavMeshAgentê°€ ë¶™ì–´ìˆë‹¤ë©´, ìœ„ì¹˜ë¥¼ ì˜®ê¸°ê¸° ì „ì— ë°˜ë“œì‹œ êº¼ì•¼ í•©ë‹ˆë‹¤.
             NavMeshAgent agent = poolable.GetComponent<NavMeshAgent>();
             if (agent != null) agent.enabled = false;
 
@@ -75,12 +75,12 @@ public class PoolManager
         }
 
 
-        // [¼öÁ¤ 2] Addressable Release »èÁ¦ ¹× À¯´ÏÆ¼ ±âº» ÆÄ±«¸¸ ¼öÇà
+        // [ìˆ˜ì • 2] Addressable Release ì‚­ì œ ë° ìœ ë‹ˆí‹° ê¸°ë³¸ íŒŒê´´ë§Œ ìˆ˜í–‰
         public void DestroyPool()
         {
             if (Root != null)
             {
-                Object.Destroy(Root.gameObject); // ÇÏÀ§ ÀÚ½Ä(Ç®¸µµÈ ¿ÀºêÁ§Æ®)µé±îÁö ½Ï ´Ù ³¯¾Æ°¨
+                Object.Destroy(Root.gameObject); // í•˜ìœ„ ìì‹(í’€ë§ëœ ì˜¤ë¸Œì íŠ¸)ë“¤ê¹Œì§€ ì‹¹ ë‹¤ ë‚ ì•„ê°
             }
         }
     }
@@ -111,29 +111,29 @@ public class PoolManager
         _pool.Add(original.name, pool);
     }
 
-    // °¡Á®¿À±â (Instantiate ´ëÃ¼)
+    // ê°€ì ¸ì˜¤ê¸° (Instantiate ëŒ€ì²´)
     public Poolable Pop(GameObject original, Transform parent = null)
     {
-        // Ç®ÀÌ ¾øÀ¸¸é Áï¼®¿¡¼­ ¸¸µê
+        // í’€ì´ ì—†ìœ¼ë©´ ì¦‰ì„ì—ì„œ ë§Œë“¦
         if (_pool.ContainsKey(original.name) == false)
             CreatePool(original);
 
         return _pool[original.name].Pop(parent);
     }
 
-    //  º¯°æ: GameObject ´ë½Å stringÀ¸·Î ¹ŞÀ½
+    //  ë³€ê²½: GameObject ëŒ€ì‹  stringìœ¼ë¡œ ë°›ìŒ
     public Poolable Pop(string prefabName, Transform parent = null)
     {
         if (!_pool.ContainsKey(prefabName))
         {
-            Debug.LogError($"Pool¿¡ '{prefabName}'ÀÌ ¾ø½À´Ï´Ù. CreatePoolÀ» ¸ÕÀú È£ÃâÇÏ¼¼¿ä!");
+            Debug.LogError($"Poolì— '{prefabName}'ì´ ì—†ìŠµë‹ˆë‹¤. CreatePoolì„ ë¨¼ì € í˜¸ì¶œí•˜ì„¸ìš”!");
             return null;
         }
 
         return _pool[prefabName].Pop(parent);
     }
 
-    // ¹İ³³ÇÏ±â (Destroy ´ëÃ¼)
+    // ë°˜ë‚©í•˜ê¸° (Destroy ëŒ€ì²´)
     public void Push(Poolable poolable)
     {
         string name = poolable.gameObject.name;
@@ -146,13 +146,13 @@ public class PoolManager
         _pool[name].Push(poolable);
     }
 
-    // ¾À ÀÌµ¿ ½Ã Ç® ÃÊ±âÈ­ ÇÊ¿äÇÏ¸é »ç¿ë
+    // ì”¬ ì´ë™ ì‹œ í’€ ì´ˆê¸°í™” í•„ìš”í•˜ë©´ ì‚¬ìš©
     public void Clear()
     {
 
         foreach (var pool in _pool.Values)
         {
-            pool.DestroyPool(); // »ı¼ºÇØµĞ ÀÎ½ºÅÏ½ºµé ¹°¸®Àû ÆÄ±«
+            pool.DestroyPool(); // ìƒì„±í•´ë‘” ì¸ìŠ¤í„´ìŠ¤ë“¤ ë¬¼ë¦¬ì  íŒŒê´´
         }
         _pool.Clear();
     }

@@ -3,25 +3,25 @@ using UnityEngine;
 
 public class GameSessionContext
 {
-    // ¿øº» ¿¡¼Â(SO) ÂüÁ¶. (ÀÌ°Ç SO¸¦ 'ÀĞ±â Àü¿ë'À¸·Î °¡¸®Å°±â¸¸ ÇÏ¹Ç·Î OK)
+    // ì›ë³¸ ì—ì…‹(SO) ì°¸ì¡°. (ì´ê±´ SOë¥¼ 'ì½ê¸° ì „ìš©'ìœ¼ë¡œ ê°€ë¦¬í‚¤ê¸°ë§Œ í•˜ë¯€ë¡œ OK)
     public SchoolDataSO SelectedSchool { get; set; }
     public List<CharacterDataSO> SelectedCharacters { get; set; }
 
-    // ºñµ¿±â ·ÎµùµÈ 3°³ ÇĞ±³ÀÇ ¼¼ÀÌºê µ¥ÀÌÅÍ ¿øº» (»çÀü ·Îµù¿ë ¹Ù±¸´Ï)
+    // ë¹„ë™ê¸° ë¡œë”©ëœ 3ê°œ í•™êµì˜ ì„¸ì´ë¸Œ ë°ì´í„° ì›ë³¸ (ì‚¬ì „ ë¡œë”©ìš© ë°”êµ¬ë‹ˆ)
     public Dictionary<string, PartySaveData> SavedDatas { get; private set; } = new Dictionary<string, PartySaveData>();
 
-    // ÇöÀç ÇÃ·¹ÀÌ ÁßÀÎ ÇĞ±³ÀÇ ¼¼ÀÌºê µ¥ÀÌÅÍ
+    // í˜„ì¬ í”Œë ˆì´ ì¤‘ì¸ í•™êµì˜ ì„¸ì´ë¸Œ ë°ì´í„°
     public PartySaveData SelectedSavedData { get; private set; }
 
     public bool ShouldLoadSaveData { get; set; } = true;
     public int SchoolIdx { get; set; }
 
-    // ÇöÀç ÇÃ·¹ÀÌ ÁßÀÎ ´øÀü Á¤º¸
+    // í˜„ì¬ í”Œë ˆì´ ì¤‘ì¸ ë˜ì „ ì •ë³´
     public Define.DungeonDifficulty SelectedDifficulty { get; set; } = Define.DungeonDifficulty.Easy;
     public int CurrentDungeonID { get; set; }
     public int CurrentDungeonGroupID { get; set; }
 
-    // StartScene¿¡¼­ È£ÃâÇÏ¿© ¹Ì¸® ·ÎµùµÈ µ¥ÀÌÅÍ¸¦ º¸°ü
+    // StartSceneì—ì„œ í˜¸ì¶œí•˜ì—¬ ë¯¸ë¦¬ ë¡œë”©ëœ ë°ì´í„°ë¥¼ ë³´ê´€
     public void SetPreloadedSaveData(string schoolName, PartySaveData data)
     {
         SavedDatas[schoolName] = data;
@@ -29,50 +29,50 @@ public class GameSessionContext
 
     
 
-    // ÀÌ¾îÇÏ±â (Continue)
+    // ì´ì–´í•˜ê¸° (Continue)
     public void LoadSchool(string schoolName)
     {
         if (SavedDatas.TryGetValue(schoolName, out var data))
         {
             if (data == null)
             {
-                // ¼¼ÀÌºê ÆÄÀÏÀÌ ¾Æ¿¹ ¾ø´Ù¸é »õ·Î »ı¼º
+                // ì„¸ì´ë¸Œ íŒŒì¼ì´ ì•„ì˜ˆ ì—†ë‹¤ë©´ ìƒˆë¡œ ìƒì„±
                 SelectedSavedData = Managers.Save.CreateNewSave(schoolName);
-                Debug.Log($"[{schoolName}] ¼¼ÀÌºê°¡ ¾ø¾î »õ·Î »ı¼º ÈÄ ÀÌ¾îÇÕ´Ï´Ù.");
+                Debug.Log($"[{schoolName}] ì„¸ì´ë¸Œê°€ ì—†ì–´ ìƒˆë¡œ ìƒì„± í›„ ì´ì–´í•©ë‹ˆë‹¤.");
             }
             else
             {
-                // ±âÁ¸ µ¥ÀÌÅÍ µöÄ«ÇÇ
+                // ê¸°ì¡´ ë°ì´í„° ë”¥ì¹´í”¼
                 string json = Newtonsoft.Json.JsonConvert.SerializeObject(data);
                 SelectedSavedData = Newtonsoft.Json.JsonConvert.DeserializeObject<PartySaveData>(json);
-                Debug.Log($"[{schoolName}] ±âÁ¸ ¼¼ÀÌºê µ¥ÀÌÅÍ¸¦ ºÒ·¯¿Ô½À´Ï´Ù.");
+                Debug.Log($"[{schoolName}] ê¸°ì¡´ ì„¸ì´ë¸Œ ë°ì´í„°ë¥¼ ë¶ˆëŸ¬ì™”ìŠµë‹ˆë‹¤.");
             }
         }
         else
         {
-            Debug.LogError($"{schoolName} Å°°¡ ¾ø½À´Ï´Ù!");
+            Debug.LogError($"{schoolName} í‚¤ê°€ ì—†ìŠµë‹ˆë‹¤!");
         }
     }
 
-    // »õ·ÎÇÏ±â (New Start)
+    // ìƒˆë¡œí•˜ê¸° (New Start)
     public void CreateNewSchool(string schoolName)
     {
-        // ±âÁ¸ ¼¼ÀÌºê ÆÄÀÏ(µğ½ºÅ©) »èÁ¦
+        // ê¸°ì¡´ ì„¸ì´ë¸Œ íŒŒì¼(ë””ìŠ¤í¬) ì‚­ì œ
         Managers.Save.DeleteSave(schoolName);
 
-        // ¿ÏÀüÈ÷ ±ú²ıÇÑ »õ ¼¼ÀÌºê µ¥ÀÌÅÍ »ı¼ºÇÏ¿© ¼¼¼Ç¿¡ ÀåÂø
+        // ì™„ì „íˆ ê¹¨ë—í•œ ìƒˆ ì„¸ì´ë¸Œ ë°ì´í„° ìƒì„±í•˜ì—¬ ì„¸ì…˜ì— ì¥ì°©
         SelectedSavedData = Managers.Save.CreateNewSave(schoolName);
 
-        // Ä³½ÌµÈ µñ¼Å³Ê¸® µ¥ÀÌÅÍµµ null·Î ÃÊ±âÈ­ (StartSceneÀ¸·Î µ¹¾Æ°¬À» ¶§ ¹æÁö)
+        // ìºì‹±ëœ ë”•ì…”ë„ˆë¦¬ ë°ì´í„°ë„ nullë¡œ ì´ˆê¸°í™” (StartSceneìœ¼ë¡œ ëŒì•„ê°”ì„ ë•Œ ë°©ì§€)
         SavedDatas[schoolName] = null;
 
-        Debug.Log($"[{schoolName}] ±âÁ¸ µ¥ÀÌÅÍ¸¦ »èÁ¦ÇÏ°í »õ·Î ½ÃÀÛÇÕ´Ï´Ù.");
+        Debug.Log($"[{schoolName}] ê¸°ì¡´ ë°ì´í„°ë¥¼ ì‚­ì œí•˜ê³  ìƒˆë¡œ ì‹œì‘í•©ë‹ˆë‹¤.");
     }
 
-    // °ÔÀÓ ½ÃÀÛ ½Ã, È¤Àº ·Îºñ·Î ³ª°¥ ¶§ ÈÖ¹ß¼º µ¥ÀÌÅÍ ½Ï ºñ¿ì±â
+    // ê²Œì„ ì‹œì‘ ì‹œ, í˜¹ì€ ë¡œë¹„ë¡œ ë‚˜ê°ˆ ë•Œ íœ˜ë°œì„± ë°ì´í„° ì‹¹ ë¹„ìš°ê¸°
     public void Clear()
     {
-        Debug.Log("[GameSession] ·±Å¸ÀÓ µ¥ÀÌÅÍ ÃÊ±âÈ­");
+        Debug.Log("[GameSession] ëŸ°íƒ€ì„ ë°ì´í„° ì´ˆê¸°í™”");
         SelectedSchool = null;
         SelectedCharacters = null;
         SelectedSavedData = null;

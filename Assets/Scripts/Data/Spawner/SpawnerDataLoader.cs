@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 1. JSONÀÇ "spawnList" ¹è¿­ ¾È¿¡ µé¾î°¥ °³º° ½ºÆù Á¤º¸ Å¬·¡½º
+// 1. JSONì˜ "spawnList" ë°°ì—´ ì•ˆì— ë“¤ì–´ê°ˆ ê°œë³„ ìŠ¤í° ì •ë³´ í´ë˜ìŠ¤
 [System.Serializable]
 public class SpawnInfo
 {
@@ -10,7 +10,7 @@ public class SpawnInfo
     public float delay;
 }
 
-[System.Serializable] // <<<<< ÀÌ°Å ÇÊ¼ö!
+[System.Serializable] // <<<<< ì´ê±° í•„ìˆ˜!
 public class SpawnerData
 {
     public int spawnerId;

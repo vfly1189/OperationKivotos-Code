@@ -19,7 +19,7 @@ public class SoundButton : MonoBehaviour
 
     private async void OnSoundSettingClicked()
     {
-        // PrefabÀ» Á÷Á¢ Àü´Ş
+        // Prefabì„ ì§ì ‘ ì „ë‹¬
         await Managers.UI.ShowPopupUIAsync<UI_SoundSetting>("UI_SoundSetting");
     }
 

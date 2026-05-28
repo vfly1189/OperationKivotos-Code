@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Data/SceneTable")]
 public class SceneTableSO : ScriptableObject
 {
-    // ¾À Enum°ú µ¥ÀÌÅÍ¸¦ ¸ÅÇÎÇÏ´Â ±¸Á¶Ã¼
+    // ì”¬ Enumê³¼ ë°ì´í„°ë¥¼ ë§¤í•‘í•˜ëŠ” êµ¬ì¡°ì²´
     [System.Serializable]
     public struct SceneEntry
     {
@@ -14,7 +14,7 @@ public class SceneTableSO : ScriptableObject
 
     public List<SceneEntry> scenes;
 
-    // ÆíÇÏ°Ô Ã£±â À§ÇÑ ÇÔ¼ö
+    // í¸í•˜ê²Œ ì°¾ê¸° ìœ„í•œ í•¨ìˆ˜
     public SceneDataSO GetSceneData(Define.Scene type)
     {
         foreach (var entry in scenes)

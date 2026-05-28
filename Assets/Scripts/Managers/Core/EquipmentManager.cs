@@ -1,4 +1,3 @@
-using NPOI.SS.Formula.PTG;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -21,7 +20,7 @@ public class EquipmentManager
 {
     public Dictionary<EquipType, InventorySlot> _equippedItem = new Dictionary<EquipType, InventorySlot>();
 
-    // Àåºñ º¯°æ ÀÌº¥Æ® (ºÎÀ§, »õ·Î ÀåÂøµÈ ¾ÆÀÌÅÛ, ¹şÀº ¾ÆÀÌÅÛ)
+    // ì¥ë¹„ ë³€ê²½ ì´ë²¤íŠ¸ (ë¶€ìœ„, ìƒˆë¡œ ì¥ì°©ëœ ì•„ì´í…œ, ë²—ì€ ì•„ì´í…œ)
     public event Action<EquipType, InventorySlot, InventorySlot> OnEquipmentChanged;
     public event Action<ItemCategory> OnInventoryChanged;
 
@@ -33,32 +32,32 @@ public class EquipmentManager
         }
     }
 
-    // ÀÎº¥Åä¸® ÀÎµ¦½º¸¦ ÅëÇØ ÀåÂø
+    // ì¸ë²¤í† ë¦¬ ì¸ë±ìŠ¤ë¥¼ í†µí•´ ì¥ì°©
     public void Equip(int inventoryIndex)
     {
-        // ÀÌ ÇÔ¼ö´Â ÀÎº¥Åä¸®ÀÇ InventorySlot UI_ItemSlot¿¡¼­ È£ÃâµÉ°ÅÀÓ
+        // ì´ í•¨ìˆ˜ëŠ” ì¸ë²¤í† ë¦¬ì˜ InventorySlot UI_ItemSlotì—ì„œ í˜¸ì¶œë ê±°ì„
 
-        //¾ÆÀÌÅÛ ÀåÂøÀÇ Èå¸§
+        //ì•„ì´í…œ ì¥ì°©ì˜ íë¦„
 
-        // ÀÎº¥Åä¸® ÀåºñÅÇ¿¡¼­ Àåºñ¸¦ DoubleClick or Drage ÇÔ
-        // ´õºí Å¬¸¯ÀÇ °æ¿ì : EquipmentManager¿¡¼­ ÇØ´ç ¾ÆÀÌÅÛÀÇ ½½·Ô°ú ±³Ã¼ È¤Àº ÀåÂøÀÌ ÀÌ·ç¾îÁü
-        //                  : ÀÌ¹Ì Àåºñ°¡ ÀåÂø µÇ¾î ÀÖ´Â°æ¿ì -> 2°³ÀÇ ½½·ÔÀ» ±³Ã¼ -> ÀÎº¥Åä¸®´Â ÇØ´ç½½·Ô¸¸ °»½ÅÇÏ¸éµÊ
-        //                  : Àåºñ ½½·ÔÀÌ ºñ¾îÀÖ¾úÀ» °æ¿ì    -> Àåºñ ÀåÂø -> ÀÎº¥Åä¸®´Â ÇØ´ç½½·Ô¸¸ ºñ¿ì¸éµÊ
+        // ì¸ë²¤í† ë¦¬ ì¥ë¹„íƒ­ì—ì„œ ì¥ë¹„ë¥¼ DoubleClick or Drage í•¨
+        // ë”ë¸” í´ë¦­ì˜ ê²½ìš° : EquipmentManagerì—ì„œ í•´ë‹¹ ì•„ì´í…œì˜ ìŠ¬ë¡¯ê³¼ êµì²´ í˜¹ì€ ì¥ì°©ì´ ì´ë£¨ì–´ì§
+        //                  : ì´ë¯¸ ì¥ë¹„ê°€ ì¥ì°© ë˜ì–´ ìˆëŠ”ê²½ìš° -> 2ê°œì˜ ìŠ¬ë¡¯ì„ êµì²´ -> ì¸ë²¤í† ë¦¬ëŠ” í•´ë‹¹ìŠ¬ë¡¯ë§Œ ê°±ì‹ í•˜ë©´ë¨
+        //                  : ì¥ë¹„ ìŠ¬ë¡¯ì´ ë¹„ì–´ìˆì—ˆì„ ê²½ìš°    -> ì¥ë¹„ ì¥ì°© -> ì¸ë²¤í† ë¦¬ëŠ” í•´ë‹¹ìŠ¬ë¡¯ë§Œ ë¹„ìš°ë©´ë¨
 
 
-        //Àåºñ ÀÎº¥¿¡¼­ ÇØ´ç ½½·ÔÀ» °¡Á®¿È
+        //ì¥ë¹„ ì¸ë²¤ì—ì„œ í•´ë‹¹ ìŠ¬ë¡¯ì„ ê°€ì ¸ì˜´
         InventorySlot invenSlot = Managers.Inventory.Inventory[ItemCategory.Equipment][inventoryIndex];
         if (invenSlot == null || invenSlot.IsEmpty) return;
 
-        // DataManager¿¡¼­ EquipmentData °¡Á®¿À±â
+        // DataManagerì—ì„œ EquipmentData ê°€ì ¸ì˜¤ê¸°
         EquipmentData itemData = Managers.Data.GetData<int, EquipmentData>(invenSlot.itemID);
         if (itemData == null) return;
 
-        //¹®ÀÚ¿­ EquipPart¸¦ EquipType EnumÀ¸·Î ¾ÈÀüÇÏ°Ô º¯È¯
-        //Àåºñ Å¸ÀÓÀÌ ¹ºÁö È®ÀÎ
+        //ë¬¸ìì—´ EquipPartë¥¼ EquipType Enumìœ¼ë¡œ ì•ˆì „í•˜ê²Œ ë³€í™˜
+        //ì¥ë¹„ íƒ€ì„ì´ ë­”ì§€ í™•ì¸
         if (!Enum.TryParse(itemData.EquipPart, true, out EquipType type))
         {
-            Debug.LogError($"Àåºñ ºÎÀ§ º¯È¯ ½ÇÆĞ: {itemData.EquipPart}");
+            Debug.LogError($"ì¥ë¹„ ë¶€ìœ„ ë³€í™˜ ì‹¤íŒ¨: {itemData.EquipPart}");
             return;
         }
 
@@ -66,21 +65,21 @@ public class EquipmentManager
         {
             itemID = invenSlot.itemID,
             Amount = 1,
-            EquipInstance = invenSlot.EquipInstance // ÀÌ ÁÙ Ãß°¡!
+            EquipInstance = invenSlot.EquipInstance // ì´ ì¤„ ì¶”ê°€!
         };
         invenSlot.Clear();
 
-        // ±× ´ÙÀ½ ±âÁ¸ Àåºñ¸¦ ¹ş±é´Ï´Ù. (È®º¸µÈ ºó °ø°£À¸·Î ¾ÈÀüÇÏ°Ô µé¾î°¨)
+        // ê·¸ ë‹¤ìŒ ê¸°ì¡´ ì¥ë¹„ë¥¼ ë²—ê¹ë‹ˆë‹¤. (í™•ë³´ëœ ë¹ˆ ê³µê°„ìœ¼ë¡œ ì•ˆì „í•˜ê²Œ ë“¤ì–´ê°)
         if (_equippedItem.ContainsKey(type) && _equippedItem[type] != null && !_equippedItem[type].IsEmpty)
         {
             UnEquip(type);
         }
 
-        // 3. »õ Àåºñ ÀåÂø Àû¿ë
+        // 3. ìƒˆ ì¥ë¹„ ì¥ì°© ì ìš©
         _equippedItem[type] = newEquip;
 
 
-        // [ÇÙ½É º¯°æÁ¡] ÇöÀç ÆÄÆ¼¿ø 4¸í ¸ğµÎ¿¡°Ô ½ºÅÈÀ» Àû¿ëÇÕ´Ï´Ù.
+        // [í•µì‹¬ ë³€ê²½ì ] í˜„ì¬ íŒŒí‹°ì› 4ëª… ëª¨ë‘ì—ê²Œ ìŠ¤íƒ¯ì„ ì ìš©í•©ë‹ˆë‹¤.
         List<BaseCharacter> partyMembers = Managers.Party.GetMember();
         foreach (BaseCharacter member in partyMembers)
         {
@@ -92,21 +91,21 @@ public class EquipmentManager
             }
         }
 
-        // 4. UI °»½Å ÀÌº¥Æ® È£Ãâ
+        // 4. UI ê°±ì‹  ì´ë²¤íŠ¸ í˜¸ì¶œ
         OnInventoryChanged?.Invoke(ItemCategory.Equipment);
         OnEquipmentChanged?.Invoke(type, newEquip, null);
     }
 
-    // Àåºñ ºÎÀ§¸¦ ¹Ş¾Æ ÀåÂø ÇØÁ¦
+    // ì¥ë¹„ ë¶€ìœ„ë¥¼ ë°›ì•„ ì¥ì°© í•´ì œ
     public void UnEquip(EquipType type)
     {
-        // 1, 2, 3 ¹æ¾îÄÚµå¸¦ ÇÏ³ª·Î ±ò²ûÇÏ°Ô ÇÕÄ¨´Ï´Ù.
+        // 1, 2, 3 ë°©ì–´ì½”ë“œë¥¼ í•˜ë‚˜ë¡œ ê¹”ë”í•˜ê²Œ í•©ì¹©ë‹ˆë‹¤.
         if (!_equippedItem.ContainsKey(type) || _equippedItem[type] == null || _equippedItem[type].IsEmpty)
             return;
 
         InventorySlot unequippedItem = _equippedItem[type];
 
-        // [ÇÙ½É º¯°æÁ¡] ÇöÀç ÆÄÆ¼¿ø 4¸í ¸ğµÎ¿¡°Ô¼­ ½ºÅÈÀ» Á¦°ÅÇÕ´Ï´Ù.
+        // [í•µì‹¬ ë³€ê²½ì ] í˜„ì¬ íŒŒí‹°ì› 4ëª… ëª¨ë‘ì—ê²Œì„œ ìŠ¤íƒ¯ì„ ì œê±°í•©ë‹ˆë‹¤.
         List<BaseCharacter> partyMembers = Managers.Party.GetMember();
         foreach (BaseCharacter member in partyMembers)
         {
@@ -117,19 +116,19 @@ public class EquipmentManager
             }
         }
 
-        // 1. ¹şÀº Àåºñ¸¦ ÀÎº¥Åä¸®¿¡ ´Ù½Ã Ãß°¡
+        // 1. ë²—ì€ ì¥ë¹„ë¥¼ ì¸ë²¤í† ë¦¬ì— ë‹¤ì‹œ ì¶”ê°€
         Managers.Inventory.AddEquipmentSlot(unequippedItem);
 
-        // 2. ÀåÂø ½½·Ô ºñ¿ì±â
+        // 2. ì¥ì°© ìŠ¬ë¡¯ ë¹„ìš°ê¸°
         _equippedItem[type] = null;
 
-        //UI °»½Å ¹× ½ºÅÈ Àç°è»ê ÀÌº¥Æ® È£Ãâ
+        //UI ê°±ì‹  ë° ìŠ¤íƒ¯ ì¬ê³„ì‚° ì´ë²¤íŠ¸ í˜¸ì¶œ
         OnEquipmentChanged?.Invoke(type, null, unequippedItem);
     }
 
     private void ApplyEquipment(CharacterStat playerStat, InventorySlot equipment)
     {
-        //¸ŞÀÎ½ºÅÈ
+        //ë©”ì¸ìŠ¤íƒ¯
         List<StatOption> mainStats = equipment.EquipInstance.MainStats;
         foreach (StatOption statOption in mainStats)
         {
@@ -139,11 +138,11 @@ public class EquipmentManager
                 ? StatModType.PercentAdd
                 : StatModType.Flat;
 
-            // 3. Modifier Ãß°¡ (ÀÌÁ¦ Stat Å¬·¡½º°¡ ¾Ë¾Æ¼­ (Base * Percent) + Flat °ø½ÄÀ¸·Î °è»êÇÔ)
+            // 3. Modifier ì¶”ê°€ (ì´ì œ Stat í´ë˜ìŠ¤ê°€ ì•Œì•„ì„œ (Base * Percent) + Flat ê³µì‹ìœ¼ë¡œ ê³„ì‚°í•¨)
             targetStat.AddModifier(new StatModifier(statOption.Value, modType, equipment));
         }
 
-        //¼­ºê½ºÅÈ
+        //ì„œë¸ŒìŠ¤íƒ¯
         List<StatOption> subStats = equipment.EquipInstance.SubStats;
         foreach (StatOption statOption in subStats)
         {
@@ -153,47 +152,19 @@ public class EquipmentManager
                 ? StatModType.PercentAdd
                 : StatModType.Flat;
 
-            // 3. Modifier Ãß°¡ (ÀÌÁ¦ Stat Å¬·¡½º°¡ ¾Ë¾Æ¼­ (Base * Percent) + Flat °ø½ÄÀ¸·Î °è»êÇÔ)
+            // 3. Modifier ì¶”ê°€ (ì´ì œ Stat í´ë˜ìŠ¤ê°€ ì•Œì•„ì„œ (Base * Percent) + Flat ê³µì‹ìœ¼ë¡œ ê³„ì‚°í•¨)
             targetStat.AddModifier(new StatModifier(statOption.Value, modType, equipment));
         }
     }
 
     public void ReleaseEquipment(CharacterStat playerStat, InventorySlot equipment)
     {
-        ////¸ŞÀÎ½ºÅÈ
-        //List<StatOption> mainStats = equipment.EquipInstance.MainStats;
-        //foreach (StatOption statOption in mainStats)
-        //{
-        //    Stat targetStat = playerStat.GetStat(statOption.StatType);
-
-        //    StatModType modType = statOption.StatType.ToString().Contains("Percent")
-        //        ? StatModType.PercentAdd
-        //        : StatModType.Flat;
-
-        //    // 3. Modifier Ãß°¡ (ÀÌÁ¦ Stat Å¬·¡½º°¡ ¾Ë¾Æ¼­ (Base * Percent) + Flat °ø½ÄÀ¸·Î °è»êÇÔ)
-        //    targetStat.RemoveAllModifiersFromSource(equipment);
-        //}
-
-        ////¼­ºê½ºÅÈ
-        //List<StatOption> subStats = equipment.EquipInstance.SubStats;
-        //foreach (StatOption statOption in subStats)
-        //{
-        //    Stat targetStat = playerStat.GetStat(statOption.StatType);
-
-        //    StatModType modType = statOption.StatType.ToString().Contains("Percent")
-        //        ? StatModType.PercentAdd
-        //        : StatModType.Flat;
-
-        //    // 3. Modifier Ãß°¡ (ÀÌÁ¦ Stat Å¬·¡½º°¡ ¾Ë¾Æ¼­ (Base * Percent) + Flat °ø½ÄÀ¸·Î °è»êÇÔ)
-        //    targetStat.RemoveAllModifiersFromSource(equipment);
-        //}
-
-        //¸ŞÀÎ½ºÅÈ
-        List<StatOption> mainStats = equipment.EquipInstance.MainStats;    
+        //ë©”ì¸ìŠ¤íƒ¯
+        List<StatOption> mainStats = equipment.EquipInstance.MainStats;
         foreach (StatOption statOption in mainStats)
             playerStat.GetStat(statOption.StatType)?.RemoveAllModifiersFromSource(equipment);
 
-        //¼­ºê½ºÅÈ
+        //ì„œë¸ŒìŠ¤íƒ¯
         List<StatOption> subStats = equipment.EquipInstance.SubStats;
         foreach (StatOption statOption in subStats)
             playerStat.GetStat(statOption.StatType)?.RemoveAllModifiersFromSource(equipment);
@@ -205,7 +176,7 @@ public class EquipmentManager
 
         foreach (KeyValuePair<EquipType, InventorySlot> entry in _equippedItem)
         {
-            // nullÀÌ°Å³ª ºñ¾îÀÖ´Â ½½·ÔÀº ÀúÀå Á¦¿Ü
+            // nullì´ê±°ë‚˜ ë¹„ì–´ìˆëŠ” ìŠ¬ë¡¯ì€ ì €ì¥ ì œì™¸
             if (entry.Value == null || entry.Value.IsEmpty) continue;
 
             save.equippedSlots.Add(new EquippedSlotEntry
@@ -226,10 +197,10 @@ public class EquipmentManager
         {
             if (entry.slot == null || entry.slot.IsEmpty) continue;
 
-            // ÀåÂø ½½·Ô º¹¿ø
+            // ì¥ì°© ìŠ¬ë¡¯ ë³µì›
             _equippedItem[entry.slotType] = entry.slot;
 
-            // ÆÄÆ¼¿ø ÀüÃ¼¿¡ ½ºÅÈ ÀçÀû¿ë
+            // íŒŒí‹°ì› ì „ì²´ì— ìŠ¤íƒ¯ ì¬ì ìš©
             foreach (var member in Managers.Party.GetMember())
             {
                 if (member?.Stat != null)
@@ -237,7 +208,7 @@ public class EquipmentManager
             }
         }
 
-        // UI °»½Å
+        // UI ê°±ì‹ 
         foreach (EquipType type in Enum.GetValues(typeof(EquipType)))
         {
             InventorySlot slot = _equippedItem.ContainsKey(type) ? _equippedItem[type] : null;

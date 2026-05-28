@@ -37,17 +37,17 @@ public abstract class BaseScene : MonoBehaviour
     {
         if (Managers.UI.IsPopupOpen)
         {
-            Debug.Log("´İ±â ½ÃÀÛ ");
+            Debug.Log("ë‹«ê¸° ì‹œì‘ ");
             Managers.UI.ClosePopupUI();
         }
         else
         {
-            Debug.Log("¶Ç ¿­±â");
+            Debug.Log("ë˜ ì—´ê¸°");
             ShowEscapeMenu().Forget();
         }
     }
 
-    // ¹öÆ° Å¬¸¯ µîÀÇ ÀÌº¥Æ®¿¡¼­ ºñµ¿±â¸¦ ¶ç¿ï ¶§´Â async UniTaskVoid »ç¿ë
+    // ë²„íŠ¼ í´ë¦­ ë“±ì˜ ì´ë²¤íŠ¸ì—ì„œ ë¹„ë™ê¸°ë¥¼ ë„ìš¸ ë•ŒëŠ” async UniTaskVoid ì‚¬ìš©
     protected async UniTaskVoid ShowEscapeMenu()
     {
         //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);

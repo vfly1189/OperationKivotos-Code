@@ -3,17 +3,17 @@ using UnityEngine.EventSystems;
 
 public class UI_DragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler
 {
-    [Tooltip("½ÇÁ¦·Î ÀÌµ¿µÉ ÆË¾÷ÀÇ ÃÖ»ó´Ü RectTransform")]
+    [Tooltip("ì‹¤ì œë¡œ ì´ë™ë  íŒì—…ì˜ ìµœìƒë‹¨ RectTransform")]
     [SerializeField] private RectTransform _targetTransform;
 
     private Canvas _canvas;
 
     private void Start()
     {
-        // ÆË¾÷ÀÌ ¼ÓÇÑ Äµ¹ö½º¸¦ Ã£½À´Ï´Ù (ÇØ»óµµ º¸Á¤À» À§ÇØ ÇÊ¿ä)
+        // íŒì—…ì´ ì†í•œ ìº”ë²„ìŠ¤ë¥¼ ì°¾ìŠµë‹ˆë‹¤ (í•´ìƒë„ ë³´ì •ì„ ìœ„í•´ í•„ìš”)
         _canvas = GetComponentInParent<Canvas>();
 
-        // Å¸°ÙÀ» ÁöÁ¤ÇÏÁö ¾Ê¾Ò´Ù¸é, ±âº»ÀûÀ¸·Î ÀÌ »ó´Ü¹ÙÀÇ ÃÖ»ó´Ü ºÎ¸ğ(ÆË¾÷ ÀüÃ¼)¸¦ Å¸°ÙÀ¸·Î Àâ½À´Ï´Ù.
+        // íƒ€ê²Ÿì„ ì§€ì •í•˜ì§€ ì•Šì•˜ë‹¤ë©´, ê¸°ë³¸ì ìœ¼ë¡œ ì´ ìƒë‹¨ë°”ì˜ ìµœìƒë‹¨ ë¶€ëª¨(íŒì—… ì „ì²´)ë¥¼ íƒ€ê²Ÿìœ¼ë¡œ ì¡ìŠµë‹ˆë‹¤.
         if (_targetTransform == null)
         {
             _targetTransform = transform.root.GetComponentInChildren<UI_PopUp>().GetComponent<RectTransform>();
@@ -22,7 +22,7 @@ public class UI_DragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        // µå·¡±×¸¦ ½ÃÀÛÇÒ ¶§ ÆË¾÷ Ã¢À» ¸Ç ¾ÕÀ¸·Î(ÃÖ»ó´Ü ·»´õ¸µ) °¡Á®¿É´Ï´Ù.
+        // ë“œë˜ê·¸ë¥¼ ì‹œì‘í•  ë•Œ íŒì—… ì°½ì„ ë§¨ ì•ìœ¼ë¡œ(ìµœìƒë‹¨ ë Œë”ë§) ê°€ì ¸ì˜µë‹ˆë‹¤.
         _targetTransform.SetAsLastSibling();
     }
 
@@ -30,7 +30,7 @@ public class UI_DragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler
     {
         if (_canvas == null) return;
 
-        // ÇØ»óµµ ½ºÄÉÀÏ(scaleFactor)¿¡ ¸ÂÃç¼­ ¸¶¿ì½º ÀÌµ¿·®(delta) º¸Á¤
+        // í•´ìƒë„ ìŠ¤ì¼€ì¼(scaleFactor)ì— ë§ì¶°ì„œ ë§ˆìš°ìŠ¤ ì´ë™ëŸ‰(delta) ë³´ì •
         _targetTransform.anchoredPosition += eventData.delta / _canvas.scaleFactor;
     }
 }

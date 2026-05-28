@@ -45,20 +45,20 @@ public class PartyManager
         _characterContainer.transform.SetParent(managersTransform);
     }
 
-    // ¦¡¦¡ Swap ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Swap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void HandleSwapRequest(int prevIdx, int nextIdx)
     {
         _activator.SyncSwap(prevIdx, nextIdx);
 
-        // ¸¶¿ì½º È¦µå »óÅÂ ÃÊ±âÈ­ ÈÄ »õ Å¸°Ù ¿¬°á
+        // ë§ˆìš°ìŠ¤ í™€ë“œ ìƒíƒœ ì´ˆê¸°í™” í›„ ìƒˆ íƒ€ê²Ÿ ì—°ê²°
         PlayerController?.ClearMouseState();
         PlayerController?.SetControlTarget(_registry.GetCurrent());
 
         OnActiveCharacterChanged?.Invoke(_registry.GetCurrent().gameObject);
     }
 
-    // ¦¡¦¡ Party Wipe / Game Over ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Party Wipe / Game Over â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public void CancelDeathTasks()
     {
@@ -93,7 +93,7 @@ public class PartyManager
         Managers.SceneEx.LoadScene(Define.Scene.Game);
     }
 
-    // ¦¡¦¡ Init / Clear ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Init / Clear â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public void Init(List<BaseCharacter> characters, Transform spawnPoint)
     {
@@ -130,7 +130,7 @@ public class PartyManager
         _deathHandler.CancelDeathTasks();
     }
 
-    // ¦¡¦¡ Scene Reset (ÇÊµå ºÎÈ°) ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Scene Reset (í•„ë“œ ë¶€í™œ) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     
 
@@ -138,33 +138,33 @@ public class PartyManager
     {
         if (_registry.Members == null || _registry.Members.Count == 0) return;
 
-        // 1. ¸ğµç ¸â¹ö »óÅÂ ½Ï ÃÊ±âÈ­ ¹× ºñÈ°¼ºÈ­ (À§Ä¡ ÀÌµ¿Àº ¾ÆÁ÷ ¾È ÇÔ)
+        // 1. ëª¨ë“  ë©¤ë²„ ìƒíƒœ ì‹¹ ì´ˆê¸°í™” ë° ë¹„í™œì„±í™” (ìœ„ì¹˜ ì´ë™ì€ ì•„ì§ ì•ˆ í•¨)
         for (int i = 0; i < _registry.Members.Count; i++)
         {
             var member = _registry.Members[i];
             if (member == null) continue;
 
-            // ResetCharacterStateÀÇ ÆÄ¶ó¹ÌÅÍ·Î ÇöÀç À§Ä¡¸¦ ±×³É Áà¹ö¸² (»óÅÂ¸¸ ¸®¼Â)
+            // ResetCharacterStateì˜ íŒŒë¼ë¯¸í„°ë¡œ í˜„ì¬ ìœ„ì¹˜ë¥¼ ê·¸ëƒ¥ ì¤˜ë²„ë¦¼ (ìƒíƒœë§Œ ë¦¬ì…‹)
             member.ResetCharacterState(member.transform.position, member.transform.rotation);
             member.gameObject.SetActive(false);
         }
 
-        // 2. °­Á¦·Î 0¹ø(¸®´õ) Ä³¸¯ÅÍ·Î ½º¿Ò Ã³¸® (À§Ä¡°¡ ¾îµğµç »ó°ü¾øÀÌ 0¹øÀ» È°¼º Å¸°ÙÀ¸·Î ÀâÀ½)
+        // 2. ê°•ì œë¡œ 0ë²ˆ(ë¦¬ë”) ìºë¦­í„°ë¡œ ìŠ¤ì™‘ ì²˜ë¦¬ (ìœ„ì¹˜ê°€ ì–´ë””ë“  ìƒê´€ì—†ì´ 0ë²ˆì„ í™œì„± íƒ€ê²Ÿìœ¼ë¡œ ì¡ìŒ)
         _swapController.TrySwap(0, isForce: true);
 
-        // 3. ¸®´õ¸¸ È°¼ºÈ­ (ÀÌ¶§ ¾ÆÁ÷ ÀÌÀü À§Ä¡ÀÓ)
+        // 3. ë¦¬ë”ë§Œ í™œì„±í™” (ì´ë•Œ ì•„ì§ ì´ì „ ìœ„ì¹˜ì„)
         _registry.Members[0].gameObject.SetActive(true);
 
-        // 4. [ÇÙ½É] CC Ãæµ¹ ¾ø´Â ¾ÈÀüÇÑ ÅÚ·¹Æ÷Æ® ÇÔ¼ö·Î Àü¿ø ½ºÆù ÁöÁ¡À¸·Î ÅÚ·¹Æ÷Æ®!
+        // 4. [í•µì‹¬] CC ì¶©ëŒ ì—†ëŠ” ì•ˆì „í•œ í…”ë ˆí¬íŠ¸ í•¨ìˆ˜ë¡œ ì „ì› ìŠ¤í° ì§€ì ìœ¼ë¡œ í…”ë ˆí¬íŠ¸!
         TeleportParty(spawnPoint.position);
 
-        // ¹æÇâ(Rotation)µµ ¸ÂÃçÁÖ±â
+        // ë°©í–¥(Rotation)ë„ ë§ì¶°ì£¼ê¸°
         foreach (var member in _registry.Members)
         {
             member.transform.rotation = spawnPoint.rotation;
         }
 
-        // 5. ÄÁÆ®·Ñ·¯ Å¸°Ù ¿¬°á ¹× ÀÌº¥Æ® ¹æ¼Û
+        // 5. ì»¨íŠ¸ë¡¤ëŸ¬ íƒ€ê²Ÿ ì—°ê²° ë° ì´ë²¤íŠ¸ ë°©ì†¡
         PlayerController?.ClearMouseState();
         PlayerController?.SetControlTarget(_registry.GetCurrent());
         OnActiveCharacterChanged?.Invoke(_registry.GetCurrent().gameObject);
@@ -181,12 +181,12 @@ public class PartyManager
             var member = _registry.Members[i];
             if (member == null) continue;
 
-            // ResetCharacterState ´ë½Å ReturnToTownCharacterState È£Ãâ
+            // ResetCharacterState ëŒ€ì‹  ReturnToTownCharacterState í˜¸ì¶œ
             member.ReturnToTownCharacterState(member.transform.position, member.transform.rotation);
             member.gameObject.SetActive(false);
         }
 
-        // 0¹ø(¸®´õ) Ä³¸¯ÅÍ·Î °­Á¦ ½º¿Ò
+        // 0ë²ˆ(ë¦¬ë”) ìºë¦­í„°ë¡œ ê°•ì œ ìŠ¤ì™‘
         _swapController.TrySwap(0, isForce: true);
         _registry.Members[0].gameObject.SetActive(true);
 
@@ -200,7 +200,7 @@ public class PartyManager
         _isGameEnding = false;
     }
 
-    // ¦¡¦¡ Death ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Death â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void HandleMemberDeath(BaseCharacter deadCharacter)
     {
@@ -208,7 +208,7 @@ public class PartyManager
             _deathHandler.HandleCharacterDeathAsync(deadCharacter).Forget();
     }
 
-    // ¦¡¦¡ Exp / Level ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Exp / Level â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public void AddExp(float amount) => _progress.AddExp(amount);
 
@@ -244,7 +244,7 @@ public class PartyManager
         }
     }
 
-    // ¦¡¦¡ Scene Load ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Scene Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -252,7 +252,7 @@ public class PartyManager
             OnActiveCharacterChanged?.Invoke(_registry.GetCurrent().gameObject);
     }
 
-    // ¦¡¦¡ Dispose ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Dispose â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public void Dispose()
     {
@@ -263,7 +263,7 @@ public class PartyManager
         _progress.OnExpChanged -= HandlePartyExpChanged;
     }
 
-    // ¦¡¦¡ Getters ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€ Getters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public int GetCurrentCharacterIndex() => _registry.CurrentIndex;
     public BaseCharacter GetCurrentCharacter() => _registry.GetCurrent();

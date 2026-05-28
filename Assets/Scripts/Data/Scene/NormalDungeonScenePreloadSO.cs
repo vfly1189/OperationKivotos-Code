@@ -3,31 +3,31 @@ using UnityEngine.AddressableAssets;
 [CreateAssetMenu(menuName = "Preload/NormalDungeonScenePreloadData")]
 public class NormalDungeonScenePreloadSO : SceneDataSO
 {
-    [Header("∏ ")]
+    [Header("Îßµ")]
     public AssetReferenceGameObject normalDungeonEasy;
     public AssetReferenceGameObject normalDungeonNormal;
     public AssetReferenceGameObject normalDungeonHard;
 
 
-    //[Header("∏ÛΩ∫≈Õ")]
+    //[Header("Î™¨Ïä§ÌÑ∞")]
     //public AssetReferenceGameObject monsterAR;
     //public AssetReferenceGameObject monsterRL;
     //public AssetReferenceGameObject monsterTank;
 
-    [Header("∏ﬁ¿Œ UI")]
+    [Header("Î©îÏù∏ UI")]
     //public AssetReferenceGameObject gameSceneCanvas;
     public AssetReferenceGameObject effectStage;
 
-    [Header("≈¨∏ÆæÓ UI")]
+    [Header("ÌÅ¥Î¶¨Ïñ¥ UI")]
     public AssetReferenceGameObject dungeonClearUI;
 
-    [Header("∫Í±›")]
+    [Header("Î∏åÍ∏à")]
     //public AudioClip[] fightingBgms;
     //public AudioClip successBgm;
 
     public AssetReferenceT<AudioClip>[] fightingBgms;
     public AssetReferenceT<AudioClip> successBgm;
 
-    [Header("√—æÀ")]
+    [Header("Ï¥ùÏïå")]
     public AssetReferenceGameObject bullet;
 }

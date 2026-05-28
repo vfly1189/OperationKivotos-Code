@@ -25,7 +25,7 @@ public class StatUI : MonoBehaviour
         SetExp(Managers.Party.PartyCurrentExp, Managers.Party.PartyRequiredExp);
     }
 
-    // [2] ºÎºÐ °»½Å (ÀÌº¥Æ® ¿¬°á¿ë)
+    // [2] ë¶€ë¶„ ê°±ì‹  (ì´ë²¤íŠ¸ ì—°ê²°ìš©)
     public void SetHp(float cur, float max)
     {
         _hpBar.value = (max > 0) ? cur / max : 0;

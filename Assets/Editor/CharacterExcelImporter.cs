@@ -16,7 +16,7 @@ public class CharacterExcelImporter : EditorWindow
 
         if (!File.Exists(excelPath))
         {
-            Debug.LogError("[ExcelImporter] ¿¢¼¿ ÆÄÀÏÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù: " + excelPath);
+            Debug.LogError("[ExcelImporter] ì—‘ì…€ íŒŒì¼ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤: " + excelPath);
             return;
         }
 
@@ -30,11 +30,11 @@ public class CharacterExcelImporter : EditorWindow
         {
             IWorkbook book = new XSSFWorkbook(stream);
 
-            // [ÇÙ½É Ãß°¡] ¿¢¼¿ ¼ö½ÄÀ» °è»êÇØÁÖ´Â Evaluator »ı¼º
+            // [í•µì‹¬ ì¶”ê°€] ì—‘ì…€ ìˆ˜ì‹ì„ ê³„ì‚°í•´ì£¼ëŠ” Evaluator ìƒì„±
             IFormulaEvaluator evaluator = book.GetCreationHelper().CreateFormulaEvaluator();
 
             // ==============================================================
-            // 1. Character_Stat_Table ÆÄ½Ì
+            // 1. Character_Stat_Table íŒŒì‹±
             // ==============================================================
             ISheet charSheet = GetSheetIgnoreCase(book, "Character_Stat_Table");
             if (charSheet != null)
@@ -64,7 +64,7 @@ public class CharacterExcelImporter : EditorWindow
                     charSO.key = stringID;
                     charSO.nameKR = row.GetCell(2)?.StringCellValue ?? "";
 
-                    // ¼ö½Ä Áö¿ø GetFloat È£Ãâ
+                    // ìˆ˜ì‹ ì§€ì› GetFloat í˜¸ì¶œ
                     charSO.baseHp = GetFloat(row, 3, evaluator);
                     charSO.baseAttack = GetFloat(row, 4, evaluator);
                     charSO.baseDefense = GetFloat(row, 5, evaluator);
@@ -82,11 +82,11 @@ public class CharacterExcelImporter : EditorWindow
 
                     count++;
                 }
-                Debug.Log($"[Character Import] Ä³¸¯ÅÍ SO °»½Å ¿Ï·á! (ÃÑ {count}¸í)");
+                Debug.Log($"[Character Import] ìºë¦­í„° SO ê°±ì‹  ì™„ë£Œ! (ì´ {count}ëª…)");
             }
 
             // ==============================================================
-            // 2. Common_Level_Exp_Table ÆÄ½Ì
+            // 2. Common_Level_Exp_Table íŒŒì‹±
             // ==============================================================
             ISheet expSheet = GetSheetIgnoreCase(book, "Common_Level_Exp_Table");
             if (expSheet != null)
@@ -119,11 +119,11 @@ public class CharacterExcelImporter : EditorWindow
                 if (isExpNew) AssetDatabase.CreateAsset(expSO, expAssetPath);
                 else EditorUtility.SetDirty(expSO);
 
-                Debug.Log($"[Exp Import] °æÇèÄ¡ Å×ÀÌºí SO °»½Å ¿Ï·á! (ÃÖ´ë {expCount} ·¹º§)");
+                Debug.Log($"[Exp Import] ê²½í—˜ì¹˜ í…Œì´ë¸” SO ê°±ì‹  ì™„ë£Œ! (ìµœëŒ€ {expCount} ë ˆë²¨)");
             }
 
             // ==============================================================
-            // 3. Weapon_Growth_Table ÆÄ½Ì (¸Ş¸ğ¸® ÀÓ½Ã ÀúÀå)
+            // 3. Weapon_Growth_Table íŒŒì‹± (ë©”ëª¨ë¦¬ ì„ì‹œ ì €ì¥)
             // ==============================================================
             Dictionary<int, WeaponLevelStat> growthDict = new Dictionary<int, WeaponLevelStat>();
             int maxWeaponLevel = 25;
@@ -150,7 +150,7 @@ public class CharacterExcelImporter : EditorWindow
             }
 
             // ==============================================================
-            // 4. Weapon_Stat_Table ÆÄ½Ì (WeaponDataSO »ı¼º)
+            // 4. Weapon_Stat_Table íŒŒì‹± (WeaponDataSO ìƒì„±)
             // ==============================================================
             ISheet weaponSheet = GetSheetIgnoreCase(book, "Weapon_Stat_Table");
             if (weaponSheet != null && growthDict.Count > 0)
@@ -207,11 +207,11 @@ public class CharacterExcelImporter : EditorWindow
 
                     weaponCount++;
                 }
-                Debug.Log($"[Weapon Import] ¹«±â µ¥ÀÌÅÍ SO °»½Å ¿Ï·á! (ÃÑ {weaponCount}°³)");
+                Debug.Log($"[Weapon Import] ë¬´ê¸° ë°ì´í„° SO ê°±ì‹  ì™„ë£Œ! (ì´ {weaponCount}ê°œ)");
             }
 
             // ==============================================================
-            // 5. Weapon_Enhance_Cost_Table ÆÄ½Ì
+            // 5. Weapon_Enhance_Cost_Table íŒŒì‹±
             // ==============================================================
             ISheet costSheet = GetSheetIgnoreCase(book, "Weapon_Enhance_Cost_Table");
             if (costSheet != null)
@@ -237,7 +237,7 @@ public class CharacterExcelImporter : EditorWindow
                     WeaponEnhanceCost costData = new WeaponEnhanceCost();
                     costData.TargetLevel = (int)GetFloat(row, 0, evaluator);
 
-                    // ¼ö½Ä °è»ê °á°ú¸¦ ¾ÈÀüÇÏ°Ô int·Î º¯È¯ÇØ¼­ °¡Á®¿È
+                    // ìˆ˜ì‹ ê³„ì‚° ê²°ê³¼ë¥¼ ì•ˆì „í•˜ê²Œ intë¡œ ë³€í™˜í•´ì„œ ê°€ì ¸ì˜´
                     costData.RequireGold = (int)GetFloat(row, 1, evaluator);
                     costData.Material1ID = (int)GetFloat(row, 2, evaluator);
                     costData.Material1Count = (int)GetFloat(row, 3, evaluator);
@@ -253,11 +253,11 @@ public class CharacterExcelImporter : EditorWindow
                 if (isCostNew) AssetDatabase.CreateAsset(costSO, costAssetPath);
                 else EditorUtility.SetDirty(costSO);
 
-                Debug.Log($"[Cost Import] °­È­ ºñ¿ë Å×ÀÌºí SO °»½Å ¿Ï·á! (ÃÑ {costCount}·¹º§Ä¡)");
+                Debug.Log($"[Cost Import] ê°•í™” ë¹„ìš© í…Œì´ë¸” SO ê°±ì‹  ì™„ë£Œ! (ì´ {costCount}ë ˆë²¨ì¹˜)");
             }
             else
             {
-                Debug.LogError("[ExcelImporter] 'Weapon_Enhance_Cost_Table' ½ÃÆ®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù. (¶ç¾î¾²±â È®ÀÎ)");
+                Debug.LogError("[ExcelImporter] 'Weapon_Enhance_Cost_Table' ì‹œíŠ¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤. (ë„ì–´ì“°ê¸° í™•ì¸)");
             }
 
             AssetDatabase.SaveAssets();
@@ -266,10 +266,10 @@ public class CharacterExcelImporter : EditorWindow
     }
 
     // ==============================================================
-    // ÇïÆÛ ÇÔ¼öµé
+    // í—¬í¼ í•¨ìˆ˜ë“¤
     // ==============================================================
 
-    // ½ÃÆ® ÀÌ¸§ ¾ÕµÚ °ø¹éÀ» ¹«½ÃÇÏ°í Ã£¾ÆÁÖ´Â ÇïÆÛ
+    // ì‹œíŠ¸ ì´ë¦„ ì•ë’¤ ê³µë°±ì„ ë¬´ì‹œí•˜ê³  ì°¾ì•„ì£¼ëŠ” í—¬í¼
     private static ISheet GetSheetIgnoreCase(IWorkbook book, string sheetName)
     {
         for (int i = 0; i < book.NumberOfSheets; i++)
@@ -283,7 +283,7 @@ public class CharacterExcelImporter : EditorWindow
         return null;
     }
 
-    // ¼¿ °ªÀ» ¼ö½Ä(Formula) Æ÷ÇÔÇÏ¿© ¾ÈÀüÇÏ°Ô floatÀ¸·Î ÃßÃâÇÏ´Â ÇïÆÛ
+    // ì…€ ê°’ì„ ìˆ˜ì‹(Formula) í¬í•¨í•˜ì—¬ ì•ˆì „í•˜ê²Œ floatìœ¼ë¡œ ì¶”ì¶œí•˜ëŠ” í—¬í¼
     private static float GetFloat(IRow row, int cellIndex, IFormulaEvaluator evaluator)
     {
         ICell cell = row.GetCell(cellIndex, MissingCellPolicy.RETURN_BLANK_AS_NULL);
@@ -305,7 +305,7 @@ public class CharacterExcelImporter : EditorWindow
 
                 case CellType.Formula:
                     {
-                        // ¼ö½Ä °è»ê
+                        // ìˆ˜ì‹ ê³„ì‚°
                         var v = evaluator.Evaluate(cell);
                         if (v == null) return 0f;
 
@@ -326,7 +326,7 @@ public class CharacterExcelImporter : EditorWindow
         }
         catch
         {
-            // ¿À·ù ¹ß»ı ½Ã Å©·¡½Ã ¹æÁö
+            // ì˜¤ë¥˜ ë°œìƒ ì‹œ í¬ë˜ì‹œ ë°©ì§€
             return 0f;
         }
     }

@@ -2,22 +2,22 @@ using UnityEngine;
 
 public struct DamageInfo
 {
-    public float Amount;            // µ¥¹ÌÁö ¾ç
-    public GameObject Attacker;     // °ø°ÝÀÚ
-    public Vector3 HitPoint;        // Å¸°Ý À§Ä¡ (ÇÇ°Ý ÀÌÆåÆ® »ý¼º À§Ä¡)
-    public bool IsCritical; // Ä¡¸íÅ¸ ¿©ºÎ¸¦ µ¥¹ÌÁö¸¦ ÁÙ ¶§ ¹Ì¸® °è»êÇØ¼­ ³Ñ±è
-                            //public DamageType Type;      // ¹°¸®, ¸¶¹ý, °íÁ¤ µ¥¹ÌÁö µî Ãß°¡ °¡´É
+    public float Amount;            // ë°ë¯¸ì§€ ì–‘
+    public GameObject Attacker;     // ê³µê²©ìž
+    public Vector3 HitPoint;        // íƒ€ê²© ìœ„ì¹˜ (í”¼ê²© ì´íŽ™íŠ¸ ìƒì„± ìœ„ì¹˜)
+    public bool IsCritical; // ì¹˜ëª…íƒ€ ì—¬ë¶€ë¥¼ ë°ë¯¸ì§€ë¥¼ ì¤„ ë•Œ ë¯¸ë¦¬ ê³„ì‚°í•´ì„œ ë„˜ê¹€
+                            //public DamageType Type;      // ë¬¼ë¦¬, ë§ˆë²•, ê³ ì • ë°ë¯¸ì§€ ë“± ì¶”ê°€ ê°€ëŠ¥
 
     public DamageInfo(float amount, GameObject attacker, bool isCritical = false)
     {
         Amount = amount;
         Attacker = attacker;
-        HitPoint = Vector3.zero; // -> Ãæµ¹ÇÒ¶§ Ã¤¿ö³ÖÀ»°ÅÀÓ
+        HitPoint = Vector3.zero; // -> ì¶©ëŒí• ë•Œ ì±„ì›Œë„£ì„ê±°ìž„
         IsCritical = isCritical;
     }
 }
 
-// ¸ðµç "¸ÂÀ» ¼ö ÀÖ´Â ¿ÀºêÁ§Æ®"´Â ÀÌ ÀÎÅÍÆäÀÌ½º¸¦ »ó¼Ó¹ÞÀ½
+// ëª¨ë“  "ë§žì„ ìˆ˜ ìžˆëŠ” ì˜¤ë¸Œì íŠ¸"ëŠ” ì´ ì¸í„°íŽ˜ì´ìŠ¤ë¥¼ ìƒì†ë°›ìŒ
 public interface IDamageable
 {
     void TakeDamage(DamageInfo damageInfo);

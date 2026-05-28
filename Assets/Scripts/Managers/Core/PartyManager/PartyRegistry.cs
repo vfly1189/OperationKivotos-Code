@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-// ¼ø¼öÇÏ°Ô ÆÄÆ¼ ¸â¹ö ¸ñ·Ï¸¸ °ü¸® (µ¥ÀÌÅÍ ÄÁÅ×ÀÌ³Ê ¿ªÇÒ)
+// ìˆœìˆ˜í•˜ê²Œ íŒŒí‹° ë©¤ë²„ ëª©ë¡ë§Œ ê´€ë¦¬ (ë°ì´í„° ì»¨í…Œì´ë„ˆ ì—­í• )
 public class PartyRegistry
 {
     public List<BaseCharacter> Members { get; private set; }

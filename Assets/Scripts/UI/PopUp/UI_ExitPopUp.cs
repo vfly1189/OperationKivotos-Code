@@ -24,7 +24,7 @@ public class UI_ExitPopUp : UI_PopUp
     {
         base.Init();
 
-        // ¹öÆ° ÀÌº¥Æ® ¹ÙÀÎµù
+        // ë²„íŠ¼ ì´ë²¤íŠ¸ ë°”ì¸ë”©
         if (_yesButton != null)
             _yesButton.onClick.AddListener(OnYesClicked);
 
@@ -32,7 +32,7 @@ public class UI_ExitPopUp : UI_PopUp
             _noButton.onClick.AddListener(OnNoClicked);
     }
 
-    // ¿ÜºÎ¿¡¼­ Äİ¹é ¼³Á¤
+    // ì™¸ë¶€ì—ì„œ ì½œë°± ì„¤ì •
     public void SetCallbacks(Action onConfirm, Action onCancel = null)
     {
         _onConfirm = onConfirm;
@@ -44,7 +44,7 @@ public class UI_ExitPopUp : UI_PopUp
         Debug.Log("Exit Confirmed");
         _onConfirm?.Invoke();
 
-        // °ÔÀÓ Á¾·á
+        // ê²Œì„ ì¢…ë£Œ
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

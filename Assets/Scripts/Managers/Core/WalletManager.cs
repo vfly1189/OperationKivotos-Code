@@ -10,44 +10,44 @@ public enum CurrencyType
 
 public class WalletManager
 {
-    // ½ÇÁ¦ ÀçÈ­°¡ ÀúÀåµÇ´Â µñ¼Å³Ê¸®
+    // ì‹¤ì œ ì¬í™”ê°€ ì €ì¥ë˜ëŠ” ë”•ì…”ë„ˆë¦¬
     private Dictionary<CurrencyType, int> _currencies = new Dictionary<CurrencyType, int>();
 
-    // ÀçÈ­°¡ º¯µ¿µÉ ¶§ UI µîÀ» ¾÷µ¥ÀÌÆ®ÇÏ±â À§ÇÑ ÀÌº¥Æ®
+    // ì¬í™”ê°€ ë³€ë™ë  ë•Œ UI ë“±ì„ ì—…ë°ì´íŠ¸í•˜ê¸° ìœ„í•œ ì´ë²¤íŠ¸
     public event Action<CurrencyType, int> OnCurrencyChanged;
 
     public void Init()
     {
-        // ÃÊ±âÈ­ ½Ã ¸ğµç ÀçÈ­¸¦ 0À¸·Î ¼¼ÆÃ (¶Ç´Â ¼¼ÀÌºê ÆÄÀÏ¿¡¼­ ·Îµå)
+        // ì´ˆê¸°í™” ì‹œ ëª¨ë“  ì¬í™”ë¥¼ 0ìœ¼ë¡œ ì„¸íŒ… (ë˜ëŠ” ì„¸ì´ë¸Œ íŒŒì¼ì—ì„œ ë¡œë“œ)
         foreach (CurrencyType type in Enum.GetValues(typeof(CurrencyType)))
         {
             _currencies[type] = 0;
         }
 
-        // TODO: Managers.Data.Load() °°Àº °÷¿¡¼­ ÀúÀåµÈ ÀçÈ­ ºÒ·¯¿À±â
-        // ÀÓ½Ã·Î Å×½ºÆ®¿ë Áö±Ş
+        // TODO: Managers.Data.Load() ê°™ì€ ê³³ì—ì„œ ì €ì¥ëœ ì¬í™” ë¶ˆëŸ¬ì˜¤ê¸°
+        // ì„ì‹œë¡œ í…ŒìŠ¤íŠ¸ìš© ì§€ê¸‰
         AddCurrency(CurrencyType.Credit, 50000000);
     }
 
-    // ÀçÈ­ È®ÀÎ
+    // ì¬í™” í™•ì¸
     public int GetCurrency(CurrencyType type)
     {
         return _currencies.TryGetValue(type, out int amount) ? amount : 0;
     }
 
-    // ÀçÈ­ È¹µæ (´øÀü Å¬¸®¾î, Äù½ºÆ® º¸»ó µî)
+    // ì¬í™” íšë“ (ë˜ì „ í´ë¦¬ì–´, í€˜ìŠ¤íŠ¸ ë³´ìƒ ë“±)
     public void AddCurrency(CurrencyType type, int amount)
     {
         if (amount < 0) return;
 
         _currencies[type] += amount;
-        Debug.Log($"[Currency] È¹µæ: {type} +{amount} (ÇöÀç: {_currencies[type]})");
+        Debug.Log($"[Currency] íšë“: {type} +{amount} (í˜„ì¬: {_currencies[type]})");
 
         OnCurrencyChanged?.Invoke(type, _currencies[type]);
     }
 
-    // ÀçÈ­ ¼Ò¸ğ (°­È­, »óÁ¡ ±¸¸Å µî)
-    // ¸®ÅÏ°ªÀÌ true¸é ¼Ò¸ğ ¼º°ø, false¸é ÀÜ¾× ºÎÁ·À¸·Î ½ÇÆĞ
+    // ì¬í™” ì†Œëª¨ (ê°•í™”, ìƒì  êµ¬ë§¤ ë“±)
+    // ë¦¬í„´ê°’ì´ trueë©´ ì†Œëª¨ ì„±ê³µ, falseë©´ ì”ì•¡ ë¶€ì¡±ìœ¼ë¡œ ì‹¤íŒ¨
     public bool ConsumeCurrency(CurrencyType type, int amount)
     {
         if (amount < 0) return false;
@@ -55,23 +55,23 @@ public class WalletManager
         if (GetCurrency(type) >= amount)
         {
             _currencies[type] -= amount;
-            Debug.Log($"[Currency] ¼Ò¸ğ: {type} -{amount} (ÇöÀç: {_currencies[type]})");
+            Debug.Log($"[Currency] ì†Œëª¨: {type} -{amount} (í˜„ì¬: {_currencies[type]})");
 
             OnCurrencyChanged?.Invoke(type, _currencies[type]);
             return true;
         }
 
-        Debug.LogWarning($"[Currency] ÀÜ¾× ºÎÁ·: {type} (ÇÊ¿ä: {amount}, ÇöÀç: {GetCurrency(type)})");
-        return false; // ÀÜ¾× ºÎÁ·
+        Debug.LogWarning($"[Currency] ì”ì•¡ ë¶€ì¡±: {type} (í•„ìš”: {amount}, í˜„ì¬: {GetCurrency(type)})");
+        return false; // ì”ì•¡ ë¶€ì¡±
     }
 
-    // ´ÙÁß ÀçÈ­ µ¿½Ã ¼Ò¸ğ Ã¼Å© (°­È­ÇÒ ¶§ °ñµå+°­È­¼® µÑ ´Ù ÇÊ¿äÇÑ °æ¿ì)
+    // ë‹¤ì¤‘ ì¬í™” ë™ì‹œ ì†Œëª¨ ì²´í¬ (ê°•í™”í•  ë•Œ ê³¨ë“œ+ê°•í™”ì„ ë‘˜ ë‹¤ í•„ìš”í•œ ê²½ìš°)
     public bool CanConsumeMultiple(CurrencyType type1, int amount1, CurrencyType type2, int amount2)
     {
         return GetCurrency(type1) >= amount1 && GetCurrency(type2) >= amount2;
     }
 
-    // ´ÙÁß ÀçÈ­ µ¿½Ã ¼Ò¸ğ ½ÇÇà
+    // ë‹¤ì¤‘ ì¬í™” ë™ì‹œ ì†Œëª¨ ì‹¤í–‰
     public bool TryConsumeMultiple(CurrencyType type1, int amount1, CurrencyType type2, int amount2)
     {
         if (CanConsumeMultiple(type1, amount1, type2, amount2))
@@ -108,7 +108,7 @@ public class WalletManager
         foreach (WalletDataEntry entry in save.currencyData)
         {
             _currencies[entry.currencyType] = entry.amount;
-            OnCurrencyChanged?.Invoke(entry.currencyType, entry.amount); // ¡ç Ãß°¡
+            OnCurrencyChanged?.Invoke(entry.currencyType, entry.amount); // â† ì¶”ê°€
         }
     }
 }

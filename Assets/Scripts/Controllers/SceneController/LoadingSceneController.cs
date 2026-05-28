@@ -2,8 +2,8 @@ using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Cysharp.Threading.Tasks; // [Ãß°¡]
-using System.Threading; // [Ãß°¡]
+using Cysharp.Threading.Tasks; // [ì¶”ê°€]
+using System.Threading; // [ì¶”ê°€]
 
 public class LoadingSceneController : BaseScene
 {
@@ -24,10 +24,10 @@ public class LoadingSceneController : BaseScene
 
     private float _startValue = 0f;
 
-    // [Ãß°¡] Á¡(.) ¾Ö´Ï¸ŞÀÌ¼Ç Ãë¼Ò °ü¸®¸¦ À§ÇÑ Àü¿ª ÅäÅ« ¼Ò½º
+    // [ì¶”ê°€] ì (.) ì• ë‹ˆë©”ì´ì…˜ ì·¨ì†Œ ê´€ë¦¬ë¥¼ ìœ„í•œ ì „ì—­ í† í° ì†ŒìŠ¤
     private CancellationTokenSource _dotAnimCts;
 
-    // [ÃÖÀûÈ­] °¡ºñÁö »ı¼º ¹æÁö¸¦ À§ÇØ Á¡ ¹®ÀÚ¿­À» ¹Ì¸® Ä³½Ì
+    // [ìµœì í™”] ê°€ë¹„ì§€ ìƒì„± ë°©ì§€ë¥¼ ìœ„í•´ ì  ë¬¸ìì—´ì„ ë¯¸ë¦¬ ìºì‹±
     private readonly string[] _loadingDotStrings = new string[]
     {
         "Now Loading",
@@ -41,7 +41,7 @@ public class LoadingSceneController : BaseScene
         SetRandomImage();
         _barFill.value = _startValue != 0 ? _startValue : 0f;
 
-        // [ÇÙ½É 1] CancellationTokenSource ÃÊ±âÈ­ ¹× ¾Ö´Ï¸ŞÀÌ¼Ç ½ÃÀÛ
+        // [í•µì‹¬ 1] CancellationTokenSource ì´ˆê¸°í™” ë° ì• ë‹ˆë©”ì´ì…˜ ì‹œì‘
         _dotAnimCts = new CancellationTokenSource();
         AnimateLoadingDotsAsync(_dotAnimCts.Token).Forget();
     }
@@ -60,7 +60,7 @@ public class LoadingSceneController : BaseScene
 
         if (_percentText != null)
         {
-            _percentText.SetText("{0}%", percent); // SetText È°¿ë
+            _percentText.SetText("{0}%", percent); // SetText í™œìš©
         }
 
         if (_resourceNameText != null)
@@ -68,12 +68,12 @@ public class LoadingSceneController : BaseScene
             if (string.IsNullOrEmpty(fileName))
                 _resourceNameText.text = "Loading...";
             else
-                _resourceNameText.text = $"Loading: {fileName}"; // ÆÄÀÏ¸íÀº °¡º¯ÀûÀÌ¹Ç·Î º¸·ù
+                _resourceNameText.text = $"Loading: {fileName}"; // íŒŒì¼ëª…ì€ ê°€ë³€ì ì´ë¯€ë¡œ ë³´ë¥˜
         }
 
         if (_percentText == null && _resourceNameText == null)
         {
-            // [ÇÙ½É 2] Á¡ Âï±â ¾Ö´Ï¸ŞÀÌ¼Ç °­Á¦ Áß´Ü
+            // [í•µì‹¬ 2] ì  ì°ê¸° ì• ë‹ˆë©”ì´ì…˜ ê°•ì œ ì¤‘ë‹¨
             if (_dotAnimCts != null)
             {
                 _dotAnimCts.Cancel();
@@ -81,7 +81,7 @@ public class LoadingSceneController : BaseScene
                 _dotAnimCts = null;
             }
 
-            // [ÃÖÀûÈ­] SetText¿Í ¼­½Ä ÁöÁ¤ÀÚ¸¦ »ç¿ëÇÏ¿© °¡ºñÁö °¨¼Ò
+            // [ìµœì í™”] SetTextì™€ ì„œì‹ ì§€ì •ìë¥¼ ì‚¬ìš©í•˜ì—¬ ê°€ë¹„ì§€ ê°ì†Œ
             if (string.IsNullOrEmpty(fileName))
                 _loadingText.SetText("Loading... ({0}%)", percent);
             else
@@ -89,7 +89,7 @@ public class LoadingSceneController : BaseScene
         }
     }
 
-    // [ÇÙ½É 3] ÄÚ·çÆ¾(IEnumerator)À» UniTaskVoid·Î º¯°æ
+    // [í•µì‹¬ 3] ì½”ë£¨í‹´(IEnumerator)ì„ UniTaskVoidë¡œ ë³€ê²½
     private async UniTaskVoid AnimateLoadingDotsAsync(CancellationToken token)
     {
         int dotCount = 0;
@@ -98,10 +98,10 @@ public class LoadingSceneController : BaseScene
         {
             dotCount = (dotCount + 1) % 4;
 
-            // Ä³½ÌµÈ ¹®ÀÚ¿­À» »ç¿ëÇÏ¿© °¡ºñÁö 0 ÇÒ´ç
+            // ìºì‹±ëœ ë¬¸ìì—´ì„ ì‚¬ìš©í•˜ì—¬ ê°€ë¹„ì§€ 0 í• ë‹¹
             _loadingText.text = _loadingDotStrings[dotCount];
 
-            // µô·¹ÀÌ Áß¿¡ Ãë¼Ò ¿äÃ»ÀÌ µé¾î¿À¸é ¿¡·¯ ¾øÀÌ Á¶¿ëÈ÷ Á¾·á
+            // ë”œë ˆì´ ì¤‘ì— ì·¨ì†Œ ìš”ì²­ì´ ë“¤ì–´ì˜¤ë©´ ì—ëŸ¬ ì—†ì´ ì¡°ìš©íˆ ì¢…ë£Œ
             bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(_dotAnimSpeed), cancellationToken: token).SuppressCancellationThrow();
             if (isCanceled) return;
         }
@@ -114,7 +114,7 @@ public class LoadingSceneController : BaseScene
 
     public override void Clear()
     {
-        // ¾À ÀüÈ¯ ½Ã ³²¾ÆÀÖ´Â ÅäÅ«ÀÌ ÀÖ´Ù¸é È®½ÇÇÏ°Ô ÆÄ±«
+        // ì”¬ ì „í™˜ ì‹œ ë‚¨ì•„ìˆëŠ” í† í°ì´ ìˆë‹¤ë©´ í™•ì‹¤í•˜ê²Œ íŒŒê´´
         if (_dotAnimCts != null)
         {
             _dotAnimCts.Cancel();

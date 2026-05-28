@@ -12,15 +12,15 @@ public class PartySlotUI : MonoBehaviour
 
     private BaseCharacter _connectedCharacter;
 
-    // µ¥ÀÌÅÍ °»½Å ¸Ş¼­µåµéÀ» ÀÌ°÷À¸·Î ÀÌµ¿
+    // ë°ì´í„° ê°±ì‹  ë©”ì„œë“œë“¤ì„ ì´ê³³ìœ¼ë¡œ ì´ë™
     public void SetCharacterName(string name) => _nameText.text = name;
     public void SetEmblem(Sprite sprite) => _emblemImage.sprite = sprite;
 
 
-    // [ÇÙ½É 3] ½½·Ô ½º½º·Î°¡ Ä³¸¯ÅÍ¸¦ ±â¾ïÇÏ°í ÀÌº¥Æ®¸¦ ¾ÈÀüÇÏ°Ô ±¸µ¶/ÇØÁ¦ÇÔ
+    // [í•µì‹¬ 3] ìŠ¬ë¡¯ ìŠ¤ìŠ¤ë¡œê°€ ìºë¦­í„°ë¥¼ ê¸°ì–µí•˜ê³  ì´ë²¤íŠ¸ë¥¼ ì•ˆì „í•˜ê²Œ êµ¬ë…/í•´ì œí•¨
     public void SubscribeToCharacter(BaseCharacter character)
     {
-        // ±âÁ¸ ¿¬°á ÇØÁ¦
+        // ê¸°ì¡´ ì—°ê²° í•´ì œ
         if (_connectedCharacter != null && _connectedCharacter.Stat != null)
         {
             _connectedCharacter.Stat.OnHpChanged -= UpdateHP;
@@ -34,7 +34,7 @@ public class PartySlotUI : MonoBehaviour
             _connectedCharacter.Stat.OnHpChanged += UpdateHP;
             _connectedCharacter.Stat.OnUltimateStateChanged += SetUltimateReady;
 
-            // ÃÊ±âÈ­
+            // ì´ˆê¸°í™”
             UpdateHP(_connectedCharacter.Stat.CurrentHp, _connectedCharacter.Stat.MaxHp.Value);
             bool isReady = (_connectedCharacter.Stat.CurrentQSkillCoolTime <= 0) &&
                            (_connectedCharacter.Stat.CurrentEnergy >= _connectedCharacter.Stat.MaxEnergy.Value);
@@ -42,7 +42,7 @@ public class PartySlotUI : MonoBehaviour
         }
     }
 
-    // ¶÷´Ù ´ë½Å ¾µ Á¤½Ä ÀÌº¥Æ® ÇÚµé·¯µé
+    // ëŒë‹¤ ëŒ€ì‹  ì“¸ ì •ì‹ ì´ë²¤íŠ¸ í•¸ë“¤ëŸ¬ë“¤
     private void UpdateHP(float current, float max)
     {
         if (_hpBar != null && max > 0)

@@ -4,11 +4,11 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Game/Preload/SceneData")]
 public class SceneDataSO : ScriptableObject
 {
-    [Header("±âº» ¼³Á¤")]
-    public string sceneAddress;      // Addressable Scene Key ( ÀÌ°Å´Â ÀÏ´Ü ³ªÁß¿¡ )
+    [Header("ê¸°ë³¸ ì„¤ì •")]
+    public string sceneAddress;      // Addressable Scene Key ( ì´ê±°ëŠ” ì¼ë‹¨ ë‚˜ì¤‘ì— )
     public Define.Scene sceneType; 
 
-    [Header("¸Ş¸ğ¸® °ü¸®")]
-    public string[] preloadLabels;   // ¹Ì¸® ·ÎµåÇÒ ¿¡¼Â ±×·ì -> Label
-    public bool clearPreviousMemory = true; // ÀÌÀü ¾À ¸Ş¸ğ¸®¸¦ ´Ù ³¯¸±Áö ¿©ºÎ
+    [Header("ë©”ëª¨ë¦¬ ê´€ë¦¬")]
+    public string[] preloadLabels;   // ë¯¸ë¦¬ ë¡œë“œí•  ì—ì…‹ ê·¸ë£¹ -> Label
+    public bool clearPreviousMemory = true; // ì´ì „ ì”¬ ë©”ëª¨ë¦¬ë¥¼ ë‹¤ ë‚ ë¦´ì§€ ì—¬ë¶€
 }

@@ -21,14 +21,14 @@ public class SkillIconUI : MonoBehaviour
     }
 
 
-    // --- [Update¿ë] ¸Å ÇÁ·¹ÀÓ È£Ãâ: ÄğÅ¸ÀÓ Ç¥½Ã ---
+    // --- [Updateìš©] ë§¤ í”„ë ˆì„ í˜¸ì¶œ: ì¿¨íƒ€ì„ í‘œì‹œ ---
     public void UpdateCooldown(float currentCool, float maxCool)
     {
         if (currentCool > 0)
         {
             if (!_coolTimeText.gameObject.activeSelf) _coolTimeText.gameObject.SetActive(true);
 
-            // [ÇÙ½É 4] ToString() ´ë½Å TMPÀÇ SetText Æ÷¸ËÆÃ »ç¿ë (°¡ºñÁö 0 ¶Ç´Â ±Ø¼ÒÈ­)
+            // [í•µì‹¬ 4] ToString() ëŒ€ì‹  TMPì˜ SetText í¬ë§·íŒ… ì‚¬ìš© (ê°€ë¹„ì§€ 0 ë˜ëŠ” ê·¹ì†Œí™”)
             _coolTimeText.SetText("{0:0.0}", currentCool);
             _coolTimeRing.fillAmount = currentCool / maxCool;
         }
@@ -42,17 +42,17 @@ public class SkillIconUI : MonoBehaviour
         }
     }
 
-    // --- [ÀÌº¥Æ®¿ë] ¿¡³ÊÁö º¯°æ ½Ã È£Ãâ ---
+    // --- [ì´ë²¤íŠ¸ìš©] ì—ë„ˆì§€ ë³€ê²½ ì‹œ í˜¸ì¶œ ---
     public void UpdateEnergy(float currentEnergy, float maxEnergy)
     {
-        //Debug.Log($"¿¡³ÊÁö º¯µ¿ : {currentEnergy} , {maxEnergy}");
+        //Debug.Log($"ì—ë„ˆì§€ ë³€ë™ : {currentEnergy} , {maxEnergy}");
         if (_energyFill != null && maxEnergy > 0)
         {
             _energyFill.fillAmount = currentEnergy / maxEnergy;
         }
     }
 
-    // --- [ÀÌº¥Æ®¿ë] ±Ã±Ø±â ÁØºñ »óÅÂ º¯°æ ½Ã È£Ãâ ---
+    // --- [ì´ë²¤íŠ¸ìš©] ê¶ê·¹ê¸° ì¤€ë¹„ ìƒíƒœ ë³€ê²½ ì‹œ í˜¸ì¶œ ---
     public void SetUltimateReady(bool isReady)
     {
         if (_readyGlow != null && _readyGlow.gameObject.activeSelf != isReady)
@@ -61,8 +61,8 @@ public class SkillIconUI : MonoBehaviour
         }
     }
 
-    // [2] ÀÌº¥Æ®¿ë: ¿¡³ÊÁö & ÁØºñ »óÅÂ °»½Å (°¡²û È£ÃâµÊ)
-    // ÄğÅ¸ÀÓÀÌ ³¡³µÀ» ¶§µµ »óÅÂ Ã¼Å©¸¦ À§ÇØ È£ÃâÇØÁà¾ß ÇÔ
+    // [2] ì´ë²¤íŠ¸ìš©: ì—ë„ˆì§€ & ì¤€ë¹„ ìƒíƒœ ê°±ì‹  (ê°€ë” í˜¸ì¶œë¨)
+    // ì¿¨íƒ€ì„ì´ ëë‚¬ì„ ë•Œë„ ìƒíƒœ ì²´í¬ë¥¼ ìœ„í•´ í˜¸ì¶œí•´ì¤˜ì•¼ í•¨
     public void UpdateEnergyState(float currentEnergy, float maxEnergy, bool isSkillReady)
     {
         if (_energyFill != null && maxEnergy > 0)
@@ -72,7 +72,7 @@ public class SkillIconUI : MonoBehaviour
 
         if (_readyGlow != null)
         {
-            // ÀÌ¹Ì ÄÑÁ®ÀÖÀ¸¸é °Çµå¸®Áö ¾ÊÀ½ (SetActive ÃÖÀûÈ­)
+            // ì´ë¯¸ ì¼œì ¸ìˆìœ¼ë©´ ê±´ë“œë¦¬ì§€ ì•ŠìŒ (SetActive ìµœì í™”)
             if (_readyGlow.gameObject.activeSelf != isSkillReady)
                 _readyGlow.gameObject.SetActive(isSkillReady);
         }
@@ -80,12 +80,12 @@ public class SkillIconUI : MonoBehaviour
 
     public void RefreshUI(float currentCool, float maxCool, float currentEnergy = -1, float maxEnergy = -1)
     {
-        // 1. ÄğÅ¸ÀÓ Ã³¸®
+        // 1. ì¿¨íƒ€ì„ ì²˜ë¦¬
         if (currentCool > 0)
         {
             //_cooldownCover.fillAmount = currentCool / maxCool;
             _coolTimeText.gameObject.SetActive(true);
-            _coolTimeText.text = currentCool.ToString("0.0"); // ¼Ò¼öÁ¡ 1ÀÚ¸®
+            _coolTimeText.text = currentCool.ToString("0.0"); // ì†Œìˆ˜ì  1ìë¦¬
             _coolTimeRing.fillAmount = currentCool / maxCool;
         }
         else
@@ -95,15 +95,15 @@ public class SkillIconUI : MonoBehaviour
             _coolTimeRing.fillAmount = currentCool / maxCool;
         }
 
-        // 2. ¿¡³ÊÁö Ã³¸® (Q½ºÅ³ ±Ã±Ø±â¿ë)
+        // 2. ì—ë„ˆì§€ ì²˜ë¦¬ (QìŠ¤í‚¬ ê¶ê·¹ê¸°ìš©)
         if (_energyFill != null && maxEnergy > 0)
         {
             float ratio = currentEnergy / maxEnergy;
             _energyFill.fillAmount = ratio;
 
-            //Debug.Log($"SkillUI: ¿¡³ÊÁö°ª{_energyFill.fillAmount}");
+            //Debug.Log($"SkillUI: ì—ë„ˆì§€ê°’{_energyFill.fillAmount}");
 
-            // ±Ã±Ø±â ÁØºñ ¿Ï·á (ÄğÅ¸ÀÓ X + ¿¡³ÊÁö O)
+            // ê¶ê·¹ê¸° ì¤€ë¹„ ì™„ë£Œ (ì¿¨íƒ€ì„ X + ì—ë„ˆì§€ O)
             bool isReady = (currentCool <= 0) && (ratio >= 1.0f);
 
             if (_readyGlow != null)

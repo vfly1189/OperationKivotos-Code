@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// [Ãß°¡] UniTask
+// [ì¶”ê°€] UniTask
 using Cysharp.Threading.Tasks;
 using System;
 
@@ -12,19 +12,19 @@ public class DataManager
     //public Dictionary<int, SpawnerData> SpawnerDict { get; private set; } = new Dictionary<int, SpawnerData>();
     //public Dictionary<int, MonsterData> MonsterDict { get; private set; } = new Dictionary<int, MonsterData>();
 
-    // [ÇÙ½É º¯°æ] ¸ğµç Á¾·ùÀÇ µñ¼Å³Ê¸®¸¦ ´ã´Â "¸¸´É ¹Ù±¸´Ï"
-    // Key: µ¥ÀÌÅÍ Å¬·¡½º Å¸ÀÔ (¿¹: typeof(MonsterData))
-    // Value: ÇØ´ç µ¥ÀÌÅÍ¸¦ ´ãÀº µñ¼Å³Ê¸® °´Ã¼ (object·Î ¾÷Ä³½ºÆÃÇÏ¿© ÀúÀå)
+    // [í•µì‹¬ ë³€ê²½] ëª¨ë“  ì¢…ë¥˜ì˜ ë”•ì…”ë„ˆë¦¬ë¥¼ ë‹´ëŠ” "ë§ŒëŠ¥ ë°”êµ¬ë‹ˆ"
+    // Key: ë°ì´í„° í´ë˜ìŠ¤ íƒ€ì… (ì˜ˆ: typeof(MonsterData))
+    // Value: í•´ë‹¹ ë°ì´í„°ë¥¼ ë‹´ì€ ë”•ì…”ë„ˆë¦¬ ê°ì²´ (objectë¡œ ì—…ìºìŠ¤íŒ…í•˜ì—¬ ì €ì¥)
     private Dictionary<Type, object> _dataDicts = new Dictionary<Type, object>();
 
 
-    // [ÇÙ½É 1] ÄÚ·çÆ¾ ´ë½Å UniTask·Î ¼±¾ğ
+    // [í•µì‹¬ 1] ì½”ë£¨í‹´ ëŒ€ì‹  UniTaskë¡œ ì„ ì–¸
     public async UniTask InitAsync()
     {
-        // Addressable¿¡¼­ ÀĞ¾î¿Ã ÀÛ¾÷ ¸®½ºÆ®
+        // Addressableì—ì„œ ì½ì–´ì˜¬ ì‘ì—… ë¦¬ìŠ¤íŠ¸
         var tasks = new List<UniTask>();
 
-        // [¸®ÆÑÅä¸µ] µ¥ÀÌÅÍ Ãß°¡ ½Ã ¿©±â¿¡ ÇÑ ÁÙ¸¸ ¾²¸é ³¡!
+        // [ë¦¬íŒ©í† ë§] ë°ì´í„° ì¶”ê°€ ì‹œ ì—¬ê¸°ì— í•œ ì¤„ë§Œ ì“°ë©´ ë!
         //tasks.Add(LoadAndCacheJsonAsync<WeaponDataLoader, string, WeaponData>("Character_Weapon_Data"));
         tasks.Add(LoadAndCacheJsonAsync<WeaponEnhanceMentDataLoader, int, EnhancementRateData>("Weapon_Enhancement_Rate_Data"));
         tasks.Add(LoadAndCacheJsonAsync<SpawnerDataLoader, int, SpawnerData>("SpawnerData"));
@@ -32,7 +32,7 @@ public class DataManager
         //tasks.Add(LoadAndCacheJsonAsync<MonsterDataLoader, int, MonsterData>("MonsterData"));
 
 
-        // ¾ÆÀÌÅÛ SO¸¦ ·ÎµåÇÏ°í ½Í´Ù¸é?
+        // ì•„ì´í…œ SOë¥¼ ë¡œë“œí•˜ê³  ì‹¶ë‹¤ë©´?
         tasks.Add(LoadAndCacheSOAsync<ItemDatabaseSO>("ItemDatabase"));
         tasks.Add(LoadAndCacheSOAsync<CharacterExpTableSO>("CharacterExpTable"));
         tasks.Add(LoadAndCacheSOAsync<WeaponEnhanceCostTableSO>("WeaponEnhanceCostTable"));
@@ -40,16 +40,16 @@ public class DataManager
         tasks.Add(LoadAndCacheSOAsync<MonsterDatabaseSO>("MonsterDatabase"));
         tasks.Add(LoadAndCacheSOAsync<DropTableDatabaseSO>("DropTableDatabase"));
         tasks.Add(LoadAndCacheSOAsync<DungeonDatabaseSO>("DungeonDatabase"));
-        // º´·Ä·Î ÇÑ ¹æ¿¡ ´Ù¿î·Îµå ¹× ÆÄ½Ì
+        // ë³‘ë ¬ë¡œ í•œ ë°©ì— ë‹¤ìš´ë¡œë“œ ë° íŒŒì‹±
         await UniTask.WhenAll(tasks);
 
-        Debug.Log($"DataManager Init Complete: ÃÑ {_dataDicts.Count}°³ÀÇ µ¥ÀÌÅÍ Å×ÀÌºí ·Îµå ¿Ï·á.");
+        Debug.Log($"DataManager Init Complete: ì´ {_dataDicts.Count}ê°œì˜ ë°ì´í„° í…Œì´ë¸” ë¡œë“œ ì™„ë£Œ.");
     }
 
 
 
     // =========================================================
-    // SO ÆÄÀÏÀ» Addressables·Î ·ÎµåÇÏ°í µñ¼Å³Ê¸®·Î ºĞÇØÇÏ¿© ¹Ù±¸´Ï¿¡ ´ã´Â ÇÔ¼ö
+    // SO íŒŒì¼ì„ Addressablesë¡œ ë¡œë“œí•˜ê³  ë”•ì…”ë„ˆë¦¬ë¡œ ë¶„í•´í•˜ì—¬ ë°”êµ¬ë‹ˆì— ë‹´ëŠ” í•¨ìˆ˜
     // =========================================================
     private async UniTask LoadAndCacheSOAsync<T>(string addressableKey) where T : ScriptableObject, IDataCacheable
     {
@@ -57,57 +57,57 @@ public class DataManager
 
         if (soData != null)
         {
-            // ÀÎÅÍÆäÀÌ½º ÇÔ¼ö¸¦ È£ÃâÇÏ¿© °¢ SO°¡ ¾Ë¾Æ¼­ ¹Ù±¸´Ï¿¡ ´ãµµ·Ï Áö½Ã
+            // ì¸í„°í˜ì´ìŠ¤ í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ì—¬ ê° SOê°€ ì•Œì•„ì„œ ë°”êµ¬ë‹ˆì— ë‹´ë„ë¡ ì§€ì‹œ
             soData.CacheData(_dataDicts);
         }
         else
         {
-            Debug.LogError($"[DataManager] SO ·Îµå ½ÇÆĞ: {addressableKey} (Type: {typeof(T).Name})");
+            Debug.LogError($"[DataManager] SO ë¡œë“œ ì‹¤íŒ¨: {addressableKey} (Type: {typeof(T).Name})");
         }
     }
 
-    // (Âü°í¿ë) ±âÁ¸ JSON ·Î´õ (ÀÌ¸§¸¸ Á» ¸íÈ®ÇÏ°Ô ¹Ù²Ş)
+    // (ì°¸ê³ ìš©) ê¸°ì¡´ JSON ë¡œë” (ì´ë¦„ë§Œ ì¢€ ëª…í™•í•˜ê²Œ ë°”ê¿ˆ)
     private async UniTask LoadAndCacheJsonAsync<Loader, TKey, TValue>(string addressableKey)
     where Loader : ILoader<TKey, TValue>
     {
         TextAsset textAsset = await Managers.Resource.LoadAsyncNoCache<TextAsset>(addressableKey);
 
-        // [Ãß°¡] ½ÇÆĞ ½Ã ¸í½ÃÀû ·Î±× Ãâ·Â
+        // [ì¶”ê°€] ì‹¤íŒ¨ ì‹œ ëª…ì‹œì  ë¡œê·¸ ì¶œë ¥
         if (textAsset == null)
         {
-            Debug.LogError($"[DataManager] JSON ·Îµå ½ÇÆĞ: '{addressableKey}' (Type: {typeof(TValue).Name})");
+            Debug.LogError($"[DataManager] JSON ë¡œë“œ ì‹¤íŒ¨: '{addressableKey}' (Type: {typeof(TValue).Name})");
             return;
         }
 
         Loader loader = JsonUtility.FromJson<Loader>(textAsset.text);
 
-        // [º¯°æ] Add() ¡æ ÀÎµ¦¼­·Î ±³Ã¼
-        // Add()´Â Áßº¹ Å° ½Ã ArgumentExceptionÀ» ´øÁöÁö¸¸
-        // ÀÎµ¦¼­´Â ÀÖÀ¸¸é µ¤¾î¾²°í, ¾øÀ¸¸é Ãß°¡ÇÏ¹Ç·Î Ç×»ó ¾ÈÀü
+        // [ë³€ê²½] Add() â†’ ì¸ë±ì„œë¡œ êµì²´
+        // Add()ëŠ” ì¤‘ë³µ í‚¤ ì‹œ ArgumentExceptionì„ ë˜ì§€ì§€ë§Œ
+        // ì¸ë±ì„œëŠ” ìˆìœ¼ë©´ ë®ì–´ì“°ê³ , ì—†ìœ¼ë©´ ì¶”ê°€í•˜ë¯€ë¡œ í•­ìƒ ì•ˆì „
         _dataDicts[typeof(TValue)] = loader.MakeDict();
     }
 
     // ==========================================================
-    // [¸¸´É Getter]
-    //µ¥ÀÌÅÍ Á¾·ù°¡ ´Ã¾î³ªµµ GetWeaponData(), GetMonsterData()¸¦ °è¼Ó ¸¸µé ÇÊ¿ä°¡ ¾ø½À´Ï´Ù!
+    // [ë§ŒëŠ¥ Getter]
+    //ë°ì´í„° ì¢…ë¥˜ê°€ ëŠ˜ì–´ë‚˜ë„ GetWeaponData(), GetMonsterData()ë¥¼ ê³„ì† ë§Œë“¤ í•„ìš”ê°€ ì—†ìŠµë‹ˆë‹¤!
     // ==========================================================
     public TValue GetData<TKey, TValue>(TKey key) where TValue : class
     {
-        // 1. ³»°¡ Ã£´Â µ¥ÀÌÅÍ Å¸ÀÔ(TValue)ÀÇ µñ¼Å³Ê¸®°¡ ¹Ù±¸´Ï¿¡ ÀÖ´ÂÁö È®ÀÎ
+        // 1. ë‚´ê°€ ì°¾ëŠ” ë°ì´í„° íƒ€ì…(TValue)ì˜ ë”•ì…”ë„ˆë¦¬ê°€ ë°”êµ¬ë‹ˆì— ìˆëŠ”ì§€ í™•ì¸
         if (_dataDicts.TryGetValue(typeof(TValue), out object dictObj))
         {
-            // 2. ÀÖ´Ù¸é ¿ø·¡ µñ¼Å³Ê¸® ÇüÅÂ·Î Ä³½ºÆÃ (object -> Dictionary<TKey, TValue>)
+            // 2. ìˆë‹¤ë©´ ì›ë˜ ë”•ì…”ë„ˆë¦¬ í˜•íƒœë¡œ ìºìŠ¤íŒ… (object -> Dictionary<TKey, TValue>)
             var dict = dictObj as Dictionary<TKey, TValue>;
 
-            // 3. µñ¼Å³Ê¸® ¾È¿¡¼­ ÇØ´çÇÏ´Â Key°ªÀ» Ã£À½
+            // 3. ë”•ì…”ë„ˆë¦¬ ì•ˆì—ì„œ í•´ë‹¹í•˜ëŠ” Keyê°’ì„ ì°¾ìŒ
             if (dict != null && dict.TryGetValue(key, out TValue data))
             {
                 return data;
             }
         }
 
-        Debug.LogError($"[DataManager] {typeof(TValue).Name} µ¥ÀÌÅÍ¿¡¼­ Å° [{key}]¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
-        return null; // ¸ø Ã£À¸¸é null
+        Debug.LogError($"[DataManager] {typeof(TValue).Name} ë°ì´í„°ì—ì„œ í‚¤ [{key}]ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
+        return null; // ëª» ì°¾ìœ¼ë©´ null
     }
 
     public Dictionary<K, V> GetDict<K, V>() where V : class
@@ -119,11 +119,11 @@ public class DataManager
                 return dict;
         }
 
-        Debug.LogError($"[DataManager] {typeof(V).Name} Å¸ÀÔÀÇ µñ¼Å³Ê¸®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+        Debug.LogError($"[DataManager] {typeof(V).Name} íƒ€ì…ì˜ ë”•ì…”ë„ˆë¦¬ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
         return null;
     }
 
-    // Æ¯Á¤ ¸¶Ä¿(TMarker)¸¦ ÀÌ¿ëÇØ µñ¼Å³Ê¸®¸¦ Ã£´Â ¿À¹ö·Îµù
+    // íŠ¹ì • ë§ˆì»¤(TMarker)ë¥¼ ì´ìš©í•´ ë”•ì…”ë„ˆë¦¬ë¥¼ ì°¾ëŠ” ì˜¤ë²„ë¡œë”©
     public Dictionary<K, V> GetDict<K, V, TMarker>() where TMarker : class
     {
         if (_dataDicts.TryGetValue(typeof(TMarker), out object dictObj))
@@ -133,11 +133,11 @@ public class DataManager
                 return dict;
         }
 
-        Debug.LogError($"[DataManager] {typeof(TMarker).Name} Å¸ÀÔÀÇ ÀÎµ¦½º µñ¼Å³Ê¸®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+        Debug.LogError($"[DataManager] {typeof(TMarker).Name} íƒ€ì…ì˜ ì¸ë±ìŠ¤ ë”•ì…”ë„ˆë¦¬ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
         return null;
     }
 
-    // [Ãß°¡] TMarker¸¦ ÀÌ¿ëÇØ ´ÜÀÏ µ¥ÀÌÅÍ¸¦ ¹Ù·Î °¡Á®¿À´Â ¸¸´É Getter ¿À¹ö·Îµù
+    // [ì¶”ê°€] TMarkerë¥¼ ì´ìš©í•´ ë‹¨ì¼ ë°ì´í„°ë¥¼ ë°”ë¡œ ê°€ì ¸ì˜¤ëŠ” ë§ŒëŠ¥ Getter ì˜¤ë²„ë¡œë”©
     public TValue GetData<TKey, TValue, TMarker>(TKey key)
         where TValue : class
         where TMarker : class
@@ -151,7 +151,7 @@ public class DataManager
             }
         }
 
-        Debug.LogError($"[DataManager] {typeof(TMarker).Name} ¸¶Ä¿¿¡¼­ Å° [{key}]¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+        Debug.LogError($"[DataManager] {typeof(TMarker).Name} ë§ˆì»¤ì—ì„œ í‚¤ [{key}]ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
         return null;
     }
 

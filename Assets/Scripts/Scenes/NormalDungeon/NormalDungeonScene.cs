@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-// [Ãß°¡]
+// [ì¶”ê°€]
 using Cysharp.Threading.Tasks;
 using NPOI.HSSF.Record.PivotTable;
 
@@ -52,7 +52,7 @@ public class NormalDungeonScene : BaseScene
         var battleInVoice = LoadBattleInVoice();
         var mainBgmTask = LoadMainBgm();
 
-        // UniTask.WhenAll ·Î º´·Ä ´ë±â
+        // UniTask.WhenAll ë¡œ ë³‘ë ¬ ëŒ€ê¸°
         await UniTask.WhenAll(mainUI, mapTask, poolTask, mainBgmTask,  effectStageTask, successBgm, victoryVoice, battleInVoice);
 
 
@@ -112,13 +112,13 @@ public class NormalDungeonScene : BaseScene
                 _curMap = Instantiate(mapPrefab, root.transform);
                 _curMap.transform.position = Vector3.zero;
 
-                // [º¯°æ] ½ºÆù ¹æ½ÄÀ¸·Î ¸ó½ºÅÍ µî·Ï º¯°æ
+                // [ë³€ê²½] ìŠ¤í° ë°©ì‹ìœ¼ë¡œ ëª¬ìŠ¤í„° ë“±ë¡ ë³€ê²½
                 _spawnedMonsters = await SpawnAndRegisterMonstersAsync(_curMap);
             }
         }
     }
 
-    // [ÇÙ½É º¯°æ] ºñµ¿±â ÆÑÅä¸®(MonsterID ±â¹İ)¸¦ »ç¿ëÇÏµµ·Ï ¼öÁ¤
+    // [í•µì‹¬ ë³€ê²½] ë¹„ë™ê¸° íŒ©í† ë¦¬(MonsterID ê¸°ë°˜)ë¥¼ ì‚¬ìš©í•˜ë„ë¡ ìˆ˜ì •
     private async UniTask<List<BaseMonsterController>> SpawnAndRegisterMonstersAsync(GameObject map)
     {
         List<BaseMonsterController> monsterList = new List<BaseMonsterController>();
@@ -126,7 +126,7 @@ public class NormalDungeonScene : BaseScene
         Transform spawnPointsRoot = map.transform.Find("SpawnPoints");
         if (spawnPointsRoot == null)
         {
-            Debug.LogError("¸Ê ÇÁ¸®ÆÕ¿¡ 'SpawnPoints' ¿ÀºêÁ§Æ®°¡ ¾ø½À´Ï´Ù!");
+            Debug.LogError("ë§µ í”„ë¦¬íŒ¹ì— 'SpawnPoints' ì˜¤ë¸Œì íŠ¸ê°€ ì—†ìŠµë‹ˆë‹¤!");
             return monsterList;
         }
 
@@ -141,30 +141,30 @@ public class NormalDungeonScene : BaseScene
         MapMonsterConfig mapConfig = Managers.Data.GetData<int, MapMonsterConfig>(Managers.Context.CurrentDungeonID);
         if (mapConfig == null)
         {
-            Debug.LogError($"¸Ê Á¤º¸({Managers.Context.CurrentDungeonID})°¡ ¾ø½À´Ï´Ù.");
+            Debug.LogError($"ë§µ ì •ë³´({Managers.Context.CurrentDungeonID})ê°€ ì—†ìŠµë‹ˆë‹¤.");
             return monsterList;
         }
 
         List<UniTask<GameObject>> spawnTasks = new List<UniTask<GameObject>>();
 
-        // 2. SpawnPoints ¹Ù·Î ¾Æ·¡ÀÇ ÀÚ½Äµé ¼øÈ¸ (ÀÌÁ¦ ÀÌ ³ëµåÀÇ ÀÌ¸§Àº "2003", "2004" °°Àº ID°¡ µÇ¾î¾ß ÇÕ´Ï´Ù)
+        // 2. SpawnPoints ë°”ë¡œ ì•„ë˜ì˜ ìì‹ë“¤ ìˆœíšŒ (ì´ì œ ì´ ë…¸ë“œì˜ ì´ë¦„ì€ "2003", "2004" ê°™ì€ IDê°€ ë˜ì–´ì•¼ í•©ë‹ˆë‹¤)
         for (int i = 0; i < spawnPointsRoot.childCount; i++)
         {
             Transform groupNode = spawnPointsRoot.GetChild(i);
 
-            // [¼öÁ¤] ±×·ì ³ëµåÀÇ ÀÌ¸§À» intÇü ID·Î ÆÄ½ÌÇÕ´Ï´Ù.
+            // [ìˆ˜ì •] ê·¸ë£¹ ë…¸ë“œì˜ ì´ë¦„ì„ intí˜• IDë¡œ íŒŒì‹±í•©ë‹ˆë‹¤.
             if (!int.TryParse(groupNode.name, out int monsterId))
             {
-                Debug.LogError($"[Spawn] Àß¸øµÈ ±×·ì ³ëµå ÀÌ¸§ÀÔ´Ï´Ù. ¸ó½ºÅÍ ID(¼ıÀÚ)·Î ¼³Á¤ÇØÁÖ¼¼¿ä: {groupNode.name}");
+                Debug.LogError($"[Spawn] ì˜ëª»ëœ ê·¸ë£¹ ë…¸ë“œ ì´ë¦„ì…ë‹ˆë‹¤. ëª¬ìŠ¤í„° ID(ìˆ«ì)ë¡œ ì„¤ì •í•´ì£¼ì„¸ìš”: {groupNode.name}");
                 continue;
             }
 
-            // 4. ±×·ì ³ëµå ¾Æ·¡ÀÇ ½ÇÁ¦ Pointµé ¼øÈ¸ÇÏ¸ç ½ºÆù ÅÂ½ºÅ© ¼öÁı
+            // 4. ê·¸ë£¹ ë…¸ë“œ ì•„ë˜ì˜ ì‹¤ì œ Pointë“¤ ìˆœíšŒí•˜ë©° ìŠ¤í° íƒœìŠ¤í¬ ìˆ˜ì§‘
             for (int j = 0; j < groupNode.childCount; j++)
             {
                 Transform point = groupNode.GetChild(j);
 
-                // [¼öÁ¤] AddressableKey°¡ ¾Æ´Ñ ID¸¦ ¹Ş´Â ÆÑÅä¸® ¸Ş¼­µå È£Ãâ!
+                // [ìˆ˜ì •] AddressableKeyê°€ ì•„ë‹Œ IDë¥¼ ë°›ëŠ” íŒ©í† ë¦¬ ë©”ì„œë“œ í˜¸ì¶œ!
                 var task = MonsterFactory.CreateMonsterByMonsterIDAsync(
                     monsterId,
                     Managers.Context.CurrentDungeonID,
@@ -175,7 +175,7 @@ public class NormalDungeonScene : BaseScene
             }
         }
 
-        // ¼öÁıµÈ ¸ğµç ¸ó½ºÅÍ »ı¼º ÅÂ½ºÅ©¸¦ º´·Ä·Î ´ë±â
+        // ìˆ˜ì§‘ëœ ëª¨ë“  ëª¬ìŠ¤í„° ìƒì„± íƒœìŠ¤í¬ë¥¼ ë³‘ë ¬ë¡œ ëŒ€ê¸°
         GameObject[] spawnedObjects = await UniTask.WhenAll(spawnTasks);
 
         foreach (GameObject monsterObj in spawnedObjects)
@@ -197,11 +197,11 @@ public class NormalDungeonScene : BaseScene
     private async UniTask SetupUI()
     {
         await Managers.Resource.LoadAsync<GameObject>("GameSceneCanvas_New");
-        // 3. UIManager¸¦ ÅëÇØ Scene UI »ı¼º
-        // @Canvas_Scene ÇÏÀ§·Î ÀÚµ¿ ¹èÄ¡ ¹× SetCanvas µÊ
+        // 3. UIManagerë¥¼ í†µí•´ Scene UI ìƒì„±
+        // @Canvas_Scene í•˜ìœ„ë¡œ ìë™ ë°°ì¹˜ ë° SetCanvas ë¨
         GameSceneCanvas ui = Managers.UI.ShowSceneUI<GameSceneCanvas>("GameSceneCanvas_New");
         _mainUI = ui;
-        // 4. Party Manager ¿¬µ¿
+        // 4. Party Manager ì—°ë™
         if (ui != null)
         {
             ui.SetPartyManager();
@@ -235,14 +235,14 @@ public class NormalDungeonScene : BaseScene
 
         _mainBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.fightingBgms[rand]);
 
-        if (_mainBGM != null) Debug.Log("¸ŞÀÎ ºê±İ ·Îµù");
-        else Debug.Log("¸ŞÀÎ ºê±İ ·Îµù¾ÈµÅ");
+        if (_mainBGM != null) Debug.Log("ë©”ì¸ ë¸Œê¸ˆ ë¡œë”©");
+        else Debug.Log("ë©”ì¸ ë¸Œê¸ˆ ë¡œë”©ì•ˆë¼");
     }
 
     void PlayBGM()
     {
         if (_mainBGM != null) Managers.Sound.Play(_mainBGM, Define.Sound.Bgm);
-        else Debug.Log("¿ìÇìÇìÇìÇìÂm");
+        else Debug.Log("ìš°í—¤í—¤í—¤í—¤í—¿");
     }
 
     void PlayBattleInVoice()
@@ -309,16 +309,16 @@ public class NormalDungeonScene : BaseScene
 
     private void SetupDungeonConditions()
     {
-        // 1. º¸½º Ã³Ä¡ (½Â¸®) Á¶°Ç ¼³Á¤
+        // 1. ë³´ìŠ¤ ì²˜ì¹˜ (ìŠ¹ë¦¬) ì¡°ê±´ ì„¤ì •
         KillAllMonstersCondition clearCondition = _curMap.AddComponent<KillAllMonstersCondition>();
         clearCondition.SetMonsters(_spawnedMonsters);
         clearCondition.SetUp();
 
-        // 2. ÆÄÆ¼ Àü¸ê (ÆĞ¹è) Á¶°Ç ¼³Á¤
+        // 2. íŒŒí‹° ì „ë©¸ (íŒ¨ë°°) ì¡°ê±´ ì„¤ì •
         PartyWipeCondition failCondition = _curMap.AddComponent<PartyWipeCondition>();
         failCondition.SetUp();
 
-        // 3. ¸Å´ÏÀú¿¡ °¢°¢ µî·Ï
+        // 3. ë§¤ë‹ˆì €ì— ê°ê° ë“±ë¡
         Managers.Dungeon.AddClearCondition(clearCondition);
         Managers.Dungeon.AddFailCondition(failCondition);
 
@@ -327,21 +327,21 @@ public class NormalDungeonScene : BaseScene
 
     private void OnDungeonSuccess()
     {
-        // º¸»óÀ» ÁÖ°í UI¸¦ ¶ç¿ì´Â ºñµ¿±â ÇÔ¼ö È£Ãâ
+        // ë³´ìƒì„ ì£¼ê³  UIë¥¼ ë„ìš°ëŠ” ë¹„ë™ê¸° í•¨ìˆ˜ í˜¸ì¶œ
         ShowSuccessUIAsync().Forget();
         Managers.Party.FinishGame(true);
     }
 
     private async UniTaskVoid ShowSuccessUIAsync()
     {
-        // [ÇÙ½É] DirectorÀÇ ÄÆ½Å ¿¬ÃâÀÌ ³¡³¯ ¶§±îÁö ¾À¿¡¼­ ´ë±â (¿¹: 3.5ÃÊ)
-        // ÀÌº¥Æ®·Î Äİ¹é ¹ŞÁö ¾Ê°í, ¾ÀÀÌ ¿¬Ãâ ½Ã°£À» ¾Ë°í ±â´Ù¸®´Â ¹æ½ÄÀÌ ÈÎ¾À À¯Áöº¸¼ö°¡ ÁÁ½À´Ï´Ù.
+        // [í•µì‹¬] Directorì˜ ì»·ì‹  ì—°ì¶œì´ ëë‚  ë•Œê¹Œì§€ ì”¬ì—ì„œ ëŒ€ê¸° (ì˜ˆ: 3.5ì´ˆ)
+        // ì´ë²¤íŠ¸ë¡œ ì½œë°± ë°›ì§€ ì•Šê³ , ì”¬ì´ ì—°ì¶œ ì‹œê°„ì„ ì•Œê³  ê¸°ë‹¤ë¦¬ëŠ” ë°©ì‹ì´ í›¨ì”¬ ìœ ì§€ë³´ìˆ˜ê°€ ì¢‹ìŠµë‹ˆë‹¤.
         await UniTask.Delay(System.TimeSpan.FromSeconds(3.0f));
 
         BaseClearUI();
 
-        // 1. ´øÀü Å×ÀÌºí¿¡¼­ ÇöÀç ¸Ê(_currentMapId)ÀÇ Å¬¸®¾î º¸»ó Á¤º¸ °¡Á®¿À±â
-        // (ÀÌ¸§Àº ½ÇÁ¦ ÇÁ·ÎÁ§Æ®ÀÇ ´øÀü Å×ÀÌºí ±¸Á¶¿¡ ¸Â°Ô º¯°æÇÏ¼¼¿ä)
+        // 1. ë˜ì „ í…Œì´ë¸”ì—ì„œ í˜„ì¬ ë§µ(_currentMapId)ì˜ í´ë¦¬ì–´ ë³´ìƒ ì •ë³´ ê°€ì ¸ì˜¤ê¸°
+        // (ì´ë¦„ì€ ì‹¤ì œ í”„ë¡œì íŠ¸ì˜ ë˜ì „ í…Œì´ë¸” êµ¬ì¡°ì— ë§ê²Œ ë³€ê²½í•˜ì„¸ìš”)
         //DungeonTable dungeonTable = Managers.Data.GetData<int, DungeonTable>(_currentMapId);
         DungeonGroup dungeonGroup = Managers.Data.GetData<int, DungeonGroup>(Managers.Context.CurrentDungeonGroupID);
         DungeonData dungeonData = dungeonGroup.DungeonDataByDifficulty[Managers.Context.SelectedDifficulty];
@@ -356,16 +356,16 @@ public class NormalDungeonScene : BaseScene
             clearExp = dungeonData.ClearExp;
             clearCredit = dungeonData.ClearCredit;
 
-            // 2. ½ÇÁ¦ ÇÃ·¹ÀÌ¾î/ÆÄÆ¼¿¡ °æÇèÄ¡¿Í ÀçÈ­ Áö±Ş
+            // 2. ì‹¤ì œ í”Œë ˆì´ì–´/íŒŒí‹°ì— ê²½í—˜ì¹˜ì™€ ì¬í™” ì§€ê¸‰
             Managers.Party.AddExp(clearExp);
             Managers.Wallet.AddCurrency(CurrencyType.Credit, clearCredit);
 
-            // 3. µå¶ø Å×ÀÌºí ID·Î ÁÖ»çÀ§¸¦ ±¼¸®°í È¹µæÇÑ ¾ÆÀÌÅÛ ¸ñ·Ï ¹Ş¾Æ¿À±â
-            // (Å¬¸®¾î º¸»óÀÌ¹Ç·Î ¿ìÃø ÇÏ´Ü Åä½ºÆ® ÆË¾÷Àº ¾È ¶ç¿ìµµ·Ï showToast: false Àü´Ş)
+            // 3. ë“œë í…Œì´ë¸” IDë¡œ ì£¼ì‚¬ìœ„ë¥¼ êµ´ë¦¬ê³  íšë“í•œ ì•„ì´í…œ ëª©ë¡ ë°›ì•„ì˜¤ê¸°
+            // (í´ë¦¬ì–´ ë³´ìƒì´ë¯€ë¡œ ìš°ì¸¡ í•˜ë‹¨ í† ìŠ¤íŠ¸ íŒì—…ì€ ì•ˆ ë„ìš°ë„ë¡ showToast: false ì „ë‹¬)
             finalRewards = Managers.Drop.RollAndGiveDropItems(dungeonData.ClearDropTableID, false);
         }
 
-        // 4. °á°ú UI ¶ç¿ì°í µ¥ÀÌÅÍ ²È¾ÆÁÖ±â
+        // 4. ê²°ê³¼ UI ë„ìš°ê³  ë°ì´í„° ê½‚ì•„ì£¼ê¸°
         UI_DungeonClear clearUI = Managers.UI.ShowSceneUI<UI_DungeonClear>("UI_DungeonClear");
         if (clearUI != null)
         {
@@ -376,7 +376,7 @@ public class NormalDungeonScene : BaseScene
     private async void OnDungeonFail()
     {  
         Managers.Party.FinishGame(false);
-        // ½ÇÆĞ´Â ÄÆ½Å ´ë±â ¾øÀÌ ¹Ù·Î ½ÇÆĞ ÆË¾÷ ¶ç¿ì±â
+        // ì‹¤íŒ¨ëŠ” ì»·ì‹  ëŒ€ê¸° ì—†ì´ ë°”ë¡œ ì‹¤íŒ¨ íŒì—… ë„ìš°ê¸°
         await UniTask.Delay(System.TimeSpan.FromSeconds(3.5f));
         BaseClearUI();
 

@@ -5,7 +5,7 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Collections.Generic;
 using System;
-using System.Linq; // Dictionary.Values.ToList() µî¿¡ »ç¿ë
+using System.Linq; // Dictionary.Values.ToList() ë“±ì— ì‚¬ìš©
 
 public class MonsterExcelImporter : EditorWindow
 {
@@ -15,7 +15,7 @@ public class MonsterExcelImporter : EditorWindow
         string excelPath = Application.dataPath + "/ExcelData/MonsterTable.xlsx";
         if (!File.Exists(excelPath))
         {
-            Debug.LogError("¿¢¼¿ ÆÄÀÏÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù: " + excelPath);
+            Debug.LogError("ì—‘ì…€ íŒŒì¼ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤: " + excelPath);
             return;
         }
 
@@ -28,7 +28,7 @@ public class MonsterExcelImporter : EditorWindow
             List<MapMonsterConfig> mapMonsterConfigs = new List<MapMonsterConfig>();
 
 
-            // 1. MonsterData ½ÃÆ® ÆÄ½Ì
+            // 1. MonsterData ì‹œíŠ¸ íŒŒì‹±
             ISheet monsterDataSheet = book.GetSheet("MonsterData");
             if (monsterDataSheet != null)
             {
@@ -58,7 +58,7 @@ public class MonsterExcelImporter : EditorWindow
                 }
             }
 
-            // 2. MonsterLevelByStat ½ÃÆ® ÆÄ½Ì
+            // 2. MonsterLevelByStat ì‹œíŠ¸ íŒŒì‹±
             ISheet monsterLevelByStat = book.GetSheet("MonsterLevelByStat");
             if (monsterLevelByStat != null)
             {
@@ -80,7 +80,7 @@ public class MonsterExcelImporter : EditorWindow
                 }
             }
 
-            // 2. MonsterLevelByStat ½ÃÆ® ÆÄ½Ì
+            // 2. MonsterLevelByStat ì‹œíŠ¸ íŒŒì‹±
             ISheet mapMonsterConfig = book.GetSheet("MapMonsterConfig");
             if (mapMonsterConfig != null)
             {
@@ -104,19 +104,19 @@ public class MonsterExcelImporter : EditorWindow
 
             SaveToScriptableObject(
                 monsterBaseDatas, monsterLevelByStats, mapMonsterConfigs
-                ); // ÆÄ¶ó¹ÌÅÍ Ãß°¡
+                ); // íŒŒë¼ë¯¸í„° ì¶”ê°€
         }
     }
 
-    // --- ÇïÆÛ ÇÔ¼öµé ---
+    // --- í—¬í¼ í•¨ìˆ˜ë“¤ ---
 
-    // ¼ö½Ä(Formula)ÀÌ Àû¿ëµÈ ¼¿ °ªÀ» ¾ÈÀüÇÏ°Ô °¡Á®¿À´Â ÇÔ¼ö
+    // ìˆ˜ì‹(Formula)ì´ ì ìš©ëœ ì…€ ê°’ì„ ì•ˆì „í•˜ê²Œ ê°€ì ¸ì˜¤ëŠ” í•¨ìˆ˜
     private static int GetNumericValue(ICell cell)
     {
         if (cell == null) return 0;
         if (cell.CellType == CellType.Formula)
         {
-            // NPOI¿¡¼­ ¼ö½Ä °á°ú°ªÀ» ÀĞÀ¸·Á¸é NumericCellValue¸¦ ¹Ù·Î ÀĞÀ¸¸é µË´Ï´Ù (¿¢¼¿¿¡¼­ ÀúÀå½Ã °ªÀÌ Ä³½ÃµÇ¾î ÀÖ¾î¾ß ÇÔ)
+            // NPOIì—ì„œ ìˆ˜ì‹ ê²°ê³¼ê°’ì„ ì½ìœ¼ë ¤ë©´ NumericCellValueë¥¼ ë°”ë¡œ ì½ìœ¼ë©´ ë©ë‹ˆë‹¤ (ì—‘ì…€ì—ì„œ ì €ì¥ì‹œ ê°’ì´ ìºì‹œë˜ì–´ ìˆì–´ì•¼ í•¨)
             try { return (int)cell.NumericCellValue; }
             catch { return 0; }
         }
@@ -147,7 +147,7 @@ public class MonsterExcelImporter : EditorWindow
         return MonsterDefine.MonsterGrade.None;
     }
 
-    // statPools ÆÄ¶ó¹ÌÅÍ Ãß°¡
+    // statPools íŒŒë¼ë¯¸í„° ì¶”ê°€
     private static void SaveToScriptableObject(
         List<MonsterBaseData> monsterBaseDatas, List<MonsterLevelByStat> monsterLevelByStats, List<MapMonsterConfig> mapMonsterConfigs
         )

@@ -21,7 +21,7 @@ public class PartyDeathHandler
 
     public async UniTaskVoid HandleCharacterDeathAsync(BaseCharacter deadChar)
     {
-        // ÇöÀç Ä³¸¯ÅÍ°¡ ¾Æ´Ñ ´ë±â ¸â¹ö »ç¸Á ½Ã ¹«½Ã
+        // í˜„ì¬ ìºë¦­í„°ê°€ ì•„ë‹Œ ëŒ€ê¸° ë©¤ë²„ ì‚¬ë§ ì‹œ ë¬´ì‹œ
         if (deadChar != _registry.GetCurrent()) return;
         if (_isHandlingDeath) return;
 
@@ -29,7 +29,7 @@ public class PartyDeathHandler
         CancelDeathTasks();
         _deathCts = new CancellationTokenSource();
 
-        // »ç¸Á ¿¬Ãâ ´ë±â (2ÃÊ)
+        // ì‚¬ë§ ì—°ì¶œ ëŒ€ê¸° (2ì´ˆ)
         bool isCanceled = await UniTask
             .Delay(TimeSpan.FromSeconds(2.0f), cancellationToken: _deathCts.Token)
             .SuppressCancellationThrow();

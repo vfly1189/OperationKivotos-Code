@@ -4,7 +4,7 @@ public interface IInteractable
 {
     void Interact();
 
-    // [Ãß°¡] ÇÃ·¹ÀÌ¾î°¡ Æ®¸®°Å ¿µ¿ª¿¡ µé¾î¿ÔÀ» ¶§/³ª°¬À» ¶§ÀÇ µ¿ÀÛ
+    // [ì¶”ê°€] í”Œë ˆì´ì–´ê°€ íŠ¸ë¦¬ê±° ì˜ì—­ì— ë“¤ì–´ì™”ì„ ë•Œ/ë‚˜ê°”ì„ ë•Œì˜ ë™ì‘
     void OnTargetEnter(BaseCharacter character);
     void OnTargetExit(BaseCharacter character);
 }

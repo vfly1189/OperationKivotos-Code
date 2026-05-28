@@ -7,18 +7,18 @@ using UnityEngine.UI;
 
 public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 {
-    [Header("º¸À¯ Àåºñ ¸ñ·Ï")]
+    [Header("ë³´ìœ  ì¥ë¹„ ëª©ë¡")]
     [SerializeField] private Transform _havingRelicScrollView;
 
-    [Header("ºĞÇØ¸ñ·Ï")]
+    [Header("ë¶„í•´ëª©ë¡")]
     [SerializeField] private Transform _decomposeRelicView;
 
-    [Header("ºĞÇØ °á°ú ±×·ì")]
+    [Header("ë¶„í•´ ê²°ê³¼ ê·¸ë£¹")]
     [SerializeField] private TextMeshProUGUI _upgradeBookSmallCountText;
     [SerializeField] private TextMeshProUGUI _upgradeBookMediumCountText;
     [SerializeField] private TextMeshProUGUI _upgradeBookLargeCountText;
 
-    [Header("ºĞÇØÇÏ±â ¹öÆ°")]
+    [Header("ë¶„í•´í•˜ê¸° ë²„íŠ¼")]
     [SerializeField] private Button _decomposeButton;
 
     private EquipmentDecomposeService _decomposeService;
@@ -28,7 +28,7 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 
     private readonly Dictionary<InventorySlot, UI_ItemSlot> _slotMap = new();
 
-    private bool _isSpawning = false; // Áßº¹ ½ÇÇà ¹æÁö ÇÃ·¡±×
+    private bool _isSpawning = false; // ì¤‘ë³µ ì‹¤í–‰ ë°©ì§€ í”Œë˜ê·¸
 
     public override void Init()
     {
@@ -45,7 +45,7 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 
         _decomposeButton.onClick.AddListener(() => _decomposeService.ExecuteDecompose());
 
-        ////  ½½·Ôµé Init¿¡¼­ ¹Ì¸® »ı¼º
+        ////  ìŠ¬ë¡¯ë“¤ Initì—ì„œ ë¯¸ë¦¬ ìƒì„±
         //await UniTask.WhenAll(
         //    SetHavingRelicScrollView(),
         //    SetConsumeMaterialSlots()
@@ -65,21 +65,21 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 
     private void OnDecomposeExecuted()
     {
-        // ¾ÆÀÌÅÛ Á¤º¸ °»½Å
+        // ì•„ì´í…œ ì •ë³´ ê°±ì‹ 
         SetHavingRelicScrollView().Forget();
     }
 
     private async UniTask SetHavingRelicScrollView()
     {
-        if (_isSpawning) return; // ÀÌ¹Ì »ı¼º ÁßÀÌ¸é ¹«½Ã
+        if (_isSpawning) return; // ì´ë¯¸ ìƒì„± ì¤‘ì´ë©´ ë¬´ì‹œ
         _isSpawning = true;
 
-        Debug.Log("SetHavingRelicScrollView() È£ÃâµÊ");
+        Debug.Log("SetHavingRelicScrollView() í˜¸ì¶œë¨");
 
         foreach (UI_ItemSlot slot in _itemSlots)
             Managers.Resource.Destroy(slot.gameObject);
 
-        _itemSlots.Clear(); // ¡ç Ãß°¡
+        _itemSlots.Clear(); // â† ì¶”ê°€
         _slotMap.Clear();
 
         InventorySlot[] relics = Managers.Inventory.Inventory[ItemCategory.Equipment];
@@ -97,7 +97,7 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
             _itemSlots.Add(slot);
         }
 
-        _isSpawning = false; // »ı¼º ¿Ï·á
+        _isSpawning = false; // ìƒì„± ì™„ë£Œ
     }
 
     private async UniTask SetConsumeMaterialSlots()
@@ -112,7 +112,7 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
                 onClick: null,
                 onCancel: () =>
                 {
-                    _decomposeService.RemoveMaterial(index); //  Service¿¡ À§ÀÓ
+                    _decomposeService.RemoveMaterial(index); //  Serviceì— ìœ„ì„
                 }
             );
 
@@ -122,7 +122,7 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 
     public void OnSlotClicked(UI_ItemSlot slot)
     {
-        // ¼­ºñ½º¿¡¼­ ºĞÇØ ¸ñ·Ï¿¡ µî·Ï
+        // ì„œë¹„ìŠ¤ì—ì„œ ë¶„í•´ ëª©ë¡ì— ë“±ë¡
         _decomposeService.SelectEquipment(slot.CurrentSlotData);
     }
 
@@ -130,7 +130,7 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
     {
         if (slot.CurrentSlotData != null && !slot.CurrentSlotData.IsEmpty)
         {
-            // ÅøÆÁ È°¼ºÈ­ ¹× Á¤º¸ ¼ÂÆÃ
+            // íˆ´íŒ í™œì„±í™” ë° ì •ë³´ ì…‹íŒ…
             //Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
             UI_ItemInfo.ShowTooltip(slot.CurrentSlotData, screenPos);
         }
@@ -182,12 +182,12 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
             if (idx >= 0)
             {
                 int capturedIdx = idx;
-                //  µî·ÏµÈ ½½·Ô ¡æ Ãë¼Ò¹öÆ° ON
+                //  ë“±ë¡ëœ ìŠ¬ë¡¯ â†’ ì·¨ì†Œë²„íŠ¼ ON
                 uiSlot.SetCancelActive(true, () => _decomposeService.RemoveMaterial(capturedIdx));
             }
             else
             {
-                //  µî·Ï ÇØÁ¦µÈ ½½·Ô ¡æ Ãë¼Ò¹öÆ° OFF
+                //  ë“±ë¡ í•´ì œëœ ìŠ¬ë¡¯ â†’ ì·¨ì†Œë²„íŠ¼ OFF
                 uiSlot.SetCancelActive(false);
             }
         }

@@ -7,10 +7,10 @@ public class GameSceneCanvas : UI_Scene
     [Header("Data Source")]
     [SerializeField] private SchoolDataSO[] _schoolDatas;
 
-    [Header("ÆÄÆ¼ ½½·Ô")]
+    [Header("íŒŒí‹° ìŠ¬ë¡¯")]
     [SerializeField] private PartyHUD _partyHUD;
 
-    [Header("½ºÅ³¾ÆÀÌÄÜ ¹× Ã¼·Â°æÇèÄ¡ HUD")]
+    [Header("ìŠ¤í‚¬ì•„ì´ì½˜ ë° ì²´ë ¥ê²½í—˜ì¹˜ HUD")]
     [SerializeField] private ActiveCharacterHUD _activeCharacterHUD;
 
     [Header("Failed or Success")]
@@ -25,7 +25,7 @@ public class GameSceneCanvas : UI_Scene
     public override void Init()
     {
         if (_isInit) return;
-        base.Init(); // UI_SceneÀÇ Init È£Ãâ
+        base.Init(); // UI_Sceneì˜ Init í˜¸ì¶œ
 
         _schoolIdx = Managers.Context.SchoolIdx;
 
@@ -34,14 +34,14 @@ public class GameSceneCanvas : UI_Scene
 
         _isInit = true;
 
-        // 2. ºñµ¿±â ·Îµù ÀÛ¾÷À» Fire & ForgetÀ¸·Î ´øÁ®³õÀ½
+        // 2. ë¹„ë™ê¸° ë¡œë”© ì‘ì—…ì„ Fire & Forgetìœ¼ë¡œ ë˜ì ¸ë†“ìŒ
         InitAsync().Forget();
     }
 
-    // 3. ½ÇÁ¦ ºñµ¿±â ·ÎµùÀ» ´ã´çÇÏ´Â ³»ºÎ ÇÔ¼ö
+    // 3. ì‹¤ì œ ë¹„ë™ê¸° ë¡œë”©ì„ ë‹´ë‹¹í•˜ëŠ” ë‚´ë¶€ í•¨ìˆ˜
     private async UniTaskVoid InitAsync()
     {
-        // UI ±âº» Á¤º¸ ¼¼ÆÃ (ºñµ¿±â ´ë±â)
+        // UI ê¸°ë³¸ ì •ë³´ ì„¸íŒ… (ë¹„ë™ê¸° ëŒ€ê¸°)
         if (_schoolDatas != null && _schoolDatas.Length > _schoolIdx)
         {
             await _partyHUD.Init(_schoolDatas[_schoolIdx]);
@@ -50,13 +50,13 @@ public class GameSceneCanvas : UI_Scene
 
     public void SetPartyManager()
     {
-        // Init()ÀÌ ¾È ºÒ·È´Ù¸é ¿©±â¼­ È£Ãâ
+        // Init()ì´ ì•ˆ ë¶ˆë ¸ë‹¤ë©´ ì—¬ê¸°ì„œ í˜¸ì¶œ
         if (!_isInit)
         {
             Init();
         }
 
-        // ÀÌº¥Æ® Áßº¹ ¹æÁö
+        // ì´ë²¤íŠ¸ ì¤‘ë³µ ë°©ì§€
         if (Managers.Party != null)
         {
             Managers.Party.OnActiveCharacterChanged -= OnActiveCharacterChanged;
@@ -91,7 +91,7 @@ public class GameSceneCanvas : UI_Scene
         _partyHUD.ConnectPartyEvents(Managers.Party.GetMember());
     }
 
-    // µ¨¸®°ÔÀÌÆ®¿Í ½Ã±×´ÏÃ³¸¦ ¸ÂÃß±â À§ÇÑ µ¿±â ·¡ÆÛ ÇÔ¼ö
+    // ë¸ë¦¬ê²Œì´íŠ¸ì™€ ì‹œê·¸ë‹ˆì²˜ë¥¼ ë§ì¶”ê¸° ìœ„í•œ ë™ê¸° ë˜í¼ í•¨ìˆ˜
     private void OnActiveCharacterChanged(GameObject currentCharacter)
     {
         UpdateActiveCharacterUIAsync(currentCharacter).Forget();

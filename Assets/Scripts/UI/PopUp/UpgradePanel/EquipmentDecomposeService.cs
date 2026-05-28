@@ -65,7 +65,7 @@ public class EquipmentDecomposeService
 
         Array.Clear(_upgradeBookResultCounts, 0, _upgradeBookResultCounts.Length); 
 
-        OnMaterialsCleared?.Invoke(); // 1¹ø¸¸ ¹ßÈ­
+        OnMaterialsCleared?.Invoke(); // 1ë²ˆë§Œ ë°œí™”
     }
 
     public void ExecuteDecompose()

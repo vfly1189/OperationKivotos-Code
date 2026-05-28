@@ -9,9 +9,9 @@ public class CheckPoint_Green : MonoBehaviour, IInteractable
 
     public void OnTargetEnter(BaseCharacter character)
     {
-        // µé¾î¿Â Ä³¸¯ÅÍÀÇ Èú¸µ ¿À¶ó ÄÑ±â
+        // ë“¤ì–´ì˜¨ ìºë¦­í„°ì˜ íë§ ì˜¤ë¼ ì¼œê¸°
         character.PlayHealingAura().Forget();
-        Debug.Log("Ã¼Å©Æ÷ÀÎÆ® µµ´Ş! Ã¼·Â È¸º¹ È¿°ú ½ÃÀÛ");
+        Debug.Log("ì²´í¬í¬ì¸íŠ¸ ë„ë‹¬! ì²´ë ¥ íšŒë³µ íš¨ê³¼ ì‹œì‘");
     }
 
     public void OnTargetExit(BaseCharacter character)

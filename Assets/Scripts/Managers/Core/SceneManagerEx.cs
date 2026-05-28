@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-// [Ãß°¡] UniTask
+// [ì¶”ê°€] UniTask
 using Cysharp.Threading.Tasks;
 
 public class SceneManagerEx
@@ -22,18 +22,18 @@ public class SceneManagerEx
 
     public string NextSceneName { get; private set; }
 
-    // [ÇÙ½É º¯°æ 1] µ¿±â InitÀ» ºñµ¿±â InitAsync·Î º¯°æ (ResourceManager È°¿ë)
+    // [í•µì‹¬ ë³€ê²½ 1] ë™ê¸° Initì„ ë¹„ë™ê¸° InitAsyncë¡œ ë³€ê²½ (ResourceManager í™œìš©)
     public async UniTask InitAsync()
     {
-        // ±Û·Î¹ú(°ÔÀÓ ³»³» À¯Áö)·Î ·ÎµåÇÏ¿© Ä³½Ì
+        // ê¸€ë¡œë²Œ(ê²Œì„ ë‚´ë‚´ ìœ ì§€)ë¡œ ë¡œë“œí•˜ì—¬ ìºì‹±
         _sceneTable = await Managers.Resource.LoadAsync<SceneTableSO>("SceneTable", true);
 
         if (_sceneTable == null)
         {
-            Debug.LogError("[SceneManagerEx] SceneTableSO ·Îµå ½ÇÆĞ!");
+            Debug.LogError("[SceneManagerEx] SceneTableSO ë¡œë“œ ì‹¤íŒ¨!");
         }
     }
-    // [ÇÙ½É 1] ÄÚ·çÆ¾ ´ë½Å UniTaskVoid Fire-and-forget ½ÇÇà
+    // [í•µì‹¬ 1] ì½”ë£¨í‹´ ëŒ€ì‹  UniTaskVoid Fire-and-forget ì‹¤í–‰
     public void LoadScene(Define.Scene type, string[] resoureceToLoad = null)
     {
         LoadSceneAsync(type).Forget();
@@ -54,7 +54,7 @@ public class SceneManagerEx
 
     }
 
-    // [ÇÙ½É 2] IEnumerator -> async UniTaskVoid·Î º¯°æ
+    // [í•µì‹¬ 2] IEnumerator -> async UniTaskVoidë¡œ ë³€ê²½
     private async UniTaskVoid LoadSceneAsync(Define.Scene type)
     {
         if (_transitionUI != null)
@@ -62,7 +62,7 @@ public class SceneManagerEx
             _transitionUI.gameObject.SetActive(true);
         }
 
-        // [ÇÙ½É 3] À¯´ÏÆ¼ 1ÇÁ·¹ÀÓ ´ë±â (·»´õ¸µ °»½Å ½Ã°£ È®º¸)
+        // [í•µì‹¬ 3] ìœ ë‹ˆí‹° 1í”„ë ˆì„ ëŒ€ê¸° (ë Œë”ë§ ê°±ì‹  ì‹œê°„ í™•ë³´)
         await UniTask.Yield(PlayerLoopTiming.Update);
 
         if (CurrentScene != null)
@@ -70,11 +70,17 @@ public class SceneManagerEx
 
         Managers.Clear();
 
+        if (_sceneTable == null)
+        {
+            Debug.LogError($"[SceneManagerEx] SceneTableì´ ë¡œë“œë˜ì§€ ì•Šì•„ ì”¬ ì „í™˜ ë¶ˆê°€: {type}");
+            return;
+        }
+
         SceneDataSO data = _sceneTable.GetSceneData(type);
         NextSceneData = data;
         NextSceneName = GetSceneName(type);
 
-        // Loading ¾ÀÀ¸·Î ÀÌµ¿
+        // Loading ì”¬ìœ¼ë¡œ ì´ë™
         SceneManager.LoadScene("Loading");
     }
 }

@@ -8,15 +8,15 @@ public class UI_DamageToast : UI_Base
     [SerializeField] private TextMeshProUGUI _damageText;
 
     [Header("Material Presets")]
-    [SerializeField] private Material normalDamageMaterial;   // ÀÎ½ºÆåÅÍ¿¡¼­ MainFont_Bold_DamageNormal ÇÒ´ç
-    [SerializeField] private Material criticalDamageMaterial; // ÀÎ½ºÆåÅÍ¿¡¼­ MainFont_Bold_DamageCritical ÇÒ´ç
-    [SerializeField] private Material monsterDamageMaterial; // ÀÎ½ºÆåÅÍ¿¡¼­ MainFont_Bold_DamageCritical ÇÒ´ç
+    [SerializeField] private Material normalDamageMaterial;   // ì¸ìŠ¤í™í„°ì—ì„œ MainFont_Bold_DamageNormal í• ë‹¹
+    [SerializeField] private Material criticalDamageMaterial; // ì¸ìŠ¤í™í„°ì—ì„œ MainFont_Bold_DamageCritical í• ë‹¹
+    [SerializeField] private Material monsterDamageMaterial; // ì¸ìŠ¤í™í„°ì—ì„œ MainFont_Bold_DamageCritical í• ë‹¹
 
     [SerializeField] private CanvasGroup _canvasGroup;
 
     [Header("Animation Settings")]
-    [SerializeField] private float _lifeTime = 1.0f;    // È­¸é¿¡ ¶° ÀÖ´Â ÃÑ ½Ã°£
-    [SerializeField] private float _floatSpeed = 50f;   // À§·Î ¶°¿À¸£´Â ¼Óµµ (È­¸é ÇÈ¼¿ ±âÁØ)
+    [SerializeField] private float _lifeTime = 1.0f;    // í™”ë©´ì— ë–  ìˆëŠ” ì´ ì‹œê°„
+    [SerializeField] private float _floatSpeed = 50f;   // ìœ„ë¡œ ë– ì˜¤ë¥´ëŠ” ì†ë„ (í™”ë©´ í”½ì…€ ê¸°ì¤€)
 
     private CancellationTokenSource _cts;
 
@@ -24,14 +24,14 @@ public class UI_DamageToast : UI_Base
     {
     }
 
-    // Ç®¸µÀ¸·Î ÀÎÇØ ºñÈ°¼ºÈ­µÉ ¶§ ÁøÇà ÁßÀÎ Å¸ÀÌ¸Ó/¾Ö´Ï¸ŞÀÌ¼Ç ¾ÈÀüÇÏ°Ô Á¾·á
+    // í’€ë§ìœ¼ë¡œ ì¸í•´ ë¹„í™œì„±í™”ë  ë•Œ ì§„í–‰ ì¤‘ì¸ íƒ€ì´ë¨¸/ì• ë‹ˆë©”ì´ì…˜ ì•ˆì „í•˜ê²Œ ì¢…ë£Œ
     private void OnDisable()
     {
         CancelTimer();
     }
 
     /// <summary>
-    /// µ¥¹ÌÁö¿Í Ä¡¸íÅ¸ ¿©ºÎ¸¦ ÀÔ·Â¹Ş¾Æ ÅØ½ºÆ®¿Í ½ºÅ¸ÀÏÀ» ¾÷µ¥ÀÌÆ®ÇÕ´Ï´Ù.
+    /// ë°ë¯¸ì§€ì™€ ì¹˜ëª…íƒ€ ì—¬ë¶€ë¥¼ ì…ë ¥ë°›ì•„ í…ìŠ¤íŠ¸ì™€ ìŠ¤íƒ€ì¼ì„ ì—…ë°ì´íŠ¸í•©ë‹ˆë‹¤.
     /// </summary>
     public void SetupDamageText(int damageAmount, bool isCritical, int attackerLayer)
     {
@@ -40,22 +40,22 @@ public class UI_DamageToast : UI_Base
         transform.localScale = Vector3.one * (isCritical ? 1.5f : 1.0f);
 
         int playerLayer = LayerMask.NameToLayer("Player");
-        int monsterLayer = LayerMask.NameToLayer("Monster"); // È¤Àº Àû±º ·¹ÀÌ¾î
+        int monsterLayer = LayerMask.NameToLayer("Monster"); // í˜¹ì€ ì êµ° ë ˆì´ì–´
         int monsterBulletLayer = LayerMask.NameToLayer("MonsterBullet");
 
         if (attackerLayer == monsterLayer || attackerLayer == monsterBulletLayer)
         {
-            // ¸ó½ºÅÍ°¡ ¶§¸° °æ¿ì (ÇÃ·¹ÀÌ¾î ÇÇ°İ)
+            // ëª¬ìŠ¤í„°ê°€ ë•Œë¦° ê²½ìš° (í”Œë ˆì´ì–´ í”¼ê²©)
             _damageText.fontSharedMaterial = monsterDamageMaterial;
         }
         else if (attackerLayer == playerLayer)
         {
-            // ÇÃ·¹ÀÌ¾î°¡ ¶§¸° °æ¿ì
+            // í”Œë ˆì´ì–´ê°€ ë•Œë¦° ê²½ìš°
             _damageText.fontSharedMaterial = isCritical ? criticalDamageMaterial : normalDamageMaterial;
         }
         else
         {
-            // ±âÅ¸ (ÇÔÁ¤, È¯°æ µ¥¹ÌÁö µî)
+            // ê¸°íƒ€ (í•¨ì •, í™˜ê²½ ë°ë¯¸ì§€ ë“±)
             _damageText.fontSharedMaterial = normalDamageMaterial;
         }
 
@@ -69,29 +69,29 @@ public class UI_DamageToast : UI_Base
         float elapsed = 0f;
         Vector3 startPos = transform.position;
 
-        // _lifeTime µ¿¾È ¸Å ÇÁ·¹ÀÓ ¾Ö´Ï¸ŞÀÌ¼Ç ½ÇÇà
+        // _lifeTime ë™ì•ˆ ë§¤ í”„ë ˆì„ ì• ë‹ˆë©”ì´ì…˜ ì‹¤í–‰
         while (elapsed < _lifeTime)
         {
-            // µµÁß¿¡ °´Ã¼°¡ ²¨Áö°Å³ª ÆÄ±«µÇ¸é Áï½Ã Áß´Ü (¿¡·¯ ¹æÁö)
+            // ë„ì¤‘ì— ê°ì²´ê°€ êº¼ì§€ê±°ë‚˜ íŒŒê´´ë˜ë©´ ì¦‰ì‹œ ì¤‘ë‹¨ (ì—ëŸ¬ ë°©ì§€)
             if (token.IsCancellationRequested) return;
 
             elapsed += Time.deltaTime;
             float normalizedTime = elapsed / _lifeTime; // 0.0 ~ 1.0
 
-            // (1) À§·Î ¼­¼­È÷ ¶°¿À¸£±â
+            // (1) ìœ„ë¡œ ì„œì„œíˆ ë– ì˜¤ë¥´ê¸°
             transform.position = startPos + (Vector3.up * _floatSpeed * normalizedTime);
 
-            // (2) Àı¹İ(0.5)ÀÇ ½Ã°£ÀÌ Áö³­ ÈÄºÎÅÍ ¼­¼­È÷ Åõ¸íÇØÁö±â (Fade Out)
+            // (2) ì ˆë°˜(0.5)ì˜ ì‹œê°„ì´ ì§€ë‚œ í›„ë¶€í„° ì„œì„œíˆ íˆ¬ëª…í•´ì§€ê¸° (Fade Out)
             if (normalizedTime > 0.5f)
             {
                 _canvasGroup.alpha = Mathf.Lerp(1f, 0f, (normalizedTime - 0.5f) * 2f);
             }
 
-            // ´ÙÀ½ ÇÁ·¹ÀÓ±îÁö ´ë±â
+            // ë‹¤ìŒ í”„ë ˆì„ê¹Œì§€ ëŒ€ê¸°
             await UniTask.Yield(PlayerLoopTiming.Update, token);
         }
 
-        // ½Ã°£ÀÌ ¿ÏÀüÈ÷ Áö³ª¸é ¸Å´ÏÀú¸¦ ÅëÇØ ÀÚ½ÅÀ» ÆÄ±« (¿ÀºêÁ§Æ® Ç® ¹İÈ¯)
+        // ì‹œê°„ì´ ì™„ì „íˆ ì§€ë‚˜ë©´ ë§¤ë‹ˆì €ë¥¼ í†µí•´ ìì‹ ì„ íŒŒê´´ (ì˜¤ë¸Œì íŠ¸ í’€ ë°˜í™˜)
         Managers.Resource.Destroy(gameObject);
     }
 

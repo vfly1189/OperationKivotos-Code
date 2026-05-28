@@ -1,6 +1,6 @@
 using UnityEngine;
-using Cysharp.Threading.Tasks; // [Ãß°¡]
-using System.Threading; // [Ãß°¡]
+using Cysharp.Threading.Tasks; // [ì¶”ê°€]
+using System.Threading; // [ì¶”ê°€]
 
 public class StartSceneTabToStart : MonoBehaviour
 {
@@ -24,7 +24,7 @@ public class StartSceneTabToStart : MonoBehaviour
         _canvasGroup.alpha = _maxAlpha;
         _isFading = true;
 
-        // [ÇÙ½É] ÆÄ±« ½Ã ÀÚµ¿ Ãë¼ÒµÇ´Â ÅäÅ«À» ³Ñ°Ü¼­ ¹«ÇÑ ¹İº¹ ½ÇÇà
+        // [í•µì‹¬] íŒŒê´´ ì‹œ ìë™ ì·¨ì†Œë˜ëŠ” í† í°ì„ ë„˜ê²¨ì„œ ë¬´í•œ ë°˜ë³µ ì‹¤í–‰
         FadeRoutineAsync(this.GetCancellationTokenOnDestroy()).Forget();
     }
 
@@ -32,13 +32,13 @@ public class StartSceneTabToStart : MonoBehaviour
     {
         while (_isFading)
         {
-            // Fade Out (max ¡æ min)
+            // Fade Out (max â†’ min)
             await FadeToAsync(_minAlpha, token);
 
-            // Ãë¼ÒµÇ¾ú´Ù¸é ·çÇÁ Áï½Ã Å»Ãâ
+            // ì·¨ì†Œë˜ì—ˆë‹¤ë©´ ë£¨í”„ ì¦‰ì‹œ íƒˆì¶œ
             if (token.IsCancellationRequested) return;
 
-            // Fade In (min ¡æ max)
+            // Fade In (min â†’ max)
             await FadeToAsync(_maxAlpha, token);
         }
     }
@@ -57,7 +57,7 @@ public class StartSceneTabToStart : MonoBehaviour
             float smoothT = Mathf.SmoothStep(0f, 1f, t);
             _canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, smoothT);
 
-            // [¾ÈÀü¸Á] 1ÇÁ·¹ÀÓ ´ë±âÇÏ¸é¼­ ÆÄ±«/Ãë¼Ò ¿©ºÎ È®ÀÎ
+            // [ì•ˆì „ë§] 1í”„ë ˆì„ ëŒ€ê¸°í•˜ë©´ì„œ íŒŒê´´/ì·¨ì†Œ ì—¬ë¶€ í™•ì¸
             bool isCanceled = await UniTask.Yield(PlayerLoopTiming.Update, token).SuppressCancellationThrow();
             if (isCanceled) return;
         }
@@ -68,6 +68,6 @@ public class StartSceneTabToStart : MonoBehaviour
     private void OnDestroy()
     {
         _isFading = false;
-        // StopAllCoroutines(); <- ÀÌÁ¦ ÇÊ¿ä ¾øÀ½! ÅäÅ«ÀÌ ¾Ë¾Æ¼­ Ãë¼ÒÇØÁÜ
+        // StopAllCoroutines(); <- ì´ì œ í•„ìš” ì—†ìŒ! í† í°ì´ ì•Œì•„ì„œ ì·¨ì†Œí•´ì¤Œ
     }
 }

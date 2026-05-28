@@ -1,4 +1,4 @@
-// [Ãß°¡] UniTask ³×ÀÓ½ºÆäÀÌ½º
+// [ì¶”ê°€] UniTask ë„¤ì„ìŠ¤í˜ì´ìŠ¤
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using TMPro;
@@ -12,20 +12,20 @@ public class StartScene : BaseScene
     [Header("PreloadData")]
     [SerializeField] private StartScenePreloadSO _preloadData;
 
-    [SerializeField] private TextMeshProUGUI _loadingText; // "µ¥ÀÌÅÍ¸¦ ÁØºñÁßÀÔ´Ï´Ù..."
-    [SerializeField] private GameObject _tapToStartGroup; // (½ÃÀÛ ½Ã ºñÈ°¼ºÈ­ »óÅÂ)
+    [SerializeField] private TextMeshProUGUI _loadingText; // "ë°ì´í„°ë¥¼ ì¤€ë¹„ì¤‘ì…ë‹ˆë‹¤..."
+    [SerializeField] private GameObject _tapToStartGroup; // (ì‹œì‘ ì‹œ ë¹„í™œì„±í™” ìƒíƒœ)
     [SerializeField] private Button _startButton;
     [SerializeField] private GameObject _soundSettingButton;
 
     float _voiceDelay = 0.5f;
 
-    // [ÇÙ½É 1] À¯´ÏÆ¼ »ı¸íÁÖ±â¿¡ ¸ÂÃß±â À§ÇØ async UniTaskVoid¸¦ »ç¿ë
+    // [í•µì‹¬ 1] ìœ ë‹ˆí‹° ìƒëª…ì£¼ê¸°ì— ë§ì¶”ê¸° ìœ„í•´ async UniTaskVoidë¥¼ ì‚¬ìš©
     protected override async void Init()
     {
         base.Init();
         _sceneType = Define.Scene.Start;
 
-        // ¾À¿¡ ¿Ã·ÁµĞ EventSystemÀ» Ã£¾Æ¼­ ÆÄ±«µÇÁö ¾Ê°Ô ¼³Á¤
+        // ì”¬ì— ì˜¬ë ¤ë‘” EventSystemì„ ì°¾ì•„ì„œ íŒŒê´´ë˜ì§€ ì•Šê²Œ ì„¤ì •
         EventSystem eventSystem = FindAnyObjectByType<EventSystem>();
         if (eventSystem != null)
         {
@@ -34,18 +34,18 @@ public class StartScene : BaseScene
 
         _startButton.onClick.AddListener(OnClick);
 
-        // 1. ÃÊ±â UI »óÅÂ ¼¼ÆÃ
+        // 1. ì´ˆê¸° UI ìƒíƒœ ì„¸íŒ…
         _loadingText.gameObject.SetActive(true);
         if (_tapToStartGroup != null) _tapToStartGroup.SetActive(false);
         _startButton.interactable = false;
         _soundSettingButton.gameObject.SetActive(false);
 
-        // 2. ºñµ¿±â ·Îµù º´·Ä ½ÇÇà (UniTask ±â¹İ)
+        // 2. ë¹„ë™ê¸° ë¡œë”© ë³‘ë ¬ ì‹¤í–‰ (UniTask ê¸°ë°˜)
         var audioTask = PlayMainTitle();
         var popupTask = PreloadPopups();
         var saveTask = LoadingSaveDatas();
 
-        // [ÇÙ½É 2] ResourceManagerÀÇ UniTask ¹öÀü LoadDependenciesAsync È£Ãâ
+        // [í•µì‹¬ 2] ResourceManagerì˜ UniTask ë²„ì „ LoadDependenciesAsync í˜¸ì¶œ
         var globalAssetTask = Managers.Resource.LoadDependenciesAsync(
             new[] { "Global" },
             true,
@@ -55,17 +55,17 @@ public class StartScene : BaseScene
             }
         );
 
-        // [ÇÙ½É 3] Task.WhenAll ´ë½Å UniTask.WhenAllÀ» »ç¿ëÇÏ¿© ½º·¹µå µ¥µå¶ô ¹æÁö
+        // [í•µì‹¬ 3] Task.WhenAll ëŒ€ì‹  UniTask.WhenAllì„ ì‚¬ìš©í•˜ì—¬ ìŠ¤ë ˆë“œ ë°ë“œë½ ë°©ì§€
         await UniTask.WhenAll(audioTask, popupTask, globalAssetTask, saveTask);
 
-        // 4. ·Îµù ¿Ï·á!
+        // 4. ë¡œë”© ì™„ë£Œ!
         _startButton.interactable = true;
         _soundSettingButton.gameObject.SetActive(true);
-        // º¸ÀÌ½º Àç»ı (Invoke ´ë½Å µô·¹ÀÌ¸¦ Á÷Á¢ ÁÖ°Å³ª UniTask.Delay »ç¿ë °¡´É)
-        // ¿©±â¼­´Â ¾ÈÀüÇÏ°Ô Fire-and-forget ¹æ½Ä(UniTaskVoid)À¸·Î ¹é±×¶ó¿îµå Àç»ı
+        // ë³´ì´ìŠ¤ ì¬ìƒ (Invoke ëŒ€ì‹  ë”œë ˆì´ë¥¼ ì§ì ‘ ì£¼ê±°ë‚˜ UniTask.Delay ì‚¬ìš© ê°€ëŠ¥)
+        // ì—¬ê¸°ì„œëŠ” ì•ˆì „í•˜ê²Œ Fire-and-forget ë°©ì‹(UniTaskVoid)ìœ¼ë¡œ ë°±ê·¸ë¼ìš´ë“œ ì¬ìƒ
         PlayTitleVoiceWithDelay(_voiceDelay).Forget();
 
-        // 5. ·Îµù ¿Ï·á Ã³¸® (À¯Àú Á¶ÀÛ Çã¿ë)
+        // 5. ë¡œë”© ì™„ë£Œ ì²˜ë¦¬ (ìœ ì € ì¡°ì‘ í—ˆìš©)
         _loadingText.gameObject.SetActive(false);
         if (_tapToStartGroup != null) _tapToStartGroup.SetActive(true);
 
@@ -76,10 +76,10 @@ public class StartScene : BaseScene
 
     public void UpdateText(float progress)
     {
-        _loadingText.text = $"Loading ... ÁøÇà·ü : {progress * 100.0f}%";
+        _loadingText.text = $"Loading ... ì§„í–‰ë¥  : {progress * 100.0f}%";
     }
 
-    // [ÇÙ½É 4] Task -> UniTask·Î ¹İÈ¯Çü º¯°æ
+    // [í•µì‹¬ 4] Task -> UniTaskë¡œ ë°˜í™˜í˜• ë³€ê²½
     private async UniTask PlayMainTitle()
     {
         if (_preloadData.mainTitleBgm != null && _preloadData.mainTitleBgm.RuntimeKeyIsValid())
@@ -100,10 +100,10 @@ public class StartScene : BaseScene
         Managers.Context.SetPreloadedSaveData("Millennium", await Managers.Save.LoadPartyAsync("Millennium"));
     }
 
-    // µô·¹ÀÌ¸¦ ÁÖ°í ¹é±×¶ó¿îµå¿¡¼­ ½ÇÇàÇÒ ¼ö ÀÖµµ·Ï UniTaskVoid·Î ºĞ¸®
+    // ë”œë ˆì´ë¥¼ ì£¼ê³  ë°±ê·¸ë¼ìš´ë“œì—ì„œ ì‹¤í–‰í•  ìˆ˜ ìˆë„ë¡ UniTaskVoidë¡œ ë¶„ë¦¬
     private async UniTaskVoid PlayTitleVoiceWithDelay(float delay)
     {
-        // Invoke¸¦ ´ëÃ¼ÇÏ´Â UniTaskÀÇ °­·ÂÇÑ ½Ã°£ ´ë±â (Å¸ÀÓ½ºÄÉÀÏ ¿µÇâ ¹ŞÀ½)
+        // Invokeë¥¼ ëŒ€ì²´í•˜ëŠ” UniTaskì˜ ê°•ë ¥í•œ ì‹œê°„ ëŒ€ê¸° (íƒ€ì„ìŠ¤ì¼€ì¼ ì˜í–¥ ë°›ìŒ)
         await UniTask.Delay(System.TimeSpan.FromSeconds(delay));
 
         int length = _preloadData.titleVoices.Length;
@@ -122,12 +122,12 @@ public class StartScene : BaseScene
     {
         if (_preloadData.exitPopup != null && _preloadData.exitPopup.RuntimeKeyIsValid())
         {
-            // ÆË¾÷ ÇÁ¸®ÆÕÀº °ÔÀÓ ³»³» ¾²ÀÌ¹Ç·Î ±Û·Î¹ú ¼Ó¼º(isGlobal = true)À¸·Î ·Îµå
+            // íŒì—… í”„ë¦¬íŒ¹ì€ ê²Œì„ ë‚´ë‚´ ì“°ì´ë¯€ë¡œ ê¸€ë¡œë²Œ ì†ì„±(isGlobal = true)ìœ¼ë¡œ ë¡œë“œ
             await Managers.Resource.LoadAsync<GameObject>(_preloadData.exitPopup, true);
         }
     }
 
-    // ¹öÆ° Å¬¸¯ µîÀÇ ÀÌº¥Æ®¿¡¼­ ºñµ¿±â¸¦ ¶ç¿ï ¶§´Â async UniTaskVoid »ç¿ë
+    // ë²„íŠ¼ í´ë¦­ ë“±ì˜ ì´ë²¤íŠ¸ì—ì„œ ë¹„ë™ê¸°ë¥¼ ë„ìš¸ ë•ŒëŠ” async UniTaskVoid ì‚¬ìš©
     private async UniTaskVoid ShowExitPopup()
     {
         //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
@@ -137,8 +137,8 @@ public class StartScene : BaseScene
         {
             UI_ExitPopUp popup = await Managers.UI.ShowPopupUIAsync<UI_ExitPopUp>("UI_ExitPopUp");
             popup.SetCallbacks(
-                onConfirm: () => Debug.Log("¾Û Á¾·á"),
-                onCancel: () => Debug.Log("Ãë¼ÒµÊ")
+                onConfirm: () => Debug.Log("ì•± ì¢…ë£Œ"),
+                onCancel: () => Debug.Log("ì·¨ì†Œë¨")
             );
         }
     }
@@ -151,7 +151,7 @@ public class StartScene : BaseScene
 
     protected override void HandleEscape()
     {
-        Debug.Log("Handle Escape È£Ãâ");
+        Debug.Log("Handle Escape í˜¸ì¶œ");
         if (Managers.UI.IsPopupOpen)
         {
             Managers.UI.ClosePopupUI();

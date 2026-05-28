@@ -10,27 +10,27 @@ using static WeaponUpgradeService;
 
 public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
 {
-    [Header("º¸À¯ Àåºñ ¸ñ·Ï")]
+    [Header("ë³´ìœ  ì¥ë¹„ ëª©ë¡")]
     [SerializeField] private Transform _havingRelicScollView;
 
-    [Header("Àåºñ ¾ÆÀÌÄÜ ±×·ì")]
+    [Header("ì¥ë¹„ ì•„ì´ì½˜ ê·¸ë£¹")]
     [SerializeField] private Image _itemIcon;
     [SerializeField] private TextMeshProUGUI _itemUpgradeLevel;
     [SerializeField] private Slider _itemExpBar;
     [SerializeField] private TextMeshProUGUI _itemExpText;
 
-    [Header("Àåºñ INFO ±×·ì")]
+    [Header("ì¥ë¹„ INFO ê·¸ë£¹")]
     [SerializeField] private TextMeshProUGUI _itemName;
     [SerializeField] private TextMeshProUGUI _itemType;
     [SerializeField] private TextMeshProUGUI _itemTier;
     [SerializeField] Transform _mainStatParent;
     [SerializeField] Transform _subStatParent;
 
-    [Header("¼Ò¸ğ Àç·á ±×·ì")]
+    [Header("ì†Œëª¨ ì¬ë£Œ ê·¸ë£¹")]
     [SerializeField] Transform _consumeMaterialParent;
     [SerializeField] TextMeshProUGUI _consumeCreditNum;
 
-    [Header("Àåºñ °­È­ ¹öÆ°")]
+    [Header("ì¥ë¹„ ê°•í™” ë²„íŠ¼")]
     [SerializeField] Button _upgradeButton;
 
     private EquipmentUpgradeService _upgradeService;
@@ -52,21 +52,21 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
 
     private async UniTask InitAsync()
     {
-        //  Service »ı¼º ¹× ÀÌº¥Æ® ±¸µ¶
+        //  Service ìƒì„± ë° ì´ë²¤íŠ¸ êµ¬ë…
         _upgradeService = new EquipmentUpgradeService();
         _upgradeService.OnEquipmentSelected += OnEquipmentSelected;
         _upgradeService.OnMaterialSlotChanged += OnMaterialSlotChanged;
         _upgradeService.OnExpPreviewChanged += OnExpPreviewChanged;
 
-        // InitAsync() ³» Service ÀÌº¥Æ® ±¸µ¶ ºÎºĞ¿¡ Ãß°¡
+        // InitAsync() ë‚´ Service ì´ë²¤íŠ¸ êµ¬ë… ë¶€ë¶„ì— ì¶”ê°€
         _upgradeService.OnUpgradeExecuted += OnUpgradeExecuted;
 
-        // ¹öÆ° ÀÌº¥Æ® µî·Ï
+        // ë²„íŠ¼ ì´ë²¤íŠ¸ ë“±ë¡
         _upgradeButton.onClick.AddListener(() => _upgradeService.ExecuteUpgrade());
 
         ResetItemInfo();
 
-        //  ½½·Ôµé Init¿¡¼­ ¹Ì¸® »ı¼º
+        //  ìŠ¬ë¡¯ë“¤ Initì—ì„œ ë¯¸ë¦¬ ìƒì„±
         await UniTask.WhenAll(
             SetHavingRelicScrollView(),
             SetConsumeMaterialSlots(),
@@ -74,24 +74,24 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         );
     }
 
-    //¸Ç Ã³À½ ÁøÀÔÇÒ¶§ ¾ÆÀÌÅÛ Á¤º¸µé ÃÊ±âÈ­
+    //ë§¨ ì²˜ìŒ ì§„ì…í• ë•Œ ì•„ì´í…œ ì •ë³´ë“¤ ì´ˆê¸°í™”
     private void ResetItemInfo()
     {
-        // 1. ÀÌ¹ÌÁö´Â ¾È º¸ÀÌ°Ô ²ô±â
+        // 1. ì´ë¯¸ì§€ëŠ” ì•ˆ ë³´ì´ê²Œ ë„ê¸°
         _itemIcon.gameObject.SetActive(false);
-        //_itemIcon.sprite = null; // ±»ÀÌ ¾È ÇØµµ SetActive(false)·Î °¡·ÁÁü
+        //_itemIcon.sprite = null; // êµ³ì´ ì•ˆ í•´ë„ SetActive(false)ë¡œ ê°€ë ¤ì§
 
-        // 2. ÅØ½ºÆ® ¿ä¼Òµé ±âº»°ªÀ¸·Î ÃÊ±âÈ­ ¶Ç´Â ºñ¿ì±â
+        // 2. í…ìŠ¤íŠ¸ ìš”ì†Œë“¤ ê¸°ë³¸ê°’ìœ¼ë¡œ ì´ˆê¸°í™” ë˜ëŠ” ë¹„ìš°ê¸°
         _itemUpgradeLevel.text = "";
-        _itemName.text = "¼±ÅÃµÈ Àåºñ ¾øÀ½";
+        _itemName.text = "ì„ íƒëœ ì¥ë¹„ ì—†ìŒ";
         _itemType.text = "";
         _itemTier.text = "";
 
-        // 3. ½½¶óÀÌ´õ ¹Ù ÃÊ±âÈ­
+        // 3. ìŠ¬ë¼ì´ë” ë°” ì´ˆê¸°í™”
         _itemExpBar.value = 0f;
         _itemExpText.text = "0 / 0";
 
-        // 4. ½ºÅÈ ÇÁ¸®ÆÕµéµµ Áö¿ì±â (ÀÚ½Ä ¿ÀºêÁ§Æ®µé ÆÄ±« ¶Ç´Â Ç®¸µ ¹İÈ¯)
+        // 4. ìŠ¤íƒ¯ í”„ë¦¬íŒ¹ë“¤ë„ ì§€ìš°ê¸° (ìì‹ ì˜¤ë¸Œì íŠ¸ë“¤ íŒŒê´´ ë˜ëŠ” í’€ë§ ë°˜í™˜)
         foreach (Transform child in _mainStatParent)
         {
             Managers.Resource.Destroy(child.gameObject);
@@ -101,14 +101,14 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
             Managers.Resource.Destroy(child.gameObject);
         }
 
-        // 5. ¹öÆ°µµ ºñÈ°¼ºÈ­ (¼±ÅÃµÈ Àåºñ°¡ ¾øÀ¸´Ï °­È­ ºÒ°¡)
+        // 5. ë²„íŠ¼ë„ ë¹„í™œì„±í™” (ì„ íƒëœ ì¥ë¹„ê°€ ì—†ìœ¼ë‹ˆ ê°•í™” ë¶ˆê°€)
         _upgradeButton.interactable = false;
 
 
-        // 6. ¼Ò¸ğ Å©·¹µ÷ ¾øÀ½
+        // 6. ì†Œëª¨ í¬ë ˆë”§ ì—†ìŒ
         _consumeCreditNum.text = "";
 
-        // 7. ¼Ò¸ğ Àç·á »èÁ¦
+        // 7. ì†Œëª¨ ì¬ë£Œ ì‚­ì œ
         foreach (Transform child in _consumeMaterialParent)
         {
             Managers.Resource.Destroy(child.gameObject);
@@ -120,7 +120,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         foreach (UI_ItemSlot slot in _itemSlots)
             Managers.Resource.Destroy(slot.gameObject);
 
-        _itemSlots.Clear(); // ¡ç Ãß°¡
+        _itemSlots.Clear(); // â† ì¶”ê°€
 
         InventorySlot[] relics = Managers.Inventory.Inventory[ItemCategory.Equipment];
         foreach (InventorySlot relic in relics)
@@ -150,7 +150,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
                     if (_upgradeService.SelectedEquipment == null) return;
                     OpenMaterialSelectPopup();
                 },
-                onCancel: () => _upgradeService.RemoveMaterial(index) //  Service¿¡ À§ÀÓ
+                onCancel: () => _upgradeService.RemoveMaterial(index) //  Serviceì— ìœ„ì„
             );
 
             _consumeMaterialSlots.Add(slot);
@@ -173,17 +173,17 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         }
     }
 
-    //Àç·á½½·Ô Äİ¹é ÇÔ¼ö
+    //ì¬ë£ŒìŠ¬ë¡¯ ì½œë°± í•¨ìˆ˜
     private async void OpenMaterialSelectPopup()
     {
-        Debug.Log("Àç·á ½½·Ô ´­¸²");
+        Debug.Log("ì¬ë£Œ ìŠ¬ë¡¯ ëˆŒë¦¼");
         var popup = await Managers.UI.ShowPopupUIAsync<UI_MaterialSelectPopup>("UI_MaterialSelectPopup");
-        //  Service¸¦ ÅëÂ°·Î ÁÖÀÔ ¡æ ÆË¾÷µµ °°Àº Service¸¦ ¹Ù¶óº½
+        //  Serviceë¥¼ í†µì§¸ë¡œ ì£¼ì… â†’ íŒì—…ë„ ê°™ì€ Serviceë¥¼ ë°”ë¼ë´„
         popup.SetService(_upgradeService);
     }
 
     // =========================================================
-    // Service ÀÌº¥Æ® ¼ö½Å ¡æ UI °»½Å
+    // Service ì´ë²¤íŠ¸ ìˆ˜ì‹  â†’ UI ê°±ì‹ 
     // =========================================================
     private void OnEquipmentSelected(InventorySlot slot)
     {
@@ -191,7 +191,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         _upgradeButton.interactable = _upgradeService.CanUpgrade();
     }
 
-    // OnMaterialSlotChanged ½Ã±×´ÏÃ³ º¯°æ
+    // OnMaterialSlotChanged ì‹œê·¸ë‹ˆì²˜ ë³€ê²½
     private void OnMaterialSlotChanged(int index, MaterialEntry entry)
     {
         if (entry == null || entry.IsEmpty)
@@ -201,10 +201,10 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
 
         _upgradeButton.interactable = _upgradeService.CanUpgrade();
     }
-    // ¼ö½Å ÈÄ UI °»½Å
+    // ìˆ˜ì‹  í›„ UI ê°±ì‹ 
     private void OnExpPreviewChanged(ExpPreviewResult result)
     {
-        _itemUpgradeLevel.text = $"+{result.SimulatedLevel}"; // °øÅëÀ¸·Î »©±â
+        _itemUpgradeLevel.text = $"+{result.SimulatedLevel}"; // ê³µí†µìœ¼ë¡œ ë¹¼ê¸°
 
         int itemID = _upgradeService.SelectedEquipment.itemID;
         ItemGrade grade = Managers.Data.GetItemData(itemID, ItemCategory.Equipment).Grade;
@@ -232,7 +232,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
     }
 
     // =========================================================
-    // Àåºñ Á¤º¸ °»½Å (Service ÀÌº¥Æ®·Î¸¸ È£ÃâµÊ)
+    // ì¥ë¹„ ì •ë³´ ê°±ì‹  (Service ì´ë²¤íŠ¸ë¡œë§Œ í˜¸ì¶œë¨)
     // =========================================================
     private async UniTask RefreshItemInfo(InventorySlot slotData)
     {
@@ -275,7 +275,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         _consumeCreditNum.text = "";
         
 
-        // SetActive Åä±Û¸¸ (Destroy/»ı¼º ¾øÀ½)
+        // SetActive í† ê¸€ë§Œ (Destroy/ìƒì„± ì—†ìŒ)
         RefreshMainStat(slotData.EquipInstance);
         RefreshSubStat(slotData.EquipInstance);
     }
@@ -304,14 +304,14 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
 
     private void OnUpgradeExecuted(InventorySlot slot, UpgradeResult result)
     {
-        // ¾ÆÀÌÅÛ Á¤º¸ °»½Å
+        // ì•„ì´í…œ ì •ë³´ ê°±ì‹ 
         RefreshItemInfo(slot).Forget();
 
-        //¿©±â¼­ ºñµ¿±â·Î ÇØ¹ö¸®¸é ·¹º§ °»½ÅÀÌ¶û Å¸ÀÌ¹Ö½Î¿òÀÌ°É¸².
+        //ì—¬ê¸°ì„œ ë¹„ë™ê¸°ë¡œ í•´ë²„ë¦¬ë©´ ë ˆë²¨ ê°±ì‹ ì´ë‘ íƒ€ì´ë°ì‹¸ì›€ì´ê±¸ë¦¼.
         SetHavingRelicScrollView().Forget();
 
 
-        //// ½ºÅ©·Ñºä ½½·Ôµµ ·¹º§ Ç¥½Ã °»½Å (ÇØ´ç ½½·Ô Ã£¾Æ¼­)
+        //// ìŠ¤í¬ë¡¤ë·° ìŠ¬ë¡¯ë„ ë ˆë²¨ í‘œì‹œ ê°±ì‹  (í•´ë‹¹ ìŠ¬ë¡¯ ì°¾ì•„ì„œ)
         //var uiSlot = _itemSlots.Find(s => s.CurrentSlotData == slot);
         //uiSlot?.SetInfo(slot, ItemCategory.Equipment, -1);
 
@@ -319,7 +319,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
     }
 
 
-    //  ÀÎÅÍÆäÀÌ½º ±¸ÇöÀº void, ³»ºÎ¿¡¼­ async ¸Ş¼­µå¿¡ À§ÀÓ
+    //  ì¸í„°í˜ì´ìŠ¤ êµ¬í˜„ì€ void, ë‚´ë¶€ì—ì„œ async ë©”ì„œë“œì— ìœ„ì„
     public void OnSlotDoubleClicked(UI_ItemSlot slot)
     {
         _upgradeService.SelectEquipment(slot.CurrentSlotData);
@@ -329,7 +329,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
     {
         if (slot.CurrentSlotData != null && !slot.CurrentSlotData.IsEmpty)
         {
-            // ÅøÆÁ È°¼ºÈ­ ¹× Á¤º¸ ¼ÂÆÃ
+            // íˆ´íŒ í™œì„±í™” ë° ì •ë³´ ì…‹íŒ…
             //Managers.UI.ShowItemTooltip(slot.CurrentSlotData, screenPos);
             UI_ItemInfo.ShowTooltip(slot.CurrentSlotData, screenPos);
         }
@@ -341,12 +341,12 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         UI_ItemInfo.HideTooltip();
     }
 
-    // Refresh()¿ë - Destroy ¾øÀÌ Ç¥½Ã¸¸ ÃÊ±âÈ­
+    // Refresh()ìš© - Destroy ì—†ì´ í‘œì‹œë§Œ ì´ˆê¸°í™”
     private void ResetEquipmentDisplay()
     {
         _itemIcon.gameObject.SetActive(false);
         _itemUpgradeLevel.text = "";
-        _itemName.text = "¼±ÅÃµÈ Àåºñ ¾øÀ½";
+        _itemName.text = "ì„ íƒëœ ì¥ë¹„ ì—†ìŒ";
         _itemType.text = "";
         _itemTier.text = "";
         _itemExpBar.value = 0f;
@@ -354,18 +354,18 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         _consumeCreditNum.text = "";
         _upgradeButton.interactable = false;
 
-        // ½ºÅÈ ½½·ÔÀº Destroy ¾øÀÌ SetActive(false)¸¸
+        // ìŠ¤íƒ¯ ìŠ¬ë¡¯ì€ Destroy ì—†ì´ SetActive(false)ë§Œ
         foreach (var slot in _mainStatSlots) slot.gameObject.SetActive(false);
         foreach (var slot in _subStatSlots) slot.gameObject.SetActive(false);
     }
 
     public override void Refresh()
     {
-        // ¼±ÅÃµÈ Àåºñ°¡ ÀÖÀ¸¸é ±× Á¤º¸ °»½Å
-        // Àç·á ¸ñ·Ï °»½Å
+        // ì„ íƒëœ ì¥ë¹„ê°€ ìˆìœ¼ë©´ ê·¸ ì •ë³´ ê°±ì‹ 
+        // ì¬ë£Œ ëª©ë¡ ê°±ì‹ 
         SetHavingRelicScrollView().Forget();
         ResetEquipmentDisplay();
-        _upgradeService?.DeselectEquipment(); // ¡ç ¼­ºñ½º »óÅÂµµ ÃÊ±âÈ­
+        _upgradeService?.DeselectEquipment(); // â† ì„œë¹„ìŠ¤ ìƒíƒœë„ ì´ˆê¸°í™”
     }
 
     private void OnDestroy()
@@ -374,7 +374,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
         _itemInfoCts?.Dispose();
         _linkedCts?.Dispose();
 
-        // ÀÌº¥Æ® ±¸µ¶ ÇØÁ¦
+        // ì´ë²¤íŠ¸ êµ¬ë… í•´ì œ
         if (_upgradeService != null)
         {
             _upgradeService.OnEquipmentSelected -= OnEquipmentSelected;

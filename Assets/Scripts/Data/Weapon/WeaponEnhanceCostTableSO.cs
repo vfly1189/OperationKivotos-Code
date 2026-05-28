@@ -5,24 +5,24 @@ using UnityEngine;
 [Serializable]
 public class WeaponEnhanceCost
 {
-    public int TargetLevel;      // °­È­ ÈÄ µµ´ŞÇÒ ·¹º§ (2~25)
-    public int RequireGold;      // ÇÊ¿ä °ñµå
+    public int TargetLevel;      // ê°•í™” í›„ ë„ë‹¬í•  ë ˆë²¨ (2~25)
+    public int RequireGold;      // í•„ìš” ê³¨ë“œ
 
-    public int Material1ID;      // Àç·á 1¹ø ¾ÆÀÌÅÛ ID
-    public int Material1Count;   // Àç·á 1¹ø °³¼ö
+    public int Material1ID;      // ì¬ë£Œ 1ë²ˆ ì•„ì´í…œ ID
+    public int Material1Count;   // ì¬ë£Œ 1ë²ˆ ê°œìˆ˜
 
-    public int Material2ID;      // Àç·á 2¹ø ¾ÆÀÌÅÛ ID (0ÀÌ¸é ºÒÇÊ¿ä)
-    public int Material2Count;   // Àç·á 2¹ø °³¼ö
+    public int Material2ID;      // ì¬ë£Œ 2ë²ˆ ì•„ì´í…œ ID (0ì´ë©´ ë¶ˆí•„ìš”)
+    public int Material2Count;   // ì¬ë£Œ 2ë²ˆ ê°œìˆ˜
 
-    public int Material3ID;      // Àç·á 3¹ø ¾ÆÀÌÅÛ ID (0ÀÌ¸é ºÒÇÊ¿ä)
-    public int Material3Count;   // Àç·á 3¹ø °³¼ö
+    public int Material3ID;      // ì¬ë£Œ 3ë²ˆ ì•„ì´í…œ ID (0ì´ë©´ ë¶ˆí•„ìš”)
+    public int Material3Count;   // ì¬ë£Œ 3ë²ˆ ê°œìˆ˜
 }
 
 [CreateAssetMenu(fileName = "WeaponEnhanceCostTable", menuName = "Data/WeaponEnhanceCostTable")]
 public class WeaponEnhanceCostTableSO : ScriptableObject, IDataCacheable
 {
     [Header("Weapon Enhancement Cost Data (Level 2~25)")]
-    // ¿¢¼¿ÀÇ Weapon_Enhance_Cost_TableÀ» ÆÄ½ÌÇØ¼­ Ã¤¿öÁú ¸®½ºÆ®
+    // ì—‘ì…€ì˜ Weapon_Enhance_Cost_Tableì„ íŒŒì‹±í•´ì„œ ì±„ì›Œì§ˆ ë¦¬ìŠ¤íŠ¸
     public List<WeaponEnhanceCost> CostList = new List<WeaponEnhanceCost>();
 
     public void CacheData(Dictionary<Type, object> dataDicts)
@@ -31,11 +31,11 @@ public class WeaponEnhanceCostTableSO : ScriptableObject, IDataCacheable
     }
 
     // ==========================================
-    // Æ¯Á¤ ¸ñÇ¥ ·¹º§ÀÇ °­È­ ºñ¿ë °¡Á®¿À±â
+    // íŠ¹ì • ëª©í‘œ ë ˆë²¨ì˜ ê°•í™” ë¹„ìš© ê°€ì ¸ì˜¤ê¸°
     // ==========================================
     public WeaponEnhanceCost GetCostByTargetLevel(int targetLevel)
     {
-        // ¸®½ºÆ®¸¦ ¼øÈ¸ÇÏ¸ç Ã£±â
+        // ë¦¬ìŠ¤íŠ¸ë¥¼ ìˆœíšŒí•˜ë©° ì°¾ê¸°
         foreach (var cost in CostList)
         {
             if (cost.TargetLevel == targetLevel)
@@ -44,12 +44,12 @@ public class WeaponEnhanceCostTableSO : ScriptableObject, IDataCacheable
             }
         }
 
-        Debug.LogError($"[WeaponEnhanceCostTable] {targetLevel} ·¹º§ÀÇ °­È­ ºñ¿ë µ¥ÀÌÅÍ°¡ ¾ø½À´Ï´Ù.");
+        Debug.LogError($"[WeaponEnhanceCostTable] {targetLevel} ë ˆë²¨ì˜ ê°•í™” ë¹„ìš© ë°ì´í„°ê°€ ì—†ìŠµë‹ˆë‹¤.");
         return default;
     }
 
     // ==========================================
-    // (¼±ÅÃ) Dictionary·Î º¯È¯ÇÏ´Â ÇïÆÛ ÇÔ¼ö (DataManager¿ë)
+    // (ì„ íƒ) Dictionaryë¡œ ë³€í™˜í•˜ëŠ” í—¬í¼ í•¨ìˆ˜ (DataManagerìš©)
     // ==========================================
     public Dictionary<int, WeaponEnhanceCost> MakeDictionary()
     {

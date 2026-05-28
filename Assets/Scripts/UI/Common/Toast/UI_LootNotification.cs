@@ -17,11 +17,11 @@ public class UI_LootNotification : UI_Base
     [SerializeField] private UI_GainExpToast _gainExpToast;
     [SerializeField] private UI_GainCreditToast _gainCreditToast;
 
-    // ´ë±â¿­ Å¥
+    // ëŒ€ê¸°ì—´ í
     private Queue<LootInfo> _lootQueue = new Queue<LootInfo>();
     private bool _isProcessingQueue = false;
 
-    // Å¥¿¡ ´ãÀ» ÀÓ½Ã µ¥ÀÌÅÍ ±¸Á¶Ã¼
+    // íì— ë‹´ì„ ì„ì‹œ ë°ì´í„° êµ¬ì¡°ì²´
     private struct LootInfo
     {
         public ItemCategory Category;
@@ -33,26 +33,26 @@ public class UI_LootNotification : UI_Base
 
     public override void Init()
     {
-        // °æÇèÄ¡/Å©·¹µ÷ ÆĞ³ÎÀº Ã³À½¿£ ¾È º¸ÀÌ°Ô ÇÏ°Å³ª Åõ¸íÇÏ°Ô ¼¼ÆÃ
+        // ê²½í—˜ì¹˜/í¬ë ˆë”§ íŒ¨ë„ì€ ì²˜ìŒì—” ì•ˆ ë³´ì´ê²Œ í•˜ê±°ë‚˜ íˆ¬ëª…í•˜ê²Œ ì„¸íŒ…
         //_gainExpToast.gameObject.SetActive(false);
         //_gainCreditToast.gameObject.SetActive(false);
     }
 
     /// <summary>
-    /// ¿ÜºÎ¿¡¼­ È£ÃâÇÏ´Â ÇÔ¼ö (ÀÌÁ¦ Áï½Ã ¶ç¿ìÁö ¾Ê°í ÁÙÀ» ¼¼¿ó´Ï´Ù)
+    /// ì™¸ë¶€ì—ì„œ í˜¸ì¶œí•˜ëŠ” í•¨ìˆ˜ (ì´ì œ ì¦‰ì‹œ ë„ìš°ì§€ ì•Šê³  ì¤„ì„ ì„¸ì›ë‹ˆë‹¤)
     /// </summary>
     public void ShowLootToast(ItemCategory category, string itemName, int amount, string iconKey, Color gradeColor)
     {
         _lootQueue.Enqueue(new LootInfo { Category = category, ItemName = itemName, Amount = amount, IconKey = iconKey, GradeColor = gradeColor });
 
-        // Å¥ Ã³¸®°¡ ¾È µ¹°í ÀÖ´Ù¸é ½ÃÀÛ½ÃÅ´
+        // í ì²˜ë¦¬ê°€ ì•ˆ ëŒê³  ìˆë‹¤ë©´ ì‹œì‘ì‹œí‚´
         if (!_isProcessingQueue)
         {
             ProcessLootQueueAsync().Forget();
         }
     }
 
-    // 0.2ÃÊ °£°İÀ¸·Î Å¥¿¡¼­ ÇÏ³ª¾¿ »©¼­ ¶ç¿öÁÖ´Â ·çÇÁ
+    // 0.2ì´ˆ ê°„ê²©ìœ¼ë¡œ íì—ì„œ í•˜ë‚˜ì”© ë¹¼ì„œ ë„ì›Œì£¼ëŠ” ë£¨í”„
     private async UniTaskVoid ProcessLootQueueAsync()
     {
         _isProcessingQueue = true;
@@ -62,7 +62,7 @@ public class UI_LootNotification : UI_Base
             LootInfo info = _lootQueue.Dequeue();
             await CreateToastItemAsync(info);
 
-            // ÇÑ ¹ø ¶ç¿ì°í 0.2ÃÊ ´ë±â (ÀÌ °£°İÀ» ÁÖ¸é ¿Í¹Ù¹Ú ¶ßÁö ¾Ê°í ºÎµå·´°Ô ÆË¾÷µË´Ï´Ù)
+            // í•œ ë²ˆ ë„ìš°ê³  0.2ì´ˆ ëŒ€ê¸° (ì´ ê°„ê²©ì„ ì£¼ë©´ ì™€ë°”ë°• ëœ¨ì§€ ì•Šê³  ë¶€ë“œëŸ½ê²Œ íŒì—…ë©ë‹ˆë‹¤)
             await UniTask.Delay(200);
         }
 
@@ -70,7 +70,7 @@ public class UI_LootNotification : UI_Base
     }
 
 
-    // ºñµ¿±â·Î ¾ÆÀÌÄÜÀ» ·ÎµåÇÏµµ·Ï º¯°æ
+    // ë¹„ë™ê¸°ë¡œ ì•„ì´ì½˜ì„ ë¡œë“œí•˜ë„ë¡ ë³€ê²½
     private async UniTask CreateToastItemAsync(LootInfo info)
     {
         GameObject go = Instantiate(_lootToastPrefab, _itemPanelRoot);
@@ -80,28 +80,28 @@ public class UI_LootNotification : UI_Base
         UI_LootToastItem toastItem = go.GetComponent<UI_LootToastItem>();
 
 
-        // 1. Å¸ÀÔ ÆĞÅÏ ¸ÅÄªÀ» ÅëÇØ ¾ÆÆ²¶ó½º Å°¿Í ¾ÆÀÌÄÜ ÀÌ¸§ ºĞ±â Ã³¸®
+        // 1. íƒ€ì… íŒ¨í„´ ë§¤ì¹­ì„ í†µí•´ ì•„í‹€ë¼ìŠ¤ í‚¤ì™€ ì•„ì´ì½˜ ì´ë¦„ ë¶„ê¸° ì²˜ë¦¬
         (string atlasKey, string iconName) = info.Category switch
         {
-            // itemData°¡ EquipmentData Å¸ÀÔÀÌ¸é equip º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ EquipmentData íƒ€ì…ì´ë©´ equip ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             ItemCategory.Equipment => ("EquipmentIconAtlas", info.IconKey),
 
-            // itemData°¡ ConsumableData Å¸ÀÔÀÌ¸é cons º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ ConsumableData íƒ€ì…ì´ë©´ cons ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             ItemCategory.Consumable => ("ConsumablesAtlas", info.IconKey),
 
-            // itemData°¡ MaterialData Å¸ÀÔÀÌ¸é mat º¯¼ö¿¡ ÇÒ´çÇÏ°í ºí·Ï ½ÇÇà
+            // itemDataê°€ MaterialData íƒ€ì…ì´ë©´ mat ë³€ìˆ˜ì— í• ë‹¹í•˜ê³  ë¸”ë¡ ì‹¤í–‰
             ItemCategory.Material => ("MaterialIconAtlas", info.IconKey),
 
-            // ¾î¶² Å¸ÀÔ¿¡µµ ¸ÂÁö ¾Ê°Å³ª ¿¡·¯ ¹æÁö¿ë (±âº»°ª)
+            // ì–´ë–¤ íƒ€ì…ì—ë„ ë§ì§€ ì•Šê±°ë‚˜ ì—ëŸ¬ ë°©ì§€ìš© (ê¸°ë³¸ê°’)
             _ => ("CommonAtlas", info.IconKey)
         };
 
-        // UI ÄÄÆ÷³ÍÆ®´Â ¹Ì¸® ¼¼ÆÃÇØµÎ°í (ÀÌ¸§, °³¼ö, Å×µÎ¸® »ö»ó µî)
-        // ¾ÆÀÌÄÜÀº ·ÎµåµÇ´Â ´ë·Î ³ªÁß¿¡ µé¾î°¡µµ·Ï Ã³¸®ÇÒ ¼öµµ ÀÖ°í, ±â´Ù·È´Ù°¡ ³Ñ±æ ¼öµµ ÀÖ½À´Ï´Ù.
+        // UI ì»´í¬ë„ŒíŠ¸ëŠ” ë¯¸ë¦¬ ì„¸íŒ…í•´ë‘ê³  (ì´ë¦„, ê°œìˆ˜, í…Œë‘ë¦¬ ìƒ‰ìƒ ë“±)
+        // ì•„ì´ì½˜ì€ ë¡œë“œë˜ëŠ” ëŒ€ë¡œ ë‚˜ì¤‘ì— ë“¤ì–´ê°€ë„ë¡ ì²˜ë¦¬í•  ìˆ˜ë„ ìˆê³ , ê¸°ë‹¤ë ¸ë‹¤ê°€ ë„˜ê¸¸ ìˆ˜ë„ ìˆìŠµë‹ˆë‹¤.
         //Sprite loadedIcon = await Managers.Resource.LoadAsync<Sprite>(info.IconKey);
         Sprite loadedIcon = await Managers.Resource.GetSpriteFromAtlasAsync(atlasKey, iconName);
 
-        // ·ÎµåµÇ´Â µ¿¾È »èÁ¦µÇ¾úÀ» ¼ö ÀÖÀ¸´Ï ¹æ¾î ÄÚµå
+        // ë¡œë“œë˜ëŠ” ë™ì•ˆ ì‚­ì œë˜ì—ˆì„ ìˆ˜ ìˆìœ¼ë‹ˆ ë°©ì–´ ì½”ë“œ
         if (toastItem != null)
         {
             toastItem.Setup(info.ItemName, info.Amount, loadedIcon, info.GradeColor);

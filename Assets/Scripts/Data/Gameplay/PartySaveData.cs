@@ -5,9 +5,9 @@ using UnityEngine;
 [Serializable]
 public class PartySaveData
 {
-    public string partyId;          // "Abydos", "Gehenna" °°Àº Å°
+    public string partyId;          // "Abydos", "Gehenna" ê°™ì€ í‚¤
 
-    public PartyRuntimeData party;  // ·¹º§/exp, Å¬¸®¾î Á¤º¸ µî
+    public PartyRuntimeData party;  // ë ˆë²¨/exp, í´ë¦¬ì–´ ì •ë³´ ë“±
 
     public List<CharacterSaveData> characters;
 
@@ -43,8 +43,8 @@ public class InventorySaveData
 [Serializable]
 public class InventorySlotEntry
 {
-    public int slotIndex;       // ¹è¿­¿¡¼­ ¸î ¹ø ½½·ÔÀÎÁö
-    public InventorySlot slot;  // ½ÇÁ¦ ¾ÆÀÌÅÛ µ¥ÀÌÅÍ
+    public int slotIndex;       // ë°°ì—´ì—ì„œ ëª‡ ë²ˆ ìŠ¬ë¡¯ì¸ì§€
+    public InventorySlot slot;  // ì‹¤ì œ ì•„ì´í…œ ë°ì´í„°
 }
 
 
@@ -57,8 +57,8 @@ public class EquipmentSaveData
 [Serializable]
 public class EquippedSlotEntry
 {
-    public EquipType slotType;   // ¾î¶² ºÎÀ§ÀÎÁö
-    public InventorySlot slot;   // ÀåÂøµÈ Àåºñ µ¥ÀÌÅÍ
+    public EquipType slotType;   // ì–´ë–¤ ë¶€ìœ„ì¸ì§€
+    public InventorySlot slot;   // ì¥ì°©ëœ ì¥ë¹„ ë°ì´í„°
 }
 
 
@@ -72,7 +72,7 @@ public class WalletSaveData
 [Serializable]
 public class WalletDataEntry
 {
-    public CurrencyType currencyType;   // ¾î¶² ºÎÀ§ÀÎÁö
-    public int amount;   // ÀåÂøµÈ Àåºñ µ¥ÀÌÅÍ
+    public CurrencyType currencyType;   // ì–´ë–¤ ë¶€ìœ„ì¸ì§€
+    public int amount;   // ì¥ì°©ëœ ì¥ë¹„ ë°ì´í„°
 }
 

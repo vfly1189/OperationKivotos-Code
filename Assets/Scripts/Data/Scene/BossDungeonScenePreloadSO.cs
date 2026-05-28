@@ -4,30 +4,30 @@ using UnityEngine.AddressableAssets;
 [CreateAssetMenu(menuName = "Preload/BossDungeonScenePreloadData")]
 public class BossDungeonScenePreloadSO : SceneDataSO
 {
-    [Header("¸Ê")]
+    [Header("ë§µ")]
     public AssetReferenceGameObject bossDungeon;
 
-    [Header("º¸½º¶û ·¼¸¯")]
+    [Header("ë³´ìŠ¤ë‘ ë ë¦­")]
     public AssetReferenceGameObject boss;
     //public AssetReferenceGameObject greenRelic;
     //public AssetReferenceGameObject redRelic;
 
-    [Header("¸ŞÀÎ UI")]
+    [Header("ë©”ì¸ UI")]
     //public AssetReferenceGameObject gameSceneCanvas;
     public AssetReferenceGameObject effectStage;
     public AssetReferenceGameObject bossHPBar;
 
-    [Header("Å¬¸®¾î UI")]
+    [Header("í´ë¦¬ì–´ UI")]
     public AssetReferenceGameObject dungeonClearUI;
 
-    [Header("ºê±İ")]
+    [Header("ë¸Œê¸ˆ")]
     public AssetReferenceT<AudioClip>[] fightingBgms;
     public AssetReferenceT<AudioClip> successBgm;
 
-    [Header("ÃÑ¾Ë")]
+    [Header("ì´ì•Œ")]
     public AssetReferenceGameObject bullet;
 
-    [Header("¸ó½ºÅÍ")]
+    [Header("ëª¬ìŠ¤í„°")]
     //public AssetReferenceGameObject monsterAR;
     public AssetReferenceGameObject monsterRL;
     //public AssetReferenceGameObject monsterTank;

@@ -1,7 +1,6 @@
 using UnityEngine;
-// [Ãß°¡] UniTask
+// [ì¶”ê°€] UniTask
 using Cysharp.Threading.Tasks;
-using NUnit.Framework.Constraints;
 
 public class Managers : MonoBehaviour
 {
@@ -46,17 +45,17 @@ public class Managers : MonoBehaviour
     public static FieldManager Field { get { return Instance._field; } }
     #endregion
 
-    // [ÇÙ½É 1] ÄÚ·çÆ¾ Start ´ë½Å ÀÏ¹İ Start¿¡¼­ Fire-and-forget ºñµ¿±â ½ÇÇà
+    // [í•µì‹¬ 1] ì½”ë£¨í‹´ Start ëŒ€ì‹  ì¼ë°˜ Startì—ì„œ Fire-and-forget ë¹„ë™ê¸° ì‹¤í–‰
     void Start()
     {
         Init();
         InitializeAsync().Forget();
     }
 
-    // µ¥ÀÌÅÍ ºñµ¿±â ÃÊ±âÈ­
+    // ë°ì´í„° ë¹„ë™ê¸° ì´ˆê¸°í™”
     private async UniTaskVoid InitializeAsync()
     {
-        // ¾À Å×ÀÌºí ·Îµå¿Í µ¥ÀÌÅÍ ·Îµå¸¦ º´·Ä·Î µ¿½Ã¿¡ Ã³¸®ÇÏ¿© ¼Óµµ ÃÖÀûÈ­
+        // ì”¬ í…Œì´ë¸” ë¡œë“œì™€ ë°ì´í„° ë¡œë“œë¥¼ ë³‘ë ¬ë¡œ ë™ì‹œì— ì²˜ë¦¬í•˜ì—¬ ì†ë„ ìµœì í™”
         await UniTask.WhenAll(
             _scene.InitAsync(),
             _data.InitAsync()
@@ -112,7 +111,7 @@ public class Managers : MonoBehaviour
         if (_party != null) _party.Dispose();
     }
 
-    // [ÇÙ½É 2] Start_Coroutine »èÁ¦! ´õ ÀÌ»ó ÄÚ·çÆ¾ ºê¸´Áö°¡ ÇÊ¿ä ¾ø½À´Ï´Ù.
+    // [í•µì‹¬ 2] Start_Coroutine ì‚­ì œ! ë” ì´ìƒ ì½”ë£¨í‹´ ë¸Œë¦¿ì§€ê°€ í•„ìš” ì—†ìŠµë‹ˆë‹¤.
 
     public static void Clear()
     {

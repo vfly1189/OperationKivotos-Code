@@ -8,12 +8,12 @@ using UnityEngine;
 
 public enum ItemGrade
 {
-    Common,     // È¸»ö
-    Uncommon,   // ³ì»ö
-    Rare,       // ÆÄ¶õ»ö
-    Epic,       // º¸¶ó»ö
-    Legendary,  // ÁÖÈ²»ö
-    Mythic      // »¡°£»ö
+    Common,     // íšŒìƒ‰
+    Uncommon,   // ë…¹ìƒ‰
+    Rare,       // íŒŒë€ìƒ‰
+    Epic,       // ë³´ë¼ìƒ‰
+    Legendary,  // ì£¼í™©ìƒ‰
+    Mythic      // ë¹¨ê°„ìƒ‰
 }
 
 public enum ItemCategory
@@ -30,13 +30,13 @@ public class InventorySlot
     public int Amount;
     public ItemCategory itemCategory;
 
-    // ÀåºñÀÏ °æ¿ì¿¡¸¸ ÇÒ´çµÇ´Â °íÀ¯ µ¥ÀÌÅÍ
+    // ì¥ë¹„ì¼ ê²½ìš°ì—ë§Œ í• ë‹¹ë˜ëŠ” ê³ ìœ  ë°ì´í„°
     public EquipmentInstance EquipInstance;
 
-    [JsonIgnore]  // ¡ç Ãß°¡
+    [JsonIgnore]  // â† ì¶”ê°€
     public bool IsEmpty => itemID == 0 || Amount <= 0;
 
-    [JsonIgnore]  // ¡ç Ãß°¡
+    [JsonIgnore]  // â† ì¶”ê°€
     public bool IsEquipment => itemID >= 10000 && itemID <= 19999;
 
 
@@ -47,23 +47,23 @@ public class InventorySlot
     }
 }
 
-// 1. Àåºñ°¡ ½ÇÁ¦·Î »ı¼ºµÉ ¶§ °¡Áö´Â '°³º° ½ºÅÈ' µ¥ÀÌÅÍ
+// 1. ì¥ë¹„ê°€ ì‹¤ì œë¡œ ìƒì„±ë  ë•Œ ê°€ì§€ëŠ” 'ê°œë³„ ìŠ¤íƒ¯' ë°ì´í„°
 [Serializable]
 public class EquipmentInstance
 {
-    public List<StatOption> MainStats = new List<StatOption>(); // ¸ŞÀÎ ¿É¼Ç (º¸Åë 1°³)
-    public List<StatOption> SubStats = new List<StatOption>();  // ¼­ºê ¿É¼Ç (·£´ı)
+    public List<StatOption> MainStats = new List<StatOption>(); // ë©”ì¸ ì˜µì…˜ (ë³´í†µ 1ê°œ)
+    public List<StatOption> SubStats = new List<StatOption>();  // ì„œë¸Œ ì˜µì…˜ (ëœë¤)
 
     public int CurrentExp = 0;
-    public int NextLevelRequireExp = 200;  // ´ÙÀ½ ·¹º§·Î °¡´Â µ¥ ÇÊ¿äÇÑ EXP
+    public int NextLevelRequireExp = 200;  // ë‹¤ìŒ ë ˆë²¨ë¡œ ê°€ëŠ” ë° í•„ìš”í•œ EXP
 
-    // ·¹º§¾÷ Ã¼Å© ¸Ş¼­µå
+    // ë ˆë²¨ì—… ì²´í¬ ë©”ì„œë“œ
     public bool CanLevelUp()
     {
         return CurrentExp >= NextLevelRequireExp;
     }
 
-    // ¿ÜºÎ¿¡¼­ EXP¸¦ Ãß°¡ÇÒ ¶§ È£Ãâ
+    // ì™¸ë¶€ì—ì„œ EXPë¥¼ ì¶”ê°€í•  ë•Œ í˜¸ì¶œ
     public void AddExp(int expAmount)
     {
         CurrentExp += expAmount;
@@ -72,7 +72,7 @@ public class EquipmentInstance
             UpgradeLevel++;
             CurrentExp -= NextLevelRequireExp;
 
-            // DataManager¿¡¼­ ´ÙÀ½ ·¹º§ ¿ä±¸ EXP Á¶È¸
+            // DataManagerì—ì„œ ë‹¤ìŒ ë ˆë²¨ ìš”êµ¬ EXP ì¡°íšŒ
             var nextExpData = Managers.Data.GetData<int, EquipmentLevelExpData>(UpgradeLevel + 1);
             NextLevelRequireExp = nextExpData?.RequireExp ?? 0;
         }
@@ -88,10 +88,10 @@ public class StatOption
     public float Value;
     public int UpgradeCount = 0;
 
-    // UI¿¡ º¸¿©ÁÙ ¶§ ÆíÇÏµµ·Ï ÇÁ·ÎÆÛÆ¼ Ãß°¡
+    // UIì— ë³´ì—¬ì¤„ ë•Œ í¸í•˜ë„ë¡ í”„ë¡œí¼í‹° ì¶”ê°€
     public string GetStatString()
     {
-        // ¿¹: MaxHP_Percent ÀÌ¸é "ÃÖ´ë Ã¼·Â +5%" ÇüÅÂ·Î ¹İÈ¯
+        // ì˜ˆ: MaxHP_Percent ì´ë©´ "ìµœëŒ€ ì²´ë ¥ +5%" í˜•íƒœë¡œ ë°˜í™˜
         bool isPercent = StatType.ToString().Contains("Percent") ||
                          StatType == EStatType.CritRate ||
                          StatType == EStatType.CritDamage ||
@@ -108,7 +108,7 @@ public class InventoryManager
 
     public Dictionary<ItemCategory, InventorySlot[]> Inventory { get; private set; }
 
-    // UI °»½Å¿ë ÀÌº¥Æ® (¾î¶² ÅÇÀÌ ¾÷µ¥ÀÌÆ® µÇ¾ú´ÂÁö ¸Å°³º¯¼ö·Î Àü´Ş)
+    // UI ê°±ì‹ ìš© ì´ë²¤íŠ¸ (ì–´ë–¤ íƒ­ì´ ì—…ë°ì´íŠ¸ ë˜ì—ˆëŠ”ì§€ ë§¤ê°œë³€ìˆ˜ë¡œ ì „ë‹¬)
     public event Action<ItemCategory> OnInventoryUpdated;
 
     public void Init()
@@ -134,13 +134,13 @@ public class InventoryManager
         OnInventoryUpdated?.Invoke(category);
     }
 
-    // 1. DataManager¿¡¼­ Ä«Å×°í¸®¿¡ ¸Â´Â MaxStackÀ» ¾ÈÀüÇÏ°Ô °¡Á®¿À´Â ÇïÆÛ ÇÔ¼ö
+    // 1. DataManagerì—ì„œ ì¹´í…Œê³ ë¦¬ì— ë§ëŠ” MaxStackì„ ì•ˆì „í•˜ê²Œ ê°€ì ¸ì˜¤ëŠ” í—¬í¼ í•¨ìˆ˜
     private int GetMaxStack(int itemID, ItemCategory category)
     {
         switch (category)
         {
             case ItemCategory.Equipment:
-                return 1; // Àåºñ´Â ¹«Á¶°Ç 1°³¸¸ (¾È °ãÄ§)
+                return 1; // ì¥ë¹„ëŠ” ë¬´ì¡°ê±´ 1ê°œë§Œ (ì•ˆ ê²¹ì¹¨)
 
             case ItemCategory.Consumable:
                 var consumeData = Managers.Data.GetData<int, ConsumableData>(itemID);
@@ -154,7 +154,7 @@ public class InventoryManager
                 return 1;
         }
     }
-    // 2. ¿Ïº®ÇÑ Stack ºĞÇÒ ·ÎÁ÷ÀÌ Àû¿ëµÈ AddItem
+    // 2. ì™„ë²½í•œ Stack ë¶„í•  ë¡œì§ì´ ì ìš©ëœ AddItem
     public void AddItem(int itemID, ItemCategory category, int amount = 1)
     {
         if (amount <= 0) return;
@@ -162,10 +162,10 @@ public class InventoryManager
         InventorySlot[] targetArray = Inventory[category];
         int maxStack = GetMaxStack(itemID, category);
 
-        // Ãß°¡ÇØ¾ß ÇÒ ³²Àº ¼ö·®
+        // ì¶”ê°€í•´ì•¼ í•  ë‚¨ì€ ìˆ˜ëŸ‰
         int remainingAmount = amount;
 
-        // 1. ¼Ò¸ğÇ°ÀÌ³ª Àç·á¶ó¸é, ±âÁ¸¿¡ ´ú Ã¤¿öÁø(MaxStack ¹Ì¸¸) ½½·ÔµéÀ» Ã£¾Æ Ã¤¿ö³Ö½À´Ï´Ù.
+        // 1. ì†Œëª¨í’ˆì´ë‚˜ ì¬ë£Œë¼ë©´, ê¸°ì¡´ì— ëœ ì±„ì›Œì§„(MaxStack ë¯¸ë§Œ) ìŠ¬ë¡¯ë“¤ì„ ì°¾ì•„ ì±„ì›Œë„£ìŠµë‹ˆë‹¤.
         if (category != ItemCategory.Equipment)
         {
             foreach (var slot in targetArray)
@@ -189,12 +189,12 @@ public class InventoryManager
             }
         }
 
-        // 2. ³²Àº ¾ÆÀÌÅÛÀÌ ÀÖ´Ù¸é, ¾Õ¿¡¼­ºÎÅÍ ºó ½½·Ô(IsEmpty)À» Ã£¾Æ Ã¤¿ö³Ö½À´Ï´Ù.
+        // 2. ë‚¨ì€ ì•„ì´í…œì´ ìˆë‹¤ë©´, ì•ì—ì„œë¶€í„° ë¹ˆ ìŠ¬ë¡¯(IsEmpty)ì„ ì°¾ì•„ ì±„ì›Œë„£ìŠµë‹ˆë‹¤.
         while (remainingAmount > 0)
         {
             int addAmount = Mathf.Min(remainingAmount, maxStack);
 
-            // ºó ½½·Ô Ã£±â
+            // ë¹ˆ ìŠ¬ë¡¯ ì°¾ê¸°
             int emptyIndex = -1;
             for (int i = 0; i < targetArray.Length; i++)
             {
@@ -205,22 +205,22 @@ public class InventoryManager
                 }
             }
 
-            // ºó ½½·ÔÀÌ ¾ø´Â °æ¿ì (ÀÎº¥Åä¸®°¡ °¡µæ Âü)
+            // ë¹ˆ ìŠ¬ë¡¯ì´ ì—†ëŠ” ê²½ìš° (ì¸ë²¤í† ë¦¬ê°€ ê°€ë“ ì°¸)
             if (emptyIndex == -1)
             {
-                Debug.LogWarning($"[{category}] ÀÎº¥Åä¸®°¡ °¡µæ Â÷¼­ ´õ ÀÌ»ó È¹µæÇÒ ¼ö ¾ø½À´Ï´Ù. (³²Àº ¼ö·®: {remainingAmount})");
-                // TODO: ³²Àº ¼ö·®¸¸Å­ ¹Ù´Ú¿¡ µå¶øÇÏ°Å³ª ¿ìÆíÇÔÀ¸·Î º¸³»´Â ·ÎÁ÷ Ãß°¡ ÇÊ¿ä
+                Debug.LogWarning($"[{category}] ì¸ë²¤í† ë¦¬ê°€ ê°€ë“ ì°¨ì„œ ë” ì´ìƒ íšë“í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. (ë‚¨ì€ ìˆ˜ëŸ‰: {remainingAmount})");
+                // TODO: ë‚¨ì€ ìˆ˜ëŸ‰ë§Œí¼ ë°”ë‹¥ì— ë“œëí•˜ê±°ë‚˜ ìš°í¸í•¨ìœ¼ë¡œ ë³´ë‚´ëŠ” ë¡œì§ ì¶”ê°€ í•„ìš”
                 break;
             }
 
-            // Ã£Àº ºó ½½·Ô¿¡ ¾ÆÀÌÅÛ ÇÒ´ç
+            // ì°¾ì€ ë¹ˆ ìŠ¬ë¡¯ì— ì•„ì´í…œ í• ë‹¹
             targetArray[emptyIndex].itemID = itemID;
             targetArray[emptyIndex].Amount = addAmount;
 
             remainingAmount -= addAmount;
         }
 
-        // Ã³¸®°¡ ¸ğµÎ ³¡³ª¸é UI °»½Å ÀÌº¥Æ® È£Ãâ
+        // ì²˜ë¦¬ê°€ ëª¨ë‘ ëë‚˜ë©´ UI ê°±ì‹  ì´ë²¤íŠ¸ í˜¸ì¶œ
         OnInventoryUpdated?.Invoke(category);
     }
     public void SwapItems(ItemCategory category, int indexA, int indexB)
@@ -232,7 +232,7 @@ public class InventoryManager
         InventorySlot slotA = Inventory[category][indexA];
         InventorySlot slotB = Inventory[category][indexB];
 
-        // °°Àº ¾ÆÀÌÅÛÀÌ¶ó¸é º´ÇÕ ·ÎÁ÷ (¼±ÅÃ »çÇ×)
+        // ê°™ì€ ì•„ì´í…œì´ë¼ë©´ ë³‘í•© ë¡œì§ (ì„ íƒ ì‚¬í•­)
         if (!slotA.IsEmpty && !slotB.IsEmpty && slotA.itemID == slotB.itemID && category != ItemCategory.Equipment)
         {
             int maxStack = GetMaxStack(slotA.itemID, category);
@@ -251,7 +251,7 @@ public class InventoryManager
             }
         }
 
-        // ´Ü¼ø ½º¿Ò (Swap)
+        // ë‹¨ìˆœ ìŠ¤ì™‘ (Swap)
         int tempID = slotA.itemID;
         int tempAmount = slotA.Amount;
         EquipmentInstance tempEquip = slotA.EquipInstance;
@@ -267,12 +267,12 @@ public class InventoryManager
         OnInventoryUpdated?.Invoke(category);
     }
 
-    // Àåºñ Àü¿ë Add ÇÔ¼ö (¹Ì¸® ¸¸µé¾îÁø ½½·ÔÀ» ³Ñ°Ü¹ŞÀ½)
+    // ì¥ë¹„ ì „ìš© Add í•¨ìˆ˜ (ë¯¸ë¦¬ ë§Œë“¤ì–´ì§„ ìŠ¬ë¡¯ì„ ë„˜ê²¨ë°›ìŒ)
     public void AddEquipmentSlot(InventorySlot newEquipSlot)
     {
         InventorySlot[] targetArray = Inventory[ItemCategory.Equipment];
 
-        // ºó ½½·Ô Ã£±â
+        // ë¹ˆ ìŠ¬ë¡¯ ì°¾ê¸°
         int emptyIndex = -1;
         for (int i = 0; i < targetArray.Length; i++)
         {
@@ -285,21 +285,21 @@ public class InventoryManager
 
         if (emptyIndex == -1)
         {
-            Debug.LogWarning("Àåºñ ÀÎº¥Åä¸®°¡ °¡µæ Ã¡½À´Ï´Ù! (¿ìÆíÇÔ ¹ß¼Û µî Ã³¸® ÇÊ¿ä)");
+            Debug.LogWarning("ì¥ë¹„ ì¸ë²¤í† ë¦¬ê°€ ê°€ë“ ì°¼ìŠµë‹ˆë‹¤! (ìš°í¸í•¨ ë°œì†¡ ë“± ì²˜ë¦¬ í•„ìš”)");
             return;
         }
 
-        // ÀÎº¥Åä¸®¿¡ ÂüÁ¶ º¹»ç (±¸Á¶Ã¼¸é °ª º¹»ç, Å¬·¡½º¸é ÂüÁ¶)
+        // ì¸ë²¤í† ë¦¬ì— ì°¸ì¡° ë³µì‚¬ (êµ¬ì¡°ì²´ë©´ ê°’ ë³µì‚¬, í´ë˜ìŠ¤ë©´ ì°¸ì¡°)
         targetArray[emptyIndex] = newEquipSlot;
 
         OnInventoryUpdated?.Invoke(ItemCategory.Equipment);
     }
 
 
-    //¿ÜºÎ¿¡¼­ È£ÃâÇÒ ÆíÀÇ ÇÔ¼öµé
+    //ì™¸ë¶€ì—ì„œ í˜¸ì¶œí•  í¸ì˜ í•¨ìˆ˜ë“¤
 
-    //¾ÆÀÌÅÛ °¹¼ö¸¦ ¸®ÅÏÇØÁÖ´Â ÇÔ¼ö
-    // ¾ÆÀÌÅÛ °¹¼ö¸¦ ¸®ÅÏÇØÁÖ´Â ÇÔ¼ö (°¡µ¶¼º Á¤¸®)
+    //ì•„ì´í…œ ê°¯ìˆ˜ë¥¼ ë¦¬í„´í•´ì£¼ëŠ” í•¨ìˆ˜
+    // ì•„ì´í…œ ê°¯ìˆ˜ë¥¼ ë¦¬í„´í•´ì£¼ëŠ” í•¨ìˆ˜ (ê°€ë…ì„± ì •ë¦¬)
     public int GetItemCount(ItemCategory category, int itemID)
     {
         int count = 0;
@@ -313,10 +313,10 @@ public class InventoryManager
         return count;
     }
 
-    // ¾ÆÀÌÅÛ ¼Ò¸ğ ÇÔ¼ö (ÃÊ°ú ¼Ò¸ğ ¹ö±× ¼öÁ¤)
+    // ì•„ì´í…œ ì†Œëª¨ í•¨ìˆ˜ (ì´ˆê³¼ ì†Œëª¨ ë²„ê·¸ ìˆ˜ì •)
     public bool ConsumeMaterial(int itemID, int amount)
     {
-        // ¾ÖÃÊ¿¡ ÃÑ·®ÀÌ ºÎÁ·ÇÏ¸é false
+        // ì• ì´ˆì— ì´ëŸ‰ì´ ë¶€ì¡±í•˜ë©´ false
         if (GetItemCount(ItemCategory.Material, itemID) < amount)
             return false;
 
@@ -334,11 +334,11 @@ public class InventoryManager
                 else
                 {
                     slot.Amount -= remainAmount;
-                    remainAmount = 0; // [¼öÁ¤µÊ] ±ğ°í ³ª¼­ ³²Àº ¿ä±¸·®À» 0À¸·Î Ã³¸®
+                    remainAmount = 0; // [ìˆ˜ì •ë¨] ê¹ê³  ë‚˜ì„œ ë‚¨ì€ ìš”êµ¬ëŸ‰ì„ 0ìœ¼ë¡œ ì²˜ë¦¬
                 }
             }
 
-            // ´Ù ±ğ¾Ò´Ù¸é ´õ ÀÌ»ó ¹İº¹¹® µ¹ ÇÊ¿ä ¾øÀÌ Áï½Ã Å»Ãâ
+            // ë‹¤ ê¹ì•˜ë‹¤ë©´ ë” ì´ìƒ ë°˜ë³µë¬¸ ëŒ í•„ìš” ì—†ì´ ì¦‰ì‹œ íƒˆì¶œ
             if (remainAmount <= 0) break;
         }
 
@@ -353,7 +353,7 @@ public class InventoryManager
         {
             if (equips[i] == targetSlot)
             {
-                equips[i] = new InventorySlot(); // ÇØ´ç ½½·Ô¸¸ ÃÊ±âÈ­
+                equips[i] = new InventorySlot(); // í•´ë‹¹ ìŠ¬ë¡¯ë§Œ ì´ˆê¸°í™”
                 OnInventoryUpdated?.Invoke(ItemCategory.Equipment);
                 return;
             }
@@ -392,27 +392,27 @@ public class InventoryManager
     {
         InventorySlot[] targetArray = Inventory[category];
 
-        // Array.Sort¸¦ »ç¿ëÇÏ¿© »ç¿ëÀÚ Á¤ÀÇ Á¶°ÇÀ¸·Î Á¤·ÄÇÕ´Ï´Ù.
+        // Array.Sortë¥¼ ì‚¬ìš©í•˜ì—¬ ì‚¬ìš©ì ì •ì˜ ì¡°ê±´ìœ¼ë¡œ ì •ë ¬í•©ë‹ˆë‹¤.
         Array.Sort(targetArray, (slotA, slotB) =>
         {
-            // 1. µÑ ´Ù ºñ¾îÀÖÀ¸¸é ¼ø¼­ À¯Áö
+            // 1. ë‘˜ ë‹¤ ë¹„ì–´ìˆìœ¼ë©´ ìˆœì„œ ìœ ì§€
             if (slotA.IsEmpty && slotB.IsEmpty) return 0;
-            // 2. A¸¸ ºñ¾îÀÖÀ¸¸é A¸¦ µÚ·Î(1)
+            // 2. Aë§Œ ë¹„ì–´ìˆìœ¼ë©´ Aë¥¼ ë’¤ë¡œ(1)
             if (slotA.IsEmpty) return 1;
-            // 3. B¸¸ ºñ¾îÀÖÀ¸¸é B¸¦ µÚ·Î(-1)
+            // 3. Bë§Œ ë¹„ì–´ìˆìœ¼ë©´ Bë¥¼ ë’¤ë¡œ(-1)
             if (slotB.IsEmpty) return -1;
 
-            // 4. µÑ ´Ù ¾ÆÀÌÅÛÀÌ ÀÖ´Ù¸é ItemID¸¦ ±âÁØÀ¸·Î ¿À¸§Â÷¼ø Á¤·Ä
+            // 4. ë‘˜ ë‹¤ ì•„ì´í…œì´ ìˆë‹¤ë©´ ItemIDë¥¼ ê¸°ì¤€ìœ¼ë¡œ ì˜¤ë¦„ì°¨ìˆœ ì •ë ¬
             if (slotA.itemID != slotB.itemID)
             {
                 return slotA.itemID.CompareTo(slotB.itemID);
             }
 
-            // 5. ItemID±îÁö °°´Ù¸é Amount(°³¼ö)¸¦ ±âÁØÀ¸·Î ³»¸²Â÷¼ø Á¤·Ä (°³¼ö°¡ ¸¹Àº °Ô ¾ÕÀ¸·Î)
+            // 5. ItemIDê¹Œì§€ ê°™ë‹¤ë©´ Amount(ê°œìˆ˜)ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ë‚´ë¦¼ì°¨ìˆœ ì •ë ¬ (ê°œìˆ˜ê°€ ë§ì€ ê²Œ ì•ìœ¼ë¡œ)
             return slotB.Amount.CompareTo(slotA.Amount);
         });
 
-        // Á¤·ÄÀÌ ¿Ï·áµÇ¾úÀ¸¹Ç·Î UI °»½Å ÀÌº¥Æ®¸¦ ¹ß»ı½ÃÅµ´Ï´Ù.
+        // ì •ë ¬ì´ ì™„ë£Œë˜ì—ˆìœ¼ë¯€ë¡œ UI ê°±ì‹  ì´ë²¤íŠ¸ë¥¼ ë°œìƒì‹œí‚µë‹ˆë‹¤.
         OnInventoryUpdated?.Invoke(category);
     }
 
@@ -420,7 +420,7 @@ public class InventoryManager
     {
         if (save == null) return;
 
-        // Init() ´ë½Å ½½·Ô¸¸ ÃÊ±âÈ­ (ÀÌº¥Æ® Àçµî·Ï ¾øÀÌ)
+        // Init() ëŒ€ì‹  ìŠ¬ë¡¯ë§Œ ì´ˆê¸°í™” (ì´ë²¤íŠ¸ ì¬ë“±ë¡ ì—†ì´)
         foreach (ItemCategory category in Enum.GetValues(typeof(ItemCategory)))
         {
             var slots = Inventory[category];
@@ -428,7 +428,7 @@ public class InventoryManager
                 slots[i] = new InventorySlot();
         }
 
-        // ½½·Ô º¹¿ø (¹üÀ§ Ã¼Å© Æ÷ÇÔ)
+        // ìŠ¬ë¡¯ ë³µì› (ë²”ìœ„ ì²´í¬ í¬í•¨)
         foreach (var entry in save.equipments)
         {
             if (entry.slotIndex < 0 || entry.slotIndex >= _maxSlotCount) continue;

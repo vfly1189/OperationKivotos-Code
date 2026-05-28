@@ -7,25 +7,25 @@ public class Barricade : MonoBehaviour, IDamageable
     private float _currentHp;
 
     private Animator _anim;
-    private Collider _collider; // ÀÚ½Äµé¿¡ ÀÖ´Â Äİ¶óÀÌ´õµé
+    private Collider _collider; // ìì‹ë“¤ì— ìˆëŠ” ì½œë¼ì´ë”ë“¤
 
     void Start()
     {
         _currentHp = _maxHp;
         _anim = GetComponent<Animator>();
 
-        // ³» ÀÚ½Ä¿¡ ÀÖ´Â ¸ğµç Äİ¶óÀÌ´õ¸¦ Ã£¾ÆµÒ (³ªÁß¿¡ ²ô±â À§ÇØ)
+        // ë‚´ ìì‹ì— ìˆëŠ” ëª¨ë“  ì½œë¼ì´ë”ë¥¼ ì°¾ì•„ë‘  (ë‚˜ì¤‘ì— ë„ê¸° ìœ„í•´)
         _collider = GetComponent<Collider>();
     }
 
-    // ÃÑ¾Ë ½ºÅ©¸³Æ®¿¡¼­ È£ÃâÇÒ ÇÔ¼ö
-    // (¸¸¾à BaseStatÀ» »ó¼Ó¹Ş¾Ò´Ù¸é override TakeDamage°¡ µÇ°ÚÁÒ?)
+    // ì´ì•Œ ìŠ¤í¬ë¦½íŠ¸ì—ì„œ í˜¸ì¶œí•  í•¨ìˆ˜
+    // (ë§Œì•½ BaseStatì„ ìƒì†ë°›ì•˜ë‹¤ë©´ override TakeDamageê°€ ë˜ê² ì£ ?)
     public void TakeDamage(DamageInfo damage)
     {
-        if (_currentHp <= 0) return; // ÀÌ¹Ì ºÎ¼­Á³À¸¸é ¹«½Ã
+        if (_currentHp <= 0) return; // ì´ë¯¸ ë¶€ì„œì¡Œìœ¼ë©´ ë¬´ì‹œ
 
         _currentHp -= damage.Amount;
-        Debug.Log($"¹Ù¸®ÄÉÀÌµå Ã¼·Â: {_currentHp}");
+        Debug.Log($"ë°”ë¦¬ì¼€ì´ë“œ ì²´ë ¥: {_currentHp}");
 
         if (_currentHp <= 0)
         {
@@ -35,20 +35,20 @@ public class Barricade : MonoBehaviour, IDamageable
 
     private IEnumerator CoDestroyBarricade()
     {
-        // 1. ¾Ö´Ï¸ŞÀÌ¼Ç Àç»ı
+        // 1. ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
         if (_anim != null) _anim.CrossFade("Destroy", 0.0f);
 
-        // 2. Äİ¶óÀÌ´õ ²ô±â (´õ ÀÌ»ó ¾È ¸Â°Ô)
+        // 2. ì½œë¼ì´ë” ë„ê¸° (ë” ì´ìƒ ì•ˆ ë§ê²Œ)
         if (_collider != null) _collider.enabled = false;
 
-        // (¼±ÅÃ) NavMeshObstacle ²ô±â
+        // (ì„ íƒ) NavMeshObstacle ë„ê¸°
         var obstacle = GetComponentInChildren<UnityEngine.AI.NavMeshObstacle>();
         if (obstacle != null) obstacle.enabled = false;
 
-        // 3. 2ÃÊ ´ë±â
+        // 3. 2ì´ˆ ëŒ€ê¸°
         yield return new WaitForSeconds(2.0f);
 
-        // 4. ÁøÂ¥ »èÁ¦
+        // 4. ì§„ì§œ ì‚­ì œ
         Destroy(gameObject);
     }
 }

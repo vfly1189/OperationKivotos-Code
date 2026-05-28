@@ -30,7 +30,7 @@ public class PartyCharacterActivator
     {
         foreach (var member in _registry.Members)
         {
-            // CharacterController°¡ ÀÖÀ¸¸é Àá±ñ ²ô°í ÀÌµ¿ ÈÄ º¹±¸
+            // CharacterControllerê°€ ìˆìœ¼ë©´ ì ê¹ ë„ê³  ì´ë™ í›„ ë³µêµ¬
             var cc = member.GetComponent<CharacterController>();
             bool wasEnabled = false;
 

@@ -19,7 +19,7 @@ public class UI_SoundSetting : UI_PopUp
     {
         base.Init();
 
-        // 1. ÇöÀç »ç¿îµå ¸Å´ÏÀúÀÇ º¼·ı°ªÀ¸·Î ½½¶óÀÌ´õ ÃÊ±âÈ­
+        // 1. í˜„ì¬ ì‚¬ìš´ë“œ ë§¤ë‹ˆì €ì˜ ë³¼ë¥¨ê°’ìœ¼ë¡œ ìŠ¬ë¼ì´ë” ì´ˆê¸°í™”
         if (_bgmSlider != null)
         {
             _bgmSlider.value = Managers.Sound.BgmVolume;
@@ -42,7 +42,7 @@ public class UI_SoundSetting : UI_PopUp
             _confirmButton.onClick.AddListener(OnConfirmClicked);
     }
 
-    // ½½¶óÀÌ´õ¸¦ µå·¡±×ÇÒ ¶§¸¶´Ù È£ÃâµÊ (Update ÇÊ¿ä ¾øÀ½!)
+    // ìŠ¬ë¼ì´ë”ë¥¼ ë“œë˜ê·¸í•  ë•Œë§ˆë‹¤ í˜¸ì¶œë¨ (Update í•„ìš” ì—†ìŒ!)
     private void OnBgmValueChanged(float value)
     {
         Managers.Sound.SetBgmVolume(value);
@@ -60,9 +60,9 @@ public class UI_SoundSetting : UI_PopUp
 
     private void OnConfirmClicked()
     {
-        // ÆË¾÷ ´İ±â
+        // íŒì—… ë‹«ê¸°
         ClosePopupUI();
 
-        // (¼±ÅÃ) ¿©±â¼­ PlayerPrefs.Save() µîÀ» È£ÃâÇÏ¿© ¼³Á¤ ¿µ±¸ ÀúÀå °¡´É
+        // (ì„ íƒ) ì—¬ê¸°ì„œ PlayerPrefs.Save() ë“±ì„ í˜¸ì¶œí•˜ì—¬ ì„¤ì • ì˜êµ¬ ì €ì¥ ê°€ëŠ¥
     }
 }

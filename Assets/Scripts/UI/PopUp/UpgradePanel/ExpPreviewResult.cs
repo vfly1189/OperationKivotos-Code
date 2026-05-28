@@ -1,17 +1,17 @@
 using UnityEngine;
 
 
-//°­È­Àç·á¸¦ µî·ÏÇßÀ»¶§ ¼³Á¤ÇÒ °æÇèÄ¡
+//ê°•í™”ì¬ë£Œë¥¼ ë“±ë¡í–ˆì„ë•Œ ì„¤ì •í•  ê²½í—˜ì¹˜
 public class ExpPreviewResult
 {
-    public int GainExp { get; }// Àç·á¿¡¼­ ¾ò´Â ÃÑ °æÇèÄ¡
-                               // ¡æ "È¹µæ °æÇèÄ¡ +2950" ÅØ½ºÆ®¿¡ »ç¿ë
-    public int SimulatedLevel { get; } // °­È­ ÈÄ ¿¹»ó ·¹º§
-                                       // ¡æ °­È­ ·¹º§ ÅØ½ºÆ®¿¡ »ç¿ë (+3 ¡æ +5)
-    public int SimulatedExp { get; } // ·¹º§¾÷ ÈÄ ³²´Â ÀÜ¿© °æÇèÄ¡
-                                     // ¡æ °æÇèÄ¡ ¹Ù ÇöÀç°ª¿¡ »ç¿ë
-    public int SimulatedRequireExp { get; } // ´ÙÀ½ ·¹º§±îÁö ÇÊ¿ä °æÇèÄ¡
-                                            // ¡æ °æÇèÄ¡ ¹Ù ÃÖ´ë°ª¿¡ »ç¿ë
+    public int GainExp { get; }// ì¬ë£Œì—ì„œ ì–»ëŠ” ì´ ê²½í—˜ì¹˜
+                               // â†’ "íšë“ ê²½í—˜ì¹˜ +2950" í…ìŠ¤íŠ¸ì— ì‚¬ìš©
+    public int SimulatedLevel { get; } // ê°•í™” í›„ ì˜ˆìƒ ë ˆë²¨
+                                       // â†’ ê°•í™” ë ˆë²¨ í…ìŠ¤íŠ¸ì— ì‚¬ìš© (+3 â†’ +5)
+    public int SimulatedExp { get; } // ë ˆë²¨ì—… í›„ ë‚¨ëŠ” ì”ì—¬ ê²½í—˜ì¹˜
+                                     // â†’ ê²½í—˜ì¹˜ ë°” í˜„ì¬ê°’ì— ì‚¬ìš©
+    public int SimulatedRequireExp { get; } // ë‹¤ìŒ ë ˆë²¨ê¹Œì§€ í•„ìš” ê²½í—˜ì¹˜
+                                            // â†’ ê²½í—˜ì¹˜ ë°” ìµœëŒ€ê°’ì— ì‚¬ìš©
     
 
     public static readonly ExpPreviewResult Empty = new ExpPreviewResult(0, 0, 0, 1);

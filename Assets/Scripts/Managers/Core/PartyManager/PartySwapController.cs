@@ -23,12 +23,12 @@ public class PartySwapController
 
         var current = _registry.GetCurrent();
         if (current.IsUsingSkill) return false;
-        if (!current.CanSwap) return false; // °ø°İ(Attack) »óÅÂ Â÷´Ü
+        if (!current.CanSwap) return false; // ê³µê²©(Attack) ìƒíƒœ ì°¨ë‹¨
 
         return true;
     }
 
-    // isForce: »ç¸Á Ã³¸® ÈÄ °­Á¦ ½º¿Ò µî ³»ºÎ¿ë
+    // isForce: ì‚¬ë§ ì²˜ë¦¬ í›„ ê°•ì œ ìŠ¤ì™‘ ë“± ë‚´ë¶€ìš©
     public void TrySwap(int targetIndex, bool isForce = false)
     {
         if (!isForce && !CanSwap(targetIndex)) return;
