@@ -20,31 +20,31 @@ public class MouthController : MonoBehaviour
             if (materials[i].name.Contains("EyeMouth"))
             {
                 material = materials[i];
-                //Debug.Log($"Found EyeMouth material at index {i}: {material.name}");
+                //GameLog.Log($"Found EyeMouth material at index {i}: {material.name}");
                 break;
             }
         }
 
         if (material == null)
         {
-            Debug.LogError("EyeMouth material not found!");
+            GameLog.LogError("EyeMouth material not found!");
         }
     }
 
     // 애니메이션 이벤트에서 호출
     public void SetMouthTile(int index)
     {
-        //Debug.Log("호출됨");
+        //GameLog.Log("호출됨");
         if (material == null)
         {
-            //Debug.Log("Material이 없음");
+            //GameLog.Log("Material이 없음");
             return;
         }
-        //Debug.Log("Material이 있음");
+        //GameLog.Log("Material이 있음");
         int x = index % 8;
         int y = index / 8;
 
-        //Debug.Log($" x : {x} ,  y : {y}");
+        //GameLog.Log($" x : {x} ,  y : {y}");
 
         material.SetVector(MouthOffsetID, new Vector4(x, y, 0, 0));
     }

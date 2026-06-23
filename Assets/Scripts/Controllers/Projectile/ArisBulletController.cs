@@ -82,7 +82,7 @@ public class ArisBulletController : MonoBehaviour
         // 예: 
         // var target = other.GetComponent<MonsterStat>();
         // if (target != null) target.OnAttacked(_damage);
-        Debug.Log($"Hit Target: {other.name} / Damage: {_damage}");
+        GameLog.Log($"Hit Target: {other.name} / Damage: {_damage}");
 
         // 3. 피격 이펙트 생성 (중요: 충돌 지점과 법선 벡터 활용)
         SpawnHitVFX(other);

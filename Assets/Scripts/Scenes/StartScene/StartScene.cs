@@ -137,8 +137,8 @@ public class StartScene : BaseScene
         {
             UI_ExitPopUp popup = await Managers.UI.ShowPopupUIAsync<UI_ExitPopUp>("UI_ExitPopUp");
             popup.SetCallbacks(
-                onConfirm: () => Debug.Log("앱 종료"),
-                onCancel: () => Debug.Log("취소됨")
+                onConfirm: () => GameLog.Log("앱 종료"),
+                onCancel: () => GameLog.Log("취소됨")
             );
         }
     }
@@ -151,7 +151,7 @@ public class StartScene : BaseScene
 
     protected override void HandleEscape()
     {
-        Debug.Log("Handle Escape 호출");
+        GameLog.Log("Handle Escape 호출");
         if (Managers.UI.IsPopupOpen)
         {
             Managers.UI.ClosePopupUI();

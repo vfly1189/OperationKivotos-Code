@@ -49,7 +49,7 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
     {
         if (string.IsNullOrEmpty(iconKey)) return;
 
-        Debug.Log($"Test : {iconKey}");
+        GameLog.Log($"Test : {iconKey}");
         // ResourceManager를 통해 비동기로 Sprite 로드
         //Sprite sprite = await Managers.Resource.LoadAsync<Sprite>(iconKey);
         Sprite icon = await Managers.Resource.GetSpriteFromAtlasAsync("EquipmentIconAtlas", iconKey);
@@ -65,7 +65,7 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
     {
         // 등급에 맞는 Addressable Key 문자열 조합 (예: "Common_Gray", "Rare_Blue")
         string gradeKey = $"GradeBg_{grade.ToString()}"; // 예시
-        Debug.Log($"GradeKey : {gradeKey}");
+        GameLog.Log($"GradeKey : {gradeKey}");
         //Sprite bgSprite = await Managers.Resource.LoadAsync<Sprite>(gradeKey);
         Sprite bgSprite = await Managers.Resource.GetSpriteFromAtlasAsync("ItemGradeAtlas", gradeKey);
 
@@ -83,7 +83,7 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
         {
             if (_currentSlotData != null && !_currentSlotData.IsEmpty)
             {
-                Debug.Log("EquipSlot OnPointerClick 호출!");
+                GameLog.Log("EquipSlot OnPointerClick 호출!");
                 Managers.Equipment.UnEquip(_equipType);
             }
         }
@@ -92,10 +92,10 @@ public class UI_EquipSlot : UI_Base, IPointerClickHandler, IPointerEnterHandler,
     // 인벤토리 슬롯 (UI_ItemSlot) 내부의 이벤트
     public void OnPointerEnter(PointerEventData eventData)
     {
-        Debug.Log($"OnPointerEnter 시작");
+        GameLog.Log($"OnPointerEnter 시작");
         if (_currentSlotData != null && !_currentSlotData.IsEmpty)
         {
-            Debug.Log($"OnPointerEnter 툴팁 시작");
+            GameLog.Log($"OnPointerEnter 툴팁 시작");
 
             // 툴팁 활성화 및 정보 셋팅
             //Managers.UI.ShowItemTooltip(_currentSlotData, eventData.position);

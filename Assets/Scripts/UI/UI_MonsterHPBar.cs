@@ -18,7 +18,7 @@ public class UI_MonsterHPBar : UI_Base
         _slider = GetComponent<Slider>();
 
         if (_slider == null)
-            Debug.LogError("UI_MonsterHPBar: Slider 컴포넌트를 찾을 수 없습니다! 프리팹을 확인하세요.");
+            GameLog.LogError("UI_MonsterHPBar: Slider 컴포넌트를 찾을 수 없습니다! 프리팹을 확인하세요.");
 
         _mainCamera = Camera.main;
     }

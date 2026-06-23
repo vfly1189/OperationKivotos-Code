@@ -1,6 +1,4 @@
 using Newtonsoft.Json;
-using NPOI.SS.Formula.Functions;
-using Org.BouncyCastle.Asn1.X509.Qualified;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -208,7 +206,7 @@ public class InventoryManager
             // 빈 슬롯이 없는 경우 (인벤토리가 가득 참)
             if (emptyIndex == -1)
             {
-                Debug.LogWarning($"[{category}] 인벤토리가 가득 차서 더 이상 획득할 수 없습니다. (남은 수량: {remainingAmount})");
+                GameLog.LogWarning($"[{category}] 인벤토리가 가득 차서 더 이상 획득할 수 없습니다. (남은 수량: {remainingAmount})");
                 // TODO: 남은 수량만큼 바닥에 드랍하거나 우편함으로 보내는 로직 추가 필요
                 break;
             }
@@ -225,7 +223,7 @@ public class InventoryManager
     }
     public void SwapItems(ItemCategory category, int indexA, int indexB)
     {
-        Debug.Log($"Index : {indexA} , {indexB}");
+        GameLog.Log($"Index : {indexA} , {indexB}");
 
         if (indexA == indexB) return;
 
@@ -285,7 +283,7 @@ public class InventoryManager
 
         if (emptyIndex == -1)
         {
-            Debug.LogWarning("장비 인벤토리가 가득 찼습니다! (우편함 발송 등 처리 필요)");
+            GameLog.LogWarning("장비 인벤토리가 가득 찼습니다! (우편함 발송 등 처리 필요)");
             return;
         }
 

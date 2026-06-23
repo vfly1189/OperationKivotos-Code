@@ -45,7 +45,7 @@ public class SkillIconUI : MonoBehaviour
     // --- [이벤트용] 에너지 변경 시 호출 ---
     public void UpdateEnergy(float currentEnergy, float maxEnergy)
     {
-        //Debug.Log($"에너지 변동 : {currentEnergy} , {maxEnergy}");
+        //GameLog.Log($"에너지 변동 : {currentEnergy} , {maxEnergy}");
         if (_energyFill != null && maxEnergy > 0)
         {
             _energyFill.fillAmount = currentEnergy / maxEnergy;
@@ -101,7 +101,7 @@ public class SkillIconUI : MonoBehaviour
             float ratio = currentEnergy / maxEnergy;
             _energyFill.fillAmount = ratio;
 
-            //Debug.Log($"SkillUI: 에너지값{_energyFill.fillAmount}");
+            //GameLog.Log($"SkillUI: 에너지값{_energyFill.fillAmount}");
 
             // 궁극기 준비 완료 (쿨타임 X + 에너지 O)
             bool isReady = (currentCool <= 0) && (ratio >= 1.0f);

@@ -17,7 +17,7 @@ public class FieldManager
         Managers.Party.OnPartyWiped -= HandleFieldPartyWipe;
         Managers.Party.OnPartyWiped += HandleFieldPartyWipe;
 
-        Debug.Log("[FieldManager] 필드 매니저 초기화 완료");
+        GameLog.Log("[FieldManager] 필드 매니저 초기화 완료");
     }
 
     private void HandleFieldPartyWipe()
@@ -31,7 +31,7 @@ public class FieldManager
     private async UniTaskVoid RespawnSequenceAsync()
     {
         _isRespawning = true;
-        Debug.Log("[FieldManager] 파티 전멸. 스폰 지점으로 부활 시퀀스 시작...");
+        GameLog.Log("[FieldManager] 파티 전멸. 스폰 지점으로 부활 시퀀스 시작...");
 
         // 1. 혹시 열려있는 팝업 UI가 있다면 모두 닫기 (선택사항)
         Managers.UI.CloseAllPopupUI();
@@ -48,7 +48,7 @@ public class FieldManager
         }
         else
         {
-            Debug.LogWarning("[FieldManager] 스폰 지점이 없습니다! 원위치에서 부활합니다.");
+            GameLog.LogWarning("[FieldManager] 스폰 지점이 없습니다! 원위치에서 부활합니다.");
             // 스폰 지점이 없으면 현재 리더의 위치에서 제자리 부활
             var leader = Managers.Party.GetCurrentCharacter();
             if (leader != null)
@@ -59,7 +59,7 @@ public class FieldManager
         // await Managers.UI.FadeInAsync(1.0f);
         await UniTask.Delay(TimeSpan.FromSeconds(1.0f));
 
-        Debug.Log("[FieldManager] 부활 시퀀스 종료");
+        GameLog.Log("[FieldManager] 부활 시퀀스 종료");
         _isRespawning = false;
     }
 

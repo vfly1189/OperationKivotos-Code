@@ -126,7 +126,7 @@ public class UIManager
         T popup = Util.GetOrAddComponent<T>(go);
         _popupStack.Push(popup);
 
-        Debug.Log($"팝업 스택 : {_popupStack.Count}");
+        GameLog.Log($"팝업 스택 : {_popupStack.Count}");
 
        
         SetCanvas(go, true);
@@ -144,7 +144,7 @@ public class UIManager
 
         if (_popupStack.Peek() != popup)
         {
-            Debug.LogWarning("[UIManager] ClosePopupUI 실패 - 가장 위에 있는 팝업이 아닙니다.");
+            GameLog.LogWarning("[UIManager] ClosePopupUI 실패 - 가장 위에 있는 팝업이 아닙니다.");
             return;
         }
 
@@ -184,7 +184,7 @@ public class UIManager
         if (string.IsNullOrEmpty(addressableKey))
             addressableKey = typeof(T).Name;
 
-        Debug.Log($"SelectScene : {addressableKey}");
+        GameLog.Log($"SelectScene : {addressableKey}");
         // [수정] Root가 아니라 CanvasScene 아래에 배치해야 함
         GameObject go = Managers.Resource.Instantiate(addressableKey, Vector3.zero, Quaternion.identity, CanvasScene.transform);
         if (go == null) return null;

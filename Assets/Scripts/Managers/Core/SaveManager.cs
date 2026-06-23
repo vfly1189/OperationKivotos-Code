@@ -30,7 +30,7 @@ public class SaveManager
 
     public void Init() 
     {
-        Debug.Log(Application.persistentDataPath);
+        GameLog.Log(Application.persistentDataPath);
     }
 
     public void SetCurrentParty(string partyId)
@@ -45,7 +45,7 @@ public class SaveManager
     {
         if (string.IsNullOrEmpty(_currentPartyId))
         {
-            Debug.LogError("[SaveManager] CurrentPartyId가 설정되지 않았습니다.");
+            GameLog.LogError("[SaveManager] CurrentPartyId가 설정되지 않았습니다.");
             return;
         }
 
@@ -83,11 +83,11 @@ public class SaveManager
                 }
             });
 
-            Debug.Log($"[SaveManager] 비동기 안전 저장 완료: {finalPath}");
+            GameLog.Log($"[SaveManager] 비동기 안전 저장 완료: {finalPath}");
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[SaveManager] 세이브 저장 중 오류 발생: {ex.Message}");
+            GameLog.LogError($"[SaveManager] 세이브 저장 중 오류 발생: {ex.Message}");
             // 저장이 실패했다면 찌꺼기 temp 파일 삭제
             if (File.Exists(tempPath)) File.Delete(tempPath);
         }
@@ -118,7 +118,7 @@ public class SaveManager
             // 메인 파일이 없는데 백업 파일이 있다면 (저장 중 튕겼을 때 복구)
             if (File.Exists(backupPath))
             {
-                Debug.LogWarning("[SaveManager] 메인 세이브가 없어 백업 파일에서 복구합니다.");
+                GameLog.LogWarning("[SaveManager] 메인 세이브가 없어 백업 파일에서 복구합니다.");
                 File.Copy(backupPath, finalPath);
             }
             else
@@ -142,7 +142,7 @@ public class SaveManager
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[SaveManager] 세이브 로드 실패: {ex.Message}");
+            GameLog.LogError($"[SaveManager] 세이브 로드 실패: {ex.Message}");
             return null;
         }
     }
@@ -168,7 +168,7 @@ public class SaveManager
         if (File.Exists(path))
         {
             File.Delete(path);
-            Debug.Log($"[SaveManager] 세이브 삭제: {path}");
+            GameLog.Log($"[SaveManager] 세이브 삭제: {path}");
         }
     }
 

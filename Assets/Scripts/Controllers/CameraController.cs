@@ -59,7 +59,7 @@ public class CameraController : MonoBehaviour
 
     public void SetTarget(GameObject target)
     {
-        Debug.Log($"카메라 타겟 설정 : {target.name}");
+        GameLog.Log($"카메라 타겟 설정 : {target.name}");
         _player = target;
     }
 

@@ -11,7 +11,7 @@ public class SectorManager
         // 이미 같은 ID의 섹터가 등록되어 있다면 덮어쓰거나 경고 
         if (_sectors.ContainsKey(sector._sectorID))
         {
-            Debug.LogWarning($"[SectorManager] 중복된 SectorId({sector._sectorID})가 등록되었습니다.");
+            GameLog.LogWarning($"[SectorManager] 중복된 SectorId({sector._sectorID})가 등록되었습니다.");
         }
 
         _sectors[sector._sectorID] = sector;
@@ -23,7 +23,7 @@ public class SectorManager
         // 딕셔너리에 없거나 죽은 섹터면 무시 
         if (!_sectors.ContainsKey(sectorId) || _sectors[sectorId] == null) return;
 
-        Debug.Log($"{_sectors[sectorId].gameObject.name}에 진입");
+        GameLog.Log($"{_sectors[sectorId].gameObject.name}에 진입");
 
         if (_currentActiveSector != null && _currentActiveSector._sectorID == sectorId)
             return;

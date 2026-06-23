@@ -84,7 +84,7 @@ public class BulletController : MonoBehaviour
         }
         else
         {
-            Debug.Log($"other : {other.gameObject.name}");
+            GameLog.Log($"other : {other.gameObject.name}");
             // 데미지 대상은 아닌데 부딪힘 -> 벽(Wall)이나 장애물
 
             if (other.gameObject.layer == LayerMask.NameToLayer("Wall"))

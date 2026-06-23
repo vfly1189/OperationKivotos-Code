@@ -30,7 +30,7 @@ public class SceneManagerEx
 
         if (_sceneTable == null)
         {
-            Debug.LogError("[SceneManagerEx] SceneTableSO 로드 실패!");
+            GameLog.LogError("[SceneManagerEx] SceneTableSO 로드 실패!");
         }
     }
     // [핵심 1] 코루틴 대신 UniTaskVoid Fire-and-forget 실행
@@ -72,7 +72,7 @@ public class SceneManagerEx
 
         if (_sceneTable == null)
         {
-            Debug.LogError($"[SceneManagerEx] SceneTable이 로드되지 않아 씬 전환 불가: {type}");
+            GameLog.LogError($"[SceneManagerEx] SceneTable이 로드되지 않아 씬 전환 불가: {type}");
             return;
         }
 

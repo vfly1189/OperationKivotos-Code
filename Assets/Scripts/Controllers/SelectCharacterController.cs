@@ -90,7 +90,7 @@ public class SelectCharacterController : MonoBehaviour
             }
         }
 
-        Debug.LogWarning($"[SelectCharacterController] '{clipName}' 클립을 Animator에서 찾을 수 없습니다!");
+        GameLog.LogWarning($"[SelectCharacterController] '{clipName}' 클립을 Animator에서 찾을 수 없습니다!");
         return 0f;
     }
 }

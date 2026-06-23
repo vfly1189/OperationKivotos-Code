@@ -43,7 +43,7 @@ public class DataManager
         // 병렬로 한 방에 다운로드 및 파싱
         await UniTask.WhenAll(tasks);
 
-        Debug.Log($"DataManager Init Complete: 총 {_dataDicts.Count}개의 데이터 테이블 로드 완료.");
+        GameLog.Log($"DataManager Init Complete: 총 {_dataDicts.Count}개의 데이터 테이블 로드 완료.");
     }
 
 
@@ -62,7 +62,7 @@ public class DataManager
         }
         else
         {
-            Debug.LogError($"[DataManager] SO 로드 실패: {addressableKey} (Type: {typeof(T).Name})");
+            GameLog.LogError($"[DataManager] SO 로드 실패: {addressableKey} (Type: {typeof(T).Name})");
         }
     }
 
@@ -75,7 +75,7 @@ public class DataManager
         // [추가] 실패 시 명시적 로그 출력
         if (textAsset == null)
         {
-            Debug.LogError($"[DataManager] JSON 로드 실패: '{addressableKey}' (Type: {typeof(TValue).Name})");
+            GameLog.LogError($"[DataManager] JSON 로드 실패: '{addressableKey}' (Type: {typeof(TValue).Name})");
             return;
         }
 
@@ -106,7 +106,7 @@ public class DataManager
             }
         }
 
-        Debug.LogError($"[DataManager] {typeof(TValue).Name} 데이터에서 키 [{key}]를 찾을 수 없습니다!");
+        GameLog.LogError($"[DataManager] {typeof(TValue).Name} 데이터에서 키 [{key}]를 찾을 수 없습니다!");
         return null; // 못 찾으면 null
     }
 
@@ -119,7 +119,7 @@ public class DataManager
                 return dict;
         }
 
-        Debug.LogError($"[DataManager] {typeof(V).Name} 타입의 딕셔너리를 찾을 수 없습니다!");
+        GameLog.LogError($"[DataManager] {typeof(V).Name} 타입의 딕셔너리를 찾을 수 없습니다!");
         return null;
     }
 
@@ -133,7 +133,7 @@ public class DataManager
                 return dict;
         }
 
-        Debug.LogError($"[DataManager] {typeof(TMarker).Name} 타입의 인덱스 딕셔너리를 찾을 수 없습니다!");
+        GameLog.LogError($"[DataManager] {typeof(TMarker).Name} 타입의 인덱스 딕셔너리를 찾을 수 없습니다!");
         return null;
     }
 
@@ -151,7 +151,7 @@ public class DataManager
             }
         }
 
-        Debug.LogError($"[DataManager] {typeof(TMarker).Name} 마커에서 키 [{key}]를 찾을 수 없습니다!");
+        GameLog.LogError($"[DataManager] {typeof(TMarker).Name} 마커에서 키 [{key}]를 찾을 수 없습니다!");
         return null;
     }
 

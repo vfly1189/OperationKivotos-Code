@@ -57,7 +57,7 @@ public class EquipmentManager
         //장비 타임이 뭔지 확인
         if (!Enum.TryParse(itemData.EquipPart, true, out EquipType type))
         {
-            Debug.LogError($"장비 부위 변환 실패: {itemData.EquipPart}");
+            GameLog.LogError($"장비 부위 변환 실패: {itemData.EquipPart}");
             return;
         }
 

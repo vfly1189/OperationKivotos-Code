@@ -21,7 +21,7 @@ public class SerikaCharacter : BaseCharacter
 
     protected override void OnCutsceneEnded(PlayableDirector director)
     {
-        Debug.Log("세리카 전용 컷신 종료 -> 일반상태로 전환");
+        GameLog.Log("세리카 전용 컷신 종료 -> 일반상태로 전환");
         if (_gameCanvas != null) _gameCanvas.SetActive(true);
         IsUsingSkill = false;
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);

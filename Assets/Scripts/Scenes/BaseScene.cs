@@ -37,12 +37,12 @@ public abstract class BaseScene : MonoBehaviour
     {
         if (Managers.UI.IsPopupOpen)
         {
-            Debug.Log("닫기 시작 ");
+            GameLog.Log("닫기 시작 ");
             Managers.UI.ClosePopupUI();
         }
         else
         {
-            Debug.Log("또 열기");
+            GameLog.Log("또 열기");
             ShowEscapeMenu().Forget();
         }
     }

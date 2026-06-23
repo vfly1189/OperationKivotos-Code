@@ -63,7 +63,7 @@ public class MonsterARController : RangedMonsterController
         var ps = effect.GetComponent<ParticleSystem>();
         if (ps != null)
         {
-            //Debug.Log("파티클 재생");
+            //GameLog.Log("파티클 재생");
             ps.Play();
         }
 

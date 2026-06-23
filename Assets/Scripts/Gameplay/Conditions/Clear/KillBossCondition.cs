@@ -11,7 +11,7 @@ public class KillBossCondition : BaseCondition
 
     //    if (_bossMonsterController == null)
     //    {
-    //        Debug.LogError("[KillBossCondition] 전달된 보스 몬스터가 null입니다!");
+    //        GameLog.LogError("[KillBossCondition] 전달된 보스 몬스터가 null입니다!");
     //        InvokeConditionMet();
     //        return;
     //    }
@@ -19,14 +19,14 @@ public class KillBossCondition : BaseCondition
     //    _bossMonsterController.OnDead -= OnMonsterDead;
     //    _bossMonsterController.OnDead += OnMonsterDead;
 
-    //    Debug.Log($"[KillBossCondition] 보스({_bossMonsterController.name}) 클리어 조건 등록 완료.");
+    //    GameLog.Log($"[KillBossCondition] 보스({_bossMonsterController.name}) 클리어 조건 등록 완료.");
     //}
 
     public override void SetUp()
     {
         if (_bossController == null)
         {
-            Debug.LogError("[KillBossCondition] 전달된 보스 몬스터가 null입니다!");
+            GameLog.LogError("[KillBossCondition] 전달된 보스 몬스터가 null입니다!");
             InvokeConditionMet();
             return;
         }
@@ -34,14 +34,14 @@ public class KillBossCondition : BaseCondition
         _bossController.OnDead -= OnMonsterDead;
         _bossController.OnDead += OnMonsterDead;
 
-        Debug.Log($"[KillBossCondition] 보스({_bossController.name}) 클리어 조건 등록 완료.");
+        GameLog.Log($"[KillBossCondition] 보스({_bossController.name}) 클리어 조건 등록 완료.");
     }
 
     public void SetBoss(GameObject boss) { _bossController = boss.GetComponent<BossMonsterController>(); }
 
     private void OnMonsterDead()
     {
-        Debug.Log("몬스터사망 OnMonsterDead");
+        GameLog.Log("몬스터사망 OnMonsterDead");
         InvokeConditionMet();
     }
 

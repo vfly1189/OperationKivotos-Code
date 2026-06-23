@@ -25,7 +25,7 @@ public class Barricade : MonoBehaviour, IDamageable
         if (_currentHp <= 0) return; // 이미 부서졌으면 무시
 
         _currentHp -= damage.Amount;
-        Debug.Log($"바리케이드 체력: {_currentHp}");
+        GameLog.Log($"바리케이드 체력: {_currentHp}");
 
         if (_currentHp <= 0)
         {

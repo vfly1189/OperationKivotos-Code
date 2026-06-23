@@ -44,7 +44,7 @@ public class WeaponDataSO : ScriptableObject
             return levelStats[index];
         }
 
-        Debug.LogError($"[{weaponName}] {level} 레벨의 스탯 데이터가 없습니다.");
+        GameLog.LogError($"[{weaponName}] {level} 레벨의 스탯 데이터가 없습니다.");
         return default;
     }
 
@@ -52,7 +52,7 @@ public class WeaponDataSO : ScriptableObject
     {
         if (string.IsNullOrEmpty(key))
         {
-            Debug.LogWarning($"[WeaponDataSO] 무기 ID {id}의 key가 비어있습니다!");
+            GameLog.LogWarning($"[WeaponDataSO] 무기 ID {id}의 key가 비어있습니다!");
             return "Weapon_Icon_Default"; // 빈 하얀색 대신 띄워줄 기본 아이콘 이름
         }
 
@@ -60,7 +60,7 @@ public class WeaponDataSO : ScriptableObject
         string[] splitData = key.Split('_');
         if (splitData.Length < 2)
         {
-            Debug.LogWarning($"[WeaponDataSO] 무기 key 형식이 잘못되었습니다. (현재: {key}, 예상: wpn_Name)");
+            GameLog.LogWarning($"[WeaponDataSO] 무기 key 형식이 잘못되었습니다. (현재: {key}, 예상: wpn_Name)");
             return "Weapon_Icon_Default";
         }
 

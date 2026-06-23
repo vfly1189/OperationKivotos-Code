@@ -119,7 +119,7 @@ public class RandomNode : Node
             _currentNode = _nodes[randIdx];
 
             // [디버그용] 콘솔창에 진짜로 다른 스킬이 뽑히는지 확인!
-            Debug.Log($"[RandomNode] {randIdx}번 스킬이 선택되었습니다!");
+            GameLog.Log($"[RandomNode] {randIdx}번 스킬이 선택되었습니다!");
         }
 
         // 2. 뽑은 노드 평가
@@ -159,7 +159,7 @@ public class WaitNode : Node
         {
             _isWaiting = false; // 리셋
             _nodeState = NodeState.Success;
-            Debug.Log("Wait Node 끝");
+            GameLog.Log("Wait Node 끝");
             return NodeState.Success;
         }
 

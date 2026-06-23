@@ -165,7 +165,7 @@ public class BossMonsterController : BaseMonsterController
         }
         else
         {
-            Debug.LogWarning($"스킬 타임라인이 없습니다! Index: {skillIdx}");
+            GameLog.LogWarning($"스킬 타임라인이 없습니다! Index: {skillIdx}");
             _isActionRunning = false;
             _isSkillFiring = false;
             if (_state != MonsterState.Dead) _state = MonsterState.Idle;

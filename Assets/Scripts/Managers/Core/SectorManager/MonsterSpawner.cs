@@ -91,7 +91,7 @@ public class MonsterSpawner : MonoBehaviour
         MonsterBaseData monsterBaseData = Managers.Data.GetData<int, MonsterBaseData>(info.monsterId);
         if (monsterBaseData == null)
         {
-            Debug.LogError($"[MonsterSpawner] monsterId({info.monsterId}) 데이터 없음.");
+            GameLog.LogError($"[MonsterSpawner] monsterId({info.monsterId}) 데이터 없음.");
             DisposeCts(pointIdx);
             return;
         }

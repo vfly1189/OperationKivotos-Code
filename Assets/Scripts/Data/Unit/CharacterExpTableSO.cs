@@ -27,7 +27,7 @@ public class CharacterExpTableSO : ScriptableObject, IDataCacheable
             return ExpList[index].RequireExp;
         }
 
-        Debug.LogError($"[ExpTable] {level} 레벨의 경험치 데이터가 없습니다. 최대 레벨일 수 있습니다.");
+        GameLog.LogError($"[ExpTable] {level} 레벨의 경험치 데이터가 없습니다. 최대 레벨일 수 있습니다.");
         return 0;
     }
     

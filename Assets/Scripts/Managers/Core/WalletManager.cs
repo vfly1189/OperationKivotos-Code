@@ -41,7 +41,7 @@ public class WalletManager
         if (amount < 0) return;
 
         _currencies[type] += amount;
-        Debug.Log($"[Currency] 획득: {type} +{amount} (현재: {_currencies[type]})");
+        GameLog.Log($"[Currency] 획득: {type} +{amount} (현재: {_currencies[type]})");
 
         OnCurrencyChanged?.Invoke(type, _currencies[type]);
     }
@@ -55,13 +55,13 @@ public class WalletManager
         if (GetCurrency(type) >= amount)
         {
             _currencies[type] -= amount;
-            Debug.Log($"[Currency] 소모: {type} -{amount} (현재: {_currencies[type]})");
+            GameLog.Log($"[Currency] 소모: {type} -{amount} (현재: {_currencies[type]})");
 
             OnCurrencyChanged?.Invoke(type, _currencies[type]);
             return true;
         }
 
-        Debug.LogWarning($"[Currency] 잔액 부족: {type} (필요: {amount}, 현재: {GetCurrency(type)})");
+        GameLog.LogWarning($"[Currency] 잔액 부족: {type} (필요: {amount}, 현재: {GetCurrency(type)})");
         return false; // 잔액 부족
     }
 

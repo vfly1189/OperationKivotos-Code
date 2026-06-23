@@ -65,7 +65,7 @@ public class BaseCharacter : MonoBehaviour
         
         //_healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("HealingAura").WaitForCompletion();
         _healingAuraPrefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura", isGlobal: true);
-        if (_healingAuraPrefab == null) Debug.LogError("HealingAura 로드 실패!");
+        if (_healingAuraPrefab == null) GameLog.LogError("HealingAura 로드 실패!");
         
     }
 

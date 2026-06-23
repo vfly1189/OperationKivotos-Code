@@ -41,7 +41,7 @@ public class UI_ExitPopUp : UI_PopUp
 
     private void OnYesClicked()
     {
-        Debug.Log("Exit Confirmed");
+        GameLog.Log("Exit Confirmed");
         _onConfirm?.Invoke();
 
         // 게임 종료
@@ -54,7 +54,7 @@ public class UI_ExitPopUp : UI_PopUp
 
     private void OnNoClicked()
     {
-        Debug.Log("Exit Cancelled");
+        GameLog.Log("Exit Cancelled");
         _onCancel?.Invoke();
         ClosePopupUI();
     }

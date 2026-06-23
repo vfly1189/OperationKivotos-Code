@@ -61,7 +61,7 @@ public class Managers : MonoBehaviour
             _data.InitAsync()
         );
 
-        Debug.Log("All Managers Async Initialization Complete");
+        GameLog.Log("All Managers Async Initialization Complete");
     }
 
     void Update()

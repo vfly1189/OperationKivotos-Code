@@ -286,7 +286,7 @@ public class CharacterStat : BaseStat, IDamageable
 
         CallOnHpChanged(CurrentHp, MaxHp.Value);
 
-        Debug.Log($"[{_data.nameKR}] 무기({_weaponData.weaponName}) Lv.{WeaponLevel} 스탯 적용 완료");
+        GameLog.Log($"[{_data.nameKR}] 무기({_weaponData.weaponName}) Lv.{WeaponLevel} 스탯 적용 완료");
     }
 
     public void ApplyCharacterSaveData(CharacterSaveData saved)

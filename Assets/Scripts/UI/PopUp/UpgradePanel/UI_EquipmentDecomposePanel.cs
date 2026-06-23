@@ -74,7 +74,7 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
         if (_isSpawning) return; // 이미 생성 중이면 무시
         _isSpawning = true;
 
-        Debug.Log("SetHavingRelicScrollView() 호출됨");
+        GameLog.Log("SetHavingRelicScrollView() 호출됨");
 
         foreach (UI_ItemSlot slot in _itemSlots)
             Managers.Resource.Destroy(slot.gameObject);

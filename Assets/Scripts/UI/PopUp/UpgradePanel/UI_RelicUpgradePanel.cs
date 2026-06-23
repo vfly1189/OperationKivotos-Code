@@ -176,7 +176,7 @@ public class UI_RelicUpgradePanel : UI_Base, IItemSlotHandler
     //재료슬롯 콜백 함수
     private async void OpenMaterialSelectPopup()
     {
-        Debug.Log("재료 슬롯 눌림");
+        GameLog.Log("재료 슬롯 눌림");
         var popup = await Managers.UI.ShowPopupUIAsync<UI_MaterialSelectPopup>("UI_MaterialSelectPopup");
         //  Service를 통째로 주입 → 팝업도 같은 Service를 바라봄
         popup.SetService(_upgradeService);

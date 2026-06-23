@@ -279,7 +279,7 @@ public class GameScene : BaseScene
         else
         {
             // 던전에서 돌아온 경우 (메모리에 있는 Managers.Party 상태를 그대로 유지)
-            Debug.Log("[GameScene] 던전에서 귀환: 기존 메모리 상태 유지");
+            GameLog.Log("[GameScene] 던전에서 귀환: 기존 메모리 상태 유지");
 
             // 주의: 파티 스폰 위치 등 물리적 리셋이 필요하다면 여기서 처리 (이미 CreateCharacters에서 하고 계시긴 합니다)
         }

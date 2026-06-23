@@ -35,12 +35,12 @@ public class DungeonManager
 
     private void HandleClearMet()
     {
-        Debug.Log($"[DungeonManager] 클리어 조건 달성됨! 현재 상태: {CurrentState}");
+        GameLog.Log($"[DungeonManager] 클리어 조건 달성됨! 현재 상태: {CurrentState}");
 
         // [핵심] 락(Lock) 처리
         if (CurrentState != DungeonState.Playing)
         {
-            Debug.LogWarning("[DungeonManager] 현재 상태가 Playing이 아니라서 클리어를 무시합니다!");
+            GameLog.LogWarning("[DungeonManager] 현재 상태가 Playing이 아니라서 클리어를 무시합니다!");
             return;
         }
 

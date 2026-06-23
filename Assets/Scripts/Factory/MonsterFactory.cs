@@ -1,5 +1,4 @@
 using Cysharp.Threading.Tasks;
-using NPOI.SS.Formula.Functions;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -52,7 +51,7 @@ public static class MonsterFactory
 
         if (monsterBaseData == null || mapConfig == null)
         {
-            Debug.LogError($"[MonsterFactory] 데이터 로드 실패. Key: {monsterAddressableKey}, MapID: {mapId}");
+            GameLog.LogError($"[MonsterFactory] 데이터 로드 실패. Key: {monsterAddressableKey}, MapID: {mapId}");
             return null;
         }
 
@@ -70,7 +69,7 @@ public static class MonsterFactory
 
         if (prefab == null)
         {
-            Debug.LogError($"[MonsterFactory] 프리팹 로드 실패. Key: {monsterAddressableKey}");
+            GameLog.LogError($"[MonsterFactory] 프리팹 로드 실패. Key: {monsterAddressableKey}");
             return null;
         }
 
@@ -98,7 +97,7 @@ public static class MonsterFactory
 
         if (monsterBaseData == null || mapConfig == null)
         {
-            Debug.LogError($"[MonsterFactory] 데이터 로드 실패. Key: {monsterID}, MapID: {mapId}");
+            GameLog.LogError($"[MonsterFactory] 데이터 로드 실패. Key: {monsterID}, MapID: {mapId}");
             return null;
         }
 
@@ -116,7 +115,7 @@ public static class MonsterFactory
 
         if (prefab == null)
         {
-            Debug.LogError($"[MonsterFactory] 프리팹 로드 실패. Key: {monsterBaseData.AddressableKey}");
+            GameLog.LogError($"[MonsterFactory] 프리팹 로드 실패. Key: {monsterBaseData.AddressableKey}");
             return null;
         }
 

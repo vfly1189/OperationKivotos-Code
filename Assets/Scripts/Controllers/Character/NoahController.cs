@@ -42,7 +42,7 @@ public class NoahController : MonoBehaviour, IInteractable
     public async void OnTargetEnter(BaseCharacter character)
     {
         // TODO: 머리 위에 "F키로 상호작용" UI 띄우기
-        Debug.Log("노아 영역 진입: F키 상호작용 UI 활성화");
+        GameLog.Log("노아 영역 진입: F키 상호작용 UI 활성화");
         Transform uiParent = Managers.UI.CanvasWorld.transform;
 
         if(_interactPrompt == null)

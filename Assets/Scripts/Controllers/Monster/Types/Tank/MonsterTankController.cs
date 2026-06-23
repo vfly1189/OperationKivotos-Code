@@ -157,7 +157,7 @@ public class MonsterTankController : RangedMonsterController
             }
 
 
-            //Debug.Log($"Hit Player! at {pos}");
+            //GameLog.Log($"Hit Player! at {pos}");
         }
     }
 

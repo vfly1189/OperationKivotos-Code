@@ -88,13 +88,13 @@ public class UI_UpgradePopUp : UI_PopUp
         switch (result)
         {
             case WeaponUpgradeService.UpgradeResult.Success:
-                Debug.Log($"강화 성공! Lv.{prevLevel} → Lv.{prevLevel + 1}");
+                GameLog.Log($"강화 성공! Lv.{prevLevel} → Lv.{prevLevel + 1}");
                 break;
             case WeaponUpgradeService.UpgradeResult.Fail:
-                Debug.Log($"강화 실패... Lv.{prevLevel} 유지");
+                GameLog.Log($"강화 실패... Lv.{prevLevel} 유지");
                 break;
             case WeaponUpgradeService.UpgradeResult.NotEnoughCurrency:
-                Debug.Log("재화가 부족합니다.");
+                GameLog.Log("재화가 부족합니다.");
                 break;
         }
     }

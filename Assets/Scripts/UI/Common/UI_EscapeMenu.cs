@@ -1,10 +1,8 @@
 using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
-using static UnityEngine.VFX.VFXTypeAttribute;
 
 public class UI_EscapeMenu : UI_PopUp
 {

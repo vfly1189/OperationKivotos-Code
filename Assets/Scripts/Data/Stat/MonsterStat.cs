@@ -112,7 +112,7 @@ public class MonsterStat : BaseStat, IDamageable
                     UI_LootNotification.ShowGainCredit(FinalCreditReward).Forget();
                 }
 
-                //Debug.Log($"플레이어에게 경험치 {DropExpAmount} 지급!");
+                //GameLog.Log($"플레이어에게 경험치 {DropExpAmount} 지급!");
 
                 if (DropTableID >= 0)
                     Managers.Drop.RollAndGiveDropItems(DropTableID);

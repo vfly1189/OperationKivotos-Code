@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class BaseStat : MonoBehaviour, IDamageable
@@ -71,7 +70,7 @@ public class BaseStat : MonoBehaviour, IDamageable
 
     protected void CallOnDead()
     {
-        Debug.Log("몬스터사망 CallOnDead");
+        GameLog.Log("몬스터사망 CallOnDead");
         OnDead?.Invoke();
     }
 

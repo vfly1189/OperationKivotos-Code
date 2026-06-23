@@ -106,7 +106,7 @@ public class ResourceManager
 
         if (handle.Status == AsyncOperationStatus.Succeeded) return handle.Result as T;
 
-        Debug.LogError($"[ResourceManager] Load Failed: {key}");
+        GameLog.LogError($"[ResourceManager] Load Failed: {key}");
         if (isGlobal || wasGlobal) _globalHandles.Remove(key);
         else _sceneHandles.Remove(key);
         return null;
@@ -131,7 +131,7 @@ public class ResourceManager
         }
         catch (Exception e)
         {
-            Debug.LogError($"[ResourceManager] NoCache Load Exception: {key} / {e.Message}");
+            GameLog.LogError($"[ResourceManager] NoCache Load Exception: {key} / {e.Message}");
         }
 
         if (handle.Status == AsyncOperationStatus.Succeeded && result != null)
@@ -141,7 +141,7 @@ public class ResourceManager
         }
         else
         {
-            Debug.LogError($"[ResourceManager] Addressable NoCache Load Failed: {key}");
+            GameLog.LogError($"[ResourceManager] Addressable NoCache Load Failed: {key}");
             // 실패했을 때도 핸들이 유효하면 메모리 해제
             if (handle.IsValid()) Addressables.Release(handle);
             return null;
@@ -189,7 +189,7 @@ public class ResourceManager
             }
             else
             {
-                Debug.LogWarning($"[ResourceManager] '{atlasKey}' 아틀라스에 '{spriteName}' 이미지가 없습니다.");
+                GameLog.LogWarning($"[ResourceManager] '{atlasKey}' 아틀라스에 '{spriteName}' 이미지가 없습니다.");
             }
         }
         return null;
@@ -214,7 +214,7 @@ public class ResourceManager
             var location = locations[i];
             string key = location.PrimaryKey;
 
-            Debug.Log($"로딩 키 : {key}");
+            GameLog.Log($"로딩 키 : {key}");
 
             // 이미 딕셔너리에 있으면 스킵 (중복 로드 방지)
             if (_globalHandles.ContainsKey(key) || _sceneHandles.ContainsKey(key))
@@ -301,7 +301,7 @@ public class ResourceManager
             }
         }
 
-        Debug.LogError($"[ResourceManager] 에셋이 로드되지 않았거나 찾을 수 없습니다. Key: {key}\n" +
+        GameLog.LogError($"[ResourceManager] 에셋이 로드되지 않았거나 찾을 수 없습니다. Key: {key}\n" +
                        $"미리 LoadAsync로 로딩해두었는지 확인하세요.");
         return null;
     }

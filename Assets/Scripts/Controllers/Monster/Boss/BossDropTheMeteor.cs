@@ -16,7 +16,7 @@ public class BossDropTheMeteor : MonoBehaviour
     {
         if (_attackFieldInstance == null)
         {
-            Debug.Log("_attackField Null!!!");
+            GameLog.Log("_attackField Null!!!");
             return;
         }
 

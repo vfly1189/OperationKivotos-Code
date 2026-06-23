@@ -44,7 +44,7 @@ public class WeaponEnhanceCostTableSO : ScriptableObject, IDataCacheable
             }
         }
 
-        Debug.LogError($"[WeaponEnhanceCostTable] {targetLevel} 레벨의 강화 비용 데이터가 없습니다.");
+        GameLog.LogError($"[WeaponEnhanceCostTable] {targetLevel} 레벨의 강화 비용 데이터가 없습니다.");
         return default;
     }
 

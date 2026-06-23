@@ -126,7 +126,7 @@ public class PoolManager
     {
         if (!_pool.ContainsKey(prefabName))
         {
-            Debug.LogError($"Pool에 '{prefabName}'이 없습니다. CreatePool을 먼저 호출하세요!");
+            GameLog.LogError($"Pool에 '{prefabName}'이 없습니다. CreatePool을 먼저 호출하세요!");
             return null;
         }
 

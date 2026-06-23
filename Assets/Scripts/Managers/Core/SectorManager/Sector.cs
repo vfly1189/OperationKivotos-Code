@@ -28,7 +28,7 @@ public class Sector : MonoBehaviour
 
     public void ActivateSector()
     {
-        Debug.Log($"{_sectorID} ActiveSector 실행");
+        GameLog.Log($"{_sectorID} ActiveSector 실행");
         foreach (var spawner in _spawners)
         {
             spawner.SpawnMonsters();

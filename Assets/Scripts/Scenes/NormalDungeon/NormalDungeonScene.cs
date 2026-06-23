@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 // [추가]
 using Cysharp.Threading.Tasks;
-using NPOI.HSSF.Record.PivotTable;
 
 public class NormalDungeonScene : BaseScene
 {
@@ -28,6 +27,7 @@ public class NormalDungeonScene : BaseScene
         base.Init();
         _sceneType = Define.Scene.NormalDungeon;
 
+        var token = this.GetCancellationTokenOnDestroy();
 
         Managers.Party.TeleportParty(new Vector3(0, 0, 0));
 
@@ -52,10 +52,19 @@ public class NormalDungeonScene : BaseScene
         var battleInVoice = LoadBattleInVoice();
         var mainBgmTask = LoadMainBgm();
 
-        // UniTask.WhenAll 로 병렬 대기
-        await UniTask.WhenAll(mainUI, mapTask, poolTask, mainBgmTask,  effectStageTask, successBgm, victoryVoice, battleInVoice);
+        //// UniTask.WhenAll 로 병렬 대기
+        //await UniTask.WhenAll(mainUI, mapTask, poolTask, mainBgmTask,  effectStageTask, successBgm, victoryVoice, battleInVoice);
 
-
+        try
+        {
+            await UniTask.WhenAll(mainUI, mapTask, poolTask, mainBgmTask,
+                                  effectStageTask, successBgm, victoryVoice, battleInVoice)
+                         .AttachExternalCancellation(token);
+        }
+        catch (System.OperationCanceledException)
+        {
+            return; // 씬이 파괴되면 여기서 안전하게 종료
+        }
 
         if (_curMap.GetComponent<DungeonSequenceDirector>() == null)
         {
@@ -126,7 +135,7 @@ public class NormalDungeonScene : BaseScene
         Transform spawnPointsRoot = map.transform.Find("SpawnPoints");
         if (spawnPointsRoot == null)
         {
-            Debug.LogError("맵 프리팹에 'SpawnPoints' 오브젝트가 없습니다!");
+            GameLog.LogError("맵 프리팹에 'SpawnPoints' 오브젝트가 없습니다!");
             return monsterList;
         }
 
@@ -141,7 +150,7 @@ public class NormalDungeonScene : BaseScene
         MapMonsterConfig mapConfig = Managers.Data.GetData<int, MapMonsterConfig>(Managers.Context.CurrentDungeonID);
         if (mapConfig == null)
         {
-            Debug.LogError($"맵 정보({Managers.Context.CurrentDungeonID})가 없습니다.");
+            GameLog.LogError($"맵 정보({Managers.Context.CurrentDungeonID})가 없습니다.");
             return monsterList;
         }
 
@@ -155,7 +164,7 @@ public class NormalDungeonScene : BaseScene
             // [수정] 그룹 노드의 이름을 int형 ID로 파싱합니다.
             if (!int.TryParse(groupNode.name, out int monsterId))
             {
-                Debug.LogError($"[Spawn] 잘못된 그룹 노드 이름입니다. 몬스터 ID(숫자)로 설정해주세요: {groupNode.name}");
+                GameLog.LogError($"[Spawn] 잘못된 그룹 노드 이름입니다. 몬스터 ID(숫자)로 설정해주세요: {groupNode.name}");
                 continue;
             }
 
@@ -231,18 +240,18 @@ public class NormalDungeonScene : BaseScene
     {
         if (_preloadData.fightingBgms == null || _preloadData.fightingBgms.Length == 0) return;
         int rand = Random.Range(0, _preloadData.fightingBgms.Length);
-        Debug.Log($"rand : {rand}");
+        GameLog.Log($"rand : {rand}");
 
         _mainBGM = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.fightingBgms[rand]);
 
-        if (_mainBGM != null) Debug.Log("메인 브금 로딩");
-        else Debug.Log("메인 브금 로딩안돼");
+        if (_mainBGM != null) GameLog.Log("메인 브금 로딩");
+        else GameLog.Log("메인 브금 로딩안돼");
     }
 
     void PlayBGM()
     {
         if (_mainBGM != null) Managers.Sound.Play(_mainBGM, Define.Sound.Bgm);
-        else Debug.Log("우헤헤헤헤헿");
+        else GameLog.Log("우헤헤헤헤헿");
     }
 
     void PlayBattleInVoice()

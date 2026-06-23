@@ -52,7 +52,7 @@ public class BossSkillController : MonoBehaviour
         // 키가 존재하는지 확인
         if (!_skillDatabase.ContainsKey(skillName))
         {
-            Debug.LogError($"[BossSkill] '{skillName}'라는 이름의 스킬을 찾을 수 없습니다! 오타를 확인하세요.");
+            GameLog.LogError($"[BossSkill] '{skillName}'라는 이름의 스킬을 찾을 수 없습니다! 오타를 확인하세요.");
             return;
         }
 

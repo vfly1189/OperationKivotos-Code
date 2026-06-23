@@ -19,7 +19,7 @@ public class Lightning : MonoBehaviour
             damageInfo.HitPoint = hitPoint;
             damageInfo.IsCritical = false;
 
-            Debug.Log("번개 데미지 실행");
+            GameLog.Log("번개 데미지 실행");
             // 인터페이스 메서드 호출 (상대가 Player든 Monster든 상관 안 함)
             target.TakeDamage(damageInfo);
         }

@@ -92,7 +92,7 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
 
     private void SetCredit()
     {
-        Debug.Log($"현재 크레딧 : {Managers.Wallet.GetCurrency(CurrencyType.Credit)}");
+        GameLog.Log($"현재 크레딧 : {Managers.Wallet.GetCurrency(CurrencyType.Credit)}");
         _creditNum.text = Managers.Wallet.GetCurrency(CurrencyType.Credit).ToString("N0");
     }
 

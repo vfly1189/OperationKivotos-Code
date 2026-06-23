@@ -63,7 +63,7 @@ public class GenesisAttack : MonoBehaviour
             {
                 //if (routine != null) StopCoroutine(routine);
                 //_activeTargets.Remove(target);
-                //Debug.Log($"{other.name} 장판 탈출 -> DoT 종료");
+                //GameLog.Log($"{other.name} 장판 탈출 -> DoT 종료");
 
                 if (cts != null)
                 {
@@ -127,7 +127,7 @@ public class GenesisAttack : MonoBehaviour
     private void ApplyDamage(IDamageable target, Vector3 hitPoint)
     {
         // 인터페이스 호출
-        Debug.Log($"장판 데미지: {_damage}");
+        GameLog.Log($"장판 데미지: {_damage}");
 
         DamageInfo damageInfo = new DamageInfo();
         damageInfo.Amount = 500;

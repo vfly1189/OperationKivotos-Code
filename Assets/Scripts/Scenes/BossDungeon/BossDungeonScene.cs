@@ -233,7 +233,7 @@ public class BossDungeonScene : BaseScene
         }
         else
         {
-            Debug.LogError("BossHPBar UI를 로드하는데 실패했습니다! Addressable Key나 Prefab 상태를 확인하세요.");
+            GameLog.LogError("BossHPBar UI를 로드하는데 실패했습니다! Addressable Key나 Prefab 상태를 확인하세요.");
         }
     }
 

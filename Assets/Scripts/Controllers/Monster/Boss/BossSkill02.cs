@@ -18,7 +18,7 @@ public class BossSkill02 : MonoBehaviour
     {
         if (_attackInstance == null)
         {
-            Debug.Log("_attackLightning Null!!!");
+            GameLog.Log("_attackLightning Null!!!");
             return;
         }
 

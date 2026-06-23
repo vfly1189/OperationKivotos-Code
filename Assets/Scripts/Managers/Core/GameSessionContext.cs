@@ -38,19 +38,19 @@ public class GameSessionContext
             {
                 // 세이브 파일이 아예 없다면 새로 생성
                 SelectedSavedData = Managers.Save.CreateNewSave(schoolName);
-                Debug.Log($"[{schoolName}] 세이브가 없어 새로 생성 후 이어합니다.");
+                GameLog.Log($"[{schoolName}] 세이브가 없어 새로 생성 후 이어합니다.");
             }
             else
             {
                 // 기존 데이터 딥카피
                 string json = Newtonsoft.Json.JsonConvert.SerializeObject(data);
                 SelectedSavedData = Newtonsoft.Json.JsonConvert.DeserializeObject<PartySaveData>(json);
-                Debug.Log($"[{schoolName}] 기존 세이브 데이터를 불러왔습니다.");
+                GameLog.Log($"[{schoolName}] 기존 세이브 데이터를 불러왔습니다.");
             }
         }
         else
         {
-            Debug.LogError($"{schoolName} 키가 없습니다!");
+            GameLog.LogError($"{schoolName} 키가 없습니다!");
         }
     }
 
@@ -66,13 +66,13 @@ public class GameSessionContext
         // 캐싱된 딕셔너리 데이터도 null로 초기화 (StartScene으로 돌아갔을 때 방지)
         SavedDatas[schoolName] = null;
 
-        Debug.Log($"[{schoolName}] 기존 데이터를 삭제하고 새로 시작합니다.");
+        GameLog.Log($"[{schoolName}] 기존 데이터를 삭제하고 새로 시작합니다.");
     }
 
     // 게임 시작 시, 혹은 로비로 나갈 때 휘발성 데이터 싹 비우기
     public void Clear()
     {
-        Debug.Log("[GameSession] 런타임 데이터 초기화");
+        GameLog.Log("[GameSession] 런타임 데이터 초기화");
         SelectedSchool = null;
         SelectedCharacters = null;
         SelectedSavedData = null;

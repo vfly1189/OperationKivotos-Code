@@ -129,7 +129,7 @@ public class DropManager
             }
         }
 
-        Debug.LogWarning($"[DropManager] Tier {tier}에 해당하는 장비가 없습니다.");
+        GameLog.LogWarning($"[DropManager] Tier {tier}에 해당하는 장비가 없습니다.");
         return -1;
     }
 }

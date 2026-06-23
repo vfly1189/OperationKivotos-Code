@@ -48,7 +48,7 @@ public class ActiveCharacterHUD : MonoBehaviour
     {
         if (charData == null) return;
 
-        Debug.Log($"[ActiveHUD] ChangeStaticDataAsync 호출: {charData.nameKey}");
+        GameLog.Log($"[ActiveHUD] ChangeStaticDataAsync 호출: {charData.nameKey}");
 
         _qSkill.SetEnergyFillColor(charData.energyFillColor);
         _qSkill.SetReadyGlowColor(charData.ultimateGlowColor);
