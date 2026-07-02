@@ -107,8 +107,8 @@ public class ArisBulletController : MonoBehaviour
         // Managers.Resource.Instantiate 사용 (사용자 환경)
         GameObject hitObj = Managers.Resource.Instantiate(_hitVFXPrefab, hitPoint, hitRot);
 
-        // 피격 이펙트는 보통 1~2초 뒤 자동 삭제되도록 해당 프리팹 내부에 로직이 있거나, 여기서 예약
-        // Destroy(hitObj, 2.0f); // 혹은 풀링 반환 로직
+        // 수명이 끝나면 자동으로 풀 반환/파괴 (스폰만 하고 회수 안 하던 누수 방지)
+        Util.GetOrAddComponent<AutoReturnToPool>(hitObj);
     }
 
     private void Despawn()

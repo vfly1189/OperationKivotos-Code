@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.Triggers;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -92,9 +93,9 @@ public class UIManager
         Util.GetOrAddComponent<GraphicRaycaster>(go);
     }
 
-    public async UniTask<T> MakeSubItemAsync<T>(string addressableKey, Transform parent = null) where T : UI_Base
+    public async UniTask<T> MakeSubItemAsync<T>(string addressableKey, Transform parent = null, CancellationToken token = default) where T : UI_Base
     {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, token: token);
         if (prefab == null) return null;
 
         GameObject go = Managers.Resource.Instantiate(prefab, parent);

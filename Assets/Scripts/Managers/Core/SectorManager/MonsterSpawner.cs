@@ -113,7 +113,8 @@ public class MonsterSpawner : MonoBehaviour
             GameObject monsterObj = await MonsterFactory.CreateMonsterByMonsterIDAsync(
                 info.monsterId,
                 _mapId,
-                spawnPoint
+                spawnPoint,
+                token
             );
 
             if (monsterObj == null) return;

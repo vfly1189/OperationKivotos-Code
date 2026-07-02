@@ -12,7 +12,7 @@ public class TankBombController : MonoBehaviour
     private void Awake()
     {
         // 시작할 때 내 원래 부모(탱크)를 기억해둠
-        _originalParent = transform.parent;
+        //_originalParent = transform.parent;
     }
 
     // 1단계: 위치 잡고 경고 데칼만 켜기
@@ -22,7 +22,7 @@ public class TankBombController : MonoBehaviour
         transform.position = position;
 
         // [중요] 탱크가 회전해도 따라돌지 않도록 부모 관계를 임시로 끊음
-        transform.SetParent(null);
+        //transform.SetParent(null);
 
         // 회전값은 월드 기준(0,0,0) 혹은 바닥에 맞게 설정 (데칼이 X축 90도여야 한다면 여기서 보정)
         // transform.rotation = Quaternion.identity; // 필요시 주석 해제
@@ -48,7 +48,7 @@ public class TankBombController : MonoBehaviour
         _explosionParticle.gameObject.SetActive(false);
 
         // [중요] 다시 탱크의 자식으로 복귀 (따라다니게)
-        transform.SetParent(_originalParent);
-        transform.localPosition = Vector3.zero; // 위치 초기화 (선택)
+        //transform.SetParent(_originalParent);
+        //transform.localPosition = Vector3.zero; // 위치 초기화 (선택)
     }
 }

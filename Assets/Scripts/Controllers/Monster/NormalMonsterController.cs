@@ -1,9 +1,9 @@
 using Cysharp.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.AI;
-using static MonsterController;
 
 // 보스를 제외하고 NavMeshAgent로 맵을 돌아다니며 플레이어를 추적하는 몬스터.
 
@@ -19,6 +19,7 @@ public abstract class NormalMonsterController : BaseMonsterController
     protected NavMeshAgent _agent;
     protected Transform _target;
     protected UI_MonsterHPBar _hpBar;
+    private bool _initialized; // 최초 Start 완료 여부 (풀 재사용 시 HP바 재생성 판단용)
 
     
     private Vector3 _lastDestPosition = Vector3.zero;
@@ -42,18 +43,9 @@ public abstract class NormalMonsterController : BaseMonsterController
     {
         base.Start();
 
-        Transform uiParent = Managers.UI.CanvasWorld.transform;
+        await CreateHpBarAsync();
+        _initialized = true;
 
-        _hpBar = await Managers.UI.MakeSubItemAsync<UI_MonsterHPBar>("MonsterHPBar", uiParent);
-
-        if (_hpBar != null)
-        {
-            _hpBar.SetTarget(_hpBarTransform, Stat);
-
-            Stat.OnHpChanged -= _hpBar.UpdateHpBar;
-            Stat.OnHpChanged += _hpBar.UpdateHpBar;
-        }
-        
         if (Managers.Party.GetCurrentCharacter() != null)
             UpdateTarget(Managers.Party.GetCurrentCharacter().gameObject);
 
@@ -62,6 +54,48 @@ public abstract class NormalMonsterController : BaseMonsterController
             Managers.Party.OnActiveCharacterChanged -= OnPlayerCharacterChanged;
             Managers.Party.OnActiveCharacterChanged += OnPlayerCharacterChanged;
         }
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        // 풀 재사용 시: 사망 때 파괴된 HP바를 다시 생성 (최초 Start 이후에만)
+        if (_initialized && _hpBar == null)
+            CreateHpBarAsync().Forget();
+    }
+
+
+
+    // HP바 생성 + 스탯 이벤트 구독 (최초 스폰/풀 재사용 공용)
+    private async UniTask CreateHpBarAsync()
+    {
+        // 이번 활성 주기의 수명 토큰 캡처 (OnDisable/사망 시 취소됨)
+        CancellationToken token = _monsterCts != null ? _monsterCts.Token : CancellationToken.None;
+
+        Transform uiParent = Managers.UI.CanvasWorld.transform;
+        UI_MonsterHPBar hpBar;
+        try
+        {
+            hpBar = await Managers.UI.MakeSubItemAsync<UI_MonsterHPBar>("MonsterHPBar", uiParent, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return; // 로드 대기 중 디스폰/사망으로 취소됨
+        }
+        if (hpBar == null) return;
+
+        // 생성 대기 중 디스폰/사망/풀 반환이 일어났으면 방금 만든 바를 즉시 회수 (유령 HP바 누수 방지)
+        if (this == null || !isActiveAndEnabled || token.IsCancellationRequested)
+        {
+            Managers.Resource.Destroy(hpBar.gameObject);
+            return;
+        }
+
+        _hpBar = hpBar;
+        _hpBar.SetTarget(_hpBarTransform, Stat);
+        Stat.OnHpChanged -= _hpBar.UpdateHpBar;
+        Stat.OnHpChanged += _hpBar.UpdateHpBar;
     }
 
     // 타겟 갱신 함수
@@ -122,7 +156,15 @@ public abstract class NormalMonsterController : BaseMonsterController
         }
 
 
-        if (_hpBar != null) _hpBar.gameObject.SetActive(false);
+        if (_hpBar != null)
+        {
+            //_hpBar.gameObject.SetActive(false);
+            
+            Stat.OnHpChanged -= _hpBar.UpdateHpBar;      // 구독 해제
+            Managers.Resource.Destroy(_hpBar.gameObject); // 실제 파괴(또는 풀 반환)
+            _hpBar = null;
+            
+        }
 
         CallOnDead();
 

@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System.Collections;
 using UnityEngine;
 
@@ -10,9 +11,19 @@ public class MonsterRLController : RangedMonsterController
 
     protected override void PerformAttackAction()
     {
-        if (_bulletPrefab == null || _firePoint == null) return;
+        //if (_bulletPrefab == null || _firePoint == null) return;
 
-        FireOneBullet();
+        //FireOneBullet();
+
+        var ctx = new AbilityContext
+        {
+            Caster = this,
+            CasterGO = gameObject,
+            CasterStat = Stat,
+            Object = _firePoint,   // ★ 총구 — 총알 스폰 위치
+            Target = null,      // 조준/방향용
+        };
+        _abilityRunner.TryCast(_abilities[0], ctx, _monsterCts.Token).Forget();
     }
 
     private void FireOneBullet()

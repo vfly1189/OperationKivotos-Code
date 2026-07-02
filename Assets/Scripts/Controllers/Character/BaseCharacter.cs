@@ -1,11 +1,12 @@
 using Cysharp.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Playables;
 
-public class BaseCharacter : MonoBehaviour
+public class BaseCharacter : MonoBehaviour, IAbilityCaster
 {
     [Header("Base Settings")]
     [SerializeField] protected float _speed = 5.0f;
@@ -19,6 +20,9 @@ public class BaseCharacter : MonoBehaviour
     [SerializeField] protected GameObject _bulletPrefab;
     [SerializeField] protected Transform _firePoint;
     [SerializeField] protected ParticleSystem fireEffectParticle;
+
+    [SerializeField] protected List<AbilityData> _abilities = new List<AbilityData>();
+    private AbilityRunner _abilityRunner;
 
     public CharacterStat Stat { get; private set; }
     public IInteractable CurrentInteractable { get; private set; }
@@ -38,6 +42,16 @@ public class BaseCharacter : MonoBehaviour
     protected CancellationTokenSource _actionCts;
 
     public event Action<BaseCharacter> OnCharacterDead;
+
+    #region Ability
+
+    public void TryUseAbility(int id)
+    {
+
+    }
+
+    #endregion
+
 
     #region Lifecycle
 

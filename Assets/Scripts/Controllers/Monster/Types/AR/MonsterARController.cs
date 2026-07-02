@@ -16,10 +16,21 @@ public class MonsterARController : RangedMonsterController
 
     protected override void PerformAttackAction()
     {
-        if (_bulletPrefab == null || _firePoint == null) return;
+        //if (_bulletPrefab == null || _firePoint == null) return;
 
 
-        RapidFireAsync(_monsterCts.Token).Forget();
+        //RapidFireAsync(_monsterCts.Token).Forget();
+
+
+        var ctx = new AbilityContext
+        {
+            Caster = this,
+            CasterGO = gameObject,
+            CasterStat = Stat,
+            Object = _firePoint,   // ★ 총구 — 총알 스폰 위치
+            Target = null,      // 조준/방향용
+        };
+        _abilityRunner.TryCast(_abilities[0], ctx, _monsterCts.Token).Forget();
     }
     private async UniTaskVoid RapidFireAsync(CancellationToken token)
     {
@@ -56,6 +67,9 @@ public class MonsterARController : RangedMonsterController
         // 이펙트가 총구에 붙어서 따라다니길 원하면 parent를 _firePoint로 설정
         GameObject effect = Managers.Resource.Instantiate(_bulletFire, _firePoint.position, _firePoint.rotation);
         effect.transform.SetParent(_firePoint);
+
+        // 수명이 끝나면 자동으로 풀 반환/파괴 (스폰만 하고 회수 안 하던 누수 방지)
+        Util.GetOrAddComponent<AutoReturnToPool>(effect);
 
         // (선택) 총구에 붙이기: effect.transform.SetParent(_firePoint); 
 

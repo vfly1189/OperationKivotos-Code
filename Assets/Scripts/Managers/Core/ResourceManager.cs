@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -35,16 +36,16 @@ public class ResourceManager
     // =========================================================================
     // 1. AssetReference를 인자로 받는 LoadAsync (씬에서 주로 사용)
     // =========================================================================
-    public async UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false) where T : UnityEngine.Object
+    public async UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
     {
         if (assetRef == null || !assetRef.RuntimeKeyIsValid())
             return null;
 
         // AssetReference의 런타임 키를 string으로 변환해서 내부 처리 함수로 넘김
-        return await LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal);
+        return await LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
     }
   
-    public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false) where T : UnityEngine.Object
+    public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
     {
         if (string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);
 
@@ -54,11 +55,11 @@ public class ResourceManager
         if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && sh.Result is T sResult)
             return UniTask.FromResult(sResult);
 
-        return LoadAsyncInternal<T>(key, isGlobal);
+        return LoadAsyncInternal<T>(key, isGlobal, token);
     }
 
     // 실제 비동기 로직 분리
-    private async UniTask<T> LoadAsyncInternal<T>(string key, bool isGlobal) where T : UnityEngine.Object
+    private async UniTask<T> LoadAsyncInternal<T>(string key, bool isGlobal, CancellationToken token = default) where T : UnityEngine.Object
     {
 
         bool wasGlobal = false;
@@ -80,12 +81,12 @@ public class ResourceManager
         // 로딩 중인 핸들 있으면 기다리기
         if (_globalHandles.TryGetValue(key, out var pendingGlobal) && !pendingGlobal.IsDone)
         {
-            await pendingGlobal.ToUniTask();
+            await pendingGlobal.ToUniTask(cancellationToken: token);
             return pendingGlobal.Result as T;
         }
         if (_sceneHandles.TryGetValue(key, out var pendingScene) && !pendingScene.IsDone)
         {
-            await pendingScene.ToUniTask();
+            await pendingScene.ToUniTask(cancellationToken: token);
             return pendingScene.Result as T;
         }
 
@@ -96,7 +97,7 @@ public class ResourceManager
         if (isGlobal || wasGlobal) _globalHandles[key] = handle;
         else _sceneHandles[key] = handle;
 
-        await handle.ToUniTask();
+        await handle.ToUniTask(cancellationToken: token);
 
         // 새 핸들 로드가 완전히 끝난 후 예전 핸들 해제 
         if (handleToRelease.IsValid())
@@ -240,6 +241,32 @@ public class ResourceManager
 
         Addressables.Release(locationsHandle);
     }
+
+    // =========================================================================
+    // [실무 패턴] 로드-필요시-생성 통합 API
+    // 동기 Instantiate(프리로드 필수)와 async Load를 손으로 잇던 걸 한 호출로 통합.
+    // 취소 토큰을 로드까지 전파하여 씬 이탈/디스폰 중 use-after-teardown 방지.
+    // =========================================================================
+    public async UniTask<GameObject> InstantiateAsync(
+        string key, Vector3 position, Quaternion rotation,
+        Transform parent = null, bool isGlobal = false, CancellationToken token = default)
+    {
+        GameObject prefab;
+        try
+        {
+            prefab = await LoadAsync<GameObject>(key, isGlobal, token);
+        }
+        catch (OperationCanceledException)
+        {
+            // 씬 이탈/디스폰으로 취소되면 예외 대신 null로 흡수 (호출부의 == null 방어와 일관)
+            return null;
+        }
+
+        if (prefab == null || token.IsCancellationRequested) return null;
+
+        return Instantiate(prefab, position, rotation, parent);
+    }
+
 
     public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent = null)
     {

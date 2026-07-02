@@ -1,8 +1,8 @@
 using Cysharp.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
-using static MonsterController;
 
 // 보스 몬스터, 일반 몬스터 모두 공통으로 쓰는 기능들이 있어야됨.
 // 공통 인것들
@@ -13,7 +13,7 @@ using static MonsterController;
 // 보스몹 - 입장연출 , 사망연출이 존재
 // 일반몹 -  
 
-public abstract class BaseMonsterController : MonoBehaviour
+public abstract class BaseMonsterController : MonoBehaviour, IAbilityCaster
 {
     // [추가] 몬스터의 현재 행동 상태를 명확히 정의
     public enum MonsterState
@@ -51,6 +51,8 @@ public abstract class BaseMonsterController : MonoBehaviour
     public event Action OnDead;         // 체력이 0이 되는 순간
     public event Action OnDespawned;    // 시체 연출까지 끝나고 오브젝트가 사라지기 직전 (스포너 리스폰용)
 
+    [SerializeField] public List<AbilityData> _abilities = new List<AbilityData>();
+    protected AbilityRunner _abilityRunner = new AbilityRunner();
 
     protected virtual void Start() { }
     protected virtual void Awake()
@@ -67,6 +69,9 @@ public abstract class BaseMonsterController : MonoBehaviour
         CancelMonsterTasks();
         _monsterCts = new CancellationTokenSource();
         _state = MonsterState.Spawning;
+
+        // 풀 재사용 시 이전 생애의 리스폰 구독(람다)이 남아 중복 리스폰되는 것을 방지
+        OnDespawned = null;
 
         Stat?.Recover();
 
@@ -93,6 +98,12 @@ public abstract class BaseMonsterController : MonoBehaviour
 
         // 매 프레임 행동 트리 평가(실행)
         _topNode.Evaluate();
+    }
+
+
+    public void TryUseAbility(int d)
+    {
+
     }
 
     protected NodeState CheckIsDead()
