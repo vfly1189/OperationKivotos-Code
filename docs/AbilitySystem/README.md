@@ -62,7 +62,8 @@
 | `EffectData` | `Assets/Scripts/Data/Ability/EffectData.cs` | 인스펙터 편집용 추상 SO. `CreateRuntime()` |
 | `IEffect` | `Assets/Scripts/Interface/IEffect.cs` | 런타임 실행 부품. `ExecuteAsync(ctx, token)` |
 
-구체 Effect: `DealDamage`, `SpawnProjectiles`, `AreaStrike`.
+구체 Effect: `DealDamage`, `SpawnProjectiles`, `AreaStrike`, `SpawnVFX`, `RepeatEffect`.
+보조: `VfxAnchorSet`(`Assets/Scripts/Ability/VfxAnchorSet.cs`) — 캐스터 프리팹이 VFX 부착점을 id로 보관. `SpawnVFX`의 `Named` 앵커가 런타임에 조회.
 
 ### 2-2. 데이터 흐름 (예: AR 몹 연사)
 ```
@@ -120,6 +121,16 @@ BT 사거리 감지 → state=Attacking → 공격 애니메이션
 - "2발 번갈아"의 `_flag`는 **캐스터(탱크)에 유지**. 탱크가 착탄점을 계산해 `ctx.TargetPoint`로 위임, `AreaStrike`는 그 지점에 폭격만.
 - 컨트롤러에서 삭제된 것: `_bombPoints`, `ArtilleryAttackSequenceAsync`, `ApplyAreaDamage`, `GetGroundPosition`, 폭발 gizmo.
 
+### 4-3. 총구화염(연출) — `PlayFireEffect` → `SpawnVFX` + `RepeatEffect`
+이관 중 **누락됐던 총구화염**을 데이터 주도 Effect로 복원. 연출도 계산·투사체와 같은 파이프라인으로.
+
+- **`SpawnVFX`** — 범용 원샷 VFX 스폰(총구화염·피격·시전·착탄 공용). "풀에서 꺼내 어딘가에 놓는다"는 로직은 하나, 차이는 **위치뿐**이라 `VFXAnchor`(`Muzzle`/`CasterRoot`/`TargetPoint`/`Named`)만 asset 값으로 바꿔 재사용. 반환은 프리팹의 `AutoReturnToPool`이 처리하므로 **대기하지 않음**.
+- **`RepeatEffect`** — "반복" 로직을 독립 부품으로 분리한 컨테이너. 자식 Effect들을 `_count`×`_interval`로 실행. **연발 타이밍의 단일 소스**. 연발 = `RepeatEffect{ SpawnProjectiles(count=1), SpawnVFX }`로, 매 회차 **총알 1발 + 화염 1번**이 함께 나감.
+  - ⚠️ Repeat 안의 `SpawnProjectiles`는 반드시 **`_count=1`**. 반복은 Repeat가 담당 — 안 그러면 `5×5=25`발.
+- **`VfxAnchorSet`**(캐스터 프리팹의 MonoBehaviour) — SO는 씬 오브젝트를 못 담으므로(3-4), **씬 오브젝트가 부착점을 `(id, Transform)`으로 보관**하고 Effect는 런타임에 `ctx.CasterGO`에서 `id`로 조회. 부착점이 여러 개(총구·탄피 등)로 늘어도 id로 구분 → `GetComponentInChildren` 식 애매함 없음.
+- 배선: **AR** `RifleRepeatEffect{count5}[ RifleProjectile(count1), RifleFireEffect ]`, **RL** `[ MissileProjectile(count1), MissileFireEffect ]`. 각 몹 프리팹에 `VfxAnchorSet(Muzzle→_firePoint)`.
+- 기존 컨트롤러의 `FireOneBullet`/`PlayFireEffect`, `_rocketFireEffect`/`_bulletFire` 필드는 **아직 미삭제**(TODO). `_firePoint`는 `ctx.Object`로 여전히 사용 중이라 유지.
+
 ---
 
 ## 5. 함정 & 트러블슈팅 (실제로 겪은 것)
@@ -131,6 +142,9 @@ BT 사거리 감지 → state=Attacking → 공격 애니메이션
 | 포격이 2발 중 1발만 | `AbilityData.Cooldown` 기본 1초 → 2번째 애니 이벤트가 쿨다운에 막힘 | 기본 공격 어빌리티는 **Cooldown=0** (발사 간격은 애니메이션이 통제) |
 | 경고 데칼이 길쭉함 | `Quaternion.identity`로 스폰돼 데칼이 수직으로 섬 | 바닥에 눕히는 회전(`_warningEuler` 기본 `(90,0,0)`) |
 | `AreaStrike`에서 씬 bomb point가 null | SO가 씬 오브젝트를 참조 못 함 | 경고/폭발을 프리팹으로 |
+| 총구화염이 엉뚱한 위치/이전 위치에 뜸 | 풀 재사용 시 Play On Awake 미재생 + World 시뮬 잔여 파티클 | `SpawnVFX`가 위치 세팅 **후** `ps.Clear(true)+Play(true)` (옛 `PlayFireEffect`의 명시적 재생 복원) |
+| 총구화염 SO가 씬 파티클을 못 잡음 | SO는 씬 오브젝트 참조 불가 | `VfxAnchorSet`으로 캐스터가 부착점 소유, Effect는 런타임에 id로 조회 |
+| 연발이 `count²` 발 나감 | Repeat와 그 안의 `SpawnProjectiles` 둘 다 반복 | Repeat 자식의 `SpawnProjectiles._count=1` (반복은 Repeat 전담) |
 
 ---
 
@@ -141,11 +155,14 @@ BT 사거리 감지 → state=Attacking → 공격 애니메이션
 - [ ] **StatusSystem** — DoT/버프/디버프의 집. `ApplyStatus` Effect가 대상에 등록, 대상이 독립 tick.
 - [ ] **인코딩** — 초기 Ability 파일 일부가 CP949(주석 깨짐). UTF-8로 재저장.
 - [ ] **`TankBombController` 정리** — 이제 미사용. 경고/폭발 비주얼을 프리팹화 후 삭제.
+- [ ] **AR/RL 죽은 코드 정리** — `SpawnVFX` 이관 후 미사용: `FireOneBullet`/`PlayFireEffect`, 프리팹의 `_rocketFireEffect`(RL)/`_bulletFire`(AR). (`_firePoint`는 `ctx.Object`로 사용 중이니 유지)
+- [ ] **RL `Cooldown` 확인** — `MonsterRL_Ability`가 `Cooldown=1`. 애니 이벤트가 1초 내 두 번 오면 2번째 발사가 막힘(포격 2발 함정과 동일). 발사율 의도면 유지, 아니면 0으로.
 
 ---
 
 ## 관련 파일
 - 캐스터/러너: `Assets/Scripts/Ability/{IAbilityCaster,AbilityRunner}.cs`
 - 데이터/실행: `Assets/Scripts/Data/Ability/{AbilityData,EffectData}.cs`, `Assets/Scripts/Interface/IEffect.cs`
-- Effect: `Assets/Scripts/Data/Ability/{DealDamage,SpawnProjectiles,AreaStrike}/*.cs`
-- 캐스터 구현: `BaseMonsterController`, `BaseCharacter`, `MonsterARController`, `MonsterTankController`
+- Effect: `Assets/Scripts/Data/Ability/{DealDamage,SpawnProjectiles,AreaStrike,SpawnVFX,RepeatEffect}/*.cs`
+- VFX 부착점: `Assets/Scripts/Ability/VfxAnchorSet.cs`, 원샷 반환: `Assets/Scripts/Pool/AutoReturnToPool.cs`
+- 캐스터 구현: `BaseMonsterController`, `BaseCharacter`, `MonsterARController`, `MonsterRLController`, `MonsterTankController`
