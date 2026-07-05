@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 
 public class AbilityContext
@@ -10,6 +11,16 @@ public class AbilityContext
     public GameObject Target;       // 대상 (없을 수도)
     public BaseStat CasterStat;     // 데미지 계산용
     public Vector3 TargetPoint;     // 착탄/조준 월드 좌표 (AoE·포격 등)
+
+    public AbilityContext CloneAt(Vector3 point) => new AbilityContext
+    {
+        Caster = Caster,
+        CasterGO = CasterGO,
+        Object = Object,
+        Target = Target,
+        CasterStat = CasterStat,
+        TargetPoint = point, //  이것만 교체
+    };
 }
 
 [CreateAssetMenu(fileName = "AbilityDataSO", menuName = "Ability/AbilityData")]
@@ -32,4 +43,5 @@ public class AbilityData : ScriptableObject
             if (data != null) list.Add(data.CreateRuntime());
         return list;
     }
+    
 }

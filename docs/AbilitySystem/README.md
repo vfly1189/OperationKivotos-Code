@@ -1,6 +1,8 @@
 # 분산된 전투 로직 → 통합 AbilitySystem (데이터 주도 어빌리티)
 
 > **한 줄 요약** — 보스·플레이어·일반몹이 **제각각 하드코딩**하던 공격/스킬 로직을, **하나의 캐스터 계약(IAbilityCaster) + 러너(AbilityRunner) + 데이터(AbilityData/EffectData) + 실행 부품(IEffect)** 로 통합했다. 새 공격은 이제 코드가 아니라 **데이터(Effect 조합)** 로 만든다.
+>
+> **📄 Part 1(이 문서)** = 몹 이관(AR/RL/Tank) + 총구화염 VFX. **후속: [BossMigration.md](BossMigration.md)** = 보스 이관(BT+Timeline+Signal 정리, 패턴/분기/소환 Effect, Anchor 공용화).
 
 | 축 | 이전(분산·하드코딩) | 현재(통합 AbilitySystem) |
 |---|---|---|

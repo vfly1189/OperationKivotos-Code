@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class BossRelicController : MonoBehaviour
+public class BossRelicController : MonoBehaviour, IChoiceHandler
 {
     [Header("Relic Objects")]
     [SerializeField] private GameObject _redRelic;   // 빨간 렐릭 오브젝트(돌릴거)
@@ -23,8 +23,20 @@ public class BossRelicController : MonoBehaviour
     private GameObject _activeRelicEffect; // 현재 선택된 렐릭
     private bool _isSpinning = false;
 
+    public int ChoiceCount => 2;                         // 빨강/초록
+    public int CurrentChoice { get; private set; }
+    public bool CurrentIsRed => CurrentChoice == 0;      // 기존 프로퍼티 유지(파생)
 
-    public bool CurrentIsRed { get; private set; }
+    public void ApplyChoice(int index)                  // '선택된 걸 처리' = 여기
+    {
+        CurrentChoice = index;
+        ActivateRelic(index == 0);   // 기존 ActivateRandomRelic에서 '랜덤'만 빼고 색 적용만 남김
+    }
+
+    public void ClearChoice()
+    {
+        DeactivateRelic();
+    }
 
     private void Start()
     {
@@ -41,11 +53,8 @@ public class BossRelicController : MonoBehaviour
 
     // 1. 랜덤 활성화 및 회전 시작
     // isRed를 리턴해서 스킬 스크립트가 어떤 색인지 알게 함
-    public bool ActivateRandomRelic()
+    public bool ActivateRelic(bool isRed)
     {
-        // 0.5 확률로 빨강/초록 결정
-        bool isRed = Random.value > 0.5f;
-        CurrentIsRed = isRed;
         // 기존 켜진거 끄기
         if (_activeRelicEffect != null)
         {

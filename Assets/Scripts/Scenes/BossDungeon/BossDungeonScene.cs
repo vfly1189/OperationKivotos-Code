@@ -207,8 +207,15 @@ public class BossDungeonScene : BaseScene
 
             if (_curMap != null)
             {
-                var skill = _boss.GetComponent<BossSkillController>();
                 var mapScript = _curMap.GetComponent<BossDungeonMap>();
+
+                // AbilitySystem 소환용: Map 스폰포인트를 보스의 SpawnPointSet 에 주입
+                var spawnSet = _boss.GetComponent<SpawnPointSet>();
+                if (spawnSet != null && mapScript != null)
+                    spawnSet.SetPoints(mapScript.GetMonsterSpawnPoints());
+
+                // (마이그레이션 중 유지) 기존 BossSkillController 경로
+                var skill = _boss.GetComponent<BossSkillController>();
                 if (skill != null && mapScript != null)
                 {
                     skill.SetSpawnPoints(mapScript.GetMonsterSpawnPoints());

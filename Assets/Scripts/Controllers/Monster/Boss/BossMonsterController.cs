@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
-public class BossMonsterController : BaseMonsterController
+public class BossMonsterController : BaseMonsterController, ISummonRegistry
 {
     [Header("Boss Settings")]
     [SerializeField] private float _patternInterval = 2.0f; // 스킬 사이 딜레이
@@ -230,6 +230,16 @@ public class BossMonsterController : BaseMonsterController
         _isActionRunning = false;
         _isSkillFiring = false;
 
+        // 소환된 잡몹도 함께 처리 — 보스 사망 시 남지 않도록 치명타로 죽여 각자 사망 연출을 태운다
+        foreach (var minion in _summonedMonsters)
+        {
+            if (minion == null) continue;
+            var stat = minion.GetComponent<MonsterStat>();
+            if (stat != null && !stat.IsDead)
+                stat.TakeDamage(new DamageInfo(99999f, this.gameObject, false));
+        }
+        _summonedMonsters.Clear();
+
         CallOnDead();
 
         // 기본 사망 로직 실행 (애니메이션, 드롭 등)
@@ -252,4 +262,24 @@ public class BossMonsterController : BaseMonsterController
         }
     }
 
+    // ISummonRegistry — SummonMonsters Effect 가 소환한 몹을 여기로 등록
+    public void RegisterSummoned(GameObject monster) => RegisterSummonedMonster(monster);
+
+    public void CastAbility(AbilityData ability)
+    {
+        if (ability == null || _monsterCts == null) return;
+
+        var target = Managers.Party.GetCurrentCharacter();
+        if (target == null) return;   // 파티 전멸 등으로 대상이 없으면 시전 안 함
+
+        var ctx = new AbilityContext
+        {
+            Caster = this,
+            CasterGO = this.gameObject,
+            CasterStat = Stat,
+            Target = target.gameObject,
+            TargetPoint = target.transform.position,
+        };
+        _abilityRunner.TryCast(ability, ctx, _monsterCts.Token).Forget();
+    }
 }

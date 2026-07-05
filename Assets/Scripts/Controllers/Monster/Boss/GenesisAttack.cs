@@ -7,12 +7,14 @@ using UnityEngine;
 public class GenesisAttack : MonoBehaviour
 {
     [Header("데미지 설정")]
-    [SerializeField] private float _damage = 10f;
     [SerializeField] private float _duration = 5.0f; // 장판 지속 시간
 
     [Header("DoT 설정")]
     [SerializeField] private bool _isDotDamage = true; // 기본값 true로 설정
     [SerializeField] private float _dotInterval = 0.5f;
+
+    private float _damage;
+    private GameObject _attacker;
 
     // 현재 장판 위에 올라와 있는 타겟들을 관리 (Target -> Coroutine)
     //private Dictionary<IDamageable, Coroutine> _activeTargets = new Dictionary<IDamageable, Coroutine>();
@@ -93,7 +95,18 @@ public class GenesisAttack : MonoBehaviour
         _activeTargets.Clear();
     }
 
+    public void Init(float damage, GameObject attacker)
+    {
+        _damage = damage;
+        _attacker = attacker;
+    }
 
+    private void ApplyDamage(IDamageable target, Vector3 hitPoint)
+    {
+        var dmg = new DamageInfo(_damage, _attacker, false);   // ★ 하드코딩 500 제거 (버그였음)
+        dmg.HitPoint = hitPoint;
+        target.TakeDamage(dmg);
+    }
 
     private async UniTaskVoid DotDamageAsync(IDamageable target, Collider collider, CancellationToken token)
     {
@@ -122,19 +135,5 @@ public class GenesisAttack : MonoBehaviour
             Vector3 hitPoint = collider.ClosestPoint(transform.position);
             ApplyDamage(target, hitPoint);
         }
-    }
-
-    private void ApplyDamage(IDamageable target, Vector3 hitPoint)
-    {
-        // 인터페이스 호출
-        GameLog.Log($"장판 데미지: {_damage}");
-
-        DamageInfo damageInfo = new DamageInfo();
-        damageInfo.Amount = 500;
-        damageInfo.HitPoint = hitPoint;
-        damageInfo.Attacker = this.gameObject;
-        damageInfo.IsCritical = false;
-
-        target.TakeDamage(damageInfo);
     }
 }
