@@ -2,7 +2,7 @@
 
 > **한 줄 요약** — 보스·플레이어·일반몹이 **제각각 하드코딩**하던 공격/스킬 로직을, **하나의 캐스터 계약(IAbilityCaster) + 러너(AbilityRunner) + 데이터(AbilityData/EffectData) + 실행 부품(IEffect)** 로 통합했다. 새 공격은 이제 코드가 아니라 **데이터(Effect 조합)** 로 만든다.
 >
-> **📄 Part 1(이 문서)** = 몹 이관(AR/RL/Tank) + 총구화염 VFX. **후속: [BossMigration.md](BossMigration.md)** = 보스 이관(BT+Timeline+Signal 정리, 패턴/분기/소환 Effect, Anchor 공용화).
+> **📄 Part 1(이 문서)** = 몹 이관(AR/RL/Tank) + 총구화염 VFX. **후속: [BossMigration.md](BossMigration.md)** = 보스 이관(BT+Timeline+Signal 정리, 패턴/분기/소환 Effect, Anchor 공용화). **[CharacterMigration.md](CharacterMigration.md)(Part 3)** = 플레이어 캐릭터 12종 이관(캐릭터=클래스 제거, 크리 경로, SpreadProjectiles/DelayEffect, 발동 경로 3갈래 완전 통합).
 
 | 축 | 이전(분산·하드코딩) | 현재(통합 AbilitySystem) |
 |---|---|---|
@@ -152,8 +152,8 @@ BT 사거리 감지 → state=Attacking → 공격 애니메이션
 
 ## 6. 남은 작업 (TODO)
 
-- [ ] **플레이어/보스 이관** — `BaseCharacter`, `BossMonsterController`의 하드코딩 공격/스킬을 AbilityData로. (`IAbilityCaster` 이미 구현, `TryUseAbility` 본체 채우기)
-- [ ] **크리티컬** — 현재 `DamageInfo(Attack.Value, …)`로 크리 미적용. 공격자 Stat에 `BuildOutgoingDamage(attacker)`(크리 롤 포함) 두고 Effect가 호출. (지금 코드에 크리 배수 적용 경로가 없는 것도 함께 메움)
+- [x] **플레이어/보스 이관** — 완료. 보스 → [BossMigration.md](BossMigration.md), 플레이어 → [CharacterMigration.md](CharacterMigration.md).
+- [x] **크리티컬** — 완료. `BaseStat.BuildOutgoingDamage(attacker)`(캐릭터는 크리 롤 override) 도입, `SpawnProjectiles`/`SpreadProjectiles`가 호출. → [CharacterMigration.md](CharacterMigration.md) §3-2.
 - [ ] **StatusSystem** — DoT/버프/디버프의 집. `ApplyStatus` Effect가 대상에 등록, 대상이 독립 tick.
 - [ ] **인코딩** — 초기 Ability 파일 일부가 CP949(주석 깨짐). UTF-8로 재저장.
 - [ ] **`TankBombController` 정리** — 이제 미사용. 경고/폭발 비주얼을 프리팹화 후 삭제.

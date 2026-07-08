@@ -170,7 +170,7 @@ payload/컨테이너 전부 `CreateRuntime() => this`(상태 없음, 공유 안�
 
 ## 8. 남은 작업 (TODO)
 
-- [ ] **플레이어 이관** — `BaseCharacter`의 하드코딩 공격을 AbilityData로. 완료 시 "누가 쓰든 같은 파이프라인" 성립(포트폴리오 핵심 주장).
+- [x] **플레이어 이관** — 완료. → [CharacterMigration.md](CharacterMigration.md)(Part 3). 12종 데이터 주도화, "누가 쓰든 같은 파이프라인" 성립.
 - [ ] **죽은 코드 삭제** — `BossSkillController`/`BossSkillContext`/`BossSkillBase` + 파생 6종, 프리팹에서 컴포넌트 제거, `UseAttack()`/주석 블록.
 - [ ] **크리티컬 경로** — `BuildOutgoingDamage(attacker)`(크리 롤) 도입해 Effect가 호출.
 - [ ] **모든 보스 어빌리티 `Cooldown=0` 확인** — 한 타임라인이 같은 시그널 반복 시 블록 방지.

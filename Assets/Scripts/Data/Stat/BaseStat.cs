@@ -76,6 +76,12 @@ public class BaseStat : MonoBehaviour, IDamageable
 
     public virtual void TakeDamage(DamageInfo damageInfo) { }
 
+    // 공격 시 내보낼 데미지 패킷을 조립한다. (발사 경로 공용 진입점)
+    // 기본은 크리 없음 — 몬스터가 이 구현을 그대로 사용한다.
+    // 크리를 굴리는 캐릭터는 CharacterStat에서 override.
+    public virtual DamageInfo BuildOutgoingDamage(GameObject attacker)
+        => new DamageInfo(Attack.Value, attacker, false);
+
     protected void ClearDeadEvent() { OnDead = null; }
     
     public void Heal()

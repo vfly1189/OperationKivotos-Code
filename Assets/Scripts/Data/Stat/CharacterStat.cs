@@ -235,6 +235,14 @@ public class CharacterStat : BaseStat, IDamageable
         return _data.battleVictoryVocies;
     }
 
+    // 발사 데미지 조립 + 치명타 롤. (기존 BaseCharacter.CalculatedDamage 로직을 Stat으로 이관)
+    public override DamageInfo BuildOutgoingDamage(GameObject attacker)
+    {
+        bool isCrit = UnityEngine.Random.value < CritRate.Value;
+        float finalDamage = isCrit ? Attack.Value * CritDamage.Value : Attack.Value;
+        return new DamageInfo(finalDamage, attacker, isCrit);
+    }
+
     public override void TakeDamage(DamageInfo damageInfo)
     {
         if (IsInvincible || IsDead) return;

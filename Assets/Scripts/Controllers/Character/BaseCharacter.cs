@@ -22,7 +22,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     [SerializeField] protected ParticleSystem fireEffectParticle;
 
     [SerializeField] protected List<AbilityData> _abilities = new List<AbilityData>();
-    private AbilityRunner _abilityRunner;
+    private readonly AbilityRunner _abilityRunner = new AbilityRunner();
 
     public CharacterStat Stat { get; private set; }
     public IInteractable CurrentInteractable { get; private set; }
@@ -45,9 +45,24 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     #region Ability
 
+    // 애니메이션 이벤트가 부르는 실제 발동 지점 (평타·반격 등).
+    // 입력이 직접 부르지 않는다 — 발동 시점은 애니메이션 비트가 정한다.
     public void TryUseAbility(int id)
     {
+        if (Stat == null || Stat.IsDead) return;
+        if (id < 0 || id >= _abilities.Count || _abilities[id] == null) return;
 
+        var token = _actionCts?.Token ?? CancellationToken.None;
+        var ctx = new AbilityContext
+        {
+            Caster      = this,
+            CasterGO    = gameObject,
+            CasterStat  = Stat,
+            Object      = _firePoint,   // 총구 = 스폰 기준 (aim은 캐릭터 회전이 firePoint에 반영됨)
+            Target      = null,
+            TargetPoint = transform.position + transform.forward,
+        };
+        _abilityRunner.TryCast(_abilities[id], ctx, token).Forget();
     }
 
     #endregion
@@ -317,7 +332,9 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     #region Virtual Methods
 
-    protected virtual void PerformAttackAction() { }
+    // 기본 평타 = 0번 어빌리티 발동. 대부분의 캐릭터는 이 기본만으로 충분하다(서브클래스 불필요).
+    // 차징·특수 발동이 필요한 캐릭터만 override 한다.
+    protected virtual void PerformAttackAction() => TryUseAbility(0);
 
     protected virtual void PlayFireEffect()
     {

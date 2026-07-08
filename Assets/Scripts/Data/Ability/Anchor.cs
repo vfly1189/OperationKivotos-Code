@@ -23,6 +23,8 @@ public class Anchor
     [SerializeField] private float _forwardDistance = 0f;
     [SerializeField] private Vector3 _localOffset;
     [SerializeField] private Vector3 _localEuler;
+    [Tooltip("회전을 소스 대신 '캐스터 몸통'(조준) 기준으로. 총구 본이 몸통과 다른 축으로 붙은 경우(예: Ako) 사용")]
+    [SerializeField] private bool _useCasterRotation = false;
 
     // 원점을 해결해 월드 pos/rot 을 낸다. (_localOffset·_localEuler 는 이미 반영됨)
     // 반환 Transform: attach(따라다니기)가 필요한 Effect만 사용, 없으면 null.
@@ -65,6 +67,11 @@ public class Anchor
                 basePos = t.position; baseRot = t.rotation;
                 break;
         }
+
+        // 위치는 소스(총구 등) 유지, 회전만 캐스터 몸통(조준) 기준으로 교체.
+        // 총구 본이 몸통과 다른 축으로 붙어 VFX/투사체가 틀어지는 경우를 배치 단계에서 한 번에 바로잡는다.
+        if (_useCasterRotation && ctx.CasterGO != null)
+            baseRot = ctx.CasterGO.transform.rotation;
 
         rot = baseRot * Quaternion.Euler(_localEuler);
         pos = basePos + rot * _localOffset;

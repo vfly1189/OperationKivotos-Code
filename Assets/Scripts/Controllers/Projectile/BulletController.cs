@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-public class BulletController : MonoBehaviour
+public class BulletController : MonoBehaviour, IProjectile
 {
     [SerializeField] private float _speed = 20f;
     [SerializeField] private float _lifeTime = 1f;

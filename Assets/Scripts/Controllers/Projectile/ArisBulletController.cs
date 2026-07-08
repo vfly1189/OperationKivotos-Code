@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.VFX;
 
-public class ArisBulletController : MonoBehaviour
+public class ArisBulletController : MonoBehaviour, IProjectile
 {
     [Header("Settings")]
     [SerializeField] private float _speed = 3.0f;
@@ -20,7 +20,7 @@ public class ArisBulletController : MonoBehaviour
     [SerializeField] private GameObject _hitVFXPrefab;    // 충돌 시 생성될 폭발/스파크 이펙트 (프리팹)
 
     private GameObject _shooter;
-    private float _damage;
+    private DamageInfo _damageInfo;
     private Vector3 _direction;
     private Rigidbody _rb;
     private float _elapsedTime = 0f; // 경과 시간 체크용
@@ -43,9 +43,9 @@ public class ArisBulletController : MonoBehaviour
         }
     }
 
-    public void Init(float damage, GameObject shooter)
+    public void Init(DamageInfo damage, GameObject shooter)
     {
-        _damage = damage;
+        _damageInfo = damage;
         _shooter = shooter;
     }
 
@@ -77,12 +77,12 @@ public class ArisBulletController : MonoBehaviour
         // 예: Player, Bullet, Trigger 등은 무시
         if (other.CompareTag("Player") || other.CompareTag("Bullet")) return;
 
-        // 2. 데미지 처리
-        // IDamageable 같은 인터페이스를 쓰고 계시다면 여기서 호출
-        // 예: 
-        // var target = other.GetComponent<MonsterStat>();
-        // if (target != null) target.OnAttacked(_damage);
-        GameLog.Log($"Hit Target: {other.name} / Damage: {_damage}");
+        // 2. 데미지 처리 — IDamageable 대상에 스냅샷 데미지 적용 (관통이면 여러 대상에 반복 적용)
+        if (other.TryGetComponent<IDamageable>(out IDamageable target))
+        {
+            _damageInfo.HitPoint = other.ClosestPoint(transform.position);
+            target.TakeDamage(_damageInfo);
+        }
 
         // 3. 피격 이펙트 생성 (중요: 충돌 지점과 법선 벡터 활용)
         SpawnHitVFX(other);

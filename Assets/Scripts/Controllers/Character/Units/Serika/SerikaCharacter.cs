@@ -10,15 +10,7 @@ public class SerikaCharacter : BaseCharacter
         base.Init();
     }
 
-    //세리카는 한발씩 애니메이션 이벤트
-    // 공격 상태일 때 매 프레임 실행될 로직
-    protected override void PerformAttackAction()
-    {
-        if (_bulletPrefab == null || _firePoint == null) return;
-
-        FireOneBullet();
-    }
-
+    // 평타는 BaseCharacter 기본(TryUseAbility(0))으로 이관됨. 세리카는 컷신 종료 처리만 고유.
     protected override void OnCutsceneEnded(PlayableDirector director)
     {
         GameLog.Log("세리카 전용 컷신 종료 -> 일반상태로 전환");
