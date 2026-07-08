@@ -1,5 +1,4 @@
 using Cysharp.Threading.Tasks;
-using NUnit.Framework;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -12,6 +11,13 @@ public class UI_ItemInfo : UI_Base
     // 1. 자기 자신을 저장할 스태틱 변수
     private static UI_ItemInfo _instance;
     private static bool _isLoading = false;
+
+    // 진행 중인 Show 요청 추적. async 로드 도중 마우스가 슬롯을 벗어나거나
+    // 다른 슬롯으로 옮겨가면 이 값이 바뀌어, 뒤늦게 완료된 Show가 자기 차례를 폐기한다.
+    private static InventorySlot _pendingSlot;
+
+    // [측정용] 세션 첫 표시 1회만 계측한다. (Before/After 비교)
+    private static bool _firstShowMeasured = false;
 
 
     [SerializeField] Image _itemIcon;
@@ -30,9 +36,21 @@ public class UI_ItemInfo : UI_Base
     private List<UI_MainStatInfo> _mainStatSlots = new();
     private List<UI_SubStatInfo> _subStatSlots = new();
 
-    //  Init에서 최초 1회 생성
-    public override async void Init()
+    private bool _statSlotsReady = false;
+    private bool _buildingStats = false;
+
+    // UI_Base.Start()가 부르지만 여기서 스탯 슬롯을 만들지 않는다.
+    // (비활성 오브젝트는 Start가 안 돌고, SetInfo가 Init보다 먼저 실행되는 레이스가 있었음)
+    // 생성은 GetInstanceAsync가 await하는 EnsureStatSlotsAsync로 이동.
+    public override void Init() { }
+
+    //  스탯 슬롯(Main 6 + Sub 6)을 최초 1회 생성. 중복 진입은 완료까지 대기.
+    private async UniTask EnsureStatSlotsAsync()
     {
+        if (_statSlotsReady) return;
+        if (_buildingStats) { await UniTask.WaitUntil(() => _statSlotsReady); return; }
+
+        _buildingStats = true;
         for (int i = 0; i < MAX_STAT_COUNT; i++)
         {
             var main = await Managers.UI.MakeSubItemAsync<UI_MainStatInfo>("UI_MainStatInfo", _mainStatParent);
@@ -43,6 +61,8 @@ public class UI_ItemInfo : UI_Base
             sub.gameObject.SetActive(false);
             _subStatSlots.Add(sub);
         }
+        _buildingStats = false;
+        _statSlotsReady = true;
     }
 
     public void SetInfo(InventorySlot slotData)
@@ -104,13 +124,20 @@ public class UI_ItemInfo : UI_Base
 
     public async UniTask SetIcon(int itemID, ItemCategory category)
     {
-        //Sprite icon = await Managers.Resource.LoadAsync<Sprite>(
-        //    Managers.Data.GetItemData(itemID, category).IconKey, isGlobal: true);
+        BaseItemData data = Managers.Data.GetItemData(itemID, category);
+        if (data == null) return;
 
-        Sprite icon = await Managers.Resource.GetSpriteFromAtlasAsync(
-            "EquipmentIconAtlas",
-            Managers.Data.GetItemData(itemID, category).IconKey
-        );
+        // 아이콘 아틀라스는 아이템 타입별로 다르다. (UI_ItemSlot.SetItemIcon과 동일 규칙)
+        // 이전엔 "EquipmentIconAtlas"를 하드코딩해 재료/소비 아이템 아이콘이 안 떴음.
+        string atlasKey = data switch
+        {
+            EquipmentData => "EquipmentIconAtlas",
+            ConsumableData => "ConsumablesAtlas",
+            MaterialData => "MaterialIconAtlas",
+            _ => "CommonAtlas"
+        };
+
+        Sprite icon = await Managers.Resource.GetSpriteFromAtlasAsync(atlasKey, data.IconKey);
 
         if (this == null || !gameObject.activeInHierarchy) return;
         _itemIcon.sprite = icon;
@@ -141,13 +168,27 @@ public class UI_ItemInfo : UI_Base
     }
 
 
-    // 2. 인스턴스를 가져오거나 생성하는 헬퍼 함수
+    //  인벤토리/강화 패널이 열릴 때 미리 호출해 첫 호버의 콜드 스타트(오브젝트 13개 생성)를 없앤다.
+    //  PreloadEnabled=false로 두면 Before(콜드 스타트) 상태를 재현할 수 있다. (측정용 스위치)
+    public static bool PreloadEnabled = true;
+    public static void Preload()
+    {
+        if (!PreloadEnabled) return;
+        GetInstanceAsync().Forget();
+    }
+
+    // 2. 인스턴스를 가져오거나 생성하는 헬퍼 함수 (스탯 슬롯 준비까지 보장)
     private static async UniTask<UI_ItemInfo> GetInstanceAsync()
     {
-        if (_instance != null) return _instance;
+        if (_instance != null)
+        {
+            await _instance.EnsureStatSlotsAsync();
+            return _instance;
+        }
         if (_isLoading) // 누군가 이미 로딩 중이라면 끝날 때까지 대기
         {
             await UniTask.WaitUntil(() => _instance != null);
+            await _instance.EnsureStatSlotsAsync();
             return _instance;
         }
 
@@ -157,6 +198,7 @@ public class UI_ItemInfo : UI_Base
         _instance.gameObject.SetActive(false);
         _isLoading = false;
 
+        await _instance.EnsureStatSlotsAsync(); // SetInfo 전에 슬롯이 반드시 준비되도록
         return _instance;
     }
 
@@ -165,7 +207,20 @@ public class UI_ItemInfo : UI_Base
     {
         if (slot == null || slot.IsEmpty) return;
 
+        // 이 요청을 최신 요청으로 등록. async 로드가 끝난 뒤 요청이 바뀌었으면 폐기.
+        _pendingSlot = slot;
+
+        // [측정] 세션 첫 호버만 계측: 진입 → 실제 표시까지 걸린 시간/GC.
+        //  After(Preload=true): 이미 만들어져 있어 ~0ms.  Before(Preload=false): 여기서 13개 생성.
+        bool measure = !_firstShowMeasured;
+        long startBytes = measure ? UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() : 0;
+        var sw = measure ? System.Diagnostics.Stopwatch.StartNew() : null;
+
         var tooltip = await GetInstanceAsync();
+
+        // await 도중 HideTooltip(마우스 이탈) 또는 다른 슬롯 진입 → 이 Show는 취소
+        if (_pendingSlot != slot) return;
+
         tooltip.gameObject.SetActive(true);
         tooltip.SetInfo(slot);
 
@@ -178,10 +233,19 @@ public class UI_ItemInfo : UI_Base
             localPoint += new Vector2(350f, 0);
             tooltipRect.localPosition = localPoint;
         }
+
+        if (measure)
+        {
+            sw.Stop();
+            _firstShowMeasured = true;
+            long kb = (UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() - startBytes) / 1024;
+            GameLog.Log($"[TooltipProfiler] 첫 호버→표시: {sw.Elapsed.TotalMilliseconds:F1} ms | GC {kb} KB | Preload={PreloadEnabled}");
+        }
     }
 
     public static void HideTooltip()
     {
+        _pendingSlot = null; // 진행 중인 Show 요청 취소
         if (_instance != null && _instance.gameObject.activeSelf)
             _instance.gameObject.SetActive(false);
     }

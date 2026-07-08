@@ -32,6 +32,7 @@ public class UI_EquipmentDecomposePanel : UI_Base, IItemSlotHandler
 
     public override void Init()
     {
+        UI_ItemInfo.Preload(); // 툴팁 콜드 스타트 제거
         InitAsync().Forget();
     }
 

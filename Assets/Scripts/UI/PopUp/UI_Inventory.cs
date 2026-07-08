@@ -20,6 +20,9 @@ public class UI_Inventory : UI_PopUp, IItemSlotHandler
     {
         base.Init();
 
+        // 툴팁 콜드 스타트 제거: 인벤토리가 열릴 때 아이템 정보창을 미리 만들어 둔다.
+        UI_ItemInfo.Preload();
+
         ItemCategory[] tabCategories = { ItemCategory.Equipment, ItemCategory.Consumable, ItemCategory.Material };
         // 1. 탭 버튼 이벤트 연결
         for (int i = 0; i < _tabButtons.Length; i++)
