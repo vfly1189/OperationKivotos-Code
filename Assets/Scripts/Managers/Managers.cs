@@ -68,9 +68,12 @@ public class Managers : MonoBehaviour
     {
         _input.OnUpdate();
 
-        if (_party != null && _party.PlayerController != null)
+        if (_party != null)
         {
-            _party.PlayerController.OnUpdate();
+            _party.TickCooldowns(Time.deltaTime);   // 쿨타임은 스왑 중(비활성 멤버)에도 진행
+
+            if (_party.PlayerController != null)
+                _party.PlayerController.OnUpdate();
         }
     }
 

@@ -150,8 +150,7 @@ public class CharacterStat : BaseStat, IDamageable
     //테스트용
     private void Update()
     {
-        CoolTimeUpdate();
-
+        // 쿨타임은 스왑 중(비활성)에도 진행돼야 하므로 PartyManager가 전 멤버를 Tick한다(여기서 제외).
         float prevEnergy = CurrentEnergy;
         CurrentEnergy = Mathf.Min(CurrentEnergy + 10.0f * Time.deltaTime, MaxEnergy.Value);
 
@@ -163,12 +162,13 @@ public class CharacterStat : BaseStat, IDamageable
     }
 
 
-    private void CoolTimeUpdate()
+    // Q/E 스킬 쿨타임 진행. 비활성(스왑아웃) 멤버도 진행되도록 PartyManager가 매 프레임 호출한다.
+    public void TickCooldowns(float dt)
     {
         // Q 스킬 쿨타임
         if (CurrentQSkillCoolTime > 0)
         {
-            CurrentQSkillCoolTime -= Time.deltaTime;
+            CurrentQSkillCoolTime -= dt;
             if (CurrentQSkillCoolTime <= 0)
             {
                 CurrentQSkillCoolTime = 0;
@@ -178,7 +178,7 @@ public class CharacterStat : BaseStat, IDamageable
 
         // E 스킬 쿨타임
         if (CurrentESkillCoolTime > 0)
-            CurrentESkillCoolTime -= Time.deltaTime;
+            CurrentESkillCoolTime -= dt;
     }
 
     // 전투 시스템 등 외부에서 호출해줘야 함
@@ -210,7 +210,7 @@ public class CharacterStat : BaseStat, IDamageable
     public bool TryUseSkillE()
     {
         if (CurrentESkillCoolTime > 0) return false;
-        CurrentESkillCoolTime = 0;
+        CurrentESkillCoolTime = ESkillCoolTime.Value;   // 실제 쿨타임 적용 (기존엔 0으로 세팅돼 연타 가능했음)
         return true;
     }
 
@@ -252,8 +252,8 @@ public class CharacterStat : BaseStat, IDamageable
         CurrentHp -= finalDamage;
         CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
 
-        // 데미지 토스트 호출 (Layer 정보와 치명타 여부 전달)
-        ToastDamageUI(finalDamage, damageInfo.HitPoint, damageInfo.Attacker.layer, damageInfo.IsCritical);
+        // 데미지 표시 이벤트 발행 (실제 토스트는 DamageNumberPresenter가 그림)
+        RaiseDamageTaken(finalDamage, damageInfo.HitPoint, damageInfo.Attacker.layer, damageInfo.IsCritical);
 
         if (CurrentHp <= 0) HandleDeath(damageInfo.Attacker);
 

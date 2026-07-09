@@ -17,12 +17,17 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     [SerializeField] protected PlayableDirector skillTimeline;
 
     [Header("Combat Settings")]
-    [SerializeField] protected GameObject _bulletPrefab;
+    //[SerializeField] protected GameObject _bulletPrefab;
     [SerializeField] protected Transform _firePoint;
-    [SerializeField] protected ParticleSystem fireEffectParticle;
+    //[SerializeField] protected ParticleSystem fireEffectParticle;
 
     [SerializeField] protected List<AbilityData> _abilities = new List<AbilityData>();
     private readonly AbilityRunner _abilityRunner = new AbilityRunner();
+
+    [Header("Role")]
+    [SerializeField] protected RoleDataSO _roleData;          // 역할 (= E스킬을 결정)
+    [SerializeField] protected AbilityData _eAbilityOverride; // 있으면 역할 기본 E를 덮어씀 (모델 1)
+    protected AbilityData _eAbility;                          // 해석된 E (override ?? 역할 기본)
 
     public CharacterStat Stat { get; private set; }
     public IInteractable CurrentInteractable { get; private set; }
@@ -49,8 +54,15 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     // 입력이 직접 부르지 않는다 — 발동 시점은 애니메이션 비트가 정한다.
     public void TryUseAbility(int id)
     {
+        if (id < 0 || id >= _abilities.Count) return;
+        TryCast(_abilities[id]);
+    }
+
+    // 어빌리티 데이터를 직접 캐스트 (E처럼 인덱스 없이 발동하는 경우에도 사용)
+    protected void TryCast(AbilityData ability)
+    {
+        if (ability == null) return;
         if (Stat == null || Stat.IsDead) return;
-        if (id < 0 || id >= _abilities.Count || _abilities[id] == null) return;
 
         var token = _actionCts?.Token ?? CancellationToken.None;
         var ctx = new AbilityContext
@@ -62,7 +74,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
             Target      = null,
             TargetPoint = transform.position + transform.forward,
         };
-        _abilityRunner.TryCast(_abilities[id], ctx, token).Forget();
+        _abilityRunner.TryCast(ability, ctx, token).Forget();
     }
 
     #endregion
@@ -77,6 +89,13 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         if (anim == null) anim = GetComponent<Animator>();
         Stat = GetComponent<CharacterStat>();
         Stat?.Init();
+
+        // 데미지 표시(토스트) 책임을 Stat에서 분리 — DamageNumberPresenter 부착·바인딩
+        DamageNumberPresenter.EnsureOn(gameObject, Stat);
+
+        // E스킬 해석 (모델 1): 캐릭터 오버라이드가 있으면 그것, 없으면 역할 기본 E
+        _eAbility = _eAbilityOverride != null ? _eAbilityOverride
+                  : (_roleData != null ? _roleData.eAbility : null);
 
         _stateMachine = new CharacterStateMachine();
         _movement = new CharacterMovement(transform, _speed);
@@ -164,6 +183,9 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.IsDead) return;
         if (!_combat.TryUseSkillE()) return;
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.E_Skill);
+
+        // 역할이 부여한 E 어빌리티 발동 (게이트는 위 TryUseSkillE, 이펙트는 데이터 주도)
+        TryCast(_eAbility);
     }
 
     public void Victory() =>
@@ -336,24 +358,6 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     // 차징·특수 발동이 필요한 캐릭터만 override 한다.
     protected virtual void PerformAttackAction() => TryUseAbility(0);
 
-    protected virtual void PlayFireEffect()
-    {
-        if (fireEffectParticle == null) return;
-        fireEffectParticle.Stop(true);
-        fireEffectParticle.Play();
-    }
-
-    protected virtual void FireOneBullet()
-    {
-        GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
-        bulletObj.transform.rotation = transform.rotation;
-
-        BulletController bulletScript = bulletObj.GetComponent<BulletController>();
-        if (bulletScript != null && Stat != null)
-            bulletScript.Init(CalculatedDamage(), gameObject);
-
-        PlayFireEffect();
-    }
 
     protected DamageInfo CalculatedDamage()
     {

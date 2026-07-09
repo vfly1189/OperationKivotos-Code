@@ -8,6 +8,9 @@ public class BulletController : MonoBehaviour, IProjectile
     [SerializeField] private float _speed = 20f;
     [SerializeField] private float _lifeTime = 1f;
 
+    [Header("On-Hit Effects (표식 등 명중 시 대상에 적용, 없으면 비워둠)")]
+    [SerializeField] private EffectData[] _onHitEffects;
+
     private GameObject _shooter;
     private DamageInfo _damageInfo;
 
@@ -79,6 +82,7 @@ public class BulletController : MonoBehaviour, IProjectile
             // 인터페이스 메서드 호출 (상대가 Player든 Monster든 상관 안 함)
             target.TakeDamage(_damageInfo);
 
+            ApplyOnHitEffects(other.gameObject);   // 명중 시 상태부여(표식=방어력↓ 등)
 
             Managers.Resource.Destroy(gameObject);
         }
@@ -89,6 +93,29 @@ public class BulletController : MonoBehaviour, IProjectile
 
             if (other.gameObject.layer == LayerMask.NameToLayer("Wall"))
                 Managers.Resource.Destroy(gameObject);
+        }
+    }
+
+    // 명중한 대상에 on-hit 이펙트(표식=방어력↓ 등)를 적용한다. ApplyStatModifier(scope=Target) 재사용.
+    private void ApplyOnHitEffects(GameObject hitTarget)
+    {
+        if (_onHitEffects == null || _onHitEffects.Length == 0) return;
+
+        BaseStat casterStat = _shooter != null ? _shooter.GetComponent<BaseStat>() : null;
+        var ctx = new AbilityContext
+        {
+            Caster      = null,          // 투사체엔 IAbilityCaster 없음
+            CasterGO    = _shooter,
+            CasterStat  = casterStat,
+            Object      = transform,
+            Target      = hitTarget,
+            TargetPoint = transform.position,
+        };
+
+        for (int i = 0; i < _onHitEffects.Length; i++)
+        {
+            var effect = _onHitEffects[i]?.CreateRuntime();
+            if (effect != null) effect.ExecuteAsync(ctx, CancellationToken.None).Forget();
         }
     }
 

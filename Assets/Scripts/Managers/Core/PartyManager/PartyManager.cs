@@ -212,6 +212,19 @@ public class PartyManager
 
     public void AddExp(float amount) => _progress.AddExp(amount);
 
+    // 스왑으로 비활성된 멤버도 쿨타임이 돌도록 전 멤버를 매 프레임 Tick한다. (Managers.Update가 호출)
+    public void TickCooldowns(float dt)
+    {
+        var members = _registry.Members;
+        if (members == null) return;
+
+        for (int i = 0; i < members.Count; i++)
+        {
+            var m = members[i];
+            if (m != null && m.Stat != null) m.Stat.TickCooldowns(dt);
+        }
+    }
+
     private void HandlePartyLevelChanged(int level)
     {
         OnPartyLevelChanged?.Invoke(level);

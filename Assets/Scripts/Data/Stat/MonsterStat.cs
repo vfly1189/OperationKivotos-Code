@@ -9,6 +9,10 @@ public class MonsterStat : BaseStat, IDamageable
     private bool _isDead = false;
 
     public event Action<BaseMonsterController> OnMonsterDead;
+
+    // 사망 순간 공격자(GameObject)를 전달 — 보상 지급은 MonsterReward가 구독해서 처리한다. (경제 로직 분리)
+    public event Action<GameObject> OnKilledByAttacker;
+
     private BaseMonsterController _controller;
 
     // 추가된 변수: 보상 캐싱
@@ -70,6 +74,14 @@ public class MonsterStat : BaseStat, IDamageable
     //    OnMonsterDead = null;
     //}
 
+    // 풀 재사용 시 사망 가드를 반드시 리셋한다. (OnEnable·SetStat 양쪽 경로에서 Recover 호출됨)
+    // 이 리셋이 없으면 2회차 생애에서 아래 TakeDamage의 사망 가드가 막혀 HandleDeath(→보상)가 안 불린다.
+    public override void Recover()
+    {
+        base.Recover();
+        _isDead = false;
+    }
+
     public override void TakeDamage(DamageInfo damageInfo)
     {
         float finalDamage = Mathf.Max(damageInfo.Amount - Defense.Value, 1);
@@ -82,45 +94,16 @@ public class MonsterStat : BaseStat, IDamageable
             HandleDeath(damageInfo.Attacker);
         }
 
-        ToastDamageUI(finalDamage, damageInfo.HitPoint, damageInfo.Attacker.layer, damageInfo.IsCritical);
+        RaiseDamageTaken(finalDamage, damageInfo.HitPoint, damageInfo.Attacker.layer, damageInfo.IsCritical);
         CallOnHpChanged(CurrentHp, MaxHp.Value);
     }
 
     protected override void HandleDeath(GameObject shooter)
     {
-        //공격자가 있고, 플레이어라면 경험치 지급
-        if (shooter != null && shooter.CompareTag("Player"))
-        {
-            // 플레이어 스탯 컴포넌트 가져오기 (예: PlayerStat)
-            CharacterStat playerStat = shooter.GetComponent<CharacterStat>();
-            if (playerStat != null)
-            {
-                //playerStat.AddExp(DropExpAmount); // 경험치 추가 함수 호출
-                Managers.Party.AddExp(FinalExpReward);
-                Managers.Wallet.AddCurrency(CurrencyType.Credit, FinalCreditReward);
+        // 보상(경험치·크레딧·드랍/알림UI) 지급은 MonsterReward가 구독해서 처리한다. (경제 로직 분리)
+        OnKilledByAttacker?.Invoke(shooter);
 
-                if (FinalExpReward > 0)
-                {
-                    //Managers.UI.ShowGainExp(FinalExpReward);
-                    UI_LootNotification.ShowGainExp(FinalExpReward).Forget();
-                }
-
-
-                if (FinalCreditReward > 0)
-                {
-                    //Managers.UI.ShowGainCredit(FinalCreditReward);
-                    UI_LootNotification.ShowGainCredit(FinalCreditReward).Forget();
-                }
-
-                //GameLog.Log($"플레이어에게 경험치 {DropExpAmount} 지급!");
-
-                if (DropTableID >= 0)
-                    Managers.Drop.RollAndGiveDropItems(DropTableID);
-                
-            }
-        }
-
-        // 2. 이벤트 발송 (나 죽었다!)
+        // 이벤트 발송 (나 죽었다!)
         CallOnDead();
 
         OnMonsterDead?.Invoke(_controller);

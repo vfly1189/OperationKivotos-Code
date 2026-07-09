@@ -42,6 +42,9 @@ public class Stat
     // 수정자 리스트
     private List<StatModifier> _modifiers = new List<StatModifier>();
 
+    // 값이 바뀔 때(모디파이어 추가/해제, 기본값 변경) 발행. UI 실시간 갱신용.
+    public event Action OnChanged;
+
     // 생성자
     public Stat(float baseValue = 0)
     {
@@ -53,6 +56,7 @@ public class Stat
     {
         _baseValue = value;
         _isDirty = true;
+        OnChanged?.Invoke();
     }
 
     // 최종값 가져오기 (외부에선 이것만 호출)
@@ -78,6 +82,7 @@ public class Stat
         // 정렬: Flat(합연산)이 먼저 계산되고, 그 다음에 Percent(곱연산)가 오도록 정렬
         _modifiers.Sort((a, b) => a.Type.CompareTo(b.Type));
         _isDirty = true;
+        OnChanged?.Invoke();
     }
 
     public void RemoveModifier(StatModifier mod)
@@ -86,6 +91,7 @@ public class Stat
         if (_modifiers.Remove(mod))
         {
             _isDirty = true;
+            OnChanged?.Invoke();
         }
     }
 
@@ -132,6 +138,7 @@ public class Stat
         if (didRemove)
         {
             _isDirty = true;
+            OnChanged?.Invoke();
         }
 
         return didRemove;
@@ -141,5 +148,6 @@ public class Stat
     {
         _modifiers.Clear();
         _isDirty = true;
+        OnChanged?.Invoke();
     }
 }

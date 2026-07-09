@@ -59,6 +59,12 @@ public abstract class BaseMonsterController : MonoBehaviour, IAbilityCaster
     {
         var tempStat = Stat;
 
+        // 보상 지급(경제) 책임을 Stat에서 분리 — MonsterReward를 런타임 부착·바인딩 (프리팹 수정 불필요)
+        MonsterReward.EnsureOn(gameObject, tempStat);
+
+        // 데미지 표시(토스트) 책임을 Stat에서 분리 — DamageNumberPresenter 부착·바인딩
+        DamageNumberPresenter.EnsureOn(gameObject, tempStat);
+
         if (_anim == null) _anim = GetComponent<Animator>();
 
         ConstructBehaviorTree(); // 자식에서 구현

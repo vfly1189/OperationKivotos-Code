@@ -2,6 +2,23 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// 데미지가 적용된 순간의 표시용 데이터. Stat은 이 데이터만 알리고, 실제 UI는 DamageNumberPresenter가 그린다.
+public readonly struct DamageTaken
+{
+    public readonly float Amount;
+    public readonly Vector3 HitPoint;
+    public readonly LayerMask AttackerLayer;
+    public readonly bool IsCritical;
+
+    public DamageTaken(float amount, Vector3 hitPoint, LayerMask attackerLayer, bool isCritical)
+    {
+        Amount = amount;
+        HitPoint = hitPoint;
+        AttackerLayer = attackerLayer;
+        IsCritical = isCritical;
+    }
+}
+
 public class BaseStat : MonoBehaviour, IDamageable
 {
     protected Dictionary<EStatType, Stat> _stats = new Dictionary<EStatType, Stat>();
@@ -19,6 +36,9 @@ public class BaseStat : MonoBehaviour, IDamageable
     // 사망 이벤트는 공통
     public event Action OnDead;
     public event Action<float, float> OnHpChanged;
+
+    // 데미지가 적용될 때마다 발행. DamageNumberPresenter가 구독해 토스트를 그린다. (UI 책임 분리)
+    public event Action<DamageTaken> OnDamageTaken;
 
     public virtual void Init()
     {
@@ -47,6 +67,19 @@ public class BaseStat : MonoBehaviour, IDamageable
         }
 
         return null;
+    }
+
+    // 스탯 값 변동(모디파이어 추가/해제·기본값 변경) 구독. UI 실시간 갱신용.
+    public void SubscribeStatChanged(Action cb)
+    {
+        if (cb == null) return;
+        foreach (var s in _stats.Values) s.OnChanged += cb;
+    }
+
+    public void UnsubscribeStatChanged(Action cb)
+    {
+        if (cb == null) return;
+        foreach (var s in _stats.Values) s.OnChanged -= cb;
     }
 
     // [추가] 풀링에서 꺼낼 때 스탯은 유지하고 HP만 회복시키는 용도
@@ -90,19 +123,8 @@ public class BaseStat : MonoBehaviour, IDamageable
         OnHpChanged?.Invoke(CurrentHp, MaxHp.Value);
     }
 
-    protected async void ToastDamageUI(float damage, Vector3 hitPoint, LayerMask layer ,bool isCritical)
-    {
-        UI_DamageToast toast = await Managers.UI.MakeSubItemAsync<UI_DamageToast>("UI_DamageToast", Managers.UI.CanvasSystem.transform);
-        if (toast == null) return;
-
-        Camera mainCam = Camera.main;
-        if (mainCam == null) return;
-
-        toast.gameObject.SetActive(true);
-        Vector3 screenPos = mainCam.WorldToScreenPoint(hitPoint);
-        toast.transform.position = screenPos;
-
-        // int로 형변환해서 넘겨줌
-        toast.SetupDamageText((int)damage, isCritical, layer);
-    }
+    // 데미지 표시(토스트)는 DamageNumberPresenter가 OnDamageTaken을 구독해 처리한다. (UI 책임 분리)
+    // 이벤트는 선언 클래스에서만 invoke 가능하므로 서브클래스용 발행 헬퍼를 둔다.
+    protected void RaiseDamageTaken(float amount, Vector3 hitPoint, LayerMask attackerLayer, bool isCritical)
+        => OnDamageTaken?.Invoke(new DamageTaken(amount, hitPoint, attackerLayer, isCritical));
 }

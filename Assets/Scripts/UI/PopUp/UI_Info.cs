@@ -21,6 +21,7 @@ public class UI_Info : UI_PopUp
 
     //캐싱용
     private BaseCharacter _curCharacter;
+    private CharacterStat _subscribedStat;   // 실시간 갱신 구독 대상 (스왑 대비 별도 캐싱)
 
     const float _standingImageWidthOriginal = 250.0f;
     const float _standingImageHeightOriginal = 310.0f;
@@ -38,9 +39,14 @@ public class UI_Info : UI_PopUp
 
         // 초기 화면 그리기
         RefreshUI();
+        RebindStatSubscription();   // 스탯 실시간 갱신 (버프 적용/해제 순간 반영)
 
         Managers.Equipment.OnEquipmentChanged -= RefreshEquipSlot;
         Managers.Equipment.OnEquipmentChanged += RefreshEquipSlot;
+
+        // 캐릭터 교체 시 정보 전체 갱신
+        Managers.Party.OnActiveCharacterChanged -= OnActiveCharacterChanged;
+        Managers.Party.OnActiveCharacterChanged += OnActiveCharacterChanged;
     }
 
     private void SetStat()
@@ -140,9 +146,28 @@ public class UI_Info : UI_PopUp
         SetCharacterStandingImage().Forget();
     }
 
+    // 캐릭터 교체 시: 정보 전체 갱신 + 실시간 스탯 구독을 새 캐릭터로 재연결
+    private void OnActiveCharacterChanged(GameObject _)
+    {
+        RefreshUI();
+        RebindStatSubscription();
+    }
+
+    private void RebindStatSubscription()
+    {
+        if (_subscribedStat != null) _subscribedStat.UnsubscribeStatChanged(SetStat);
+        _subscribedStat = _curCharacter != null ? _curCharacter.Stat : null;
+        if (_subscribedStat != null) _subscribedStat.SubscribeStatChanged(SetStat);
+    }
+
     private void OnDestroy()
     {
+        if (_subscribedStat != null) _subscribedStat.UnsubscribeStatChanged(SetStat);
+
         // 매니저 이벤트 해제 시 안전하게 체크
+        if (Managers.Party != null)
+            Managers.Party.OnActiveCharacterChanged -= OnActiveCharacterChanged;
+
         if (Managers.Equipment != null)
         {
             Managers.Equipment.OnEquipmentChanged -= RefreshEquipSlot;
