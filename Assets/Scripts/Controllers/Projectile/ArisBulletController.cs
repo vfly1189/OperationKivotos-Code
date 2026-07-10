@@ -75,7 +75,7 @@ public class ArisBulletController : MonoBehaviour, IProjectile
     {
         // 1. 피아식별 (태그나 레이어 사용)
         // 예: Player, Bullet, Trigger 등은 무시
-        if (other.CompareTag("Player") || other.CompareTag("Bullet")) return;
+        if (other.CompareTag("Player")) return;
 
         // 2. 데미지 처리 — IDamageable 대상에 스냅샷 데미지 적용 (관통이면 여러 대상에 반복 적용)
         if (other.TryGetComponent<IDamageable>(out IDamageable target))

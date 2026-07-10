@@ -11,10 +11,6 @@ public class MonsterRLController : RangedMonsterController
 
     protected override void PerformAttackAction()
     {
-        //if (_bulletPrefab == null || _firePoint == null) return;
-
-        //FireOneBullet();
-
         var ctx = new AbilityContext
         {
             Caster = this,
@@ -24,31 +20,5 @@ public class MonsterRLController : RangedMonsterController
             Target = null,      // 조준/방향용
         };
         _abilityRunner.TryCast(_abilities[0], ctx, _monsterCts.Token).Forget();
-    }
-
-    private void FireOneBullet()
-    {
-        // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
-        GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
-
-        bulletObj.transform.position = _firePoint.position;
-        // 캐릭터가 바라보는 방향 기준으로 회전
-        bulletObj.transform.rotation = transform.rotation;
-        // 2. 데미지 주입
-        BulletController bulletScript = bulletObj.GetComponent<BulletController>();
-        if (bulletScript != null && Stat != null)
-        {
-            //bulletScript.Init(Stat.Attack.Value, this.gameObject);
-            bulletScript.Init(new DamageInfo(Stat.Attack.Value, this.gameObject, false), this.gameObject);
-        }
-        PlayFireEffect();
-    }
-
-    private void PlayFireEffect()
-    {
-        if (_rocketFireEffect == null) return;
-
-        _rocketFireEffect.Stop();
-        _rocketFireEffect.Play();
     }
 }

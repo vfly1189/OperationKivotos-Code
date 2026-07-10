@@ -107,11 +107,6 @@ public abstract class BaseMonsterController : MonoBehaviour, IAbilityCaster
     }
 
 
-    public void TryUseAbility(int d)
-    {
-
-    }
-
     protected NodeState CheckIsDead()
     {
         return (Stat.HealthComp.CurrentHp <= 0) ? NodeState.Success : NodeState.Failure;

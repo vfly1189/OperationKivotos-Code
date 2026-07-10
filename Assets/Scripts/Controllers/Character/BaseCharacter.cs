@@ -21,7 +21,9 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     [SerializeField] protected Transform _firePoint;
     //[SerializeField] protected ParticleSystem fireEffectParticle;
 
-    [SerializeField] protected List<AbilityData> _abilities = new List<AbilityData>();
+    [SerializeField] protected List<AbilitySlotEntry> _abilities = new List<AbilitySlotEntry>();
+    // 슬롯 하나당 어빌리티 "리스트". 인스펙터에 같은 슬롯을 여러 개 넣으면 그 순서가 비트 인덱스가 된다.
+    private Dictionary<CharacterAbilitySlot, List<AbilityData>> _slotMap;
     private readonly AbilityRunner _abilityRunner = new AbilityRunner();
 
     [Header("Role")]
@@ -50,12 +52,35 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     #region Ability
 
-    // 애니메이션 이벤트가 부르는 실제 발동 지점 (평타·반격 등).
-    // 입력이 직접 부르지 않는다 — 발동 시점은 애니메이션 비트가 정한다.
-    public void TryUseAbility(int id)
+    // 슬롯 → 어빌리티 리스트 매핑 구축. 역할(_eAbility) 해석 이후에 호출해야 한다.
+    // 인스펙터 _abilities의 등장 순서 = 각 슬롯 리스트 내 비트 인덱스.
+    protected void BuildSlotMap()
     {
-        if (id < 0 || id >= _abilities.Count) return;
-        TryCast(_abilities[id]);
+        _slotMap = new Dictionary<CharacterAbilitySlot, List<AbilityData>>();
+        foreach (var e in _abilities)
+        {
+            if (e.Ability == null) continue;
+            if (!_slotMap.TryGetValue(e.Slot, out var list))
+                _slotMap[e.Slot] = list = new List<AbilityData>();
+            list.Add(e.Ability);
+        }
+
+        // 역할이 부여한 E를 Ex 슬롯 [0]으로 흡수 (별도 경로 제거)
+        if (_eAbility != null)
+        {
+            if (!_slotMap.TryGetValue(CharacterAbilitySlot.Ex, out var exList))
+                _slotMap[CharacterAbilitySlot.Ex] = exList = new List<AbilityData>();
+            exList.Insert(0, _eAbility);
+        }
+    }
+
+    // 키 기반 발동 진입점. slot = 어느 스킬(상태가 결정), beat = 그 스킬 안에서 몇 번째 발사.
+    // 평타·Q는 애니메이션 이벤트(AbilityBeat)가, E는 입력(UseSkillE)이 직접 부른다.
+    public void UseAbility(CharacterAbilitySlot slot, int beat = 0)
+    {
+        if (_slotMap != null && _slotMap.TryGetValue(slot, out var list)
+            && beat >= 0 && beat < list.Count)
+            TryCast(list[beat]);
     }
 
     // 어빌리티 데이터를 직접 캐스트 (E처럼 인덱스 없이 발동하는 경우에도 사용)
@@ -96,6 +121,8 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         // E스킬 해석 (모델 1): 캐릭터 오버라이드가 있으면 그것, 없으면 역할 기본 E
         _eAbility = _eAbilityOverride != null ? _eAbilityOverride
                   : (_roleData != null ? _roleData.eAbility : null);
+
+        BuildSlotMap();
 
         _stateMachine = new CharacterStateMachine();
         _movement = new CharacterMovement(transform, _speed);
@@ -185,7 +212,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.E_Skill);
 
         // 역할이 부여한 E 어빌리티 발동 (게이트는 위 TryUseSkillE, 이펙트는 데이터 주도)
-        TryCast(_eAbility);
+        UseAbility(CharacterAbilitySlot.Ex);
     }
 
     public void Victory() =>
@@ -341,17 +368,36 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         IsUsingSkill = false;
     }
 
-    public void OnAttackEvent(AudioClip sfx)
-    {
-        if (_stateMachine.CurrentState != CharacterStateMachine.PlayerState.Attack) return;
-        PerformAttackAction();
-        Managers.Sound.Play(sfx, Define.Sound.Effect);
-    }
-
     public void OnPlaySoundEvent(AudioClip clip)
     {
         if (clip != null) Managers.Sound.Play(clip, Define.Sound.Effect);
     }
+
+    // 좌클릭·Q 공용 애니메이션 이벤트 콜백. 클립마다 콜백을 따로 만들 필요 없다.
+    //  - 슬롯(어느 스킬)은 '현재 상태'가 결정한다.
+    //  - intParameter = 그 슬롯 리스트 안에서 '몇 번째 발사(비트 인덱스)'.
+    //  - objectReferenceParameter = (선택) 이 비트에서 재생할 SFX.
+    public void AbilityBeat(AnimationEvent e)
+    {
+        if (_stateMachine.IsDead) return;
+
+        // 상태 → 슬롯. 매칭 상태가 아니면(캔슬된 애니 잔여 비트 등) 무시.
+        var slot = SlotForState(_stateMachine.CurrentState);
+        if ((int)slot < 0) return;
+
+        if (e.objectReferenceParameter is AudioClip sfx)
+            Managers.Sound.Play(sfx, Define.Sound.Effect);
+
+        UseAbility(slot, e.intParameter);   // intParameter = 비트 인덱스
+    }
+
+    // 현재 상태에 대응하는 슬롯. 대응이 없으면 -1(무효)을 돌려 비트를 무시하게 한다.
+    private static CharacterAbilitySlot SlotForState(CharacterStateMachine.PlayerState s) => s switch
+    {
+        CharacterStateMachine.PlayerState.Attack  => CharacterAbilitySlot.Attack,
+        CharacterStateMachine.PlayerState.Q_Skill => CharacterAbilitySlot.Skill,
+        _ => (CharacterAbilitySlot)(-1),
+    };
 
     public void PlayAudio() { }
 
@@ -359,31 +405,12 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     #region Virtual Methods
 
-    // 기본 평타 = 0번 어빌리티 발동. 대부분의 캐릭터는 이 기본만으로 충분하다(서브클래스 불필요).
+    // 기본 평타 = Attack 슬롯 발동. 대부분의 캐릭터는 이 기본만으로 충분하다(서브클래스 불필요).
     // 차징·특수 발동이 필요한 캐릭터만 override 한다.
-    protected virtual void PerformAttackAction() => TryUseAbility(0);
-
-
-    protected DamageInfo CalculatedDamage()
-    {
-        // 1. 플레이어의 스탯 가져오기
-        float baseDamage = Stat.Attack.Value;
-        float critRate = Stat.CritRate.Value;
-        float critDamage = Stat.CritDamage.Value;
-
-        // 2. 치명타 계산
-        bool isCrit = UnityEngine.Random.value < critRate;
-
-        // 3. 최종 데미지 산출
-        float finalDamage = isCrit ? baseDamage * critDamage : baseDamage;
-
-        // 4. 정보 캡슐화 후 반환
-        return new DamageInfo(finalDamage, gameObject, isCrit);
-    }
+    protected virtual void PerformAttackAction() => UseAbility(CharacterAbilitySlot.Attack);
 
     protected virtual void PlaySFXOnly() { }
     protected virtual void PlaySFX() { }
-    protected virtual void OnESkillEvent(AudioClip sfx) { }
 
     #endregion
 

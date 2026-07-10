@@ -16,12 +16,6 @@ public class MonsterARController : RangedMonsterController
 
     protected override void PerformAttackAction()
     {
-        //if (_bulletPrefab == null || _firePoint == null) return;
-
-
-        //RapidFireAsync(_monsterCts.Token).Forget();
-
-
         var ctx = new AbilityContext
         {
             Caster = this,
@@ -31,57 +25,5 @@ public class MonsterARController : RangedMonsterController
             Target = null,      // 조준/방향용
         };
         _abilityRunner.TryCast(_abilities[0], ctx, _monsterCts.Token).Forget();
-    }
-    private async UniTaskVoid RapidFireAsync(CancellationToken token)
-    {
-        for (int i = 0; i < _shotCount; i++)
-        {
-            // [핵심] 연사 도중 몬스터가 사망하면 즉시 발사 중지
-            if (_state == MonsterState.Dead || token.IsCancellationRequested) return;
-
-            // 1. 풀링으로 총알 생성 (위치/회전은 총구 기준)
-            GameObject bulletObj = Managers.Resource.Instantiate(_bulletPrefab, _firePoint.position, _firePoint.rotation);
-            bulletObj.transform.position = _firePoint.position;
-            // 캐릭터가 바라보는 방향 기준으로 회전
-            bulletObj.transform.rotation = transform.rotation;
-            // 2. 데미지 주입
-            BulletController bulletScript = bulletObj.GetComponent<BulletController>();
-            if (bulletScript != null && Stat != null)
-            {
-                //bulletScript.Init(Stat.Attack.Value, this.gameObject);
-                bulletScript.Init(new DamageInfo(Stat.Attack.Value, this.gameObject, false), this.gameObject);
-            }
-            PlayFireEffect();
-            // 3. 다음 발사까지 대기
-            bool isCanceled = await UniTask.Delay(System.TimeSpan.FromSeconds(_fireDelay), cancellationToken: token).SuppressCancellationThrow();
-
-            if (isCanceled) return; // 취소되었다면 루프 탈출
-        }
-    }
-
-    private void PlayFireEffect()
-    {
-        if (_bulletFire == null || _firePoint == null) return;
-
-        // 이펙트 생성 (총구 위치, 총구 회전)
-        // 이펙트가 총구에 붙어서 따라다니길 원하면 parent를 _firePoint로 설정
-        GameObject effect = Managers.Resource.Instantiate(_bulletFire, _firePoint.position, _firePoint.rotation);
-        effect.transform.SetParent(_firePoint);
-
-        // 수명이 끝나면 자동으로 풀 반환/파괴 (스폰만 하고 회수 안 하던 누수 방지)
-        Util.GetOrAddComponent<AutoReturnToPool>(effect);
-
-        // (선택) 총구에 붙이기: effect.transform.SetParent(_firePoint); 
-
-        // 파티클 시스템이면 재생 확인 (보통 Play On Awake가 켜져 있어서 자동 재생됨)
-        var ps = effect.GetComponent<ParticleSystem>();
-        if (ps != null)
-        {
-            //GameLog.Log("파티클 재생");
-            ps.Play();
-        }
-
-        // 이펙트는 보통 1~2초 뒤 자동 삭제되도록 프리팹 자체에 로직이 있거나 여기서 예약
-        //Managers.Resource.Destroy(effect);
     }
 }

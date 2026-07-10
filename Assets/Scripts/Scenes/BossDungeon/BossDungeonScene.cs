@@ -213,14 +213,6 @@ public class BossDungeonScene : BaseScene
                 var spawnSet = _boss.GetComponent<SpawnPointSet>();
                 if (spawnSet != null && mapScript != null)
                     spawnSet.SetPoints(mapScript.GetMonsterSpawnPoints());
-
-                // (마이그레이션 중 유지) 기존 BossSkillController 경로
-                var skill = _boss.GetComponent<BossSkillController>();
-                if (skill != null && mapScript != null)
-                {
-                    skill.SetSpawnPoints(mapScript.GetMonsterSpawnPoints());
-                    skill.SetLightningPoints(mapScript.GetLightningPoints());
-                }
             }
         }
     }
