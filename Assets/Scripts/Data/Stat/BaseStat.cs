@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 데미지가 적용된 순간의 표시용 데이터. Stat은 이 데이터만 알리고, 실제 UI는 DamageNumberPresenter가 그린다.
+// 데미지가 적용된 순간의 표시용 데이터. Health가 이 데이터를 발행하고, 실제 UI는 DamageNumberPresenter가 그린다.
 public readonly struct DamageTaken
 {
     public readonly float Amount;
@@ -19,7 +19,10 @@ public readonly struct DamageTaken
     }
 }
 
-public class BaseStat : MonoBehaviour, IDamageable
+// 속성(Attribute) 저장·합산만 담당하는 스탯 컬렉션. = GAS의 AttributeSet.
+// HP/피격/죽음/무적은 Health 컴포넌트가 소유한다(StatRefactor 3단계 완료). BaseStat은 HP 상태를 노출하지 않는다.
+// (외부에서 HP/사망이 필요하면 HealthComp를 통해 Health를 구독/조회한다.)
+public class BaseStat : MonoBehaviour
 {
     protected Dictionary<EStatType, Stat> _stats = new Dictionary<EStatType, Stat>();
 
@@ -29,16 +32,17 @@ public class BaseStat : MonoBehaviour, IDamageable
     public Stat Attack => GetStat(EStatType.Attack_Flat);
     public Stat Defense => GetStat(EStatType.Defense_Flat);
 
-
-    public float CurrentHp { get; protected set; }
-    //public bool IsDead => CurrentHp <= 0;
-    public bool IsDead { get; protected set; }
-    // 사망 이벤트는 공통
-    public event Action OnDead;
-    public event Action<float, float> OnHpChanged;
-
-    // 데미지가 적용될 때마다 발행. DamageNumberPresenter가 구독해 토스트를 그린다. (UI 책임 분리)
-    public event Action<DamageTaken> OnDamageTaken;
+    // HP/사망/무적 상태를 소유하는 Health 컴포넌트로의 접근점.
+    // 자기부트스트랩 — 접근 시점에 없으면 만든다(부착 타이밍에 무관하게 NRE 차단). Health가 MaxHp/Defense를 이 Stat에서 읽는다.
+    protected Health _health;
+    public Health HealthComp
+    {
+        get
+        {
+            if (_health == null) _health = Health.EnsureOn(gameObject, this);
+            return _health;
+        }
+    }
 
     public virtual void Init()
     {
@@ -82,49 +86,9 @@ public class BaseStat : MonoBehaviour, IDamageable
         foreach (var s in _stats.Values) s.OnChanged -= cb;
     }
 
-    // [추가] 풀링에서 꺼낼 때 스탯은 유지하고 HP만 회복시키는 용도
-    public virtual void Recover()
-    {
-        IsDead = false;
-        CurrentHp = MaxHp.Value;
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
-    }
-
-    protected virtual void HandleDeath(GameObject shooter)
-    {
-        OnDead?.Invoke();
-        // 실제 파괴나 비활성화는 Controller에서 이벤트 구독해서 처리하거나 여기서 구현
-    }
-
-    protected void CallOnHpChanged(float current, float max)
-    {
-        OnHpChanged?.Invoke(current, max);
-    }
-
-    protected void CallOnDead()
-    {
-        GameLog.Log("몬스터사망 CallOnDead");
-        OnDead?.Invoke();
-    }
-
-    public virtual void TakeDamage(DamageInfo damageInfo) { }
-
     // 공격 시 내보낼 데미지 패킷을 조립한다. (발사 경로 공용 진입점)
     // 기본은 크리 없음 — 몬스터가 이 구현을 그대로 사용한다.
     // 크리를 굴리는 캐릭터는 CharacterStat에서 override.
     public virtual DamageInfo BuildOutgoingDamage(GameObject attacker)
         => new DamageInfo(Attack.Value, attacker, false);
-
-    protected void ClearDeadEvent() { OnDead = null; }
-    
-    public void Heal()
-    {
-        CurrentHp = MaxHp.Value;
-        OnHpChanged?.Invoke(CurrentHp, MaxHp.Value);
-    }
-
-    // 데미지 표시(토스트)는 DamageNumberPresenter가 OnDamageTaken을 구독해 처리한다. (UI 책임 분리)
-    // 이벤트는 선언 클래스에서만 invoke 가능하므로 서브클래스용 발행 헬퍼를 둔다.
-    protected void RaiseDamageTaken(float amount, Vector3 hitPoint, LayerMask attackerLayer, bool isCritical)
-        => OnDamageTaken?.Invoke(new DamageTaken(amount, hitPoint, attackerLayer, isCritical));
 }

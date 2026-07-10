@@ -79,7 +79,7 @@ public abstract class BaseMonsterController : MonoBehaviour, IAbilityCaster
         // 풀 재사용 시 이전 생애의 리스폰 구독(람다)이 남아 중복 리스폰되는 것을 방지
         OnDespawned = null;
 
-        Stat?.Recover();
+        Stat?.HealthComp.Recover();
 
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = true;
@@ -114,7 +114,7 @@ public abstract class BaseMonsterController : MonoBehaviour, IAbilityCaster
 
     protected NodeState CheckIsDead()
     {
-        return (Stat.CurrentHp <= 0) ? NodeState.Success : NodeState.Failure;
+        return (Stat.HealthComp.CurrentHp <= 0) ? NodeState.Success : NodeState.Failure;
     }
 
     protected virtual NodeState HandleDeadState()

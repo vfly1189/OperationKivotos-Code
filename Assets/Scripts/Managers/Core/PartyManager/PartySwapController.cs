@@ -19,7 +19,7 @@ public class PartySwapController
         if (Time.time - _lastSwapTime < _swapCooldown) return false;
         if (targetIndex >= _registry.Members.Count) return false;
         if (targetIndex == _registry.CurrentIndex) return false;
-        if (_registry.Members[targetIndex].Stat.IsDead) return false;
+        if (_registry.Members[targetIndex].Stat.HealthComp.IsDead) return false;
 
         var current = _registry.GetCurrent();
         if (current.IsUsingSkill) return false;
@@ -32,7 +32,7 @@ public class PartySwapController
     public void TrySwap(int targetIndex, bool isForce = false)
     {
         if (!isForce && !CanSwap(targetIndex)) return;
-        if (_registry.Members[targetIndex].Stat.IsDead) return;
+        if (_registry.Members[targetIndex].Stat.HealthComp.IsDead) return;
 
         int prevIdx = _registry.CurrentIndex;
         _registry.SetCurrentIndex(targetIndex);

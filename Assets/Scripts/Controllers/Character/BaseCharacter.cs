@@ -62,7 +62,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     protected void TryCast(AbilityData ability)
     {
         if (ability == null) return;
-        if (Stat == null || Stat.IsDead) return;
+        if (Stat == null || Stat.HealthComp.IsDead) return;
 
         var token = _actionCts?.Token ?? CancellationToken.None;
         var ctx = new AbilityContext
@@ -127,15 +127,15 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     {
         if (Stat != null)
         {
-            Stat.OnDead -= HandleDeath;
-            Stat.OnDead += HandleDeath;
+            Stat.HealthComp.OnDead -= HandleDeath;
+            Stat.HealthComp.OnDead += HandleDeath;
         }
         _stateMachine?.ChangeState(CharacterStateMachine.PlayerState.Idle);
     }
 
     protected virtual void OnDisable()
     {
-        if (Stat != null) Stat.OnDead -= HandleDeath;
+        if (Stat != null) Stat.HealthComp.OnDead -= HandleDeath;
         CancelCurrentAction();
     }
 
@@ -145,7 +145,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     public void Move(Vector2 dir)
     {
-        if (!_stateMachine.CanMove || Stat.IsDead) return;
+        if (!_stateMachine.CanMove || Stat.HealthComp.IsDead) return;
 
         if (dir.sqrMagnitude > 0.01f)
         {
@@ -164,7 +164,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     public void Attack(bool isPressing)
     {
         if (!isPressing) return;
-        if (!_stateMachine.CanAttack || IsUsingSkill || Stat.IsDead) return;
+        if (!_stateMachine.CanAttack || IsUsingSkill || Stat.HealthComp.IsDead) return;
         if (!_combat.CanAttack) return;
 
         if (_combat.TryAttack())
@@ -173,14 +173,14 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     public void UseSkillQ()
     {
-        if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.IsDead) return;
+        if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.HealthComp.IsDead) return;
         if (!_combat.TryUseSkillQ()) return;
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.QSkillCutScene);
     }
 
     public void UseSkillE()
     {
-        if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.IsDead) return;
+        if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.HealthComp.IsDead) return;
         if (!_combat.TryUseSkillE()) return;
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.E_Skill);
 
@@ -225,7 +225,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         CancelCurrentAction();
         _actionCts = new CancellationTokenSource();
 
-        Stat.IsInvincible = newState == CharacterStateMachine.PlayerState.QSkillCutScene
+        Stat.HealthComp.IsInvincible = newState == CharacterStateMachine.PlayerState.QSkillCutScene
                          || newState == CharacterStateMachine.PlayerState.Q_Skill
                          || newState == CharacterStateMachine.PlayerState.Victory;
 
@@ -282,8 +282,13 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Q_Skill);
     }
 
+    // Stat(Health).OnDead 구독자. 사망 시 캐릭터 고유 반응 수행. (구 CharacterStat.HandleDeath의 collider 비활성화 흡수)
     private void HandleDeath()
     {
+        // Collider 비활성화 (추가 피격 방지)
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = false;
+
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Death);
         OnCharacterDead?.Invoke(this);
     }
@@ -424,7 +429,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
             _healingAuraParticle.Play(true);
         }
 
-        Stat.Heal();
+        Stat.HealthComp.Heal();
     }
 
     public virtual void StopHealingAura()

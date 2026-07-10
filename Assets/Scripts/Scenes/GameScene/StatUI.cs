@@ -19,7 +19,7 @@ public class StatUI : MonoBehaviour
         //SetExp(stat.CurrentExp, stat.MaxExp);
 
         SetLevel(Managers.Party.PartyLevel);
-        SetHp(stat.CurrentHp, stat.MaxHp.Value);
+        SetHp(stat.HealthComp.CurrentHp, stat.MaxHp.Value);
         SetExp(Managers.Party.PartyCurrentExp, Managers.Party.PartyRequiredExp);
     }
 

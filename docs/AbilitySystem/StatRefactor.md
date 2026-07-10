@@ -42,18 +42,17 @@
 |---|---|---|
 | **1** | **경제 축출** — 몬스터 보상 → `MonsterReward` | ✅ 완료 |
 | **2** | **UI 축출** — `ToastDamageUI` → `DamageNumberPresenter`(이벤트 구독) | ✅ 완료 |
-| 3 | **Health 추출** — HP/피격/죽음/무적 → `Health` | ⏸ **보류 (#2 우선)** |
+| **3** | **Health 추출** — HP/피격/죽음/무적 → `Health` | ✅ **완료 (2026-07-10)** |
 | 4 | 에너지/쿨타임 분리 — `EnergyGauge` | ⏸ 보류 |
 | 5 | 남은 `CharacterStat`/`MonsterStat` = 초기화 바인딩만 | ⏸ 보류 |
 
 각 단계 후 컴파일·전투 1회 확인 후 다음으로.
 
-**3단계 이후 보류 결정 (2026-07-09)**: 착수 전 실측 결과 Health 추출은
-① blast radius ~14곳(HP바·HUD·Save·무적·Heal/Recover 등) ② 캐릭터/몬스터 죽음 로직 상이 →
-여러 시스템 동시 수정(준-빅뱅). **결정적으로 #2의 선행조건이 아님** — 버프/방깎은
-`Stat.AddModifier`(공격력·방어력 modifier)로 현재 아키텍처에서 이미 동작한다.
-분해 패턴은 1·2단계로 이미 2회 증명됨. → **#2(역할/버프/방깎) 착수를 우선**하고 Health 추출은
-필요 시 후속으로. (오버엔지니어링 경계 · "안 하는 결정"도 시니어 시그널)
+**3단계 보류 결정 (2026-07-09) → 재개·완료 (2026-07-10)**: 최초 실측 시 Health 추출은
+① blast radius ~15곳(HP바·HUD·Save·무적·Heal/Recover 등) ② 캐릭터/몬스터 죽음 로직 상이 →
+여러 시스템 동시 수정(준-빅뱅) 우려로 **보류**했다(#2의 선행조건 아님·오버엔지니어링 경계).
+이후 #2가 안정화되어 **재개**했고, 준-빅뱅 우려는 아래 **2개 안전장치**(facade 전환 + 이벤트 구독 분기)로
+해소해 6개 서브스텝 증분으로 완료했다. 상세는 [3단계 기록](#3단계-기록--health-추출-완료) 참고.
 
 ---
 
@@ -102,6 +101,58 @@
 
 ---
 
+## 3단계 기록 — Health 추출 (완료)
+
+> **2026-07-10 완료.** God 컴포넌트에서 HP/피격/죽음/무적을 **단일 균일 `Health` 컴포넌트**로 완전 분리.
+> `BaseStat`은 순수 `StatCollection`(= GAS AttributeSet)이 되었다.
+
+### 최종 구조
+
+```
+[엔티티 GameObject]
+ ├─ BaseStat (= StatCollection)  ← MaxHp/Attack/Defense + modifier 합산. HealthComp 접근점만 노출
+ ├─ Health                       ← CurrentHp/피격/죽음/무적 + IDamageable + TakeDamage. StatCollection에서 MaxHp·Defense 읽음
+ ├─(캐릭터) CharacterStat         ← 에너지·궁·쿨타임·크리. HP 복원은 Health에 위임
+ └─(몬스터) MonsterStat           ← 보상 캐시 + 사망 재브로드캐스트(OnKilledByAttacker/OnMonsterDead)
+[구독자] BaseCharacter(collider off) · MonsterReward(경제) · MonsterSpawner(리스폰) · DamageNumberPresenter(토스트)
+```
+
+### 준-빅뱅을 없앤 2개 안전장치
+
+1. **BaseStat facade(전환기 위임)** — Health로 상태를 옮기되 `BaseStat.CurrentHp/IsDead/OnHpChanged` 등을
+   `HealthComp`로 위임하는 얇은 멤버로 남겨, 소비 15곳이 계속 컴파일되게 했다. → **동시 수정 소멸.**
+   클러스터별로 소비자를 `stat.HealthComp.*`로 옮긴 뒤(Step 5) facade를 삭제(Step 6). facade 삭제 시
+   컴파일 에러가 **누락된 소비자를 자동으로 색출**하는 안전망 역할까지 했다.
+2. **분기를 구독자로 흡수** — 캐릭터/몬스터 죽음의 차이를 서브클래스가 아니라 **`Health.OnDead`/`OnDied` 구독자**가
+   처리. Health는 단일 균일 컴포넌트로 유지(서브클래스 0개). "안 만드는 결정".
+
+### 6개 서브스텝 (각 단계 컴파일 + 전투 1회 검증)
+
+| 스텝 | 작업 | 위험 |
+|---|---|---|
+| **1** | `Health` 생성(HP 숫자·사망 소유) + BaseStat facade화. 자기부트스트랩 lazy `HealthComp` getter로 부착 타이밍 NRE 차단 | 저 (파일 2개) |
+| **2** | 데미지 계산·죽음 → `Health.TakeDamage`로 통합. Character/MonsterStat의 `TakeDamage`/`HandleDeath` 삭제. 분기를 구독자로 이관. `OnDamageTaken`·무적도 Health로. `_isDead`→`Health.IsDead` 통일 | **고 (유일)** |
+| **3** | (2에 흡수) 무적 가드가 `Health.TakeDamage`에 필요해 Step 2에서 함께 이관 | — |
+| **4** | `IDamageable` seam을 Stat→Health로 **원자적** 이관(이중구현 순간 금지). 투사체/Effect 6경로는 `TryGetComponent<IDamageable>`라 무수정 | 중 (격리) |
+| **5** | 소비 15곳을 facade→`stat.HealthComp.*`로 클러스터 이관(UI/파티/세이브). facade는 유지(안전망) | 기계적 |
+| **6** | facade 전면 삭제 → BaseStat=순수 StatCollection. CharacterStat 내부 HP대입 재배선. Recover/Heal도 Health로 | 정리 |
+
+### 핵심 설계 결정
+
+- **단일 Health(서브클래스 X)** — 죽음 사이드이펙트가 이미 이벤트로 빠져(경제=`OnKilledByAttacker`, collider=`OnDead`)
+  Health 내부에 override 지점이 없다. 무적/풀가드는 무해한 기본값 필드로 균일화. (README §3-1 "값이 다르면 asset, 로직이 다르면 클래스"의 정확한 적용)
+- **IDamageable = seam** — 데미지 6경로 중 5경로가 이미 `TryGetComponent<IDamageable>`. Health가 이 인터페이스를 물려받자
+  투사체·Effect 코드가 **한 줄도 안 바뀌었다**. typed 호출은 보스 미니언 즉사 1곳뿐.
+- **몬스터 death 이벤트 재브로드캐스트** — `MonsterStat`이 `Health.OnDied`를 구독해 자기 고유 이벤트로 되쏨 →
+  `MonsterReward`/`MonsterSpawner` 무수정. (오래 미뤄둔 `_isDead` vs `IsDead` 중복 필드도 이때 통일)
+- **`BaseStat→StatCollection` 리네임은 스킵** — BaseStat이 GO에 직접 부착되진 않지만 타입 참조 churn이 커
+  변별력 대비 비용이 낮아 보류(선택).
+
+### 안전장치 — 롤백 앵커
+착수 전 `checkpoint/pre-health-refactor` 태그(커밋 `7bde3e21`)를 찍어, 이상 시 전체 롤백 가능하게 했다.
+
+---
+
 ## 관련
-- 시각 구조도: 세션 산출물(God 컴포넌트 분해 다이어그램)
+- 시각 구조도: 세션 산출물(God 컴포넌트 분해 다이어그램) · 전/후 비교 PDF(`docs/AbilitySystem/HealthExtraction_BeforeAfter.pdf`)
 - 후속: [RoleSystemPlan.md](RoleSystemPlan.md) Phase 3 버프/방깎이 `StatCollection` 위에 얹힘

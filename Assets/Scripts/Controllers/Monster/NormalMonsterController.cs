@@ -94,8 +94,8 @@ public abstract class NormalMonsterController : BaseMonsterController
 
         _hpBar = hpBar;
         _hpBar.SetTarget(_hpBarTransform, Stat);
-        Stat.OnHpChanged -= _hpBar.UpdateHpBar;
-        Stat.OnHpChanged += _hpBar.UpdateHpBar;
+        Stat.HealthComp.OnHpChanged -= _hpBar.UpdateHpBar;
+        Stat.HealthComp.OnHpChanged += _hpBar.UpdateHpBar;
     }
 
     // 타겟 갱신 함수
@@ -160,7 +160,7 @@ public abstract class NormalMonsterController : BaseMonsterController
         {
             //_hpBar.gameObject.SetActive(false);
             
-            Stat.OnHpChanged -= _hpBar.UpdateHpBar;      // 구독 해제
+            Stat.HealthComp.OnHpChanged -= _hpBar.UpdateHpBar;      // 구독 해제
             Managers.Resource.Destroy(_hpBar.gameObject); // 실제 파괴(또는 풀 반환)
             _hpBar = null;
             

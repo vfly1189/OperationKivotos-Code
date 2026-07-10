@@ -59,7 +59,7 @@ public class ApplyStatModifier : EffectData, IEffect
                 {
                     foreach (BaseCharacter m in members)
                     {
-                        if (m == null || m.Stat == null || m.Stat.IsDead) continue;
+                        if (m == null || m.Stat == null || m.Stat.HealthComp.IsDead) continue;
                         yield return (container.gameObject, m.Stat);
                     }
                 }

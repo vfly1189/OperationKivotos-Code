@@ -253,7 +253,7 @@ public class PartyManager
             var member = _registry.Members[i];
             if (member == null) continue;
 
-            member.Stat.IsInvincible = invincible;
+            member.Stat.HealthComp.IsInvincible = invincible;
         }
     }
 

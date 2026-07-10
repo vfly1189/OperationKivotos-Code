@@ -23,7 +23,7 @@ public class PartySlotUI : MonoBehaviour
         // 기존 연결 해제
         if (_connectedCharacter != null && _connectedCharacter.Stat != null)
         {
-            _connectedCharacter.Stat.OnHpChanged -= UpdateHP;
+            _connectedCharacter.Stat.HealthComp.OnHpChanged -= UpdateHP;
             _connectedCharacter.Stat.OnUltimateStateChanged -= SetUltimateReady;
         }
 
@@ -31,11 +31,11 @@ public class PartySlotUI : MonoBehaviour
 
         if (_connectedCharacter != null && _connectedCharacter.Stat != null)
         {
-            _connectedCharacter.Stat.OnHpChanged += UpdateHP;
+            _connectedCharacter.Stat.HealthComp.OnHpChanged += UpdateHP;
             _connectedCharacter.Stat.OnUltimateStateChanged += SetUltimateReady;
 
             // 초기화
-            UpdateHP(_connectedCharacter.Stat.CurrentHp, _connectedCharacter.Stat.MaxHp.Value);
+            UpdateHP(_connectedCharacter.Stat.HealthComp.CurrentHp, _connectedCharacter.Stat.MaxHp.Value);
             bool isReady = (_connectedCharacter.Stat.CurrentQSkillCoolTime <= 0) &&
                            (_connectedCharacter.Stat.CurrentEnergy >= _connectedCharacter.Stat.MaxEnergy.Value);
             SetUltimateReady(isReady);

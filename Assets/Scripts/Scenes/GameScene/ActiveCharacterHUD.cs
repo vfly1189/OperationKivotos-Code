@@ -13,7 +13,7 @@ public class ActiveCharacterHUD : MonoBehaviour
 
         CharacterStat stat = character.Stat;
 
-        stat.OnHpChanged -= _statUI.SetHp;
+        stat.HealthComp.OnHpChanged -= _statUI.SetHp;
         //stat.OnExpChanged -= _statUI.SetExp;
         //stat.OnLevelChanged -= HandleLevelChanged;
 
@@ -31,7 +31,7 @@ public class ActiveCharacterHUD : MonoBehaviour
         CharacterStat stat = character.Stat;
 
         _statUI.Initialize(stat);
-        stat.OnHpChanged += _statUI.SetHp;
+        stat.HealthComp.OnHpChanged += _statUI.SetHp;
         Managers.Party.OnPartyExpChanged   += _statUI.SetExp;
         Managers.Party.OnPartyLevelChanged += HandleLevelChanged;
 

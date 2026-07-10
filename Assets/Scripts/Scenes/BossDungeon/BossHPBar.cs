@@ -26,11 +26,11 @@ public class BossHPBar : UI_Scene
         if (_bossMonsterController != null)
         {
             // 구독 중복 방지를 위해 뺐다가 넣기
-            _bossMonsterController.Stat.OnHpChanged -= UpdateHPBar;
-            _bossMonsterController.Stat.OnHpChanged += UpdateHPBar;
+            _bossMonsterController.Stat.HealthComp.OnHpChanged -= UpdateHPBar;
+            _bossMonsterController.Stat.HealthComp.OnHpChanged += UpdateHPBar;
 
             // 처음 보여줄 체력 갱신
-            UpdateHPBar(_bossMonsterController.Stat.CurrentHp, _bossMonsterController.Stat.MaxHp.Value);
+            UpdateHPBar(_bossMonsterController.Stat.HealthComp.CurrentHp, _bossMonsterController.Stat.MaxHp.Value);
         }
     }
 
@@ -44,7 +44,7 @@ public class BossHPBar : UI_Scene
     {
         if (_bossMonsterController != null && _bossMonsterController.Stat != null)
         {
-            _bossMonsterController.Stat.OnHpChanged -= UpdateHPBar;
+            _bossMonsterController.Stat.HealthComp.OnHpChanged -= UpdateHPBar;
         }
     }
 }

@@ -4,9 +4,9 @@ using System;
 using UnityEngine;
 
 
-public class MonsterStat : BaseStat, IDamageable
+public class MonsterStat : BaseStat
 {
-    private bool _isDead = false;
+    // 사망 감지·가드는 Health.IsDead로 통일(구 _isDead 제거). 풀 리셋도 Health.Recover가 담당.
 
     public event Action<BaseMonsterController> OnMonsterDead;
 
@@ -46,8 +46,22 @@ public class MonsterStat : BaseStat, IDamageable
 
         OnMonsterDead = null;
 
-        // 스탯 세팅이 끝나면 HP를 최대로 채움
-        Recover();
+        // Health의 사망 발행을 몬스터 고유 이벤트로 재브로드캐스트(경제=MonsterReward, 리스폰=MonsterSpawner).
+        // idempotent(-=/+=) — 풀 재사용으로 SetStat이 여러 번 불려도 중복 구독 없음. Health는 GO에 영속.
+        HealthComp.OnDied -= OnHealthDied;
+        HealthComp.OnDied += OnHealthDied;
+
+        // 스탯 세팅이 끝나면 HP를 최대로 채움 (사망 플래그 리셋 포함)
+        HealthComp.Recover();
+    }
+
+    // Health가 사망을 감지·발행하면, 몬스터 고유 사망 이벤트로 되쏜다. (구 HandleDeath의 이벤트 발행부)
+    private void OnHealthDied(GameObject attacker)
+    {
+        // 보상(경험치·크레딧·드랍/알림UI)은 MonsterReward가 OnKilledByAttacker를 구독해 처리.
+        OnKilledByAttacker?.Invoke(attacker);
+        // 리스폰은 MonsterSpawner가 OnMonsterDead를 구독해 처리.
+        OnMonsterDead?.Invoke(_controller);
     }
 
 
@@ -74,38 +88,4 @@ public class MonsterStat : BaseStat, IDamageable
     //    OnMonsterDead = null;
     //}
 
-    // 풀 재사용 시 사망 가드를 반드시 리셋한다. (OnEnable·SetStat 양쪽 경로에서 Recover 호출됨)
-    // 이 리셋이 없으면 2회차 생애에서 아래 TakeDamage의 사망 가드가 막혀 HandleDeath(→보상)가 안 불린다.
-    public override void Recover()
-    {
-        base.Recover();
-        _isDead = false;
-    }
-
-    public override void TakeDamage(DamageInfo damageInfo)
-    {
-        float finalDamage = Mathf.Max(damageInfo.Amount - Defense.Value, 1);
-        CurrentHp -= finalDamage;
-        CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
-
-        if (CurrentHp <= 0 && _isDead == false)
-        {
-            _isDead = true;
-            HandleDeath(damageInfo.Attacker);
-        }
-
-        RaiseDamageTaken(finalDamage, damageInfo.HitPoint, damageInfo.Attacker.layer, damageInfo.IsCritical);
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
-    }
-
-    protected override void HandleDeath(GameObject shooter)
-    {
-        // 보상(경험치·크레딧·드랍/알림UI) 지급은 MonsterReward가 구독해서 처리한다. (경제 로직 분리)
-        OnKilledByAttacker?.Invoke(shooter);
-
-        // 이벤트 발송 (나 죽었다!)
-        CallOnDead();
-
-        OnMonsterDead?.Invoke(_controller);
-    }
 }

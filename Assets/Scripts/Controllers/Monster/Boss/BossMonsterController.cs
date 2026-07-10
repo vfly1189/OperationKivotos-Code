@@ -235,8 +235,8 @@ public class BossMonsterController : BaseMonsterController, ISummonRegistry
         {
             if (minion == null) continue;
             var stat = minion.GetComponent<MonsterStat>();
-            if (stat != null && !stat.IsDead)
-                stat.TakeDamage(new DamageInfo(99999f, this.gameObject, false));
+            if (stat != null && !stat.HealthComp.IsDead)
+                stat.HealthComp.TakeDamage(new DamageInfo(99999f, this.gameObject, false)); // 피격은 Health가 소유(Step 4)
         }
         _summonedMonsters.Clear();
 

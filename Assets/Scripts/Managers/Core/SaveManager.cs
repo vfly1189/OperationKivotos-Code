@@ -246,7 +246,7 @@ public class SaveManager
                 {
                     characterId = member.Stat.GetID(),
                     weaponLevel = member.Stat.WeaponLevel,
-                    currentHp = member.Stat.CurrentHp <= 0 ? 1 : member.Stat.CurrentHp
+                    currentHp = member.Stat.HealthComp.CurrentHp <= 0 ? 1 : member.Stat.HealthComp.CurrentHp
                 }
             );
  

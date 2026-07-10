@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 
 
-public class CharacterStat : BaseStat, IDamageable
+public class CharacterStat : BaseStat
 {
     [Header("Data")]
     [SerializeField] private CharacterDataSO _data; // 초기 데이터
@@ -14,7 +14,7 @@ public class CharacterStat : BaseStat, IDamageable
 
 
     // 계산된 스탯들
-    public Stat MaxEnergy; 
+    public Stat MaxEnergy;
     public Stat CritRate => GetStat(EStatType.CritRate);
     public Stat CritDamage => GetStat(EStatType.CritDamage);
     public Stat MoveSpeed => GetStat(EStatType.MoveSpeed);
@@ -29,7 +29,7 @@ public class CharacterStat : BaseStat, IDamageable
     public float CurrentQSkillCoolTime { get; private set; }
     public float CurrentESkillCoolTime { get; private set; }
 
-    public bool IsInvincible { get; set; } = false; //무적인지
+    // 무적/HP/사망 상태는 Health가 소유(HealthComp). 캐릭터 상태 복원 시 HP 부분만 HealthComp로 위임한다.
 
     private bool _isUltimateReady = false;
 
@@ -59,7 +59,7 @@ public class CharacterStat : BaseStat, IDamageable
     }
     void Awake()
     {
-          
+
     }
     public void SetCharacterData(CharacterDataSO data)
     {
@@ -78,7 +78,7 @@ public class CharacterStat : BaseStat, IDamageable
         ESkillCoolTime.SetBaseValue(data.ESkillCoolTime);
 
         // 실시간 수치 풀충전
-        CurrentHp = MaxHp.Value; 
+        HealthComp.SetHpRaw(MaxHp.Value);
         CurrentEnergy = 0;
         CurrentQSkillCoolTime = QSkillCoolTime.Value;
         CurrentESkillCoolTime = 0;
@@ -99,9 +99,9 @@ public class CharacterStat : BaseStat, IDamageable
 
     public void ResetState()
     {
-        IsDead = false;
-        IsInvincible = false; 
-        CurrentHp = MaxHp.Value;
+        HealthComp.SetDead(false);
+        HealthComp.IsInvincible = false;
+        HealthComp.SetHpRaw(MaxHp.Value);
         CurrentEnergy = 0;
         CurrentQSkillCoolTime = QSkillCoolTime.Value;
         CurrentESkillCoolTime = 0;
@@ -114,22 +114,22 @@ public class CharacterStat : BaseStat, IDamageable
         if (rigid != null) rigid.isKinematic = false;
 
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
+        HealthComp.RaiseHpChanged(HealthComp.CurrentHp, MaxHp.Value);
     }
 
     // 마을 귀환용 상태 보정 (생존자는 체력 유지, 사망자만 예외 부활)
     public void ReturnToTownState()
     {
         // 사망한 캐릭터라면 HP 1로 예외 부활
-        if (CurrentHp <= 0 || IsDead)
+        if (HealthComp.CurrentHp <= 0 || HealthComp.IsDead)
         {
-            IsDead = false;
-            CurrentHp = 1;
+            HealthComp.SetDead(false);
+            HealthComp.SetHpRaw(1);
         }
         else
         {
             // 생존자는 체력 유지 (최대 체력 넘어가지 않게 방지)
-            CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+            HealthComp.SetHpRaw(Mathf.Clamp(HealthComp.CurrentHp, 0, MaxHp.Value));
         }
 
         Collider col = GetComponent<Collider>();
@@ -138,13 +138,13 @@ public class CharacterStat : BaseStat, IDamageable
         Rigidbody rigid = GetComponent<Rigidbody>();
         if (rigid != null) rigid.isKinematic = false;
 
-        IsInvincible = false; // 무적은 무조건 해제
+        HealthComp.IsInvincible = false; // 무적은 무조건 해제
         CurrentEnergy = 0;
         CurrentQSkillCoolTime = QSkillCoolTime.Value;
         CurrentESkillCoolTime = 0;
 
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
+        HealthComp.RaiseHpChanged(HealthComp.CurrentHp, MaxHp.Value);
     }
 
     //테스트용
@@ -193,7 +193,7 @@ public class CharacterStat : BaseStat, IDamageable
         CheckUltimateReadyState(); // 에너지 찼으니 궁극기 상태 체크
     }
 
-   
+
     public bool TryUseSkillQ()
     {
         if (CurrentQSkillCoolTime > 0) return false;
@@ -224,7 +224,7 @@ public class CharacterStat : BaseStat, IDamageable
             _isUltimateReady = isNowReady;
             OnUltimateStateChanged?.Invoke(_isUltimateReady); // UI야, 상태 바꼈다!
         }
-    }   
+    }
     public AssetReferenceT<AudioClip>[] GetBattleInVoice()
     {
         return _data.battleInVoices;
@@ -243,36 +243,8 @@ public class CharacterStat : BaseStat, IDamageable
         return new DamageInfo(finalDamage, attacker, isCrit);
     }
 
-    public override void TakeDamage(DamageInfo damageInfo)
-    {
-        if (IsInvincible || IsDead) return;
-
-        // 방어력 적용
-        float finalDamage = Mathf.Max(damageInfo.Amount - Defense.Value, 1);
-        CurrentHp -= finalDamage;
-        CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
-
-        // 데미지 표시 이벤트 발행 (실제 토스트는 DamageNumberPresenter가 그림)
-        RaiseDamageTaken(finalDamage, damageInfo.HitPoint, damageInfo.Attacker.layer, damageInfo.IsCritical);
-
-        if (CurrentHp <= 0) HandleDeath(damageInfo.Attacker);
-
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
-    }
-
-    protected override void HandleDeath(GameObject shooter)
-    {
-        if (IsDead) return; // 중복 호출 방지
-
-        IsDead = true;
-
-        // Collider 비활성화 (추가 피격 방지)
-        Collider col = GetComponent<Collider>();
-        if (col != null) col.enabled = false;
-
-        CallOnDead();
-    }
-
+    // 피격(방어력·HP차감·데미지표시)·사망은 Health가 통합 처리한다(Step 2).
+    // 사망 시 collider 비활성화 등 캐릭터 고유 반응은 BaseCharacter가 Health.OnDead를 구독해 수행.
 
     private void ApplyWeaponStats()
     {
@@ -292,7 +264,7 @@ public class CharacterStat : BaseStat, IDamageable
         CritRate.AddModifier(new StatModifier(wStat.CritRate, StatModType.Flat, _weaponData));
         CritDamage.AddModifier(new StatModifier(wStat.CritDmg, StatModType.Flat, _weaponData));
 
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
+        HealthComp.RaiseHpChanged(HealthComp.CurrentHp, MaxHp.Value);
 
         GameLog.Log($"[{_data.nameKR}] 무기({_weaponData.weaponName}) Lv.{WeaponLevel} 스탯 적용 완료");
     }
@@ -304,10 +276,10 @@ public class CharacterStat : BaseStat, IDamageable
         ApplyWeaponStats();
 
         // HP 복원 (마을 귀환 시 풀충전 원하면 MaxHp.Value로 변경)
-        CurrentHp = Mathf.Clamp(saved.currentHp, 0, MaxHp.Value);
-        if (CurrentHp > 0) IsDead = false;
+        HealthComp.SetHpRaw(Mathf.Clamp(saved.currentHp, 0, MaxHp.Value));
+        if (HealthComp.CurrentHp > 0) HealthComp.SetDead(false);
 
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
+        HealthComp.RaiseHpChanged(HealthComp.CurrentHp, MaxHp.Value);
     }
     public void WeaponLevelUp()
     {
@@ -320,9 +292,9 @@ public class CharacterStat : BaseStat, IDamageable
     public void RefreshStatsUI()
     {
         // 1. 필요한 내부 로직 처리 (최대 체력이 변했을 수 있으니 현재 체력 보정)
-        CurrentHp = Mathf.Clamp(CurrentHp, 0, MaxHp.Value);
+        HealthComp.SetHpRaw(Mathf.Clamp(HealthComp.CurrentHp, 0, MaxHp.Value));
 
-        // 2. 내부에서 안전하게 protected 함수를 호출하여 이벤트를 발생시킴
-        CallOnHpChanged(CurrentHp, MaxHp.Value);
+        // 2. Health가 HP 변경 이벤트를 발생시킴
+        HealthComp.RaiseHpChanged(HealthComp.CurrentHp, MaxHp.Value);
     }
 }

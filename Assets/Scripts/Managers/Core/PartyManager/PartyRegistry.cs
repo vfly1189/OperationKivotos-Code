@@ -29,7 +29,7 @@ public class PartyRegistry
         for (int i = 1; i < Members.Count; i++)
         {
             int checkIndex = (CurrentIndex + i) % Members.Count;
-            if (!Members[checkIndex].Stat.IsDead)
+            if (!Members[checkIndex].Stat.HealthComp.IsDead)
                 return checkIndex;
         }
         return -1;      

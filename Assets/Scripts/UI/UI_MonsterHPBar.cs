@@ -30,7 +30,7 @@ public class UI_MonsterHPBar : UI_Base
         _stat = stat;
 
         // 초기 갱신
-        UpdateHpBar(stat.CurrentHp, stat.MaxHp.Value);
+        UpdateHpBar(stat.HealthComp.CurrentHp, stat.MaxHp.Value);
     }
 
     private void LateUpdate()
@@ -70,7 +70,7 @@ public class UI_MonsterHPBar : UI_Base
         float ratio = 0f;
         if (_stat.MaxHp.Value > 0)
         {
-            ratio = Mathf.Clamp01((float)_stat.CurrentHp / (float)_stat.MaxHp.Value);
+            ratio = Mathf.Clamp01((float)_stat.HealthComp.CurrentHp / (float)_stat.MaxHp.Value);
         }
 
         _slider.value = ratio;

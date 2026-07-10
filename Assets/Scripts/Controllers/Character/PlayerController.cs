@@ -95,7 +95,7 @@ public class PlayerController
 
     private void HandleInteract()
     {
-        if (_currentTarget == null || _currentTarget.Stat.IsDead) return;
+        if (_currentTarget == null || _currentTarget.Stat.HealthComp.IsDead) return;
 
         // 현재 컨트롤 중인 캐릭터 주변에 상호작용 가능한 NPC가 있다면
         if (_currentTarget.CurrentInteractable != null)
@@ -124,7 +124,7 @@ public class PlayerController
     // Update 로직 -> Managers.Update에서 호출
     public void OnUpdate()
     {
-        if (_currentTarget == null || _currentTarget.Stat.IsDead) return;
+        if (_currentTarget == null || _currentTarget.Stat.HealthComp.IsDead) return;
 
         _currentTarget.Attack(_isMousePressed);
     }
