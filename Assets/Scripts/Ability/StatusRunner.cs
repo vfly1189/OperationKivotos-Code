@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 지속시간 스탯 modifier(버프/방깎/가드)를 소유하고 만료 시 자동 해제한다.
+// 지속시간 상태(버프/방깎/가드 modifier + 상태 태그)를 소유하고 만료 시 자동 해제한다.
 // Effect는 stateless(공유 SO)로 두고, "언제 해제되나"라는 상태는 이 컴포넌트(소유자)가 갖는다.
 // 소유자 규칙: 시전자/대상 스코프 = 해당 엔티티, 파티 스코프 = 영속 파티 컨테이너(비활성 멤버도 만료되게).
 public class StatusRunner : MonoBehaviour
@@ -13,7 +13,15 @@ public class StatusRunner : MonoBehaviour
         public float Remaining;
     }
 
+    private class TimedTag
+    {
+        public GameplayTagContainer Container;
+        public GameplayTagSO Tag;
+        public float Remaining;
+    }
+
     private readonly List<Timed> _active = new();
+    private readonly List<TimedTag> _activeTags = new();
 
     public static StatusRunner EnsureOn(GameObject go)
     {
@@ -30,11 +38,22 @@ public class StatusRunner : MonoBehaviour
         _active.Add(new Timed { Stat = stat, Mod = mod, Remaining = Mathf.Max(duration, 0f) });
     }
 
+    // 대상 태그 컨테이너에 지속시간 태그 부착. duration 후 자동 해제(−1). modifier 경로와 대칭.
+    // 카운트형이라 같은 태그 다중 부착도 안전 — 각 부착이 자기 타이머로 개별 해제된다.
+    public void ApplyTimedTag(GameplayTagContainer container, GameplayTagSO tag, float duration)
+    {
+        if (container == null || tag == null) return;
+
+        container.Add(tag);
+        _activeTags.Add(new TimedTag { Container = container, Tag = tag, Remaining = Mathf.Max(duration, 0f) });
+    }
+
     private void Update()
     {
-        if (_active.Count == 0) return;
+        if (_active.Count == 0 && _activeTags.Count == 0) return;
 
         float dt = Time.deltaTime;
+
         for (int i = _active.Count - 1; i >= 0; i--)
         {
             Timed t = _active[i];
@@ -45,6 +64,17 @@ public class StatusRunner : MonoBehaviour
                 _active.RemoveAt(i);
             }
         }
+
+        for (int i = _activeTags.Count - 1; i >= 0; i--)
+        {
+            TimedTag t = _activeTags[i];
+            t.Remaining -= dt;
+            if (t.Remaining <= 0f)
+            {
+                t.Container.Remove(t.Tag);
+                _activeTags.RemoveAt(i);
+            }
+        }
     }
 
     // 비활성/파괴 시 걸린 것 전부 해제 (풀 재사용 이월·누수 방지)
@@ -53,5 +83,9 @@ public class StatusRunner : MonoBehaviour
         for (int i = 0; i < _active.Count; i++)
             _active[i].Stat.RemoveModifier(_active[i].Mod);
         _active.Clear();
+
+        for (int i = 0; i < _activeTags.Count; i++)
+            _activeTags[i].Container.Remove(_activeTags[i].Tag);
+        _activeTags.Clear();
     }
 }

@@ -25,6 +25,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     // 슬롯 하나당 어빌리티 "리스트". 인스펙터에 같은 슬롯을 여러 개 넣으면 그 순서가 비트 인덱스가 된다.
     private Dictionary<CharacterAbilitySlot, List<AbilityData>> _slotMap;
     private readonly AbilityRunner _abilityRunner = new AbilityRunner();
+    private GameplayTagContainer _ownedTags;   // 캐스터 보유 태그 (게이트 판독·GrantsTags 부여 대상)
 
     [Header("Role")]
     [SerializeField] protected RoleDataSO _roleData;          // 역할 (= E스킬을 결정)
@@ -98,6 +99,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
             Object      = _firePoint,   // 총구 = 스폰 기준 (aim은 캐릭터 회전이 firePoint에 반영됨)
             Target      = null,
             TargetPoint = transform.position + transform.forward,
+            Tags        = _ownedTags,   // 태그 게이트 판독 대상
         };
         _abilityRunner.TryCast(ability, ctx, token).Forget();
     }
@@ -117,6 +119,9 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
         // 데미지 표시(토스트) 책임을 Stat에서 분리 — DamageNumberPresenter 부착·바인딩
         DamageNumberPresenter.EnsureOn(gameObject, Stat);
+
+        // 보유 태그 컨테이너 확보 (게이트 판독용). 저장=Owner, 만료=StatusRunner, 판독=AbilityRunner.
+        _ownedTags = GameplayTagOwner.EnsureOn(gameObject).Owned;
 
         // E스킬 해석 (모델 1): 캐릭터 오버라이드가 있으면 그것, 없으면 역할 기본 E
         _eAbility = _eAbilityOverride != null ? _eAbilityOverride
