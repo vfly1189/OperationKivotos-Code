@@ -1,6 +1,19 @@
-# 입력 시스템 리팩토링 계획 — 의도 추상화 + 입력 컨텍스트 + 선입력 버퍼
+# 입력 시스템 리팩토링 — 의도 추상화 + 입력 컨텍스트 (선입력 버퍼는 검토 후 제외)
 
-> 목표: 지금의 "InputManager 단일 폴링 + magic string 이벤트" 구조를
+## 결과 요약 (TL;DR)
+
+| 단계 | 내용 | 상태 |
+|---|---|---|
+| **Phase 1** | magic string → `InputIntent` enum (타입 안전) | ✅ 완료 |
+| **Phase 2** | `InputContext` + `InputContextStack` — Action Map식 컨텍스트 게이팅. UI 중 이동·스왑만 허용, 전투 차단. `IsPopupOpen` 땜빵 3곳 제거 | ✅ 완료 |
+| **Phase 3** | 선입력 버퍼 — **구현·실측 후 제외** (커밋형 스킬 설계와 상충) | ⛔ 제외 |
+| **Phase 4** | Unity `InputActionAsset` 이관 | 보류(불필요) |
+
+**핵심 배운 점**: 입력에서 진짜 문제는 "매 프레임 폴링"이 아니라 ①magic string ②`IsPopupOpen`이 소비자 코드에 번지는 것이었다. 선입력 버퍼는 "멋있어 보이지만" 이 게임의 커밋형 스킬 설계엔 활약할 무대가 없어 제거했다 — IInputSource 제외와 함께 **YAGNI 판단** 사례.
+
+---
+
+> 목표(원안): 지금의 "InputManager 단일 폴링 + magic string 이벤트" 구조를
 > **의도(Intent) 추상화 → 입력 컨텍스트(Action Map + Stack) → 선입력 버퍼** 로 옮기고,
 > 슬롯 입력을 **기존 AbilitySystem에 자연스럽게 물린다.**
 >
@@ -165,53 +178,34 @@ public class InputContextStack
 
 ---
 
-### Phase 3 — 선입력 버퍼 · 리스크 중간, **P1 해결 · 핵심 가치**
+### Phase 3 — 선입력 버퍼 · **구현했으나 제외(REJECTED)**
 
-**무엇**: 이산 입력을 N프레임(또는 t초) 보관하고, 소비자가 "지금 가능"할 때 꺼내 쓴다.
+> 결론: `InputBuffer`(시간창 기반 선입력)를 실제로 구현·테스트한 뒤 **되돌렸다.**
+> 이 게임의 전투 설계와 근본적으로 상충하기 때문. "안 쓴 이유"가 곧 이 프로젝트의 판단 근거다.
 
-```csharp
-// 신규: Input/InputBuffer.cs
-public class InputBuffer
-{
-    private readonly float _window = 0.15f;                 // 선입력 유효 시간(튜닝값)
-    private readonly Dictionary<InputIntent, float> _stamp = new();
+**시도한 것**: 스킬 입력을 즉시 발동하지 않고 `InputBuffer`(0.15s 창)에 push, `PlayerController.OnUpdate`에서
+폴링하여 발동 가능해지는 순간 소비. `BaseCharacter.UseSkillE()/Q()`를 bool 반환으로 변경.
 
-    public void Push(InputIntent i) => _stamp[i] = Time.time;
-
-    public bool Peek(InputIntent i)                          // 소비하지 않고 유효성만
-        => _stamp.TryGetValue(i, out var t) && Time.time - t <= _window;
-
-    public bool TryConsume(InputIntent i)                    // 유효창이면 소비(제거)하고 true
-    {
-        if (Peek(i)) { _stamp.Remove(i); return true; }
-        return false;
-    }
-
-    public void Flush(InputIntent i) => _stamp.Remove(i);
-    public void Clear() => _stamp.Clear();
-}
+**왜 제외했나 — 실측 근거** (`CharacterStateMachine`의 게이트 표):
 ```
-
-**소비 방식 전환** (`PlayerController.OnUpdate`):
-```csharp
-// 기존: 이벤트에서 즉시 UseSkillE() (실패 시 소실)
-// 변경: 매 프레임 버퍼 폴링, 발동 성공했을 때만 소비
-if (_buffer.Peek(InputIntent.SkillE) && _currentTarget.UseSkillE()) // UseSkillE가 bool 반환
-    _buffer.TryConsume(InputIntent.SkillE);
-if (_buffer.Peek(InputIntent.SkillQ) && _currentTarget.UseSkillQ())
-    _buffer.TryConsume(InputIntent.SkillQ);
-
-_currentTarget.Attack(_attackHeld);   // Attack은 held 기반 유지
+CanUseSkill = Idle | Move | Attack        // 공격 중 스킬 캔슬 허용(즉발)
+CanSwap     = Idle | Move                 // 스킬·공격 중 스왑 불가(의도)
 ```
+- 스킬을 막는 유일한 상태는 **"다른 스킬 중"**이고, 이는 **의도적으로 막은 것**(스킬=커밋된 행동, 캔슬 불가).
+- 나머지 상태(Idle/Move/Attack)에서는 스킬이 **즉발** → 버퍼가 들고 있을 입력이 없음.
+- 즉 버퍼가 "막혔다 푸는" 구간이 사실상 없어 **동작이 없다.** 유일한 실측 효과는
+  스킬 종료 직전 0.15s에 **원치 않는 스킬 캔슬 누수**를 만든 것 → 설계 의도(캔슬 불가)와 정면 충돌.
+- "누수 차단"과 "버퍼 유지"는 **같은 것을 반대로 요구** → 버퍼 제거가 정답.
 
-> 이를 위해 `BaseCharacter.UseSkillE()/UseSkillQ()`를 **성공/실패 bool 반환**으로 살짝 바꾼다.
-> 내부 게이트는 이미 `_combat.TryUseSkillE()`가 bool을 반환하므로, 그 결과를 그대로 리턴하면 됨(작은 변경).
-> 게이트/쿨타임 실패면 false → 버퍼 유지 → 락 풀리는 프레임에 재시도·발동.
+**결정**: 즉시 발동(`HandleSkillE() => _currentTarget?.UseSkillE()`)으로 복구. 파일 삭제.
 
-- Move는 연속값이라 **버퍼 대상 아님**(현재 이동 값 그대로).
-- 컨텍스트가 Gameplay가 아닐 때는 **Push 자체를 막는다**(팝업 닫는 순간 발동 방지 — Phase 2와 연동).
-
-**완료 기준**: 평타/스킬 모션 중 E를 미리 눌러두면 락 풀리는 순간 발동(현재는 씹힘). `_window=0`이면 기존 동작과 동일 → A/B 회귀 검증.
+> **면접/포트폴리오 포인트**: 선입력 버퍼 개념을 구현하고, "입력이 들어온 시점 vs 소비 시점 분리",
+> 코요테 타임·점프 버퍼와의 관계까지 설명할 수 있다. 동시에 **우리 전투가 커밋형 스킬 설계라 버퍼가
+> 해결할 '입력 씹힘'이 존재하지 않음을 실측으로 확인하고 제거**했다 — IInputSource 제외와 같은
+> YAGNI 판단. "언제 쓰지 않을지 아는 것"의 사례.
+>
+> (선입력이 유효하려면 스킬에 **캔슬 윈도우/콤보 체인** 같은 "막았다 푸는" 락 구조가 먼저 필요하다.
+> 그 설계가 생기면 이 문서와 InputBuffer를 되살리면 된다.)
 
 ---
 
@@ -230,45 +224,43 @@ Phase 2에서 만든 컨텍스트 경계 덕분에, 상위 레이어(Intent/Buff
 
 ```
 Assets/Scripts/Managers/Core/Input/
-  ├─ InputIntent.cs           (신규, P3)
+  ├─ InputIntent.cs           (신규, P3 — magic string 제거)
   ├─ InputContext.cs          (신규, P2)
-  ├─ InputContextStack.cs     (신규, P2)
-  └─ InputBuffer.cs           (신규, P1)
+  └─ InputContextStack.cs     (신규, P2)
+  (InputBuffer.cs — Phase 3에서 구현 후 제외, 삭제됨)
 
 변경:
-  InputManager.cs      → 키맵 enum화, top 컨텍스트 기준으로 Intent 발화(게이트)
-  PlayerController.cs  → 이벤트 즉시 발동 → 버퍼 폴링·소비, IsPopupOpen 분기 제거
+  InputManager.cs      → 키맵 enum화, 컨텍스트별 허용 Intent 집합으로 게이팅
+  PlayerController.cs  → IsPopupOpen 게임플레이 게이팅 분기 3곳 제거
   PartyInputHandler.cs → string → InputIntent
-  BaseCharacter.cs     → UseSkillE/UseSkillQ 를 bool 반환으로 (게이트 결과 리턴)
-  UI 오픈/클로즈 지점   → InputContextStack.Push/Pop 연동
+  UIManager.cs         → 팝업 push/pop 지점에서 InputContextStack.Push/Pop 연동
+  (BaseCharacter.cs    → Phase 3의 bool 반환 변경은 되돌림)
 ```
 
 ---
 
 ## 5. 리스크 & 회귀 검증
 
-- **스왑 시 버퍼 정책**: 스왑(타겟 교체) 시 전투 버퍼(SkillE/Q)는 **flush 권장**(직전 캐릭터의 입력이 새 캐릭터로 새는 것 방지). `SetControlTarget`에서 `_buffer.Clear()`.
-- **팝업 중 Push 차단**: 컨텍스트가 Gameplay가 아니면 전투 Intent를 버퍼에 **Push하지 않는다**(안 그러면 팝업 닫는 순간 발동).
-- **컨텍스트 복귀 누락**: UI 닫힘 콜백에서 `Pop`을 빠뜨리면 입력이 영구 잠김 → 닫힘 경로마다 Pop 보장(또는 팝업 파괴 시 자동 Pop 훅).
-- **불변식 검증**: `_window=0` 이면 현행과 동일해야 한다.
+- **컨텍스트 복귀 누락**: UI 닫힘 시 `Pop`을 빠뜨리면 입력이 영구 잠김 → UIManager가 `_popupStack` pop과 **동일 지점**에서 PopContext를 호출하므로 구조적으로 동기(별도 병렬 스택 없음).
+- **씬 전환 잔류**: `InputManager.Clear()`에서 `_context.Clear()` — 컨텍스트가 씬 넘어 잔류하지 않게.
+- **연속 입력 중립화**: 차단 컨텍스트에서 Move는 매 프레임 `(0,0)`, Attack은 `Click`으로 해제 → UI 여는 순간 관성 이동/공격 방지.
 - **스모크(각 Phase 후 `/verify`)**: 이동 · 평타 · E · Q · 스왑 · 상호작용 · 인벤/정보창 열고닫기 · ESC — 8개 경로.
+- **UI 중 허용 정책**: 현재 UI 컨텍스트 허용 = `{ Move, Swap1~4 }`. 정책 변경은 `InputManager._contextAllow`만 수정.
 
 ---
 
-## 6. 권장 착수 순서
+## 6. 착수 순서 (실제 진행 결과)
 
-1. **Phase 1** (반나절) — 안전. magic string 제거로 기반 마련.
-2. **Phase 2** — `IsPopupOpen` 땜빵 제거. 구조 개선 체감.
-3. **Phase 3** — 조작감(선입력) 개선 체감. 여기까지가 "실무 권장 조합" 본체.
-4. **Phase 4** — 여유 될 때 별도 과제로. (안 해도 됨)
-
-> 순서 근거: Phase 3(버퍼)의 소비 정책은 Phase 2(컨텍스트)에서 "언제 Push하나"가 정해져야 안전하다.
+1. **Phase 1** ✅ — magic string 제거, `InputIntent` enum.
+2. **Phase 2** ✅ — 컨텍스트 스택 + 허용집합 게이팅, `IsPopupOpen` 땜빵 제거.
+3. **Phase 3** ⛔ — 선입력 버퍼 구현→테스트→**제외**(전투가 커밋형 스킬 설계라 상충. 위 Phase 3 참조).
+4. **Phase 4** — 보류(안 해도 됨). 필요 시 `InputActionAsset`으로 이관.
 
 ---
 
 ## 7. 포트폴리오 / 면접 서술 포인트
 
-- **P1(선입력)** = "플레이어 조작에서 중요한 것 = 조작감"의 실체. **입력이 들어온 시점과 소비되는 시점을 분리**해, 프레임 단위 정확도를 인간에게 요구하지 않는다. 형제 개념: 코요테 타임 · 점프 버퍼.
-- **P2(컨텍스트 스택)** = "패턴을 안다"가 아니라 **"`IsPopupOpen` 체크가 소비자 코드에 번지는 냄새를 감지 → 입력 활성 판단을 입력 레이어로 승격 → 중첩 UI 복귀를 스택으로 자동화"** 라는 진단→해결 서술로 말한다.
-- **AbilitySystem 연결** = 슬롯 입력이 (컨텍스트 게이트 → 버퍼 → `UseAbility`)를 거쳐 데이터 주도 어빌리티로 발동. 입력이 독립 자랑거리가 아니라 **플래그십과 유기적으로 물린다**는 증거.
-- **범위 결정(YAGNI)** = "IInputSource·리플레이·결정론도 검토했으나, 필드 입력 소비자가 1명뿐이라 over-engineering으로 판단하고 제외했다." **멈춘 이유를 대는 것**이 성숙함의 신호.
+- **컨텍스트 스택(P2)** = "패턴을 안다"가 아니라 **"`IsPopupOpen` 체크가 소비자 코드에 번지는 냄새를 감지 → 입력 활성 판단을 입력 레이어로 승격 → Action Map식 허용집합으로 UI 중 이동·스왑만 통과"** 라는 진단→해결 서술. 별도 병렬 스택을 안 만들고 기존 `_popupStack` 지점에 얹어 **동기화 리스크를 0으로** 한 판단도 포인트.
+- **선입력 버퍼(고려→제외)** = 개념(입력 도착 시점 vs 소비 시점 분리, 코요테 타임·점프 버퍼)을 **구현·실측**한 뒤, 우리 전투가 커밋형 스킬 설계라 버퍼가 해결할 '입력 씹힘'이 없고 유일한 효과가 원치 않는 스킬 캔슬 누수임을 확인하고 **제거**. → "언제 쓰지 **않을지** 아는" 판단.
+- **AbilitySystem 연결** = 슬롯 입력이 (컨텍스트 게이트 → `UseSkillE` → `UseAbility`)를 거쳐 데이터 주도 어빌리티로 발동. 입력이 독립 자랑거리가 아니라 **플래그십과 유기적으로 물린다**는 증거.
+- **범위 결정(YAGNI)** = IInputSource·리플레이·결정론·선입력버퍼를 모두 **검토했으나 근거를 대고 제외**. 필드 입력 소비자 1명 / 커밋형 스킬 설계. **멈춘 이유를 대는 것**이 성숙함의 신호.
