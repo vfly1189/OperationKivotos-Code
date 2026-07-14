@@ -14,7 +14,7 @@ public class UI_InteractPrompt : UI_Base
    
     public void RefreshKeyText()
     { 
-        _pressKey.text = Managers.Input.GetKeyName("Interact");
+        _pressKey.text = Managers.Input.GetKeyName(InputIntent.Interact);
     }
 
     // NPC마다 "대화하기", "대장장이 앞" 등 텍스트가 다를 수 있으니 변경 함수

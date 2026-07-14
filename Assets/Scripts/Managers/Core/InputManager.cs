@@ -12,21 +12,21 @@ public class InputManager
 
     bool _pressed = false;
 
-    // 동적 키 (리맵핑 가능)
-    private Dictionary<string, Key> _keyMap = new Dictionary<string, Key>()
+    // 동적 키 (리맵핑 가능) — Intent → 실제 Key
+    private Dictionary<InputIntent, Key> _keyMap = new Dictionary<InputIntent, Key>()
     {
-        {"Info",Key.T },
-        {"Inventory", Key.I },
-        {"Interact",Key.F },
-        { "E_Skill", Key.E },
-        { "Q_Skill", Key.Q },
-        { "Swap_1", Key.Digit1 },
-        { "Swap_2", Key.Digit2 },
-        { "Swap_3", Key.Digit3 },
-        { "Swap_4", Key.Digit4 }
+        { InputIntent.Info,      Key.T },
+        { InputIntent.Inventory, Key.I },
+        { InputIntent.Interact,  Key.F },
+        { InputIntent.SkillE,    Key.E },
+        { InputIntent.SkillQ,    Key.Q },
+        { InputIntent.Swap1,     Key.Digit1 },
+        { InputIntent.Swap2,     Key.Digit2 },
+        { InputIntent.Swap3,     Key.Digit3 },
+        { InputIntent.Swap4,     Key.Digit4 }
     };
 
-    private Dictionary<string, Action> _actionMap = new Dictionary<string, Action>();
+    private Dictionary<InputIntent, Action> _actionMap = new Dictionary<InputIntent, Action>();
 
     public void OnUpdate()
     {
@@ -79,10 +79,10 @@ public class InputManager
         }
     }
 
-    // 액션 이름을 주면, 할당된 키의 문자열을 반환 ("F", "1", "Tab" 등)
-    public string GetKeyName(string actionName)
+    // Intent에 할당된 키의 표시 문자열을 반환 ("F", "1", "Tab" 등)
+    public string GetKeyName(InputIntent intent)
     {
-        if (_keyMap.TryGetValue(actionName, out Key key))
+        if (_keyMap.TryGetValue(intent, out Key key))
         {
             if (Keyboard.current != null)
             {
@@ -96,31 +96,31 @@ public class InputManager
         return "?";
     }
 
-    // 동적 키 등록 (이름 기반)
-    public void RegisterAction(string actionName, Action callback)
+    // 동적 키 등록 (Intent 기반)
+    public void RegisterAction(InputIntent intent, Action callback)
     {
-        if (_actionMap.ContainsKey(actionName))
-            _actionMap[actionName] += callback;
+        if (_actionMap.ContainsKey(intent))
+            _actionMap[intent] += callback;
         else
-            _actionMap[actionName] = callback;
+            _actionMap[intent] = callback;
     }
 
-    public void UnregisterAction(string actionName, Action callback)
+    public void UnregisterAction(InputIntent intent, Action callback)
     {
-        if (_actionMap.ContainsKey(actionName))
-            _actionMap[actionName] -= callback;
+        if (_actionMap.ContainsKey(intent))
+            _actionMap[intent] -= callback;
     }
 
     // 키 리맵핑
-    public void RemapKey(string actionName, Key newKey)
+    public void RemapKey(InputIntent intent, Key newKey)
     {
-        if (_keyMap.ContainsKey(actionName))
-            _keyMap[actionName] = newKey;
+        if (_keyMap.ContainsKey(intent))
+            _keyMap[intent] = newKey;
     }
 
-    public Key GetKey(string actionName)
+    public Key GetKey(InputIntent intent)
     {
-        return _keyMap.TryGetValue(actionName, out Key key) ? key : Key.None;
+        return _keyMap.TryGetValue(intent, out Key key) ? key : Key.None;
     }
 
     public void Clear()

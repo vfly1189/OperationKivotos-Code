@@ -28,11 +28,11 @@ public class PlayerController
         Managers.Input.MouseAction -= HandleMouse;
         Managers.Input.MouseAction += HandleMouse;
 
-        Managers.Input.RegisterAction("Info", HandleInfo);
-        Managers.Input.RegisterAction("Inventory", HandleInventory);
-        Managers.Input.RegisterAction("Q_Skill", HandleSkillQ);
-        Managers.Input.RegisterAction("E_Skill", HandleSkillE);
-        Managers.Input.RegisterAction("Interact", HandleInteract);
+        Managers.Input.RegisterAction(InputIntent.Info, HandleInfo);
+        Managers.Input.RegisterAction(InputIntent.Inventory, HandleInventory);
+        Managers.Input.RegisterAction(InputIntent.SkillQ, HandleSkillQ);
+        Managers.Input.RegisterAction(InputIntent.SkillE, HandleSkillE);
+        Managers.Input.RegisterAction(InputIntent.Interact, HandleInteract);
     }
 
     // PartyManager가 호출해줄 함수
