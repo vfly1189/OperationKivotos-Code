@@ -126,6 +126,7 @@ public class UIManager
 
         T popup = Util.GetOrAddComponent<T>(go);
         _popupStack.Push(popup);
+        Managers.Input.PushContext(InputContext.UI);   // 팝업 열림 → 게임플레이 입력 차단
 
         GameLog.Log($"팝업 스택 : {_popupStack.Count}");
 
@@ -157,6 +158,7 @@ public class UIManager
         if (_popupStack.Count == 0) return;
 
         UI_PopUp popup = _popupStack.Pop();
+        Managers.Input.PopContext();   // 팝업 닫힘 → 이전 컨텍스트로 복귀
 
         // 팝업이 닫힐 때 혹시 열려있을지 모르는 툴팁을 무조건 함께 끕니다.
         //HideItemTooltip();

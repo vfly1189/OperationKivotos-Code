@@ -69,14 +69,9 @@ public class PlayerController
 
     // 마우스 입력 처리 (공격)
     private void HandleMouse(Define.MouseEvent evt)
-    {  
-        //팝업이 열려있다면 입력을 무시하되, 누름 상태는 강제로 취소(초기화)해야 합니다!
-        if (Managers.UI.IsPopupOpen)
-        {
-            _isMousePressed = false;
-            return;
-        }
-
+    {
+        // 팝업 열림 시 입력 차단은 InputManager의 컨텍스트 게이트가 담당한다.
+        // (UI 진입 순간 게이트가 Click을 한 번 쏴 누름 상태를 자동 해제)
         if (_currentTarget == null) return;
 
         if (evt == Define.MouseEvent.Press)
@@ -107,17 +102,13 @@ public class PlayerController
     
     private async void HandleInventory()
     {
-        if (Managers.UI.IsPopupOpen && Managers.UI.IsOpened<UI_Inventory>())
-            return;
-
+        // 팝업 열림 중엔 컨텍스트 게이트가 이 콜백 자체를 막으므로 중복 오픈 방지 분기 불필요.
+        // (로딩 중 재진입은 ShowPopupUIAsync의 _isLoadingPopup 가드가 처리)
         UI_Inventory inventory = await Managers.UI.ShowPopupUIAsync<UI_Inventory>("UI_Inventory");
     }
 
     private async void HandleInfo()
     {
-        if (Managers.UI.IsPopupOpen && Managers.UI.IsOpened<UI_Info>())
-            return;
-
         UI_Info info = await Managers.UI.ShowPopupUIAsync<UI_Info>("UI_Info");
     }
 

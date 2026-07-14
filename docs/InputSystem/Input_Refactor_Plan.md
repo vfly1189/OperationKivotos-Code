@@ -138,29 +138,30 @@ public enum InputIntent
 
 ```csharp
 // 신규: Input/InputContext.cs  — 하나의 상황(맵)
-public enum InputContext { Gameplay, UI, Dialogue }
+public enum InputContext { Gameplay, UI }   // 대화·컷신 등은 필요해질 때 추가(YAGNI)
 
-// 신규: Input/InputContextStack.cs
+// 신규: Input/InputContextStack.cs — 비어있으면 Gameplay(암묵적 바닥)
 public class InputContextStack
 {
     private readonly Stack<InputContext> _stack = new();
-
     public InputContext Current => _stack.Count > 0 ? _stack.Peek() : InputContext.Gameplay;
-
-    public void Push(InputContext ctx) => _stack.Push(ctx);  // (+ Action Map enable/disable)
-    public void Pop()                  => _stack.Pop();       // 직전 컨텍스트로 자동 복귀
+    public bool IsGameplay => Current == InputContext.Gameplay;
+    public void Push(InputContext ctx) => _stack.Push(ctx);
+    public void Pop() { if (_stack.Count > 0) _stack.Pop(); }   // 직전 컨텍스트로 자동 복귀
+    public void Clear() => _stack.Clear();
 }
 ```
 
-- InputManager는 **top 컨텍스트에 해당하는 Intent만** 발화한다.
-  예: `Current == UI` 이면 Attack/SkillE/Move/Swap 발화 안 함.
-- UI 오픈/클로즈 지점에서 `Push/Pop` 호출:
-  - `ShowPopupUIAsync<UI_Inventory>` 성공 → `Push(UI)`; 닫힘 콜백 → `Pop()`.
-  - 중첩(인벤 안 대화 등)도 스택이 복귀 순서를 자동 관리.
-- **`PlayerController`의 `if (Managers.UI.IsPopupOpen)` 3곳 제거** (`74, 108, 116`).
-- (Phase 4에서 실제 `InputActionAsset`의 Action Map으로 매핑. 지금은 컨텍스트 enum + 발화 게이트로 충분.)
+- **핵심: 전부 차단(all-or-nothing)이 아니라 "컨텍스트별 허용 Intent 집합"** — Unity Action Map의 정확한 모델(맵마다 액션의 부분집합만 활성). InputManager가 `IsAllowed(intent)`로 필터.
+  - **Gameplay**: 전부 허용.
+  - **UI**: `{ Move, Swap1~4 }` 만 허용 → **인벤/정보창 열려도 이동·스왑은 되고, 평타·스킬·상호작용·UI토글은 차단.** (실제 RPG 조작감: 메뉴 열어도 이동은 자연스러움)
+- 게이트가 연속 입력을 **자연 중립화**: Move는 차단 시 매 프레임 `(0,0)`(정지), Attack은 차단 시 `Click`으로 눌림 해제 → 별도 전환 플래그 불필요.
+- 스택 구동은 **UIManager가 `_popupStack`을 push/pop하는 바로 그 두 지점**에서 `PushContext(UI)`/`PopContext()` → 두 스택이 구조적으로 동기. (별도 병렬 스택 신설 안 함 = 어긋남 리스크 0)
+- **`PlayerController`의 `if (Managers.UI.IsPopupOpen)` 3곳 제거** (HandleMouse/HandleInventory/HandleInfo).
+- ESC는 게이트 **앞**에서 처리 → UI 열려도 닫기 정상.
+- (Phase 4에서 실제 `InputActionAsset`의 Action Map으로 매핑. 지금은 컨텍스트 enum + 허용집합 필터로 충분.)
 
-**완료 기준**: 인벤/정보창 열면 이동·평타·스킬·스왑이 **입력 단에서** 막히고, 닫으면 복귀. `IsPopupOpen` 분기 소멸.
+**완료 기준**: 인벤/정보창 열면 **평타·스킬·상호작용은 입력 단에서 막히고, 이동·스왑은 유지**되며, 닫으면 전투 입력 복귀. `IsPopupOpen` 게임플레이 게이팅 분기 소멸.
 
 ---
 

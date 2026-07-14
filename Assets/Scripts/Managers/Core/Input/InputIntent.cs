@@ -7,6 +7,9 @@ public enum InputIntent
 {
     None,
 
+    // 이동 (연속값)
+    Move,
+
     // 전투 (추후 선입력 버퍼 대상)
     Attack,
     SkillE,

@@ -12,6 +12,32 @@ public class InputManager
 
     bool _pressed = false;
 
+    // 입력 컨텍스트 스택 (Gameplay/UI). UIManager가 팝업 열고닫을 때 Push/Pop 구동.
+    private readonly InputContextStack _context = new InputContextStack();
+
+    public InputContext CurrentContext => _context.Current;
+    public void PushContext(InputContext ctx) => _context.Push(ctx);
+    public void PopContext() => _context.Pop();
+
+    // 컨텍스트별 "허용 Intent" 집합 (Unity Action Map 대응).
+    // Gameplay는 전부 허용이라 명시 안 함. UI는 아래 집합만 통과(이동/스왑 O, 전투·상호작용 X).
+    private static readonly Dictionary<InputContext, HashSet<InputIntent>> _contextAllow =
+        new Dictionary<InputContext, HashSet<InputIntent>>
+        {
+            [InputContext.UI] = new HashSet<InputIntent>
+            {
+                InputIntent.Move,
+                InputIntent.Swap1, InputIntent.Swap2, InputIntent.Swap3, InputIntent.Swap4,
+            },
+        };
+
+    // 현재 컨텍스트에서 이 Intent가 통과되는가.
+    private bool IsAllowed(InputIntent intent)
+    {
+        if (_context.IsGameplay) return true;                       // Gameplay: 전부 허용
+        return _contextAllow.TryGetValue(_context.Current, out var set) && set.Contains(intent);
+    }
+
     // 동적 키 (리맵핑 가능) — Intent → 실제 Key
     private Dictionary<InputIntent, Key> _keyMap = new Dictionary<InputIntent, Key>()
     {
@@ -32,49 +58,45 @@ public class InputManager
     {
         if (Keyboard.current == null) return; // 키보드 연결 체크
 
-        // 고정 키 (최적화)
+        // 고정 키 (최적화) — ESC는 컨텍스트 무관(팝업 닫기/메뉴 열기)이라 게이트 앞에서 처리
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
             OnEscapePressed?.Invoke();
 
-        // 2. 이동 입력 (WASD) 체크 -> BasePlayerController로 전송
+        // 이동 입력 (WASD) — 허용 컨텍스트면 읽고, 아니면 (0,0)으로 정지시킴
         if (OnMoveInput != null)
         {
             Vector2 moveDir = Vector2.zero;
-            if (Keyboard.current.wKey.isPressed) moveDir.y += 1;
-            if (Keyboard.current.sKey.isPressed) moveDir.y -= 1;
-            if (Keyboard.current.aKey.isPressed) moveDir.x -= 1;
-            if (Keyboard.current.dKey.isPressed) moveDir.x += 1;
-
-            // 입력이 없어도 (0,0)을 보내야 멈출 수 있음
+            if (IsAllowed(InputIntent.Move))
+            {
+                if (Keyboard.current.wKey.isPressed) moveDir.y += 1;
+                if (Keyboard.current.sKey.isPressed) moveDir.y -= 1;
+                if (Keyboard.current.aKey.isPressed) moveDir.x -= 1;
+                if (Keyboard.current.dKey.isPressed) moveDir.x += 1;
+            }
+            // 차단 컨텍스트에선 zero → 정지 (입력이 없어도 (0,0)을 보내야 멈춤)
             OnMoveInput.Invoke(moveDir.normalized);
         }
 
-        // 동적 키 (유연성)
+        // 동적 키 (유연성) — 현재 컨텍스트에서 허용된 Intent만 발화
         foreach (var pair in _actionMap)
         {
-            if (_keyMap.TryGetValue(pair.Key, out Key key))
-            {
-                if (Keyboard.current[key].wasPressedThisFrame)
-                {
-                    pair.Value?.Invoke();
-                }
-            }
+            if (!IsAllowed(pair.Key)) continue;
+            if (_keyMap.TryGetValue(pair.Key, out Key key) && Keyboard.current[key].wasPressedThisFrame)
+                pair.Value?.Invoke();
         }
 
+        // 평타 (마우스) — 허용 컨텍스트만. 차단되면 눌림 상태를 자동 해제(Click)한다.
         if (MouseAction != null)
         {
-            if (Mouse.current.leftButton.isPressed)
+            if (IsAllowed(InputIntent.Attack) && Mouse.current != null && Mouse.current.leftButton.isPressed)
             {
                 MouseAction.Invoke(Define.MouseEvent.Press);
                 _pressed = true;
             }
-            else
+            else if (_pressed)
             {
-                if (_pressed)
-                {
-                    MouseAction.Invoke(Define.MouseEvent.Click);
-                    _pressed = false;
-                }
+                MouseAction.Invoke(Define.MouseEvent.Click);
+                _pressed = false;
             }
         }
     }
@@ -127,6 +149,7 @@ public class InputManager
     {
         //_keyMap.Clear();
         _actionMap.Clear();
+        _context.Clear();              // 씬 전환 시 컨텍스트 잔류 방지
 
         OnEscapePressed = null;        //ESC
         OnMoveInput = null;            //이동
