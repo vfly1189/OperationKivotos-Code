@@ -102,6 +102,10 @@ public class LoadingScene : BaseScene
         {
 
         }
+        finally
+        {
+            ResourceMetrics.EndSceneTransition(); // [Phase 0.5 계측] 전환 종료 → 피크 리포트 자동 출력
+        }
     }
     public override void Clear()
     {

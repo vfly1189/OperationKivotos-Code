@@ -112,6 +112,8 @@ public class UIManager
         if (string.IsNullOrEmpty(addressableKey))
             addressableKey = typeof(T).Name;
 
+        ResourceMetrics.BeginUIOpen(addressableKey); // [Phase 0.5 계측] 오픈 레이턴시 + 히치 관찰 시작
+
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, isGlobal: true);
         if (prefab == null) return null;
 
@@ -132,6 +134,9 @@ public class UIManager
 
        
         SetCanvas(go, true);
+
+        ResourceMetrics.MarkUIShown(addressableKey); // [Phase 0.5 계측] "표시됨" 마킹 (요청→표시 구간 확정)
+
         _isLoadingPopup = false;
         return popup;
     }

@@ -104,6 +104,9 @@ public class ResourceManager
         }
 
         // 2. 새로운 타입(예: Sprite)으로 다시 로드
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        var loadSw = System.Diagnostics.Stopwatch.StartNew(); // [Phase 0.5 계측] 실제 로드 시간 (캐시 히트는 여기 안 옴)
+#endif
         var handle = Addressables.LoadAssetAsync<T>(key);
 
 
@@ -111,6 +114,11 @@ public class ResourceManager
         else _sceneHandles[key] = handle;
 
         await handle.ToUniTask(cancellationToken: token);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        loadSw.Stop();
+        ResourceMetrics.RecordLoad(key, loadSw.ElapsedMilliseconds); // [Phase 0.5 계측]
+#endif
 
         // 새 핸들 로드가 완전히 끝난 후 예전 핸들 해제 
         if (handleToRelease.IsValid())
@@ -180,6 +188,9 @@ public class ResourceManager
 
         if (atlas != null)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            var expandSw = System.Diagnostics.Stopwatch.StartNew(); // [Phase 0.5 계측] 전량 전개 = 메인 스레드 히치 후보
+#endif
             // 3. 아틀라스를 여는 순간, 내부의 모든 Sprite 조각을 캐시에 등록
             Sprite[] allSprites = new Sprite[atlas.spriteCount];
             atlas.GetSprites(allSprites);
@@ -195,6 +206,11 @@ public class ResourceManager
                     _atlasSpriteCache.Add(cleanName, s);
                 }
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            expandSw.Stop();
+            ResourceMetrics.RecordAtlasExpansion(atlasKey, allSprites.Length, expandSw.ElapsedMilliseconds); // [Phase 0.5 계측]
+#endif
 
             // 4. 이제 안전하게 캐시에서 꺼내서 반환
             if (_atlasSpriteCache.TryGetValue(spriteName, out Sprite targetSprite))
@@ -249,11 +265,19 @@ public class ResourceManager
 
             SetLoadSource(key, $"Preload({labelText})"); // [Phase 0 계측]
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            var keySw = System.Diagnostics.Stopwatch.StartNew(); // [Phase 0.5 계측] 키별 프리로드 시간 (프레임 대기 포함 = 근사치)
+#endif
             while (!handle.IsDone)
             {
                 onProgress?.Invoke(key, (i + handle.PercentComplete) / totalCount);
                 await UniTask.Yield(PlayerLoopTiming.Update);
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            keySw.Stop();
+            ResourceMetrics.RecordLoad(key, keySw.ElapsedMilliseconds); // [Phase 0.5 계측]
+#endif
 
             onProgress?.Invoke(key, (i + 1f) / totalCount);
         }
@@ -516,6 +540,24 @@ public class ResourceManager
     {
         foreach (var key in _sceneHandles.Keys)
             _loadSources.Remove(key);
+    }
+
+    // [Phase 0.5 계측] 아틀라스 캐시 스프라이트가 실제로 바인딩한 텍스처 목록
+    //  - 텍스처 이름이 "SpriteAtlasTexture-..."면 페이지 바인딩(정상 패킹), 개별 이름이면 원본 폴백
+    public void GetAtlasCacheTextures(Dictionary<Texture2D, List<string>> buffer)
+    {
+        buffer.Clear();
+        foreach (var kv in _atlasSpriteCache)
+        {
+            var tex = kv.Value != null ? kv.Value.texture : null;
+            if (tex == null) continue;
+            if (!buffer.TryGetValue(tex, out var names))
+            {
+                names = new List<string>();
+                buffer[tex] = names;
+            }
+            names.Add(kv.Key);
+        }
     }
 
     #endregion

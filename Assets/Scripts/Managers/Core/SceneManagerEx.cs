@@ -57,6 +57,8 @@ public class SceneManagerEx
     // [핵심 2] IEnumerator -> async UniTaskVoid로 변경
     private async UniTaskVoid LoadSceneAsync(Define.Scene type)
     {
+        ResourceMetrics.BeginSceneTransition(GetSceneName(type)); // [Phase 0.5 계측] 전환 구간 메모리 피크 샘플링 시작
+
         if (_transitionUI != null)
         {
             _transitionUI.gameObject.SetActive(true);
