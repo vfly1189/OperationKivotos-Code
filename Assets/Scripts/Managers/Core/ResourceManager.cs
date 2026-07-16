@@ -11,6 +11,16 @@ using Object = UnityEngine.Object;
 using Cysharp.Threading.Tasks;
 using UnityEngine.U2D;
 
+// [Phase 0 계측] 디버그 창/리포트가 읽는 핸들 스냅샷 한 줄
+public struct ResourceHandleDebugInfo
+{
+    public string Key;
+    public string Bucket;    // "Global" / "Scene"
+    public string TypeName;  // 로드 완료 시 실제 타입, 로딩 중이면 "(loading)"
+    public bool IsDone;
+    public string Source;    // 최초 로드를 요청한 호출자 (에디터/개발 빌드에서만 수집)
+}
+
 public class ResourceManager
 {
     // Addressables 핸들 관리용 딕셔너리 2개 분리
@@ -48,6 +58,8 @@ public class ResourceManager
     public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
     {
         if (string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);
+
+        RecordLoadSource(key); // [Phase 0 계측] 최초 로드 요청자 기록 (에디터/개발 빌드 전용, 동작 무변경)
 
         if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && gh.Result is T gResult)
             return UniTask.FromResult(gResult);
@@ -201,7 +213,11 @@ public class ResourceManager
     // 프리로딩 전용 함수
     // =========================================================================
     public async UniTask LoadDependenciesAsync(IEnumerable<string> labels, bool isGlobal = false, System.Action<string, float> onProgress = null)
-    {    
+    {
+        // [Phase 0 계측] 프리로드 소요 시간 측정 (Baseline: P6 순차 로드의 Before 수치)
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        string labelText = string.Join(",", labels);
+
         var locationsHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
         await locationsHandle.ToUniTask();
 
@@ -230,6 +246,8 @@ public class ResourceManager
             if (isGlobal) _globalHandles[key] = handle;
             else _sceneHandles[key] = handle;
 
+            SetLoadSource(key, $"Preload({labelText})"); // [Phase 0 계측]
+
             while (!handle.IsDone)
             {
                 onProgress?.Invoke(key, (i + handle.PercentComplete) / totalCount);
@@ -240,6 +258,9 @@ public class ResourceManager
         }
 
         Addressables.Release(locationsHandle);
+
+        stopwatch.Stop();
+        GameLog.Log($"[Preload] {totalCount}개 로드 완료 — {stopwatch.ElapsedMilliseconds}ms (라벨: {labelText}, isGlobal: {isGlobal})");
     }
 
     // =========================================================================
@@ -353,6 +374,8 @@ public class ResourceManager
     // 메모리 정리 (씬 이동 시 호출)
     public void Clear()
     {
+        RemoveSceneLoadSources(); // [Phase 0 계측] 해제될 씬 키들의 출처 기록 정리
+
         // _globalHandles는 건드리지 않고, _sceneHandles만 Release하여 메모리 확보
         foreach (var handle in _sceneHandles.Values)
         {
@@ -380,4 +403,117 @@ public class ResourceManager
 
         Object.Destroy(go);
     }
+
+    // =========================================================================
+    // [Phase 0 계측] 디버그 스냅샷 · 로드 출처 추적 · 씬 전환 리포트
+    //  - 동작 무변경: 읽기 전용 관찰 + 로그만. 출처 수집은 에디터/개발 빌드 전용.
+    //  - 리팩토링(Phase 2) 후에는 레지스트리를 가리키도록 유지되는 영구 자산.
+    // =========================================================================
+    #region Phase 0 계측
+
+    // key → 최초 로드를 요청한 호출자. 에디터/개발 빌드에서만 채워짐
+    private readonly Dictionary<string, string> _loadSources = new Dictionary<string, string>();
+
+    public int GlobalHandleCount => _globalHandles.Count;
+    public int SceneHandleCount => _sceneHandles.Count;
+    public int AtlasSpriteCacheCount => _atlasSpriteCache.Count;
+
+    // 디버그 창이 매 프레임 호출해도 부담 없도록 버퍼 재사용 방식
+    public void GetHandleSnapshot(List<ResourceHandleDebugInfo> buffer)
+    {
+        buffer.Clear();
+        AppendSnapshot(buffer, _globalHandles, "Global");
+        AppendSnapshot(buffer, _sceneHandles, "Scene");
+    }
+
+    private void AppendSnapshot(List<ResourceHandleDebugInfo> buffer, Dictionary<string, AsyncOperationHandle> handles, string bucket)
+    {
+        foreach (var kv in handles)
+        {
+            var h = kv.Value;
+            buffer.Add(new ResourceHandleDebugInfo
+            {
+                Key = kv.Key,
+                Bucket = bucket,
+                TypeName = (h.IsValid() && h.IsDone && h.Result != null) ? h.Result.GetType().Name : "(loading)",
+                IsDone = h.IsValid() && h.IsDone,
+                Source = _loadSources.TryGetValue(kv.Key, out var src) ? src : "?",
+            });
+        }
+    }
+
+    // 씬 전환 시점에 살아있는 핸들 전체를 로그로 남김 (Baseline 측정용)
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    public void LogAliveReport(string tag)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"[ResourceReport] ({tag}) global={_globalHandles.Count} scene={_sceneHandles.Count} atlasSprites={_atlasSpriteCache.Count}");
+        foreach (var kv in _globalHandles)
+            sb.AppendLine($"  [G] {kv.Key}  ←  {(_loadSources.TryGetValue(kv.Key, out var g) ? g : "?")}");
+        foreach (var kv in _sceneHandles)
+            sb.AppendLine($"  [S] {kv.Key}  ←  {(_loadSources.TryGetValue(kv.Key, out var s) ? s : "?")}");
+        GameLog.Log(sb.ToString());
+    }
+
+    // 씬 버킷이 비었어야 하는 시점의 누수 검출
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    public void AssertSceneHandlesCleared(string context)
+    {
+        if (_sceneHandles.Count == 0) return;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"[ResourceLeak] 씬 버킷에 핸들 {_sceneHandles.Count}개 잔존! ({context})");
+        foreach (var kv in _sceneHandles)
+            sb.AppendLine($"  [S] {kv.Key}  ←  {(_loadSources.TryGetValue(kv.Key, out var s) ? s : "?")}");
+        GameLog.LogError(sb.ToString());
+    }
+
+    // 스택에서 ResourceManager/플러밍 프레임을 걷어내고 실제 호출자를 찾음
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    private void RecordLoadSource(string key)
+    {
+        if (_loadSources.ContainsKey(key)) return;
+
+        var st = new System.Diagnostics.StackTrace(1, false);
+        for (int i = 0; i < st.FrameCount; i++)
+        {
+            var method = st.GetFrame(i).GetMethod();
+            var type = method?.DeclaringType;
+            if (type == null) continue;
+
+            // async 상태머신은 컴파일러 생성 중첩 타입 → 바깥 타입이 실제 소유자
+            var owner = type.DeclaringType ?? type;
+            if (owner == typeof(ResourceManager)) continue;
+            if (owner.Namespace != null &&
+                (owner.Namespace.StartsWith("Cysharp") || owner.Namespace.StartsWith("System") || owner.Namespace.StartsWith("UnityEngine")))
+                continue;
+
+            // "<LoadAsync>d__7" 같은 상태머신 타입명에서 원래 메서드명 복원
+            string methodName = method.Name;
+            if (type.Name.StartsWith("<"))
+            {
+                int end = type.Name.IndexOf('>');
+                if (end > 1) methodName = type.Name.Substring(1, end - 1);
+            }
+
+            _loadSources[key] = $"{owner.Name}.{methodName}";
+            return;
+        }
+        _loadSources[key] = "(async 연결점 추적 불가)";
+    }
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    private void SetLoadSource(string key, string source)
+    {
+        if (!_loadSources.ContainsKey(key)) _loadSources[key] = source;
+    }
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    private void RemoveSceneLoadSources()
+    {
+        foreach (var key in _sceneHandles.Keys)
+            _loadSources.Remove(key);
+    }
+
+    #endregion
 }

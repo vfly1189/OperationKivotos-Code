@@ -33,9 +33,15 @@ public class LoadingScene : BaseScene
             // 1. 씬 전환 직후의 엔진 불안정 상태를 방지하기 위해 0.1초 대기
             await UniTask.Delay(100);
 
+            // [Phase 0 계측] 해제 직전, 살아있는 핸들 전체 기록 (Baseline: 씬 왕복 시 global 누적 관찰)
+            Managers.Resource.LogAliveReport($"씬 전환 직전 → {Managers.SceneEx.NextSceneName}");
+
             Managers.Resource.Clear();
             Managers.Pool.Clear();
             Managers.UI.Clear();
+
+            // [Phase 0 계측] Clear 직후 씬 버킷은 반드시 비어 있어야 함
+            Managers.Resource.AssertSceneHandlesCleared("LoadingScene Clear 직후");
 
             // 2. 안 쓰는 에셋 메모리에서 해제 (UniTask로 대기)
             AsyncOperation unloadOp = Resources.UnloadUnusedAssets();
@@ -66,6 +72,9 @@ public class LoadingScene : BaseScene
                     }
                 );
             }
+
+            // [Phase 0 계측] 프리로드 완료 시점 스냅샷
+            Managers.Resource.LogAliveReport($"프리로드 완료 → {nextSceneName}");
 
             // 5. 다음 씬 구조만 메모리에 로드 (활성화는 안 함: activateOnLoad = false)
             var sceneHandle = Addressables.LoadSceneAsync(nextSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single, false);
