@@ -91,8 +91,8 @@ public class UI_Info : UI_PopUp
         string key = string.Concat("Img_", _curCharacter.Stat.GetNameKey(), "_Standing");
 
         var token = this.GetCancellationTokenOnDestroy();
-        Sprite standingImage = await Managers.Resource.GetSpriteFromAtlasAsync("StandingImagesAtlas", key)
-                                                    .AttachExternalCancellation(token);
+        // [Phase 0.5c] 아틀라스 해체 — 개별 스프라이트 직접 로드 (1명 열람 = 1장만, 페이지 64MB 전량 로드 제거)
+        Sprite standingImage = await Managers.Resource.LoadAsync<Sprite>(key, isGlobal: true, token: token);
 
         _standingImage.sprite = standingImage;
 

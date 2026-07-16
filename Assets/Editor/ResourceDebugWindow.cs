@@ -84,7 +84,8 @@ public class ResourceDebugWindow : EditorWindow
             if (GUILayout.Button("콘솔로 리포트 출력", GUILayout.Width(140)))
             {
                 rm.LogAliveReport("디버그 창 수동 출력");
-                if (_memoryMeasured) LogMemoryReport();
+                MeasureMemory(); // [Phase 0.5] 측정 안 하고 눌러도 메모리 리포트가 빠지지 않도록 항상 측정
+                LogMemoryReport();
             }
             if (GUILayout.Button("로드 통계", GUILayout.Width(80)))
                 ResourceMetrics.LogLoadStats(); // [Phase 0.5 계측] 키별 로드 횟수·시간 덤프
@@ -100,7 +101,7 @@ public class ResourceDebugWindow : EditorWindow
                 _sortBySize = EditorGUILayout.ToggleLeft("크기순 정렬", _sortBySize, GUILayout.Width(100));
         }
 
-        DrawCheckpointSection();
+        DrawCheckpointSection(rm);
 
         EditorGUILayout.Space(2);
 
@@ -155,22 +156,30 @@ public class ResourceDebugWindow : EditorWindow
     //  Metric 태그 로그는 자동으로 같은 파일에 쌓이므로 콘솔 복사가 불필요하다.
     private bool _showCheckpoints = true;
 
-    private void DrawCheckpointSection()
+    private void DrawCheckpointSection(ResourceManager rm)
     {
         EditorGUILayout.Space(2);
-        _showCheckpoints = EditorGUILayout.Foldout(_showCheckpoints, "측정 시나리오 체크포인트 (클릭 → 로그 파일에 단계 마킹)", true);
+        _showCheckpoints = EditorGUILayout.Foldout(_showCheckpoints, "측정 시나리오 체크포인트 (클릭 → 단계 마킹 + 메모리 리포트 자동)", true);
         if (!_showCheckpoints) return;
+
+        // 체크포인트 버튼 = 단계 마킹 + 그 시점의 메모리 측정·리포트까지 한 번에 (별도 버튼 불필요)
+        void Mark(string label)
+        {
+            ResourceMetrics.Checkpoint(label);
+            MeasureMemory();
+            LogMemoryReport();
+        }
 
         using (new EditorGUILayout.HorizontalScope())
         {
             if (GUILayout.Button("① 진입 직후"))
-                ResourceMetrics.Checkpoint("1. GameScene 진입 직후");
+                Mark("1. GameScene 진입 직후");
             if (GUILayout.Button("② 팝업 첫 오픈 시작"))
-                ResourceMetrics.Checkpoint("2. 팝업 5종 첫 오픈 시작");
+                Mark("2. 팝업 5종 첫 오픈 시작");
             if (GUILayout.Button("③ 팝업 재오픈 시작"))
-                ResourceMetrics.Checkpoint("3. 같은 팝업 재오픈 시작 (캐시 히트 비교)");
+                Mark("3. 같은 팝업 재오픈 시작 (캐시 히트 비교)");
             if (GUILayout.Button("④ 던전 왕복 시작"))
-                ResourceMetrics.Checkpoint("4. Boss/Normal 던전 왕복 시작");
+                Mark("4. Boss/Normal 던전 왕복 시작");
         }
 
         using (new EditorGUILayout.HorizontalScope())
@@ -178,7 +187,7 @@ public class ResourceDebugWindow : EditorWindow
             if (GUILayout.Button("⑤ 측정 종료 (로드 통계 덤프 포함)"))
             {
                 ResourceMetrics.LogLoadStats();
-                ResourceMetrics.Checkpoint("5. 측정 종료");
+                Mark("5. 측정 종료");
             }
             if (GUILayout.Button("로그 폴더 열기", GUILayout.Width(110)))
             {

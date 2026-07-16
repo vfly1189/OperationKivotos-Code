@@ -43,7 +43,8 @@ public class UI_EscapeMenu : UI_PopUp
             for(int i= 0; i < 3; i++)
             {
                 string key = schoolName + "_Deco_" + dir[i];
-                Sprite img = await Managers.Resource.GetSpriteFromAtlasAsync("EscapeMenuAtlas", key);
+                // [Phase 0.5c] 아틀라스 해체 — 학교 1곳 데코 3장만 개별 로드 (9장 전량 로드 제거)
+                Sprite img = await Managers.Resource.LoadAsync<Sprite>(key, isGlobal: true);
                 _decoImages[i].sprite = img;
             }
         }

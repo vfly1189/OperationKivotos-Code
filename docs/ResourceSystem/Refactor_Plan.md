@@ -25,14 +25,17 @@
 
 > **비교 기준선 규칙**: Phase 0.5(아틀라스 콘텐츠 트랙)가 메모리 절대값을 크게 바꾸므로, 완료 직후 같은 시나리오로 **Baseline v2**를 재측정한다. **Phase 1~4의 성과는 v2 대비**로 판정 — "압축 켠 것"과 "수명 재배치"의 성과를 분리 귀속하기 위함. 아래 표의 Before 수치는 v2 측정 후 갱신.
 
-| 지표 | Before ([Baseline.md](./Baseline.md)) | After 목표 |
+| 지표 | Before v2 ([Baseline.md §8](./Baseline.md), 보정된 도구) | After 목표 |
 |---|---|---|
-| 팝업 세션 후 영구 증가 | **+287 MB** (global 982→1270) → *v2에서 갱신* | **0** (씬/팝업 수명으로 회수) |
-| 진입 직후 Global 핸들 메모리 | **982 MB** → *v2에서 갱신* | 대폭 감소 (프리로드 다이어트) |
-| 던전 산물 영구 고정 | 아틀라스 3종 등 | 퇴장 시 회수 |
-| AtlasSpriteCache | ~300 영구 상주 | 소비자 수명과 동행 |
-| Scene 버킷 동작 | 정상 (65~94MB, 전환 시 교체) | **불변** (회귀 없음 증명) |
+| 팝업 세션 후 영구 증가 | **+46.8 MB** (global 515.5→562.3) | **0** (씬/팝업 수명으로 회수) |
+| 진입 직후 Global 핸들 메모리 | **512.8 MB** (상위: UpgradePanel 245·UI_Info 217·UI_ItemInfo 172) | 대폭 감소 (프리로드 다이어트) |
+| 던전 왕복 후 영구 증가 | **+18.7 MB** (아이콘 아틀라스 3종 등) | 퇴장 시 회수 |
+| AtlasSpriteCache | 268 영구 상주 | 소비자 수명과 동행 |
+| Scene 버킷 동작 | 정상 (96~101MB, 전환 시 교체) | **불변** (회귀 없음 증명) |
+| UI_Info 첫 오픈 최악 프레임 | 123.4ms (0.5에서 219.7→123.4) | 재배치 후에도 히치 악화 없음 + 잔여 원인 조사 |
 | 프리로드 시간 | 99~177ms | (참고 지표 — 개선 축 아님) |
+
+> v1 수치(982MB·+287MB)는 측정 도구 과대 계상 포함([Baseline.md §6-2](./Baseline.md)) — 이제 인용하지 않는다. 아틀라스 트랙(0.5)의 성과는 [Baseline.md §8-1](./Baseline.md)에 별도 귀속.
 
 ### 측정 지표 체계 (4계층) — 상세 도식: [Metrics_BeforeAfter.pdf](./Metrics_BeforeAfter.pdf)
 
@@ -168,6 +171,13 @@ Phase 2 착수 시 참고할 초안이 대화에서 작성됨 — 핵심 시그�
 - **0.5c 대형 이미지 아틀라스 해체 (메인)**: `StandingImagesAtlas`(페이지 64MB) + `EscapeMenuAtlas` 해체 — 개별 스프라이트를 Addressable 키로 등록, 소비처를 `LoadAsync<Sprite>`로 전환 (Standing 소비처 = `UI_Info.cs` 1곳, EscapeMenu = `UI_EscapeMenu.cs`). 효과: **1명 열람 64MB 전량 → 3~4MB (1/16)** + 219.7ms 히치(§7-1) 해소 기대 + 패킹 낭비 제거
 - **0.5d 검증 + Baseline v2**: 화질 육안 확인(BC 압축이 일러스트에서 티 나는지) → 같은 시나리오 재측정 → [Baseline.md](./Baseline.md)에 v2 섹션 기록, 성공 기준 표의 Before 갱신
 
+**진행 상태 (2026-07-17)**:
+- ✅ 0.5b 완료 — 원본 29장 처리: 23장 리사이즈/4배수 패딩 (Standing 13·EscapeMenu Middle 3·StatIcon 7→244×256), `.meta` 21장 Default Compression 적용. 스크립트 일괄 처리
+- ✅ 0.5c 코드 전환 완료 — `UI_Info.cs`·`UI_EscapeMenu.cs`를 `LoadAsync<Sprite>(파일명)`으로 전환 (수명은 기존과 동일하게 global 유지 — 재배치는 Phase 3에서), 해체 자동화 툴 `AtlasDismantleTool.cs` 작성 (개별 Addressable 등록 + 아틀라스 삭제, 원 그룹 `Global_Atlas` 유지, 라벨 없음=lazy)
+- ✅ 0.5c 해체 실행 + 0.5d 재측정 완료 (2026-07-17) → **[Baseline.md §8 = Baseline v2](./Baseline.md)**. 헤드라인: UI_Info 히치 219.7→123.4ms(-44%), 1명 열람=1장만 로드 확인, 전환 피크 전 구간 -200MB, 재오픈 무히치 유지(회귀 없음)
+- ✅ §8-4 메모리 v2 확보 (2026-07-17) — 진입 512.8MB / 팝업 +46.8MB / 왕복 +18.7MB. 체크포인트 버튼에 메모리 리포트 자동화 내장 (이후 After 측정도 같은 ①~⑤ 버튼 흐름 하나로 통일)
+- **Phase 0.5 완료.** 새 관찰 2건(UI_Info 잔여 히치 123ms = UI 프리팹 구조 의심, NormalDungeonEntrance 59.9ms)은 Phase 3 입력. **재개 지점: Phase 1 (정확성 버그 — §Phase 1, +UIManager `_isLoadingPopup` 미복구 버그 추가)**
+
 | Phase 0.5 측정 항목 | Before | 기대 |
 |---|---|---|
 | StandingImagesAtlas 메모리 | 436 MB | 해체+압축으로 "1명 열람 = 1장·압축"  |
@@ -183,6 +193,7 @@ Phase 2 착수 시 참고할 초안이 대화에서 작성됨 — 핵심 시그�
 - P2: `LoadAsyncNoCache` — 사용 완료 후 Release로 계약 변경 (JSON은 `.text` 복사 후 해제)
 - P1 일부: 캐시 히트 시 global 요청이면 scene → global 승격
 - P3: 씬 핸들 Release 시점을 Loading 씬 진입 이후로 일원화, `BaseScene.Clear()`의 `Resource.Clear()` 이중 호출 제거
+- (0.5a에서 발견) `UIManager.ShowPopupUIAsync` — prefab 로드 실패 시 `_isLoadingPopup` 미복구로 이후 모든 팝업이 영구 차단되는 버그 수정
 
 ### Phase 2 — 레지스트리 + ResourceScope (1~2일) — **수치 무관, Phase 3의 전제조건**
 
