@@ -19,6 +19,7 @@ public struct ResourceHandleDebugInfo
     public string TypeName;  // 로드 완료 시 실제 타입, 로딩 중이면 "(loading)"
     public bool IsDone;
     public string Source;    // 최초 로드를 요청한 호출자 (에디터/개발 빌드에서만 수집)
+    public Object Asset;     // 로드 완료된 에셋 참조 (에디터 창의 메모리 측정용)
 }
 
 public class ResourceManager
@@ -431,13 +432,15 @@ public class ResourceManager
         foreach (var kv in handles)
         {
             var h = kv.Value;
+            bool done = h.IsValid() && h.IsDone && h.Result != null;
             buffer.Add(new ResourceHandleDebugInfo
             {
                 Key = kv.Key,
                 Bucket = bucket,
-                TypeName = (h.IsValid() && h.IsDone && h.Result != null) ? h.Result.GetType().Name : "(loading)",
+                TypeName = done ? h.Result.GetType().Name : "(loading)",
                 IsDone = h.IsValid() && h.IsDone,
                 Source = _loadSources.TryGetValue(kv.Key, out var src) ? src : "?",
+                Asset = done ? h.Result as Object : null,
             });
         }
     }
