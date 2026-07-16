@@ -12,8 +12,8 @@
 | 단계 | 내용 | 측정치 영향 | 상태 |
 |---|---|---|---|
 | **Phase 0** | 계측 도구(디버그 창·메모리 측정·자동 리포트) + Before 측정 → [Baseline.md](./Baseline.md) | — (기준점 확보) | ✅ 완료 (2026-07-16) |
-| **Phase 0.5** | **아틀라스 콘텐츠 트랙** — 계측 보강(히치 측정기) → 12개 아틀라스 압축 + 대형 이미지 아틀라스 해체 → **Baseline v2 재측정** | 메모리 대폭 (단, **콘텐츠 설정 몫으로 분리 귀속** — 스코프 성과와 섞지 않음) | ⬜ 예정 |
-| **Phase 1** | 정확성 버그 3건 — NoCache use-after-release · 캐시 히트 승격 · 해제 순서 일원화 | **수치 무관** (잠재 크래시 리스크 제거로만 정당화) | ⬜ 예정 |
+| **Phase 0.5** | **아틀라스 콘텐츠 트랙** — 비용 계측(히치·전환 피크·재로드) + 측정 도구 계통 오차 보정 + Standing·EscapeMenu 해체 → **Baseline v2** | UI_Info 히치 -44%, 1명 열람=1장 로드 (콘텐츠 몫 분리 귀속) | ✅ 완료 (2026-07-17) |
+| **Phase 1** | 정확성 버그 4건 — NoCache use-after-release · 캐시 히트 승격 · 해제 순서 일원화 · `_isLoadingPopup` 미복구 | **수치 무관** (잠재 크래시 리스크 제거로만 정당화) | ⬜ 예정 |
 | **Phase 2** | `(key, type)` ref-count 레지스트리 + `ResourceScope`(IDisposable). 기존 API는 어댑터 유지 | **수치 무관** — 1:1 매핑이므로. 가치는 Phase 3을 누수 없이 가능하게 하는 전제조건 | ⬜ 예정 |
 | **Phase 3 ★** | **수명 재배치 (메인)** — 팝업/아틀라스/프리로드/던전을 제 수명으로 | **모든 수치가 여기서 움직임** | ⬜ 예정 |
 | **Phase 4** | 풀·인스턴스 수명 통합 | 안전성 위주, 수치 소폭 | ⬜ 예정 |
@@ -267,12 +267,22 @@ Phase 2 착수 시 참고할 초안이 대화에서 작성됨 — 핵심 시그�
 2. **아틀라스 콘텐츠 트랙을 Phase 0.5로 승격**: 12개 아틀라스 전부 무압축 확인(전수 조사). Baseline 오염 방지를 위해 스코프 작업 앞에 배치, 완료 후 **Baseline v2 재측정** → 콘텐츠 몫과 구조 몫의 성과 분리 귀속
 3. **② 비용 지표의 Before(히치·오픈 시간)는 Phase 0.5a에서 선측정** — After만 재면 비교 불가
 
+### 2026-07-17 (계속) — Phase 0.5 완주: 진단 2회 반전 → 해체 → Baseline v2
+
+1. **계측 구현·자동화** (`0c1be945`): `ResourceMetrics.cs` 4종 측정기 + Metric 로그 파일 자동 기록 + 체크포인트 버튼. ② Before 확보 — 헤드라인: **UI_Info 첫 오픈 219.7ms 히치**, 재오픈 전 팝업 무히치, 재로드 20키 전부 씬 버킷(= "팝업 씬 수명 이동은 이미 검증된 규칙에 합류"의 논거)
+2. **진단 1차 반전**: "12개 아틀라스 전부 무압축"(grep 진단) → `AtlasAuditTool` 에디트 모드 검사로 재검증 시도 → 원본 폴백처럼 보임 → **플레이 모드 런타임 검사로 최종 확정: 아틀라스는 DXT5 페이지로 정상 패킹 중** (Standing 8192² 단일 페이지 64MB)
+3. **진단 2차 반전 = 도구의 계통 오차 발견**: v1의 436MB/982MB는 [메모리 측정]의 `CollectDependencies`가 빌드에 안 들어가는 원본 텍스처까지 세던 과대 계상(×6.8). 검산: 원본 185×2 + 페이지 64 ≈ 435.8 일치 → **도구 보정(SpriteAtlas=페이지 기준) + [Baseline.md §6-2](./Baseline.md) 정정 기록**. 교훈: "도구의 숫자도 교차 검증 대상"
+4. **진짜 문제로 재정의**: 압축이 아니라 **전량 로드**(1명 열람=64MB 페이지 통째, 히치 원인) + 패킹 낭비(세로형 일러 vs 정사각 페이지 ~25% 허공) + 수명(Phase 3 몫). 아이콘류 8개 아틀라스는 0.5~4MB로 이미 최적 → 작업 제외로 축소
+5. **해체 실행** (`ac4e05ac`): 원본 29장 리사이즈/4배수/압축(스크립트) → `AtlasDismantleTool`로 Standing·EscapeMenu 해체(22장 개별 Addressable, 주소=파일명) → 소비 코드 2곳 `LoadAsync<Sprite>` 전환. StatIcon 1008×1063→244×256 부수 정리
+6. **Baseline v2 확정** ([Baseline.md §7~8](./Baseline.md)): UI_Info 히치 **219.7→123.4ms(-44%)**, 1명 열람=1장 로드 로그 확인, 재오픈 무히치 유지(회귀 없음). 메모리(보정 도구): 진입 512.8MB / 팝업 세션 +46.8MB / 왕복 +18.7MB — **Phase 3 성공 기준이 이 수치로 고정됨**
+7. 새 관찰 → Phase 3 입력: UI_Info 잔여 히치 123ms(프리팹 대형 텍스처 직접 참조 의심, 시작부터 217MB 프리로드) / NormalDungeonEntrance 59.9ms 원인 미상 / `_isLoadingPopup` 미복구 버그 → Phase 1에 4번째로 추가
+
 ## 6. 다음 세션 가이드
 
-**재개 지점: Phase 0.5 (아틀라스 콘텐츠 트랙 — 0.5a 계측 보강부터).** 읽을 순서: 이 문서 → [Baseline.md](./Baseline.md) → (개념이 흐리면) 도식 PDF 4종.
+**재개 지점: Phase 1 (정확성 버그 4건).** 읽을 순서: 이 문서 → [Baseline.md](./Baseline.md) §8(v2)·§7 → (개념이 흐리면) 도식 PDF 4종.
 
-- Phase 0.5 작업 대상: 히치 측정기(디버그 창 또는 UIManager 훅) → 12개 `.spriteatlas` 압축 설정 → `StandingImagesAtlas` 해체(`UI_Info.cs:94` 소비처 1곳 + Addressable 등록 + 원본 4의 배수 정리) → Baseline v2
-- Phase 1 작업 대상: `ResourceManager.cs`의 `LoadAsyncNoCache`(use-after-release) / `LoadAsync` 캐시 히트 경로(global 승격) / `SceneManagerEx.LoadSceneAsync`·`BaseScene.Clear`(이중 Clear·해제 시점)
+- Phase 1 작업 대상: `ResourceManager.cs`의 `LoadAsyncNoCache`(use-after-release) / `LoadAsync` 캐시 히트 경로(global 승격) / `SceneManagerEx.LoadSceneAsync`·`BaseScene.Clear`(이중 Clear·해제 시점) / `UIManager.ShowPopupUIAsync`(`_isLoadingPopup` 미복구)
+- After 측정 절차(모든 Phase 공통): 플레이 → 디버그 창 체크포인트 버튼 ①~⑤ (시간·히치·메모리 리포트 전부 자동, `MetricsLogs/*.log`에 기록됨)
 - 각 Phase 완료 시: 배치 컴파일 확인(에디터 닫혀 있을 때) 또는 에디터 컴파일 → 디버그 창으로 씬 왕복 검증 → 독립 커밋
 - 검증 습관: Phase 2는 "수치가 안 변해야 성공", Phase 3는 "성공 기준 표 달성이 성공"
 - 커밋 컨벤션: `리소스 Phase N — <내용>` (기존: `a3665521` → `9c92a30f` → `6d3e8680` → `87672de5`)
