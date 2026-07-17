@@ -19,10 +19,10 @@ public class LoadingScene : BaseScene
         base.Init();
         _sceneType = Define.Scene.Loading;
 
-
+        Managers.SceneEx.RunLoadSequenceAsync(_loadingUI, this.GetCancellationTokenOnDestroy()).Forget();
 
         //LoadProcessAsync().Forget();
-        LoadProcessAsync(this.GetCancellationTokenOnDestroy()).Forget();
+        //LoadProcessAsync(this.GetCancellationTokenOnDestroy()).Forget();
     }
 
     private async UniTaskVoid LoadProcessAsync(CancellationToken token)

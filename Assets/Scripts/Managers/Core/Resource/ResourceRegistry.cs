@@ -4,6 +4,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 
 public sealed class ResourceRegistry
 {
@@ -46,6 +47,34 @@ public sealed class ResourceRegistry
             return handle.Result as T;
     }
 
+    // ResourceRegistry — location 기반 오버로드 추가
+    public async UniTask<Object> LoadAsync(ResourceKey key, IResourceLocation location, bool incrementRef, CancellationToken tok)
+    {
+        if (_entries.TryGetValue(key, out Entry entry))
+        {
+            if (incrementRef) entry.RefCount++;
+
+            if (!entry.handle.IsDone) 
+                await entry.handle.ToUniTask(cancellationToken: tok);
+
+            return entry.handle.Result as Object;
+        }
+
+        AsyncOperationHandle handle = Addressables.LoadAssetAsync<Object>(location);   // location으로 로드
+
+        entry = new Entry { handle = handle, RefCount = incrementRef ? 1 : 0 };
+        _entries[key] = entry;
+        await handle.ToUniTask(cancellationToken: tok);
+
+        if (handle.Status != AsyncOperationStatus.Succeeded) 
+        { 
+            _entries.Remove(key); 
+            return null; 
+        }
+
+        return handle.Result as Object;
+    }
+
     public void Release(ResourceKey key)
     {
         //없는걸 해제하려고 할때
@@ -56,5 +85,14 @@ public sealed class ResourceRegistry
             if(entry.handle.IsValid()) Addressables.Release(entry.handle);
             _entries.Remove(key);
         }
+    }
+
+    public bool TryGetAsset<T>(string key, out T asset) where T : UnityEngine.Object
+    {
+        asset = null;
+        if (_entries.TryGetValue(new ResourceKey(key, typeof(T)), out var e)
+            && e.handle.IsValid() && e.handle.IsDone && e.handle.Result is T t)
+        { asset = t; return true; }
+        return false;
     }
 }

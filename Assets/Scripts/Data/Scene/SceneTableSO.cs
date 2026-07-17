@@ -9,18 +9,19 @@ public class SceneTableSO : ScriptableObject
     public struct SceneEntry
     {
         public Define.Scene sceneType;
-        public SceneDataSO data;
+        public string sceneName;
+
+        public string[] preloadLabels;
+
+        //public SceneDataSO data;
     }
 
-    public List<SceneEntry> scenes;
+    [SerializeField] private List<SceneEntry> _entries;
 
-    // 편하게 찾기 위한 함수
-    public SceneDataSO GetSceneData(Define.Scene type)
+    public bool TryGet(Define.Scene type, out SceneEntry entry)
     {
-        foreach (var entry in scenes)
-        {
-            if (entry.sceneType == type) return entry.data;
-        }
-        return null;
+        foreach (var e in _entries)
+            if (e.sceneType == type) { entry = e; return true; }
+        entry = default; return false;
     }
 }

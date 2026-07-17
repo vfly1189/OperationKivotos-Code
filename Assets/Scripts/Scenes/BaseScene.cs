@@ -26,7 +26,7 @@ public abstract class BaseScene : MonoBehaviour
 
     public virtual void Clear()
     {
-        Managers.Resource.Clear();
+        //Managers.Resource.Clear();
         //Managers.Input.OnEscapePressed -= OnEscapeEvent;
     }
 

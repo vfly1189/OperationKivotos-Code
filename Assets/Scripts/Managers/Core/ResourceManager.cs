@@ -22,6 +22,12 @@ public struct ResourceHandleDebugInfo
     public Object Asset;     // 로드 완료된 에셋 참조 (에디터 창의 메모리 측정용)
 }
 
+public enum ResourceScopeType
+{
+    Global,
+    Scene,
+}
+
 public class ResourceManager
 {
     // Addressables 핸들 관리용 딕셔너리 2개 분리
@@ -35,41 +41,109 @@ public class ResourceManager
     private Dictionary<string, Sprite> _atlasSpriteCache = new Dictionary<string, Sprite>();
 
 
+    private ResourceRegistry _registry;
+    private Dictionary<ResourceScopeType, ResourceScope> _scopes = new Dictionary<ResourceScopeType, ResourceScope>();
 
     public void Init()
     {
+        // 구 버전
         //global은 계속 살려둘거임
         _sceneHandles.Clear();
 
-        
+        // 신 버전
+        _registry = new ResourceRegistry();
+        _scopes[ResourceScopeType.Global] = new ResourceScope(_registry, "Global");
+        _scopes[ResourceScopeType.Scene] = new ResourceScope(_registry, "Scene");
     }
+
+    #region 리소스 관리 신버전
+
+    public ResourceScope CreateScope(ResourceScopeType type, string scopeName)
+    {
+        return _scopes[type] = new ResourceScope(_registry, scopeName);
+    }
+
+    public ResourceScope GetScope(ResourceScopeType type) => _scopes[type];
+
+    public void ChangeSceneScope()
+    {
+        ResourceScope old = _scopes[ResourceScopeType.Scene];
+        _scopes[ResourceScopeType.Scene] = new ResourceScope(_registry, "Scene");
+        old.Dispose();
+    }
+
+    public async UniTask LoadAsyncPreload(
+    string[] labels, bool isGlobal = false,
+    System.Action<string, float> onProgress = null, CancellationToken token = default)
+    {
+        // Preload 할때 Global은 어차피 StartScene에서 할거임
+        // 따라서 중간에 불리는 이 함수들은 무조건 Scope가 Scene에 한정됨.
+
+        // Global 프리로드는 StartScene, 씬 중간 호출은 Scene — 스코프만 다르므로 먼저 결정
+        ResourceScope scope = isGlobal ? _scopes[ResourceScopeType.Global]
+                             : _scopes[ResourceScopeType.Scene];
+
+        // "이 라벨이 붙은 물건들의 '주소 카드'를 다 뽑아줘" (카드만! 물건 자체는 안 꺼냄)
+        var locationsHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
+        try
+        {
+            await locationsHandle.ToUniTask(cancellationToken: token);
+            if (locationsHandle.Status != AsyncOperationStatus.Succeeded) return;
+
+            var locations = locationsHandle.Result;
+            int total = locations.Count;
+            for (int i = 0; i < total; i++)
+            {
+                var loc = locations[i];
+                await scope.LoadAsync(loc, token);                    // (key, ResourceType)로 스코프에 acquire
+                onProgress?.Invoke(loc.PrimaryKey, (i + 1f) / total);
+            }
+        }
+        finally
+        {
+            if (locationsHandle.IsValid()) Addressables.Release(locationsHandle);
+        }
+    }
+
+    #endregion
+
 
     // =========================================================================
     // 1. AssetReference를 인자로 받는 LoadAsync (씬에서 주로 사용)
     // =========================================================================
-    public async UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
-    {
-        if (assetRef == null || !assetRef.RuntimeKeyIsValid())
-            return null;
+    //public async UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
+    //{
+    //    if (assetRef == null || !assetRef.RuntimeKeyIsValid())
+    //        return null;
 
-        // AssetReference의 런타임 키를 string으로 변환해서 내부 처리 함수로 넘김
-        return await LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
-    }
-  
-    public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
-    {
-        if (string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);
+    //    // AssetReference의 런타임 키를 string으로 변환해서 내부 처리 함수로 넘김
+    //    return await LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
+    //}
 
-        RecordLoadSource(key); // [Phase 0 계측] 최초 로드 요청자 기록 (에디터/개발 빌드 전용, 동작 무변경)
+    public UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false, CancellationToken token = default) 
+        where T : UnityEngine.Object
+        => (assetRef == null || !assetRef.RuntimeKeyIsValid())
+            ? UniTask.FromResult<T>(null)
+            : LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
 
-        if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && gh.Result is T gResult)
-            return UniTask.FromResult(gResult);
+    //public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
+    //{
+    //    if (string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);
 
-        if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && sh.Result is T sResult)
-            return UniTask.FromResult(sResult);
+        //    RecordLoadSource(key); // [Phase 0 계측] 최초 로드 요청자 기록 (에디터/개발 빌드 전용, 동작 무변경)
 
-        return LoadAsyncInternal<T>(key, isGlobal, token);
-    }
+        //    if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && gh.Result is T gResult)
+        //        return UniTask.FromResult(gResult);
+
+        //    if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && sh.Result is T sResult)
+        //        return UniTask.FromResult(sResult);
+
+        //    return LoadAsyncInternal<T>(key, isGlobal, token);
+        //}
+
+    public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default)
+        where T : UnityEngine.Object
+        => (isGlobal ? _scopes[ResourceScopeType.Global] : _scopes[ResourceScopeType.Scene]).LoadAsync<T>(key, token);
 
     // 실제 비동기 로직 분리
     private async UniTask<T> LoadAsyncInternal<T>(string key, bool isGlobal, CancellationToken token = default) where T : UnityEngine.Object
@@ -357,25 +431,36 @@ public class ResourceManager
         return go;
     }
 
-    //  Addressable Key 문자열을 받아 위치/회전까지 맞춰주는 Instantiate 함수
+
+    ////  Addressable Key 문자열을 받아 위치/회전까지 맞춰주는 Instantiate 함수
+    //public GameObject Instantiate(string key, Vector3 position, Quaternion rotation, Transform parent = null)
+    //{
+    //    // 캐시에서 찾기 (글로벌 우선, 그 다음 씬)
+    //    AsyncOperationHandle handle;
+    //    bool found = _globalHandles.TryGetValue(key, out handle) || _sceneHandles.TryGetValue(key, out handle);
+
+    //    if (found && handle.Status == AsyncOperationStatus.Succeeded)
+    //    {
+    //        GameObject original = handle.Result as GameObject;
+    //        if (original != null)
+    //        {
+    //            // 찾았으면 기존 안전한 Instantiate(GameObject) 활용
+    //            return Instantiate(original, position, rotation, parent);
+    //        }
+    //    }
+
+    //    GameLog.LogError($"[ResourceManager] 에셋이 로드되지 않았거나 찾을 수 없습니다. Key: {key}\n" +
+    //                   $"미리 LoadAsync로 로딩해두었는지 확인하세요.");
+    //    return null;
+    //}
+
     public GameObject Instantiate(string key, Vector3 position, Quaternion rotation, Transform parent = null)
     {
-        // 캐시에서 찾기 (글로벌 우선, 그 다음 씬)
-        AsyncOperationHandle handle;
-        bool found = _globalHandles.TryGetValue(key, out handle) || _sceneHandles.TryGetValue(key, out handle);
-
-        if (found && handle.Status == AsyncOperationStatus.Succeeded)
-        {
-            GameObject original = handle.Result as GameObject;
-            if (original != null)
-            {
-                // 찾았으면 기존 안전한 Instantiate(GameObject) 활용
-                return Instantiate(original, position, rotation, parent);
-            }
-        }
+        if (_registry.TryGetAsset<GameObject>(key, out var original))
+            return Instantiate(original, position, rotation, parent);
 
         GameLog.LogError($"[ResourceManager] 에셋이 로드되지 않았거나 찾을 수 없습니다. Key: {key}\n" +
-                       $"미리 LoadAsync로 로딩해두었는지 확인하세요.");
+                         $"미리 LoadAsync로 로딩해두었는지 확인하세요.");
         return null;
     }
 

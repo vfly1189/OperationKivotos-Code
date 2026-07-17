@@ -45,15 +45,21 @@ public class StartScene : BaseScene
         var popupTask = PreloadPopups();
         var saveTask = LoadingSaveDatas();
 
-        // [핵심 2] ResourceManager의 UniTask 버전 LoadDependenciesAsync 호출
-        var globalAssetTask = Managers.Resource.LoadDependenciesAsync(
-            new[] { "Global" },
-            true,
-            (fileName, progress) =>
-            {
-                UpdateText(progress);
-            }
-        );
+        //// [핵심 2] ResourceManager의 UniTask 버전 LoadDependenciesAsync 호출
+        //var globalAssetTask = Managers.Resource.LoadDependenciesAsync(
+        //    new[] { "Global" },
+        //    true,
+        //    (fileName, progress) =>
+        //    {
+        //        UpdateText(progress);
+        //    }
+        //);
+
+        var globalAssetTask = Managers.Resource.LoadAsyncPreload(
+    new[] { "Global" },
+    true,                       // Global 스코프
+    (fileName, progress) => UpdateText(progress)
+);
 
         // [핵심 3] Task.WhenAll 대신 UniTask.WhenAll을 사용하여 스레드 데드락 방지
         await UniTask.WhenAll(audioTask, popupTask, globalAssetTask, saveTask);

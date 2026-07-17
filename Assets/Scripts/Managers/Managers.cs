@@ -55,7 +55,6 @@ public class Managers : MonoBehaviour
     // 데이터 비동기 초기화
     private async UniTaskVoid InitializeAsync()
     {
-        // 씬 테이블 로드와 데이터 로드를 병렬로 동시에 처리하여 속도 최적화
         await UniTask.WhenAll(
             _scene.InitAsync(),
             _data.InitAsync()
@@ -93,6 +92,7 @@ public class Managers : MonoBehaviour
             s_instance = go.GetComponent<Managers>();
 
             s_instance._party = new PartyManager(s_instance.transform);
+            s_instance._resource.Init();   // 레지스트리 생성 + Global/Scene 스코프 등록 (LoadAsync 전에 반드시)
             s_instance._pool.Init();
             s_instance._sound.Init();
             s_instance._wallet.Init();
