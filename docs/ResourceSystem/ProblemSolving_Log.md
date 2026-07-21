@@ -170,14 +170,26 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 | S3 | 죽은 코드 제거 | ✅ `LoadSceneAsync`·`GetSceneName`·`NextSceneData/Name`(SceneManagerEx) + `LoadProcessAsync`(LoadingScene) + 잡동사니 using(`Org.BouncyCastle.Ocsp`/`static NPOI...HSSFColor`) 삭제. **`SceneDataSO.cs`는 삭제 취소** — PreloadSO 5종(Start/Select/Game/NormalDungeon/BossDungeon)의 베이스 클래스로 실사용 중(문서 판단이 stale했음, 코드로 재검증). SceneManagerEx의 `SceneDataSO` 의존만 제거됨 |
 | S4 | `ShowCover`/`_transitionUI` | ⏳ 현재 `_transitionUI` 미할당 → no-op. 페이드 쓸지/제거할지 결정 |
 
+### Phase 3 (수명 재배치) — 명세: [Phase3_Spec.md](./Phase3_Spec.md)
+| # | 항목 | 상태 | 비고 |
+|---|---|---|---|
+| 3a | 팝업 프리팹 → 씬 스코프 | ✅ **검증 완료** | `ShowPopupUIAsync`의 `isGlobal` 제거 + `_isLoadingPopup` try/finally. 팝업 세션 Global 영구증가 **+56.0 → +10.4MB(−81%)**, Scene 버킷 101.4 → 160.7 → **101.4 왕복 복귀**(회수 증명), 히치 무변화. 측정 상세 [Baseline.md §9](./Baseline.md) |
+| 3b | 스탠딩 → 팝업 스코프 신설 | 🔜 | `UI_Info:95`·`UI_EscapeMenu:47`. **`UI_Info` 첫 오픈 히치 420~597ms 미해결 조사와 병합** |
+| 3c | 파티 스코프 + 라벨 다이어트 | 🔜 **다음** | 라벨 감사 완료(Global 42개 중 진짜 전역은 VFX 5개). Before = `metrics_20260721_213808.log` |
+| 3d | 던전 스코프 + AtlasSpriteCache | ⏳ | R3/R5 합류 |
+
 ### 검증 (막힘 순서)
-**R2(디버그 창 레지스트리 이관)가 선행되어야** Phase 2 성공 기준("씬 왕복 후 잔존 핸들 = Baseline v2, 수치 불변")을 잴 수 있다. 그 다음 R1(죽은코드 제거)로 통합 완결, 이후 Phase 3(수명 재배치)에서 실제 수치가 움직인다.
+~~**R2(디버그 창 레지스트리 이관)가 선행되어야** Phase 2 성공 기준을 잴 수 있다~~ → **해소**. R1/R2 완료로 측정 재개, Phase 3a에서 실제 수치가 움직였다(§9).
+
+**남은 검증 부채**: ① 개발 빌드 실측 **0회** (전부 에디터 측정 = 내부 비교 전용) ② 히치 n=1 (§8-5 기준상 15ms 이하 차이 주장 금지) ③ "씬 왕복 후 재오픈" 구간 미측정 = 정책 A의 비용이 아직 미정량.
 
 ---
 
 ## Part 8. 포트폴리오 각도 (어필 포인트)
 
 - **방법론이 결과물보다 세다**: "측정→진단→구조→검증" 루프. 각 결정에 트레이드오프 근거(Part 3~4).
-- **말할 수 있는 숫자**(Phase 3 이후): 팝업 세션 영구증가 +46.8MB→0, 진입 Global 512.8MB 다이어트, 던전 왕복 +18.7MB→0. (Baseline v2 대비)
+- **말할 수 있는 숫자**: 3a 확정 — 팝업 세션 Global 영구증가 **+56.0 → +10.4MB(−81%)**, Scene 버킷 왕복 복귀로 회수 증명(수동 Release 0줄). 3c 이후 예정 — 진입 Global 513MB 다이어트, 던전 왕복 +18.7MB→0.
+  - ⚠ **"→0"으로 말하지 말 것**: 3a 후에도 +10.4MB가 남는다. 잔여분은 `Preload(Global)` 라벨로 강제 상주하는 항목들이고 3c의 몫 — "팝업 프리팹은 0이 됐고, 남은 것은 라벨 문제로 원인이 분리됐다"가 정확한 서술.
+- **측정 방법론 자체가 재료**: 계측 도구를 R2에서 갈아엎었기 때문에 Baseline v2와 직접 차감이 불가능했다 → **`isGlobal` 한 줄만 토글해 같은 도구로 Before를 재측정**해 단일 변수 A/B를 만들었다(§9-1). 그 과정에서 옛/새 도구가 같은 값(512.8MB)을 내는 것이 확인돼 기준선 연속성까지 덤으로 얻음. "숫자를 믿기 전에 숫자를 만든 도구를 먼저 검증했다".
 - **정직함**: split-brain 버그(5-2)를 숨기지 않고 "과도기 구조가 만든 버그를 계측/디버깅으로 잡았다"로 서술. 프레임 예산 스트리밍·프리로드 배치화는 측정 근거로 **제외**(필요한 것만 했다는 증거).
 - **방어 질문 준비**: "Addressables refCount 위에 왜?"(Part 2), "본인 문제를 본인이?"(2버킷은 초기 설계, 계측으로 한계 발견→구조로 재발 차단=성장 서사), "1인 프로젝트 오버엔지니어링?"(측정치가 필요성 증명).
