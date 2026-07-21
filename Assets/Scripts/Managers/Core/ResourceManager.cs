@@ -22,10 +22,13 @@ public struct ResourceHandleDebugInfo
     public Object Asset;     // 로드 완료된 에셋 참조 (에디터 창의 메모리 측정용)
 }
 
+// 리소스 수명 계층 (Phase 3). 열거 순서 = 수명이 긴 것부터.
+//  Global/Scene은 Init에서 상시 생성, 그 외는 도메인 경계에서 CreateScope로 생성·Dispose.
 public enum ResourceScopeType
 {
-    Global,
-    Scene,
+    Global,   // 부팅 → 종료. 절대 Dispose 안 함
+    Scene,    // 씬 진입 → 다음 전환 (ChangeSceneScope가 자동 회전)
+    Party,    // 파티 구성 → 해체/교체 (씬 전환을 넘어 생존) — Phase 3c
 }
 
 public class ResourceManager
@@ -46,12 +49,36 @@ public class ResourceManager
 
     #region 리소스 관리 신버전
 
+    // 스코프 회전: 새 스코프로 교체하고 **이전 것은 반드시 Dispose**.
+    //  Dispose를 빠뜨리면 이전 스코프가 쥔 refCount가 영영 안 풀려 조용히 누수된다
+    //  (레지스트리에는 남고 소유 스코프는 사라지므로 LogAliveReport에 [?]로 잡힘).
     public ResourceScope CreateScope(ResourceScopeType type, string scopeName)
     {
+        if (type == ResourceScopeType.Global)
+        {
+            GameLog.LogError("[Resource] Global 스코프는 회전할 수 없다 (수명 = 게임 전체).");
+            return _scopes[ResourceScopeType.Global];
+        }
+
+        if (_scopes.TryGetValue(type, out ResourceScope old) && old != null)
+            old.Dispose();
+
         return _scopes[type] = new ResourceScope(_registry, scopeName);
     }
 
-    public ResourceScope GetScope(ResourceScopeType type) => _scopes[type];
+    // 아직 생성되지 않은 스코프(Party 등)는 null — 호출부가 판단하도록 예외 대신 null 반환.
+    public ResourceScope GetScope(ResourceScopeType type)
+        => _scopes.TryGetValue(type, out ResourceScope scope) ? scope : null;
+
+    // 도메인 경계에서 스코프를 닫는다 (파티 해체·던전 퇴장 등). Global은 무시.
+    public void DisposeScope(ResourceScopeType type)
+    {
+        if (type == ResourceScopeType.Global) return;
+        if (!_scopes.TryGetValue(type, out ResourceScope scope) || scope == null) return;
+
+        scope.Dispose();
+        _scopes.Remove(type);
+    }
 
     public void ChangeSceneScope()
     {
@@ -111,17 +138,42 @@ public class ResourceManager
     //    return await LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
     //}
 
-    public UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false, CancellationToken token = default) 
+    public UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false, CancellationToken token = default)
         where T : UnityEngine.Object
         => (assetRef == null || !assetRef.RuntimeKeyIsValid())
             ? UniTask.FromResult<T>(null)
             : LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
+
+    // [Phase 3] AssetReference + 명시 스코프 (SO가 프리팹을 AssetReference로 들고 있는 경로용)
+    public UniTask<T> LoadAsync<T>(AssetReference assetRef, ResourceScopeType scopeType, CancellationToken token = default)
+        where T : UnityEngine.Object
+        => (assetRef == null || !assetRef.RuntimeKeyIsValid())
+            ? UniTask.FromResult<T>(null)
+            : LoadAsync<T>(assetRef.RuntimeKey.ToString(), scopeType, token);
 
     public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default)
         where T : UnityEngine.Object
     {
         RecordLoadSource(key); // [Phase 2 계측] 최초 로드 요청자 기록 (에디터/개발 빌드 전용, 동작 무변경)
         ResourceScope scope = isGlobal ? _scopes[ResourceScopeType.Global] : _scopes[ResourceScopeType.Scene];
+        return scope.LoadAsync<T>(key, token);
+    }
+
+    // [Phase 3] 수명 스코프를 명시하는 로드. bool isGlobal은 2버킷 시절의 잔재라
+    //  Party/Popup/Dungeon 같은 새 수명을 표현할 수 없다 — 신규 호출부는 이쪽을 쓴다.
+    //  해당 스코프가 아직 없으면(생성 훅 누락) 로드하지 않고 에러 — 조용히 Global로
+    //  새는 것보다 즉시 드러나는 편이 낫다(2버킷 도피의 재발 방지).
+    public UniTask<T> LoadAsync<T>(string key, ResourceScopeType scopeType, CancellationToken token = default)
+        where T : UnityEngine.Object
+    {
+        ResourceScope scope = GetScope(scopeType);
+        if (scope == null)
+        {
+            GameLog.LogError($"[Resource] {scopeType} 스코프가 없다 — 생성 훅 누락. key={key}");
+            return UniTask.FromResult<T>(null);
+        }
+
+        RecordLoadSource(key);
         return scope.LoadAsync<T>(key, token);
     }
 
@@ -345,6 +397,15 @@ public class ResourceManager
     // [Phase 2] 카운트는 이제 스코프(버킷) 소유 수 / 레지스트리 고유 핸들 수를 가리킨다.
     public int GlobalHandleCount => _scopes[ResourceScopeType.Global].Count;
     public int SceneHandleCount => _scopes[ResourceScopeType.Scene].Count;
+
+    // [Phase 3] 현재 살아있는 스코프 이름 → 소유 핸들 수. 버킷이 2개로 고정이 아니게 되면서
+    //  디버그 창/리포트가 하드코딩 대신 이걸 순회한다 (새 스코프가 Scene에 오분류되던 문제 차단).
+    public void GetScopeCounts(Dictionary<string, int> buffer)
+    {
+        buffer.Clear();
+        foreach (var kv in _scopes)
+            if (kv.Value != null) buffer[kv.Value.Name] = kv.Value.Count;
+    }
     public int RegistryHandleCount => _registry.Count;   // 서로 다른 (key,type) 핸들 총수
     public int AtlasSpriteCacheCount => _atlasSpriteCache.Count;
 
@@ -392,9 +453,10 @@ public class ResourceManager
         _registry.GetSnapshot(_regSnapshot);
 
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"[ResourceReport] ({tag}) handles={_registry.Count} " +
-                      $"global={_scopes[ResourceScopeType.Global].Count} scene={_scopes[ResourceScopeType.Scene].Count} " +
-                      $"atlasSprites={_atlasSpriteCache.Count}");
+        sb.Append($"[ResourceReport] ({tag}) handles={_registry.Count}");
+        foreach (var kv in _scopes)
+            if (kv.Value != null) sb.Append($" {kv.Value.Name.ToLowerInvariant()}={kv.Value.Count}");
+        sb.AppendLine($" atlasSprites={_atlasSpriteCache.Count}");
         foreach (var e in _regSnapshot)
         {
             string bucket = ResolveBucket(e.Key);

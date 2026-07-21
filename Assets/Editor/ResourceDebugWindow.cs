@@ -5,7 +5,9 @@ using UnityEngine;
 using UnityEngine.Profiling;
 
 // [Phase 0 계측] 살아있는 Addressables 핸들을 실시간으로 보여주는 디버그 창.
-//  - 버킷(Global/Scene)별 핸들 목록 + 어떤 코드가 최초 로드했는지(Source) 표시
+//  - 버킷(수명 스코프)별 핸들 목록 + 어떤 코드가 최초 로드했는지(Source) 표시
+//    [Phase 3] 버킷은 Global/Scene 고정이 아니라 살아있는 스코프에서 동적으로 나온다.
+//    소유 스코프가 없는 고아는 "?" 버킷(빨강)으로 표시 = Dispose 훅 누락 검출용
 //  - [메모리 측정]: 핸들별 의존성(텍스처/메시/오디오 포함) 런타임 메모리 추정치 + 버킷 합계(중복 제거)
 //  - Baseline 측정과 이후 Phase 2~3 검증(씬 왕복 후 잔존 핸들·메모리 확인)에 사용
 //  - Phase 2에서 내부가 레지스트리로 바뀌어도 이 창은 스냅샷 API만 바라보므로 그대로 유지
@@ -20,15 +22,46 @@ public class ResourceDebugWindow : EditorWindow
     private readonly List<ResourceHandleDebugInfo> _buffer = new List<ResourceHandleDebugInfo>();
     private Vector2 _scroll;
     private string _search = "";
-    private bool _showGlobal = true;
-    private bool _showScene = true;
     private bool _sortBySize = false;
+
+    // [Phase 3] 버킷이 Global/Scene 2개로 고정이 아니게 됨 (Party 등 수명 스코프 신설).
+    //  하드코딩하면 새 스코프가 Scene으로 오분류되어 "Scene 불변 = 회귀 없음" 지표를 오염시킨다.
+    private readonly Dictionary<string, int> _countByBucket = new Dictionary<string, int>();
+    private readonly Dictionary<string, int> _scopeCounts = new Dictionary<string, int>();
+    private readonly Dictionary<string, bool> _showBucket = new Dictionary<string, bool>();
 
     // ---- 메모리 측정 캐시 ([메모리 측정] 버튼을 누른 시점 기준) ----
     private readonly Dictionary<string, long> _sizeByKey = new Dictionary<string, long>();
-    private long _globalBytes;
-    private long _sceneBytes;
+    private readonly Dictionary<string, long> _bytesByBucket = new Dictionary<string, long>();
     private bool _memoryMeasured;
+
+    private long TotalBytes()
+    {
+        long sum = 0;
+        foreach (var kv in _bytesByBucket) sum += kv.Value;
+        return sum;
+    }
+
+    private void AddBucketBytes(string bucket, long size)
+    {
+        _bytesByBucket.TryGetValue(bucket, out long cur);
+        _bytesByBucket[bucket] = cur + size;
+    }
+
+    // 버킷별 축약 라벨/색 — 알 수 없는 버킷도 첫 글자로 자동 대응
+    private static string ShortLabel(string bucket) =>
+        string.IsNullOrEmpty(bucket) ? "[?]" : $"[{char.ToUpperInvariant(bucket[0])}]";
+
+    private static Color BucketColor(string bucket)
+    {
+        switch (bucket)
+        {
+            case "Global": return new Color(0.85f, 0.55f, 0.20f);
+            case "Scene": return new Color(0.35f, 0.65f, 0.95f);
+            case "Party": return new Color(0.45f, 0.85f, 0.45f);
+            default: return new Color(0.90f, 0.35f, 0.35f);   // 소유 스코프 없음("?") = 고아 = 경고색
+        }
+    }
 
     // 플레이 중 자동 갱신 (OnInspectorUpdate ≈ 10fps, 폴링 부담 없음)
     private void OnInspectorUpdate()
@@ -48,18 +81,32 @@ public class ResourceDebugWindow : EditorWindow
         var rm = Managers.Resource;
         rm.GetHandleSnapshot(_buffer);
 
-        int globalCount = 0, sceneCount = 0;
+        _countByBucket.Clear();
         foreach (var e in _buffer)
         {
-            if (e.Bucket == "Global") globalCount++;
-            else sceneCount++;
+            _countByBucket.TryGetValue(e.Bucket, out int c);
+            _countByBucket[e.Bucket] = c + 1;
         }
 
-        // ---- 헤더: 카운트 + 전체 메모리 요약 ----
+        // ---- 헤더: 스코프 소유 카운트 + 전체 메모리 요약 ----
+        //  주의: 헤더는 **스코프가 실제로 쥔 수**, 아래 목록의 버킷 라벨은 **ResolveBucket이 고른 대표 스코프**다.
+        //  한 키를 두 스코프가 동시에 소유하면(예: Global 프리로드 + Party 로드) 목록엔 Global로만 보이므로
+        //  둘이 어긋나는 것 자체가 "중복 소유가 있다"는 신호 — 라벨 다이어트의 진행도를 여기서 읽는다.
+        rm.GetScopeCounts(_scopeCounts);
         EditorGUILayout.Space(4);
         EditorGUILayout.LabelField(
-            $"Global: {globalCount}    Scene: {sceneCount}    AtlasSpriteCache: {rm.AtlasSpriteCacheCount}",
+            string.Join("    ", _scopeCounts.Select(kv => $"{kv.Key}: {kv.Value}")) +
+            $"    AtlasSpriteCache: {rm.AtlasSpriteCacheCount}",
             EditorStyles.boldLabel);
+
+        int listed = 0;
+        foreach (var kv in _countByBucket) listed += kv.Value;
+        int owned = 0;
+        foreach (var kv in _scopeCounts) owned += kv.Value;
+        if (owned != listed)
+            EditorGUILayout.LabelField(
+                $"※ 스코프 소유 합 {owned} ≠ 목록 {listed} → 중복 소유 {owned - listed}건 (같은 키를 여러 스코프가 쥠)",
+                EditorStyles.miniLabel);
 
         // Unity 전체 메모리 지표 (Baseline의 절대 기준점)
         EditorGUILayout.LabelField(
@@ -71,8 +118,9 @@ public class ResourceDebugWindow : EditorWindow
         if (_memoryMeasured)
         {
             EditorGUILayout.LabelField(
-                $"핸들 메모리(중복 제거): Global {FormatBytes(_globalBytes)}    Scene {FormatBytes(_sceneBytes)}    " +
-                $"합계 {FormatBytes(_globalBytes + _sceneBytes)}",
+                "핸들 메모리(중복 제거): " +
+                string.Join("    ", _bytesByBucket.Select(kv => $"{kv.Key} {FormatBytes(kv.Value)}")) +
+                $"    합계 {FormatBytes(TotalBytes())}",
                 EditorStyles.boldLabel);
         }
 
@@ -95,8 +143,12 @@ public class ResourceDebugWindow : EditorWindow
 
         using (new EditorGUILayout.HorizontalScope())
         {
-            _showGlobal = EditorGUILayout.ToggleLeft($"Global ({globalCount})", _showGlobal, GUILayout.Width(120));
-            _showScene = EditorGUILayout.ToggleLeft($"Scene ({sceneCount})", _showScene, GUILayout.Width(120));
+            foreach (var kv in _countByBucket)
+            {
+                if (!_showBucket.ContainsKey(kv.Key)) _showBucket[kv.Key] = true;
+                _showBucket[kv.Key] = EditorGUILayout.ToggleLeft(
+                    $"{kv.Key} ({kv.Value})", _showBucket[kv.Key], GUILayout.Width(120));
+            }
             using (new EditorGUI.DisabledScope(!_memoryMeasured))
                 _sortBySize = EditorGUILayout.ToggleLeft("크기순 정렬", _sortBySize, GUILayout.Width(100));
         }
@@ -114,8 +166,7 @@ public class ResourceDebugWindow : EditorWindow
 
         foreach (var entry in ordered)
         {
-            if (entry.Bucket == "Global" && !_showGlobal) continue;
-            if (entry.Bucket == "Scene" && !_showScene) continue;
+            if (_showBucket.TryGetValue(entry.Bucket, out bool show) && !show) continue;
             if (!string.IsNullOrEmpty(_search) &&
                 !entry.Key.ToLowerInvariant().Contains(_search.ToLowerInvariant()) &&
                 !entry.Source.ToLowerInvariant().Contains(_search.ToLowerInvariant()))
@@ -123,10 +174,9 @@ public class ResourceDebugWindow : EditorWindow
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
             {
-                var bucketColor = entry.Bucket == "Global" ? new Color(0.85f, 0.55f, 0.2f) : new Color(0.35f, 0.65f, 0.95f);
                 var prev = GUI.color;
-                GUI.color = bucketColor;
-                EditorGUILayout.LabelField(entry.Bucket == "Global" ? "[G]" : "[S]", EditorStyles.boldLabel, GUILayout.Width(28));
+                GUI.color = BucketColor(entry.Bucket);
+                EditorGUILayout.LabelField(ShortLabel(entry.Bucket), EditorStyles.boldLabel, GUILayout.Width(28));
                 GUI.color = prev;
 
                 EditorGUILayout.LabelField(entry.Key, GUILayout.MinWidth(150));
@@ -233,11 +283,10 @@ public class ResourceDebugWindow : EditorWindow
     private void MeasureMemory()
     {
         _sizeByKey.Clear();
-        _globalBytes = 0;
-        _sceneBytes = 0;
+        _bytesByBucket.Clear();
 
         // 공유 의존성(아틀라스 텍스처 등)은 버킷 합계에서 한 번만 계산.
-        // 스냅샷 순서가 Global → Scene 이므로 공유분은 Global에 귀속됨.
+        // 스냅샷 순서가 Global → 나머지 이므로 공유분은 Global에 귀속됨.
         var counted = new HashSet<Object>();
 
         foreach (var entry in _buffer)
@@ -263,11 +312,7 @@ public class ResourceDebugWindow : EditorWindow
                     long size = Profiler.GetRuntimeMemorySizeLong(dep);
                     sum += size;
 
-                    if (counted.Add(dep))
-                    {
-                        if (entry.Bucket == "Global") _globalBytes += size;
-                        else _sceneBytes += size;
-                    }
+                    if (counted.Add(dep)) AddBucketBytes(entry.Bucket, size);
                 }
             }
             _sizeByKey[entry.Key] = sum;
@@ -296,11 +341,7 @@ public class ResourceDebugWindow : EditorWindow
             long size = Profiler.GetRuntimeMemorySizeLong(page);
             sum += size;
 
-            if (counted.Add(page))
-            {
-                if (bucket == "Global") _globalBytes += size;
-                else _sceneBytes += size;
-            }
+            if (counted.Add(page)) AddBucketBytes(bucket, size);
         }
         return sum;
     }
@@ -309,7 +350,9 @@ public class ResourceDebugWindow : EditorWindow
     private void LogMemoryReport()
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"[ResourceMemory] 핸들 메모리(중복 제거) — Global: {FormatBytes(_globalBytes)}, Scene: {FormatBytes(_sceneBytes)}, 합계: {FormatBytes(_globalBytes + _sceneBytes)}");
+        sb.AppendLine("[ResourceMemory] 핸들 메모리(중복 제거) — " +
+                      string.Join(", ", _bytesByBucket.Select(kv => $"{kv.Key}: {FormatBytes(kv.Value)}")) +
+                      $", 합계: {FormatBytes(TotalBytes())}");
         sb.AppendLine($"  전체 할당: {FormatBytes(Profiler.GetTotalAllocatedMemoryLong())} / 예약: {FormatBytes(Profiler.GetTotalReservedMemoryLong())} / 텍스처: {FormatBytes((long)Texture.currentTextureMemory)}");
         sb.AppendLine("  ---- 상위 15개 (개별 크기 = 의존성 포함) ----");
 
@@ -318,7 +361,7 @@ public class ResourceDebugWindow : EditorWindow
                      .Take(15))
         {
             long size = _sizeByKey.TryGetValue(entry.Key, out var s2) ? s2 : 0;
-            sb.AppendLine($"  [{(entry.Bucket == "Global" ? "G" : "S")}] {FormatBytes(size),10}  {entry.Key}  ←  {entry.Source}");
+            sb.AppendLine($"  {ShortLabel(entry.Bucket)} {FormatBytes(size),10}  {entry.Key}  ←  {entry.Source}");
         }
 
         GameLog.Log(sb.ToString());

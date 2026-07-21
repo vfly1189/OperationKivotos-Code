@@ -150,13 +150,20 @@ public class GameScene : BaseScene
         Transform spawnPoint = _map.GetComponent<BaseMap>().GetPlayerSpawnPoint();
         Managers.Party.TeleportParty(spawnPoint.position);
 
+        // 파티가 이미 있으면 재사용 — 파티는 씬 전환을 넘어 생존하므로 Party 스코프도 그대로 둔다.
         if (Managers.Party.GetMember() != null && Managers.Party.GetMember().Count > 0)
         {
             Managers.Party.ReturnToTownForNewScene(spawnPoint);
             return;
         }
 
+        // [Phase 3c] 여기가 유일한 파티 구성 경계 = Party 스코프의 회전 지점.
+        //  순서 주의: 인스턴스 파괴(ClearParty)를 먼저, 핸들 반납(CreateScope)을 나중에.
+        //  살아있는 인스턴스가 프리팹의 메시/텍스처를 참조하는 동안 핸들만 반납하면
+        //  refCount는 풀려도 실제 언로드가 일어나지 않는다.
         Managers.Party.ClearParty();
+        Managers.Resource.CreateScope(ResourceScopeType.Party, "Party");   // 이전 파티 스코프 Dispose + 새 스코프
+
         Transform container = Managers.Party.GetCharacterContainer();
         List<BaseCharacter> partyMembers = new List<BaseCharacter>();
 
@@ -169,7 +176,8 @@ public class GameScene : BaseScene
 
     private async UniTask LoadCharacterSequential(CharacterDataSO data, Transform parent, List<BaseCharacter> list, Transform spawnPoint)
     {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(data.inGamePrefab, isGlobal: true);
+        // [Phase 3c] Global(영구 상주) → Party 스코프. 파티 교체 시 이전 파티 프리팹이 회수된다.
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(data.inGamePrefab, ResourceScopeType.Party);
 
         if (prefab != null)
         {
