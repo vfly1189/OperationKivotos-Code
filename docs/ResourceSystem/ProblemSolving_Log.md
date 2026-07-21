@@ -195,7 +195,8 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 | # | 항목 | 상태 | 비고 |
 |---|---|---|---|
 | 3a | 팝업 프리팹 → 씬 스코프 | ✅ **검증 완료** | `ShowPopupUIAsync`의 `isGlobal` 제거 + `_isLoadingPopup` try/finally. 팝업 세션 Global 영구증가 **+56.0 → +10.4MB(−81%)**, Scene 버킷 101.4 → 160.7 → **101.4 왕복 복귀**(회수 증명), 히치 무변화. 측정 상세 [Baseline.md §9](./Baseline.md) |
-| 3b | 스탠딩 → 팝업 스코프 신설 | ✅ **구현·측정 대기** | Popup 스코프 신설(스택 0→1 생성, 1→0 Dispose, 중첩은 공유). `UI_Info:95`·`UI_EscapeMenu:47` → Popup. **첫 수동 Dispose 훅** = 닫기 경로 누락이 곧 누수, `[?]` 버킷으로 검출. **`UI_Info` 첫 오픈 히치 420~597ms 조사는 미착수** |
+| 3b | 스탠딩 → 팝업 스코프 신설 | ✅ **검증 완료** | Popup 스코프(스택 0→1 생성, 1→0 Dispose, 중첩 공유). Global 단조 증가 **+40.1 → +30.9MB**, 스탠딩·데코가 Global에서 소멸, `[?]` 고아 0건. `UI_Info` 첫 오픈 히치 563.6 → **119.8ms**(v2 수준 복귀, **메커니즘 미설명 — 11-3**). 상세 [Baseline.md §11](./Baseline.md) |
+| — | 3d 대비 미결 | ⏳ | Popup 스코프의 "회수"가 실제 언로드인지 장부상인지 미확인. 복구된 `[LoadStats]`로 스탠딩 키 재로드 횟수를 보면 판정 가능 |
 | 3c | 파티 스코프 + 라벨 다이어트 | ✅ **검증 완료** | Global 라벨 42→12개. 진입 Global **513.0 → 65.8MB(−87%)**, 합계 616.7 → 362.4MB. Party 54.3MB 전 구간 불변(씬 전환 생존). 대가는 팝업 첫 오픈 +14~20ms. 상세 [Baseline.md §10](./Baseline.md) |
 | 3d | 던전 스코프 + AtlasSpriteCache | ⏳ | R3/R5 합류. 잔여 단조 증가의 아틀라스 8종 몫 |
 
