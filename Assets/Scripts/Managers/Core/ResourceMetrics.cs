@@ -203,6 +203,9 @@ public static class ResourceMetrics
     {
         "[UIMetric]", "[TransitionMetric]", "[AtlasMetric]", "[LoadStats]", "[Checkpoint]",
         "[ResourceReport]", "[ResourceMemory]", "[ResourceLeak]", "[Preload]",
+        // 스코프 부재 등 리소스 계층의 에러. 없으면 "로그에 에러가 없다"를 근거로 쓸 수 없다
+        // (Phase 3b 검증에서 실제로 판단 불가 상황이 발생했음).
+        "[Resource]",
     };
 
     private static System.IO.StreamWriter _logWriter;

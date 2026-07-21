@@ -33,10 +33,16 @@ public sealed class ResourceRegistry
         }
 
         //entries에 없어서 로딩해야됨
+        //  [계측] 여기가 "실제 Addressables 로드"의 유일한 지점 — 위 캐시 히트 경로는 세지 않는다.
+        //  같은 키가 여러 번 세지면 그것이 곧 "회수 후 재로드"의 증거 (Baseline §7-3).
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         AsyncOperationHandle handle = Addressables.LoadAssetAsync<T>(key.Key);
         entry = new Entry { handle = handle, RefCount = incrementRef ? 1 : 0 };
         _entries[key] = entry;
         await handle.ToUniTask(cancellationToken:tok);
+
+        ResourceMetrics.RecordLoad(key.Key, sw.ElapsedMilliseconds);
 
         if (handle.Status != AsyncOperationStatus.Succeeded)
         {
@@ -60,13 +66,17 @@ public sealed class ResourceRegistry
             return entry.handle.Result as Object;
         }
 
+        var sw = System.Diagnostics.Stopwatch.StartNew();   // [계측] 위와 동일 — 실제 로드만 집계
+
         AsyncOperationHandle handle = Addressables.LoadAssetAsync<Object>(location);   // location으로 로드
 
         entry = new Entry { handle = handle, RefCount = incrementRef ? 1 : 0 };
         _entries[key] = entry;
         await handle.ToUniTask(cancellationToken: tok);
 
-        if (handle.Status != AsyncOperationStatus.Succeeded) 
+        ResourceMetrics.RecordLoad(key.Key, sw.ElapsedMilliseconds);
+
+        if (handle.Status != AsyncOperationStatus.Succeeded)
         { 
             _entries.Remove(key); 
             return null; 
