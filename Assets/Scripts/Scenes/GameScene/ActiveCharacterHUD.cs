@@ -54,14 +54,18 @@ public class ActiveCharacterHUD : MonoBehaviour
         _qSkill.SetReadyGlowColor(charData.ultimateGlowColor);
 
 
+        // [Phase 3d] 씬 전환 중 이 HUD가 파괴되면 로드도 취소 — 토큰이 없으면 인플라이트 로드가
+        //  다음 씬의 스코프에 얹혀 아무도 안 쓰는 아틀라스로 남는다.
+        var token = this.GetCancellationTokenOnDestroy();
+
         // 규칙: "캐릭터ID_Q_Icon"
         string qIconName = $"{charData.nameKey}_Q_Icon";
-        Sprite qIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", qIconName);      
+        Sprite qIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", qIconName, token: token);
         if (qIcon != null) _qSkill.SetIcon(qIcon);
 
         // 규칙: "캐릭터ID_E_Icon"
         string eIconName = $"{charData.nameKey}_E_Icon";
-        Sprite eIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", eIconName);
+        Sprite eIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", eIconName, token: token);
         if (eIcon != null) _eSkill.SetIcon(eIcon);
     }
 

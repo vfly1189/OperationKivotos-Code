@@ -244,10 +244,14 @@ public class ResourceManager
     // =========================================================================
     // [Phase 3d] scope 기본값이 Scene — 예전엔 isGlobal:true로 무조건 영구 상주였다.
     //  씬을 넘어 사는 소비자(DontDestroyOnLoad UI 등)만 명시적으로 Global을 넘긴다.
+    //  token: 소비자가 죽으면 로드를 취소한다. 없으면 씬을 떠나는 UI의 인플라이트 로드가
+    //  **다음 씬의 스코프**에 얹혀 아무도 안 쓰는 에셋이 되고, 다음 전환까지 방치된다
+    //  (실측: ActiveCharacterHUD가 전환 중 SkillIconAtlas를 새 Scene 스코프에 적재 → 누수 assert).
     public async UniTask<Sprite> GetSpriteFromAtlasAsync(string atlasKey, string spriteName,
-        ResourceScopeType scope = ResourceScopeType.Scene)
+        ResourceScopeType scope = ResourceScopeType.Scene, CancellationToken token = default)
     {
         if (string.IsNullOrEmpty(spriteName)) return null;
+        if (token.IsCancellationRequested) return null;
 
         // 1. 방어 캐시에 안전하게 보관 중이라면 반환
         if (_atlasSpriteCache.TryGetValue(spriteName, out Sprite cachedSprite))
@@ -256,7 +260,8 @@ public class ResourceManager
         }
 
         // 2. 캐시에 없으면 아틀라스 자체를 어드레서블로 로드
-        SpriteAtlas atlas = await LoadAsync<SpriteAtlas>(atlasKey, scope);
+        SpriteAtlas atlas = await LoadAsync<SpriteAtlas>(atlasKey, scope, token);
+        if (token.IsCancellationRequested) return null;   // 대기 중 소비자가 죽었으면 전개도 하지 않는다
 
         if (atlas != null)
         {
