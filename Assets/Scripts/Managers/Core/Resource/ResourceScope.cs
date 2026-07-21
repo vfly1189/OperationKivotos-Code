@@ -24,14 +24,24 @@ public sealed class ResourceScope : IDisposable
     public int Count => _acquired.Count;
     public bool Contains(ResourceKey rk) => _acquired.Contains(rk);
 
-    public UniTask<T> LoadAsync<T>(string key, CancellationToken tok = default) where T : UnityEngine.Object
+    public async UniTask<T> LoadAsync<T>(string key, CancellationToken tok = default) where T : UnityEngine.Object
     {
-        if (_disposed || string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);
+        if (_disposed || string.IsNullOrEmpty(key)) return null;
 
         ResourceKey rk = new ResourceKey(key, typeof(T));
         bool isFirstTimeToLoad = _acquired.Add(rk);
 
-        return _registry.LoadAsync<T>(rk, isFirstTimeToLoad, tok);
+        try
+        {
+            return await _registry.LoadAsync<T>(rk, isFirstTimeToLoad, tok);
+        }
+        catch
+        {
+            // 취소·실패 시 소유 기록을 되돌린다. 안 그러면 레지스트리엔 없는데 스코프만
+            // 쥐고 있는 유령 소유가 남아, 계측에는 잡히고 Dispose는 헛돈다.
+            if (isFirstTimeToLoad) _acquired.Remove(rk);
+            throw;
+        }
     }
 
     // ResourceScope — location 기반 추가

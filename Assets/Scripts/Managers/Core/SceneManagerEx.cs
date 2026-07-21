@@ -80,14 +80,18 @@ public class SceneManagerEx
             Managers.Resource.LogAliveReport($"ChangeSceneScope 직전 → {rq.SceneName}");
 
             Managers.Resource.ChangeSceneScope();   // 이전 Scene 스코프 Dispose → 새 빈 스코프
+
+            // [계측] 회전 "직후" = 이전 씬 핸들이 전부 반납됐는지 검증.
+            //  반드시 await 이전에 검사한다 — 아래 UnloadUnusedAssets의 대기 구간은 yield 창구라
+            //  파괴 예약된(Destroy는 프레임 끝에 처리) UI의 인플라이트 async가 거기서 재개해
+            //  **새** 스코프에 적재할 수 있다. 그건 "이전 씬 미반납"이 아니므로 이 검사의 대상이 아니다.
+            Managers.Resource.AssertSceneHandlesCleared("ChangeSceneScope 직후");
+
             Managers.Pool.Clear();
             Managers.UI.Clear();
 
             await Resources.UnloadUnusedAssets().ToUniTask(cancellationToken: token);
             System.GC.Collect();
-
-            // [계측] 회전 직후 새 Scene 스코프는 비어 있어야 함 (이전 씬 핸들 완전 반납 검증)
-            Managers.Resource.AssertSceneHandlesCleared("ChangeSceneScope 직후");
 
             // 프리로드
             if (rq.PreloadLabels is { Length: > 0 })
