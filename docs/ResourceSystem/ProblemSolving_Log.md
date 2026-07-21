@@ -136,6 +136,25 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 **해결**: (1)`Instantiate(string key)`를 `_registry.TryGetAsset<GameObject>(key)` 조회로 교체 + (2)StartScene의 Global 프리로드도 옛 `LoadDependenciesAsync`→새 `LoadAsyncPreload`로. 두 개가 한 쌍이라 같이 고쳐야 통합됨.
 **교훈**: 파사드 안쪽을 교체할 때 **읽기 경로(Instantiate)와 쓰기 경로(LoadAsync)가 같은 저장소를 보는지**가 생명. 한쪽만 옮기면 조용히 null이 샌다.
 
+### 5-4. `UI_LootNotification` use-after-release — 계측이 찾아낸 기존 버그 ★
+
+**증상**: 던전 왕복 후 `UI_LootNotification`(178MB)이 **다시 로드되지 않는다.** Phase 3c 측정 로그에서 첫 던전 전환 이후 이 키가 영영 안 나타나는 것으로 발견.
+
+**원인 체인** (셋이 맞물려야 재현되는 종류):
+1. [UIManager.cs:37](../../Assets/Scripts/Managers/Core/UIManager.cs) — UI 루트가 `DontDestroyOnLoad` → **인스턴스는 씬 전환을 넘어 생존**
+2. [UI_LootNotification.cs](../../Assets/Scripts/UI/Common/Toast/UI_LootNotification.cs) `PreloadAsync` — `if (_instance != null) return;` → static이 살아있으니 재로드를 건너뜀
+3. 그런데 `MakeSubItemAsync`는 **Scene 스코프**로 로드 → 씬 회전에서 핸들이 반납됨
+
+**결과**: 에셋 핸들은 반납됐는데 그 에셋으로 만든 인스턴스는 계속 살아있는 **use-after-release**. 에디터에서는 Addressables가 실제 언로드를 미뤄 티가 안 나지만, 빌드에서 번들이 내려가면 참조가 깨질 수 있다. R4(NoCache/JSON)와 같은 계열.
+
+**중요 — 이건 Phase 3c가 만든 버그가 아니다.** `MakeSubItemAsync`는 이전부터 Scene 스코프였고, 버그도 그때부터 있었다. **다버킷 계측을 붙이자 비로소 "핸들은 사라졌는데 인스턴스는 남은" 불일치가 로그에 드러난 것.** 계측이 리팩터의 부산물이 아니라 도구라는 증거.
+
+**해결 방향 (미결)**:
+- (A) 인스턴스 수명에 맞춰 **Global 스코프로** — `DontDestroyOnLoad` 인스턴스라면 에셋도 전역이 맞다. 1줄.
+- (B) **인스턴스를 씬과 함께 파괴** — Scene 스코프를 유지하고 static을 씬 전환 때 정리. 메모리 178MB 이득이지만 손이 더 감.
+
+**교훈**: 에셋의 수명 스코프와 그 에셋으로 만든 **인스턴스의 수명이 어긋나면**, refCount가 아무리 정확해도 안전하지 않다. 스코프를 고를 때 "누가 이 에셋을 쓰는가"가 아니라 **"그것으로 만든 것이 언제까지 사는가"**를 물어야 한다.
+
 ### 5-3. `sceneName` 빈 문자열 폴백
 **증상 가능성**: 테이블에 `sceneName` 미기입 시 `LoadSceneAsync("")` 실패.
 **원인**: 폴백을 `string.Empty`로(무의미한 삼항). 씬은 enum 이름으로 주소화됨.
@@ -161,6 +180,8 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 | R3 | `_atlasSpriteCache` 수명화 | ⏳ | 해제 경로 없는 영구 캐시 → 아틀라스 핸들 수명 동행 (Phase 3d). 아틀라스 대부분 해체돼 우선순위 낮음 |
 | R4 | NoCache/JSON use-after-release | ⏳ | `LoadAsyncNoCache`(P2) → `LoadTextAsync`(임시 스코프+`.text` 복사) |
 | R5 | 풀↔에셋 수명 통합 | ⏳ | PoolManager를 스코프 소속으로 (Phase 4) |
+| R6 | `UI_LootNotification` use-after-release | 🔜 | `DontDestroyOnLoad` 인스턴스 + Scene 스코프 에셋의 수명 불일치 (5-4). 정책 A/B 결정 필요 |
+| R7 | `DisposeScope()` 호출부 없음 | ⏳ | 3d(던전 스코프)에서 사용 예정. 그때까지 미사용 API — 3d에서 안 쓰게 되면 삭제 |
 
 ### 씬 전환
 | # | 항목 | 상태 |
@@ -174,9 +195,9 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 | # | 항목 | 상태 | 비고 |
 |---|---|---|---|
 | 3a | 팝업 프리팹 → 씬 스코프 | ✅ **검증 완료** | `ShowPopupUIAsync`의 `isGlobal` 제거 + `_isLoadingPopup` try/finally. 팝업 세션 Global 영구증가 **+56.0 → +10.4MB(−81%)**, Scene 버킷 101.4 → 160.7 → **101.4 왕복 복귀**(회수 증명), 히치 무변화. 측정 상세 [Baseline.md §9](./Baseline.md) |
-| 3b | 스탠딩 → 팝업 스코프 신설 | 🔜 | `UI_Info:95`·`UI_EscapeMenu:47`. **`UI_Info` 첫 오픈 히치 420~597ms 미해결 조사와 병합** |
-| 3c | 파티 스코프 + 라벨 다이어트 | 🔜 **다음** | 라벨 감사 완료(Global 42개 중 진짜 전역은 VFX 5개). Before = `metrics_20260721_213808.log` |
-| 3d | 던전 스코프 + AtlasSpriteCache | ⏳ | R3/R5 합류 |
+| 3b | 스탠딩 → 팝업 스코프 신설 | 🔜 **다음** | `UI_Info:95`·`UI_EscapeMenu:47`. **`UI_Info` 첫 오픈 히치 420~597ms 미해결 조사와 병합** |
+| 3c | 파티 스코프 + 라벨 다이어트 | ✅ **검증 완료** | Global 라벨 42→12개. 진입 Global **513.0 → 65.8MB(−87%)**, 합계 616.7 → 362.4MB. Party 54.3MB 전 구간 불변(씬 전환 생존). 대가는 팝업 첫 오픈 +14~20ms. 상세 [Baseline.md §10](./Baseline.md) |
+| 3d | 던전 스코프 + AtlasSpriteCache | ⏳ | R3/R5 합류. 잔여 단조 증가의 아틀라스 8종 몫 |
 
 ### 검증 (막힘 순서)
 ~~**R2(디버그 창 레지스트리 이관)가 선행되어야** Phase 2 성공 기준을 잴 수 있다~~ → **해소**. R1/R2 완료로 측정 재개, Phase 3a에서 실제 수치가 움직였다(§9).

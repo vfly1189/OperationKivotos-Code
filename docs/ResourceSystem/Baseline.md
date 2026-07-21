@@ -367,9 +367,85 @@ After   [S] UI_EquipmentUpgradePanel ← UIManager.ShowPopupUIAsync
 
 ---
 
+## 10. Phase 3c 검증 — 파티 스코프 + Global 라벨 다이어트 (2026-07-21 측정)
+
+> 원본: Before `metrics_20260721_213808.log`(=3a After) / After `metrics_20260721_215737.log`
+> 변경: ① `*_InGame` 프리팹을 Party 스코프로 ② Global 라벨 **42개 → 12개**
+
+### 10-1. 성과
+
+| 시점 | 3a After | 3c After | 변화 |
+|---|---|---|---|
+| ① Global | 513.0 | **65.8** | **−447.2 MB (−87%)** |
+| ① Scene | 103.8 | 242.3 | (귀속 이동 포함 — 아래 주의) |
+| ① Party | — | 54.3 | 신설 |
+| **① 합계** | **616.7** | **362.4** | **−254.3 MB (−41%)** |
+| **⑤ 합계** | **655.4** | **259.3** | **−396.1 MB (−60%)** |
+
+**합계가 줄어든 것이 핵심.** 라벨 재배치는 본래 "짐을 옮기는" 작업이라 합계는 보존돼야 정상인데 254MB가 사라졌다 = **비파티 캐릭터 8종이 애초에 로드되지 않게 됐다**(명세 §3c의 "파티원만 로드, 비파티는 로드 자체를 안 함"이 실현).
+
+> ⚠️ **Scene 절대값을 3a와 직접 비교하지 말 것.** 공유 의존성(아틀라스 등)은 "Global 우선 귀속"으로 한 번만 계산되는데, Global이 작아지면서 예전에 Global로 세던 몫이 Scene으로 넘어갔다. **합계만 신뢰 가능**하다.
+
+### 10-2. Party 스코프 — 설계 요구 충족
+
+```
+[P]  31.3 MB  e5bbb922...  ←  GameScene.LoadCharacterSequential   (파티원 4명)
+```
+
+- **54.3MB가 ①~⑤ 전 구간 완전 불변** — 던전 왕복 리포트에도 `party=4` 유지. 씬 전환에 날아가지 않는 것이 Party 스코프의 존재 이유이고 그대로 나왔다.
+- 파티원이 `[G]`가 아닌 `[P]`로 찍힘 = 중복 소유 해소 = 라벨에서 실제로 빠졌다는 교차 증거.
+- 고아 `[?]` 0건, `ResourceLeak` 0건, `스코프가 없다` 에러 0건.
+
+> **정직한 한계**: Party 스코프 자체의 메모리 이득은 ≈ 0이다. 파티원 프리팹은 인스턴스가 계속 참조하므로 핸들을 반납해도 실제 언로드가 일어나지 않는다. **수치는 전부 라벨 다이어트에서 나왔고**, Party 스코프의 값어치는 "파티 교체 시 회수 경로가 존재한다"는 구조적 정합성이다. 이 구분을 흐리지 말 것.
+
+### 10-3. 비용 — 정책 A의 대가가 처음으로 측정됨
+
+| 팝업 | 3a After 요청→표시 | 3c 요청→표시 |
+|---|---|---|
+| UI_Info | 2.7ms | **23.2ms** |
+| UI_Inventory | 1.4ms | **15.2ms** |
+| UI_EquipmentUpgradePanel | 36.1ms | 36.8ms (불변) |
+
+앞의 둘은 Global 프리로드로 이미 적재돼 있어 "1~3ms"였던 것 — 라벨에서 빼자 **처음으로 실제 로드 비용이 드러났다**. `UI_EquipmentUpgradePanel`은 원래부터 lazy라 변화 없음(대조군 역할).
+
+**재오픈은 전 팝업 8.9~10.2ms = 회귀 없음 ✓**
+
+→ **진입 −447MB의 대가 = 팝업 첫 오픈 +14~20ms.** 명세 §4가 요구한 "히치와 상주의 트레이드오프를 측정으로 판단"의 실제 수치. 상시 부담(진입 메모리)을 일회성 지연(첫 오픈)으로 바꾼 거래다.
+
+### 10-4. 남은 Global 단조 증가 +40.1MB → 3b/3d로 정확히 분해됨
+
+② 66.0 → ⑤ 106.1로 여전히 단조 증가한다. **3a 때의 +38.6과 거의 같다** — 증가량 자체는 줄지 않았고 베이스라인만 447MB 내려간 것. 잔여분의 출처가 최종 리포트에 전부 노출된다:
+
+```
+[Global] Img_Nonomi_Standing / Img_Hoshino_Standing ← UI_Info.SetCharacterStandingImage  ┐ 3b
+[Global] Abydos_Deco_L/M/R                          ← UI_EscapeMenu.SettingDecos         ┘
+[Global] StatIconAtlas / ItemGradeAtlas / WeaponIconAtlas / SkillIconAtlas ...            ┐ 3d
+[Global] MaterialIconAtlas / EquipmentIconAtlas / CharacterPortraitsAtlas ...             ┘
+```
+
+3b(스탠딩·데코)와 3d(아틀라스 8종)로 깔끔하게 갈린다.
+
+### 10-5. Global 라벨 잔존 12개 (다이어트 결과)
+
+| 유지 | 사유 |
+|---|---|
+| `Healing_Aura`, `BazookaBullet`, `EffectStage`, `BulletTrail`, `Fire` | 진짜 전역 VFX — 계획대로 유지 |
+| `MonsterHPBar`, `UnitName`, `UI_InteractPrompt` | Game/NormalDungeon/BossDungeon 3씬 공통 상시 UI. on-demand 로드도 가능하나 씬마다 첫 조우 히치를 피하려 유지 — **재검토 여지 있음(합계 약 78MB)** |
+| `Droid_Helmet_AR/RL/Tank` | `GameScene.CreatePool`이 개별 로드 중이라 라벨 제거 가능해 보이나 던전 재사용 여부 미확인 |
+| `SoundSettingIcon` | 씬 테이블에 Start 항목이 없어(StartScene이 코드에서 "Global"을 직접 프리로드) 옮길 곳이 없음. 아이콘 1장이라 이득도 없음 |
+
+### 10-6. 이번 측정의 한계
+
+- §8-5 등급 그대로: 메모리는 **에디터 측정·내부 비교 전용**, 개발 빌드 실측 여전히 **0회**
+- 히치 n=1, 시나리오가 세션마다 완전 동일하지 않음(이번에도 `UI_EscapeMenu` 추가 열림)
+- `UI_Info` 첫 오픈 최악 프레임 563.6ms — 420/436/597에 이어 4세션 연속 v2(123.4ms) 대비 큰 값. **원인 미상, 3b에서 조사**
+- Scene 버킷 절대값은 귀속 이동 때문에 단계 간 비교 불가 (10-1 주의 참조)
+
+---
+
 ## After 비교 (Phase 3b~4 완료 후 기입)
 
-> **3c의 Before = 위 9-2의 After 열** (`metrics_20260721_213808.log`, HEAD 3a 상태).
-> 3c는 진입 직후 ① Global 513.0MB가 주 관찰 지표 — 라벨이 Scene 계열로 이동하므로 ① Scene은 반대로 증가하는 것이 정상.
+> **3b의 Before = 위 10-1의 3c After 열** (`metrics_20260721_215737.log`).
+> 3b 주 관찰 지표: ② → ⑤ Global 단조 증가 **+40.1MB** 중 스탠딩·데코 몫이 빠지는가.
 
 〔같은 표 구조로 재측정하여 Before/After 비교〕
