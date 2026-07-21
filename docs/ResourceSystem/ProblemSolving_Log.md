@@ -156,8 +156,8 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 ### 리소스 시스템
 | # | 항목 | 상태 | 비고 |
 |---|---|---|---|
-| R1 | 옛 딕셔너리 은퇴 | 🔜 | `_globalHandles`/`_sceneHandles` + `LoadAsyncInternal`(죽음)·옛 `LoadDependenciesAsync`(죽음)·`Clear()`(무효) 제거 |
-| R2 | **디버그 창/계측을 레지스트리로** | 🔜 **측정 차단 중** | `GetHandleSnapshot`/`LogAliveReport`/`AssertSceneHandlesCleared`/카운트가 아직 옛 딕셔너리를 봄 → 현재 빈 값. Phase 2 검증("잔존 핸들=Baseline")이 이거 없으면 불가 |
+| R1 | 옛 딕셔너리 은퇴 | ✅ | `_globalHandles`/`_sceneHandles` 필드 + `LoadAsyncInternal`·`LoadDependenciesAsync`·`Clear()`·`RemoveSceneLoadSources` + 주석 처리된 옛 `LoadAsync`/`Instantiate` 전량 삭제. `Init()`도 슬림화. 라이브 경로는 스코프/레지스트리만 참조 |
+| R2 | **디버그 창/계측을 레지스트리로** | ✅ | `ResourceRegistry.GetSnapshot`/`Count` 신설 + `ResourceScope.Count`/`Contains` 노출. 파사드 `GetHandleSnapshot`/`LogAliveReport`/`AssertSceneHandlesCleared`/카운트를 레지스트리+스코프로 배선. 버킷 라벨=스코프 소유(`ResolveBucket`), Global 우선 방출로 MeasureMemory 귀속 불변식 유지. 로드 출처 추적 복구(`LoadAsync` 파사드+`LoadAsyncPreload`). **측정 차단 해제** — 이제 디버그 창이 실제 값 표시 |
 | R3 | `_atlasSpriteCache` 수명화 | ⏳ | 해제 경로 없는 영구 캐시 → 아틀라스 핸들 수명 동행 (Phase 3d). 아틀라스 대부분 해체돼 우선순위 낮음 |
 | R4 | NoCache/JSON use-after-release | ⏳ | `LoadAsyncNoCache`(P2) → `LoadTextAsync`(임시 스코프+`.text` 복사) |
 | R5 | 풀↔에셋 수명 통합 | ⏳ | PoolManager를 스코프 소속으로 (Phase 4) |
@@ -165,9 +165,9 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 ### 씬 전환
 | # | 항목 | 상태 |
 |---|---|---|
-| S1 | 전환 계측 재배선 | 🔜 `RunLoadSequenceAsync`에 `Begin/EndSceneTransition` 소실됨 (옛 경로에 있었음) → 새 흐름에 재삽입 |
-| S2 | `RunLoadSequenceAsync` try/catch(OCE)/finally | 🔜 다음 씬 로드 시 Loading 씬 파괴로 토큰 취소 → 미처리 예외 로그 방지 + finally에 EndSceneTransition |
-| S3 | 죽은 코드 제거 | 🔜 `LoadSceneAsync`·`GetSceneName`·`NextSceneData/Name`(SceneManagerEx), `LoadProcessAsync`(LoadingScene), 잡동사니 using(`Org.BouncyCastle.Ocsp`/`static NPOI...HSSFColor`), `SceneDataSO.cs` |
+| S1 | 전환 계측 재배선 | ✅ `BeginSceneTransition`을 `LoadScene`(트리거 시점)에, `EndSceneTransition`을 `RunLoadSequenceAsync` finally에 재삽입. `LogAliveReport`(회전 직전/프리로드 완료)·`AssertSceneHandlesCleared`(회전 직후)도 새 흐름에 복귀 |
+| S2 | `RunLoadSequenceAsync` try/catch(OCE)/finally | ✅ 씬 활성화 시 Loading 씬 파괴로 토큰 취소되는 OCE를 삼킴(정상 종료 경로) + finally에서 `EndSceneTransition` 보장 |
+| S3 | 죽은 코드 제거 | ✅ `LoadSceneAsync`·`GetSceneName`·`NextSceneData/Name`(SceneManagerEx) + `LoadProcessAsync`(LoadingScene) + 잡동사니 using(`Org.BouncyCastle.Ocsp`/`static NPOI...HSSFColor`) 삭제. **`SceneDataSO.cs`는 삭제 취소** — PreloadSO 5종(Start/Select/Game/NormalDungeon/BossDungeon)의 베이스 클래스로 실사용 중(문서 판단이 stale했음, 코드로 재검증). SceneManagerEx의 `SceneDataSO` 의존만 제거됨 |
 | S4 | `ShowCover`/`_transitionUI` | ⏳ 현재 `_transitionUI` 미할당 → no-op. 페이드 쓸지/제거할지 결정 |
 
 ### 검증 (막힘 순서)

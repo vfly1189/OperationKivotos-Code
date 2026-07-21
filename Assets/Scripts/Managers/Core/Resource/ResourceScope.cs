@@ -19,6 +19,11 @@ public sealed class ResourceScope : IDisposable
         Name = name;
     }
 
+    // [Phase 2 계측] 이 스코프가 소유(참조)한 키 수 / 특정 키 소유 여부 —
+    //  ResourceManager가 레지스트리 엔트리에 Global/Scene 버킷 라벨을 붙일 때 사용.
+    public int Count => _acquired.Count;
+    public bool Contains(ResourceKey rk) => _acquired.Contains(rk);
+
     public UniTask<T> LoadAsync<T>(string key, CancellationToken tok = default) where T : UnityEngine.Object
     {
         if (_disposed || string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);

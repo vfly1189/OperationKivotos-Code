@@ -1,14 +1,9 @@
 // [추가] UniTask
 using Cysharp.Threading.Tasks;
-using Org.BouncyCastle.Ocsp;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
-using static NPOI.HSSF.Util.HSSFColor;
-
-
-
 
 public class SceneManagerEx
 {
@@ -25,7 +20,6 @@ public class SceneManagerEx
     private SceneTableSO _sceneTable;
 
     public BaseScene CurrentScene { get { return GameObject.FindAnyObjectByType<BaseScene>(); } }
-    public SceneDataSO NextSceneData { get; private set; }
 
     public Define.Scene CurrentSceneType
     {
@@ -35,8 +29,6 @@ public class SceneManagerEx
             return Define.Scene.Unknown;
         }
     }
-
-    public string NextSceneName { get; private set; }
 
     public async UniTask InitAsync()
     {
@@ -51,8 +43,6 @@ public class SceneManagerEx
 
     public void LoadScene(Define.Scene type)
     {
-        //LoadSceneAsync(type).Forget();
-
         if(!_sceneTable.TryGet(type, out SceneTableSO.SceneEntry entry))
         { 
             GameLog.LogError($"[SceneEx] 테이블에 없음: {type}"); 
@@ -62,15 +52,14 @@ public class SceneManagerEx
         string name = string.IsNullOrEmpty(entry.sceneName) ? type.ToString() : entry.sceneName;
         Pending = new SceneLoadRequest(type, name, entry.preloadLabels);
 
+        // [Phase 0.5 계측] 전환 피크 샘플링 시작 — 트리거 시점부터 다음 씬 활성화까지.
+        //  (RunLoadSequenceAsync의 finally에서 EndSceneTransition으로 종료)
+        ResourceMetrics.BeginSceneTransition(name);
+
         ShowCover(true);
         CurrentScene?.Clear(); // 씬의 고유정리만 하는거임 리소스 ㄴㄴ
 
         SceneManager.LoadScene("Loading");
-    }
-
-    string GetSceneName(Define.Scene type)
-    {
-        return System.Enum.GetName(typeof(Define.Scene), type);
     }
 
     public void Clear()
@@ -85,62 +74,50 @@ public class SceneManagerEx
     {
         SceneLoadRequest rq = Pending;
 
-        Managers.Resource.ChangeSceneScope();
-        Managers.Pool.Clear();
-        Managers.UI.Clear();
+        try
+        {
+            // [계측] ChangeSceneScope 직전 = 이전 씬 스코프가 아직 핸들을 쥐고 있는 상태
+            Managers.Resource.LogAliveReport($"ChangeSceneScope 직전 → {rq.SceneName}");
 
-        await Resources.UnloadUnusedAssets().ToUniTask(cancellationToken : token);
-        System.GC.Collect();
+            Managers.Resource.ChangeSceneScope();   // 이전 Scene 스코프 Dispose → 새 빈 스코프
+            Managers.Pool.Clear();
+            Managers.UI.Clear();
 
+            await Resources.UnloadUnusedAssets().ToUniTask(cancellationToken: token);
+            System.GC.Collect();
 
-        // 프리로드
-        if (rq.PreloadLabels is { Length: > 0 })
-            await Managers.Resource.LoadAsyncPreload(
-                rq.PreloadLabels,
-                false,
-                (key, p) => ui.UpdateProgress(p, key), token
-                );
+            // [계측] 회전 직후 새 Scene 스코프는 비어 있어야 함 (이전 씬 핸들 완전 반납 검증)
+            Managers.Resource.AssertSceneHandlesCleared("ChangeSceneScope 직후");
 
-        // 다음 씬 로드(비활성상태로) -> 활성화
+            // 프리로드
+            if (rq.PreloadLabels is { Length: > 0 })
+                await Managers.Resource.LoadAsyncPreload(
+                    rq.PreloadLabels,
+                    false,
+                    (key, p) => ui.UpdateProgress(p, key), token
+                    );
 
-        var handle = Addressables.LoadSceneAsync(rq.SceneName, LoadSceneMode.Single, false);
-        while (!handle.IsDone) { ui.UpdateProgress(handle.PercentComplete); await UniTask.Yield(token); }
+            // [계측] 프리로드 완료 시점 스냅샷
+            Managers.Resource.LogAliveReport($"프리로드 완료 → {rq.SceneName}");
 
-        await UniTask.Delay(300, cancellationToken: token);   // 연출
-        await handle.Result.ActivateAsync().ToUniTask(cancellationToken: token);
+            // 다음 씬 로드(비활성상태로) -> 활성화
+            var handle = Addressables.LoadSceneAsync(rq.SceneName, LoadSceneMode.Single, false);
+            while (!handle.IsDone) { ui.UpdateProgress(handle.PercentComplete); await UniTask.Yield(token); }
 
-        ShowCover(false);
+            await UniTask.Delay(300, cancellationToken: token);   // 연출
+            await handle.Result.ActivateAsync().ToUniTask(cancellationToken: token);
+
+            ShowCover(false);
+        }
+        catch (System.OperationCanceledException)
+        {
+            // 다음 씬 활성화 순간 Loading 씬이 파괴되며 토큰 취소 → 정상 종료 경로.
+            // 미처리 예외 로그 방지를 위해 삼킴.
+        }
+        finally
+        {
+            ResourceMetrics.EndSceneTransition(); // [Phase 0.5 계측] 전환 종료 → 피크 리포트 자동 출력
+        }
     }
 
-    private async UniTaskVoid LoadSceneAsync(Define.Scene type)
-    {
-        ResourceMetrics.BeginSceneTransition(GetSceneName(type)); // [Phase 0.5 계측] 전환 구간 메모리 피크 샘플링 시작
-
-        if (_transitionUI != null)
-        {
-            _transitionUI.gameObject.SetActive(true);
-        }
-
-        // [핵심 3] 유니티 1프레임 대기 (렌더링 갱신 시간 확보)
-        await UniTask.Yield(PlayerLoopTiming.Update);
-
-        if (CurrentScene != null)
-            CurrentScene.Clear();
-
-        Managers.Clear();
-
-        if (_sceneTable == null)
-        {
-            GameLog.LogError($"[SceneManagerEx] SceneTable이 로드되지 않아 씬 전환 불가: {type}");
-            return;
-        }
-
-        //SceneDataSO data = _sceneTable.GetSceneData(type);
-        SceneDataSO data = null;
-        NextSceneData = data;
-        NextSceneName = GetSceneName(type);
-
-        // Loading 씬으로 이동
-        SceneManager.LoadScene("Loading");
-    }
 }

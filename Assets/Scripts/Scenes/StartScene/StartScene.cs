@@ -45,16 +45,6 @@ public class StartScene : BaseScene
         var popupTask = PreloadPopups();
         var saveTask = LoadingSaveDatas();
 
-        //// [핵심 2] ResourceManager의 UniTask 버전 LoadDependenciesAsync 호출
-        //var globalAssetTask = Managers.Resource.LoadDependenciesAsync(
-        //    new[] { "Global" },
-        //    true,
-        //    (fileName, progress) =>
-        //    {
-        //        UpdateText(progress);
-        //    }
-        //);
-
         var globalAssetTask = Managers.Resource.LoadAsyncPreload(
     new[] { "Global" },
     true,                       // Global 스코프

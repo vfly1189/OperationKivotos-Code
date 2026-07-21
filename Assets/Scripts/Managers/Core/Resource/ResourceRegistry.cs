@@ -95,4 +95,38 @@ public sealed class ResourceRegistry
         { asset = t; return true; }
         return false;
     }
+
+    // =========================================================================
+    // [Phase 2 계측] 디버그 창/리포트가 읽는 스냅샷.
+    //  레지스트리가 "살아있는 핸들"의 단일 진실 — 옛 2버킷 딕셔너리를 대체한다.
+    //  버킷(Global/Scene) 라벨은 소유 스코프가 정하므로 여기선 refCount만 노출.
+    // =========================================================================
+    public int Count => _entries.Count;
+
+    public struct DebugEntry
+    {
+        public ResourceKey Key;
+        public int RefCount;      // 이 리소스를 소유한 서로 다른 스코프 수
+        public bool IsDone;
+        public string TypeName;   // 완료 시 실제 타입, 로딩 중이면 "(loading)"
+        public UnityEngine.Object Asset;
+    }
+
+    public void GetSnapshot(List<DebugEntry> buffer)
+    {
+        buffer.Clear();
+        foreach (var kv in _entries)
+        {
+            var h = kv.Value.handle;
+            bool done = h.IsValid() && h.IsDone && h.Result != null;
+            buffer.Add(new DebugEntry
+            {
+                Key = kv.Key,
+                RefCount = kv.Value.RefCount,
+                IsDone = h.IsValid() && h.IsDone,
+                TypeName = done ? h.Result.GetType().Name : "(loading)",
+                Asset = done ? h.Result as UnityEngine.Object : null,
+            });
+        }
+    }
 }

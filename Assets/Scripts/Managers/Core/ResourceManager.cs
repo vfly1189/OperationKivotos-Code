@@ -30,13 +30,6 @@ public enum ResourceScopeType
 
 public class ResourceManager
 {
-    // Addressables 핸들 관리용 딕셔너리 2개 분리
-    // 1. 글로벌: 게임 종료 시까지 절대 해제되지 않음 (플레이어 캐릭터, UI, 공통 VFX 등)
-    private Dictionary<string, AsyncOperationHandle> _globalHandles = new Dictionary<string, AsyncOperationHandle>();
-
-    // 2. 씬: 씬 이동(Clear) 시마다 모두 해제되어 메모리 확보 (맵, 몬스터, 환경음 등)
-    private Dictionary<string, AsyncOperationHandle> _sceneHandles = new Dictionary<string, AsyncOperationHandle>();
-
     //아틀라스 파편(Sprite) 보호용 강력한 글로벌 캐시
     private Dictionary<string, Sprite> _atlasSpriteCache = new Dictionary<string, Sprite>();
 
@@ -46,11 +39,6 @@ public class ResourceManager
 
     public void Init()
     {
-        // 구 버전
-        //global은 계속 살려둘거임
-        _sceneHandles.Clear();
-
-        // 신 버전
         _registry = new ResourceRegistry();
         _scopes[ResourceScopeType.Global] = new ResourceScope(_registry, "Global");
         _scopes[ResourceScopeType.Scene] = new ResourceScope(_registry, "Scene");
@@ -83,6 +71,8 @@ public class ResourceManager
         ResourceScope scope = isGlobal ? _scopes[ResourceScopeType.Global]
                              : _scopes[ResourceScopeType.Scene];
 
+        string labelText = string.Join(",", labels); // [Phase 2 계측] 출처 라벨
+
         // "이 라벨이 붙은 물건들의 '주소 카드'를 다 뽑아줘" (카드만! 물건 자체는 안 꺼냄)
         var locationsHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
         try
@@ -95,6 +85,7 @@ public class ResourceManager
             for (int i = 0; i < total; i++)
             {
                 var loc = locations[i];
+                SetLoadSource(loc.PrimaryKey, $"Preload({labelText})"); // [Phase 2 계측]
                 await scope.LoadAsync(loc, token);                    // (key, ResourceType)로 스코프에 acquire
                 onProgress?.Invoke(loc.PrimaryKey, (i + 1f) / total);
             }
@@ -126,88 +117,13 @@ public class ResourceManager
             ? UniTask.FromResult<T>(null)
             : LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
 
-    //public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
-    //{
-    //    if (string.IsNullOrEmpty(key)) return UniTask.FromResult<T>(null);
-
-        //    RecordLoadSource(key); // [Phase 0 계측] 최초 로드 요청자 기록 (에디터/개발 빌드 전용, 동작 무변경)
-
-        //    if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && gh.Result is T gResult)
-        //        return UniTask.FromResult(gResult);
-
-        //    if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && sh.Result is T sResult)
-        //        return UniTask.FromResult(sResult);
-
-        //    return LoadAsyncInternal<T>(key, isGlobal, token);
-        //}
-
     public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default)
         where T : UnityEngine.Object
-        => (isGlobal ? _scopes[ResourceScopeType.Global] : _scopes[ResourceScopeType.Scene]).LoadAsync<T>(key, token);
-
-    // 실제 비동기 로직 분리
-    private async UniTask<T> LoadAsyncInternal<T>(string key, bool isGlobal, CancellationToken token = default) where T : UnityEngine.Object
     {
-
-        bool wasGlobal = false;
-        AsyncOperationHandle handleToRelease = default;
-
-        // 1. 타입 불일치 핸들 제거 및 원래 글로벌 소속이었는지 기억하기
-        if (_globalHandles.TryGetValue(key, out var gh) && gh.IsDone && !(gh.Result is T))
-        {
-            wasGlobal = true; // 아! 얘는 처음에 Global로 프리로드 했던 애구나!
-            _globalHandles.Remove(key);
-            handleToRelease = gh; // 즉시 해제하면 메모리가 날아갈 수 있으니 임시 보관
-        }
-        if (_sceneHandles.TryGetValue(key, out var sh) && sh.IsDone && !(sh.Result is T))
-        {
-            _sceneHandles.Remove(key);
-            handleToRelease = sh;
-        }
-
-        // 로딩 중인 핸들 있으면 기다리기
-        if (_globalHandles.TryGetValue(key, out var pendingGlobal) && !pendingGlobal.IsDone)
-        {
-            await pendingGlobal.ToUniTask(cancellationToken: token);
-            return pendingGlobal.Result as T;
-        }
-        if (_sceneHandles.TryGetValue(key, out var pendingScene) && !pendingScene.IsDone)
-        {
-            await pendingScene.ToUniTask(cancellationToken: token);
-            return pendingScene.Result as T;
-        }
-
-        // 2. 새로운 타입(예: Sprite)으로 다시 로드
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        var loadSw = System.Diagnostics.Stopwatch.StartNew(); // [Phase 0.5 계측] 실제 로드 시간 (캐시 히트는 여기 안 옴)
-#endif
-        var handle = Addressables.LoadAssetAsync<T>(key);
-
-
-        if (isGlobal || wasGlobal) _globalHandles[key] = handle;
-        else _sceneHandles[key] = handle;
-
-        await handle.ToUniTask(cancellationToken: token);
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        loadSw.Stop();
-        ResourceMetrics.RecordLoad(key, loadSw.ElapsedMilliseconds); // [Phase 0.5 계측]
-#endif
-
-        // 새 핸들 로드가 완전히 끝난 후 예전 핸들 해제 
-        if (handleToRelease.IsValid())
-        {
-            Addressables.Release(handleToRelease);
-        }
-
-        if (handle.Status == AsyncOperationStatus.Succeeded) return handle.Result as T;
-
-        GameLog.LogError($"[ResourceManager] Load Failed: {key}");
-        if (isGlobal || wasGlobal) _globalHandles.Remove(key);
-        else _sceneHandles.Remove(key);
-        return null;
+        RecordLoadSource(key); // [Phase 2 계측] 최초 로드 요청자 기록 (에디터/개발 빌드 전용, 동작 무변경)
+        ResourceScope scope = isGlobal ? _scopes[ResourceScopeType.Global] : _scopes[ResourceScopeType.Scene];
+        return scope.LoadAsync<T>(key, token);
     }
-
 
     // =========================================================================
     // 3. NoCache 로드 (문자열 string Key 기반) -> DataManager에서 JSON 부를 때 사용
@@ -301,68 +217,6 @@ public class ResourceManager
 
 
     // =========================================================================
-    // 프리로딩 전용 함수
-    // =========================================================================
-    public async UniTask LoadDependenciesAsync(IEnumerable<string> labels, bool isGlobal = false, System.Action<string, float> onProgress = null)
-    {
-        // [Phase 0 계측] 프리로드 소요 시간 측정 (Baseline: P6 순차 로드의 Before 수치)
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        string labelText = string.Join(",", labels);
-
-        var locationsHandle = Addressables.LoadResourceLocationsAsync(labels, Addressables.MergeMode.Union);
-        await locationsHandle.ToUniTask();
-
-        if (locationsHandle.Status != AsyncOperationStatus.Succeeded) return;
-
-        var locations = locationsHandle.Result;
-        int totalCount = locations.Count;
-
-        for (int i = 0; i < totalCount; i++)
-        {
-            var location = locations[i];
-            string key = location.PrimaryKey;
-
-            GameLog.Log($"로딩 키 : {key}");
-
-            // 이미 딕셔너리에 있으면 스킵 (중복 로드 방지)
-            if (_globalHandles.ContainsKey(key) || _sceneHandles.ContainsKey(key))
-            {
-                onProgress?.Invoke(key, (i + 1f) / totalCount);
-                continue;
-            }
-
-            //  Object 타입으로 로드하되 딕셔너리에 저장
-            var handle = Addressables.LoadAssetAsync<Object>(location);
-
-            if (isGlobal) _globalHandles[key] = handle;
-            else _sceneHandles[key] = handle;
-
-            SetLoadSource(key, $"Preload({labelText})"); // [Phase 0 계측]
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            var keySw = System.Diagnostics.Stopwatch.StartNew(); // [Phase 0.5 계측] 키별 프리로드 시간 (프레임 대기 포함 = 근사치)
-#endif
-            while (!handle.IsDone)
-            {
-                onProgress?.Invoke(key, (i + handle.PercentComplete) / totalCount);
-                await UniTask.Yield(PlayerLoopTiming.Update);
-            }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            keySw.Stop();
-            ResourceMetrics.RecordLoad(key, keySw.ElapsedMilliseconds); // [Phase 0.5 계측]
-#endif
-
-            onProgress?.Invoke(key, (i + 1f) / totalCount);
-        }
-
-        Addressables.Release(locationsHandle);
-
-        stopwatch.Stop();
-        GameLog.Log($"[Preload] {totalCount}개 로드 완료 — {stopwatch.ElapsedMilliseconds}ms (라벨: {labelText}, isGlobal: {isGlobal})");
-    }
-
-    // =========================================================================
     // [실무 패턴] 로드-필요시-생성 통합 API
     // 동기 Instantiate(프리로드 필수)와 async Load를 손으로 잇던 걸 한 호출로 통합.
     // 취소 토큰을 로드까지 전파하여 씬 이탈/디스폰 중 use-after-teardown 방지.
@@ -432,28 +286,6 @@ public class ResourceManager
     }
 
 
-    ////  Addressable Key 문자열을 받아 위치/회전까지 맞춰주는 Instantiate 함수
-    //public GameObject Instantiate(string key, Vector3 position, Quaternion rotation, Transform parent = null)
-    //{
-    //    // 캐시에서 찾기 (글로벌 우선, 그 다음 씬)
-    //    AsyncOperationHandle handle;
-    //    bool found = _globalHandles.TryGetValue(key, out handle) || _sceneHandles.TryGetValue(key, out handle);
-
-    //    if (found && handle.Status == AsyncOperationStatus.Succeeded)
-    //    {
-    //        GameObject original = handle.Result as GameObject;
-    //        if (original != null)
-    //        {
-    //            // 찾았으면 기존 안전한 Instantiate(GameObject) 활용
-    //            return Instantiate(original, position, rotation, parent);
-    //        }
-    //    }
-
-    //    GameLog.LogError($"[ResourceManager] 에셋이 로드되지 않았거나 찾을 수 없습니다. Key: {key}\n" +
-    //                   $"미리 LoadAsync로 로딩해두었는지 확인하세요.");
-    //    return null;
-    //}
-
     public GameObject Instantiate(string key, Vector3 position, Quaternion rotation, Transform parent = null)
     {
         if (_registry.TryGetAsset<GameObject>(key, out var original))
@@ -479,23 +311,6 @@ public class ResourceManager
         return go;
     }
 
-
-
-    // 메모리 정리 (씬 이동 시 호출)
-    public void Clear()
-    {
-        RemoveSceneLoadSources(); // [Phase 0 계측] 해제될 씬 키들의 출처 기록 정리
-
-        // _globalHandles는 건드리지 않고, _sceneHandles만 Release하여 메모리 확보
-        foreach (var handle in _sceneHandles.Values)
-        {
-            if (handle.IsValid())
-            {
-                Addressables.Release(handle); // Addressable 레퍼런스 카운트 감소 (메모리 해제)
-            }
-        }
-        _sceneHandles.Clear();
-    }
 
 
     public void Destroy(GameObject go)
@@ -524,33 +339,49 @@ public class ResourceManager
     // key → 최초 로드를 요청한 호출자. 에디터/개발 빌드에서만 채워짐
     private readonly Dictionary<string, string> _loadSources = new Dictionary<string, string>();
 
-    public int GlobalHandleCount => _globalHandles.Count;
-    public int SceneHandleCount => _sceneHandles.Count;
+    // 디버그 창/리포트가 매 프레임 호출해도 부담 없도록 재사용하는 레지스트리 스냅샷 버퍼
+    private readonly List<ResourceRegistry.DebugEntry> _regSnapshot = new List<ResourceRegistry.DebugEntry>();
+
+    // [Phase 2] 카운트는 이제 스코프(버킷) 소유 수 / 레지스트리 고유 핸들 수를 가리킨다.
+    public int GlobalHandleCount => _scopes[ResourceScopeType.Global].Count;
+    public int SceneHandleCount => _scopes[ResourceScopeType.Scene].Count;
+    public int RegistryHandleCount => _registry.Count;   // 서로 다른 (key,type) 핸들 총수
     public int AtlasSpriteCacheCount => _atlasSpriteCache.Count;
 
-    // 디버그 창이 매 프레임 호출해도 부담 없도록 버퍼 재사용 방식
+    // 레지스트리 엔트리에 Global/Scene 버킷 라벨 부여 — 어느 스코프가 이 키를 소유하는가
+    private string ResolveBucket(ResourceKey rk)
+    {
+        foreach (var kv in _scopes)
+            if (kv.Value.Contains(rk)) return kv.Value.Name;
+        return "?"; // 소유 스코프 없음(과도기/직접 로드) — 정상 흐름에선 나오지 않음
+    }
+
+    // 디버그 창이 매 프레임 호출해도 부담 없도록 버퍼 재사용 방식.
+    //  Global 버킷을 먼저 방출 — 디버그 창 MeasureMemory가 공유 의존성(아틀라스 텍스처 등)을
+    //  "먼저 나온 버킷"에 한 번만 귀속시키므로, Global 우선 순서를 유지해야 Baseline v2와 대조된다.
     public void GetHandleSnapshot(List<ResourceHandleDebugInfo> buffer)
     {
         buffer.Clear();
-        AppendSnapshot(buffer, _globalHandles, "Global");
-        AppendSnapshot(buffer, _sceneHandles, "Scene");
-    }
+        _registry.GetSnapshot(_regSnapshot);
 
-    private void AppendSnapshot(List<ResourceHandleDebugInfo> buffer, Dictionary<string, AsyncOperationHandle> handles, string bucket)
-    {
-        foreach (var kv in handles)
+        for (int pass = 0; pass < 2; pass++) // pass 0 = Global, pass 1 = 나머지(Scene 등)
         {
-            var h = kv.Value;
-            bool done = h.IsValid() && h.IsDone && h.Result != null;
-            buffer.Add(new ResourceHandleDebugInfo
+            foreach (var e in _regSnapshot)
             {
-                Key = kv.Key,
-                Bucket = bucket,
-                TypeName = done ? h.Result.GetType().Name : "(loading)",
-                IsDone = h.IsValid() && h.IsDone,
-                Source = _loadSources.TryGetValue(kv.Key, out var src) ? src : "?",
-                Asset = done ? h.Result as Object : null,
-            });
+                string bucket = ResolveBucket(e.Key);
+                bool isGlobal = bucket == "Global";
+                if (pass == 0 ? !isGlobal : isGlobal) continue;
+
+                buffer.Add(new ResourceHandleDebugInfo
+                {
+                    Key = e.Key.Key,
+                    Bucket = bucket,
+                    TypeName = e.TypeName,
+                    IsDone = e.IsDone,
+                    Source = _loadSources.TryGetValue(e.Key.Key, out var src) ? src : "?",
+                    Asset = e.Asset,
+                });
+            }
         }
     }
 
@@ -558,25 +389,38 @@ public class ResourceManager
     [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
     public void LogAliveReport(string tag)
     {
+        _registry.GetSnapshot(_regSnapshot);
+
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"[ResourceReport] ({tag}) global={_globalHandles.Count} scene={_sceneHandles.Count} atlasSprites={_atlasSpriteCache.Count}");
-        foreach (var kv in _globalHandles)
-            sb.AppendLine($"  [G] {kv.Key}  ←  {(_loadSources.TryGetValue(kv.Key, out var g) ? g : "?")}");
-        foreach (var kv in _sceneHandles)
-            sb.AppendLine($"  [S] {kv.Key}  ←  {(_loadSources.TryGetValue(kv.Key, out var s) ? s : "?")}");
+        sb.AppendLine($"[ResourceReport] ({tag}) handles={_registry.Count} " +
+                      $"global={_scopes[ResourceScopeType.Global].Count} scene={_scopes[ResourceScopeType.Scene].Count} " +
+                      $"atlasSprites={_atlasSpriteCache.Count}");
+        foreach (var e in _regSnapshot)
+        {
+            string bucket = ResolveBucket(e.Key);
+            string src = _loadSources.TryGetValue(e.Key.Key, out var s) ? s : "?";
+            sb.AppendLine($"  [{bucket}] {e.Key.Key}  (ref {e.RefCount}, {e.TypeName})  ←  {src}");
+        }
         GameLog.Log(sb.ToString());
     }
 
-    // 씬 버킷이 비었어야 하는 시점의 누수 검출
+    // 씬 스코프가 비었어야 하는 시점의 누수 검출
     [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
     public void AssertSceneHandlesCleared(string context)
     {
-        if (_sceneHandles.Count == 0) return;
+        ResourceScope sceneScope = _scopes[ResourceScopeType.Scene];
+        if (sceneScope.Count == 0) return;
+
+        _registry.GetSnapshot(_regSnapshot);
 
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"[ResourceLeak] 씬 버킷에 핸들 {_sceneHandles.Count}개 잔존! ({context})");
-        foreach (var kv in _sceneHandles)
-            sb.AppendLine($"  [S] {kv.Key}  ←  {(_loadSources.TryGetValue(kv.Key, out var s) ? s : "?")}");
+        sb.AppendLine($"[ResourceLeak] 씬 스코프에 핸들 {sceneScope.Count}개 잔존! ({context})");
+        foreach (var e in _regSnapshot)
+        {
+            if (!sceneScope.Contains(e.Key)) continue;
+            string src = _loadSources.TryGetValue(e.Key.Key, out var s) ? s : "?";
+            sb.AppendLine($"  [S] {e.Key.Key}  (ref {e.RefCount})  ←  {src}");
+        }
         GameLog.LogError(sb.ToString());
     }
 
@@ -618,13 +462,6 @@ public class ResourceManager
     private void SetLoadSource(string key, string source)
     {
         if (!_loadSources.ContainsKey(key)) _loadSources[key] = source;
-    }
-
-    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-    private void RemoveSceneLoadSources()
-    {
-        foreach (var key in _sceneHandles.Keys)
-            _loadSources.Remove(key);
     }
 
     // [Phase 0.5 계측] 아틀라스 캐시 스프라이트가 실제로 바인딩한 텍스처 목록
