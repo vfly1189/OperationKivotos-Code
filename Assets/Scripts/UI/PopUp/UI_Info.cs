@@ -92,7 +92,9 @@ public class UI_Info : UI_PopUp
 
         var token = this.GetCancellationTokenOnDestroy();
         // [Phase 0.5c] 아틀라스 해체 — 개별 스프라이트 직접 로드 (1명 열람 = 1장만, 페이지 64MB 전량 로드 제거)
-        Sprite standingImage = await Managers.Resource.LoadAsync<Sprite>(key, isGlobal: true, token: token);
+        // [Phase 3b] Global(영구 상주) → Popup 스코프. 스탠딩은 크고 한 캐릭만 열람하므로
+        //  씬 끝까지 들고 있을 이유가 없다 — 팝업이 닫히면 회수된다.
+        Sprite standingImage = await Managers.Resource.LoadAsync<Sprite>(key, ResourceScopeType.Popup, token);
 
         _standingImage.sprite = standingImage;
 

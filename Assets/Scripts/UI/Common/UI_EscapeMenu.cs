@@ -44,7 +44,8 @@ public class UI_EscapeMenu : UI_PopUp
             {
                 string key = schoolName + "_Deco_" + dir[i];
                 // [Phase 0.5c] 아틀라스 해체 — 학교 1곳 데코 3장만 개별 로드 (9장 전량 로드 제거)
-                Sprite img = await Managers.Resource.LoadAsync<Sprite>(key, isGlobal: true);
+                // [Phase 3b] Global(영구 상주) → Popup 스코프. ESC 메뉴가 닫히면 회수된다.
+                Sprite img = await Managers.Resource.LoadAsync<Sprite>(key, ResourceScopeType.Popup);
                 _decoImages[i].sprite = img;
             }
         }

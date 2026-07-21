@@ -29,6 +29,7 @@ public enum ResourceScopeType
     Global,   // 부팅 → 종료. 절대 Dispose 안 함
     Scene,    // 씬 진입 → 다음 전환 (ChangeSceneScope가 자동 회전)
     Party,    // 파티 구성 → 해체/교체 (씬 전환을 넘어 생존) — Phase 3c
+    Popup,    // 팝업 스택이 비어있지 않은 동안 (0→1에서 생성, 1→0에서 Dispose) — Phase 3b
 }
 
 public class ResourceManager
