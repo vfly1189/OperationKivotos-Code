@@ -180,8 +180,8 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 | R3 | `_atlasSpriteCache` 수명화 | ⏳ | 해제 경로 없는 영구 캐시 → 아틀라스 핸들 수명 동행 (Phase 3d). 아틀라스 대부분 해체돼 우선순위 낮음 |
 | R4 | NoCache/JSON use-after-release | ⏳ | `LoadAsyncNoCache`(P2) → `LoadTextAsync`(임시 스코프+`.text` 복사) |
 | R5 | 풀↔에셋 수명 통합 | ⏳ | PoolManager를 스코프 소속으로 (Phase 4) |
-| R6 | `UI_LootNotification` use-after-release | 🔜 | `DontDestroyOnLoad` 인스턴스 + Scene 스코프 에셋의 수명 불일치 (5-4). 정책 A/B 결정 필요 |
-| R7 | `DisposeScope()` 호출부 없음 | ⏳ | 3d(던전 스코프)에서 사용 예정. 그때까지 미사용 API — 3d에서 안 쓰게 되면 삭제 |
+| R6 | `UI_LootNotification` use-after-release | ✅ **구현·검증 대기** | **정책 (A) 채택** — 인스턴스가 `DontDestroyOnLoad` 싱글톤이므로 에셋도 Global. `MakeSubItemAsync`에 스코프 명시 오버로드 추가(기본은 Scene 유지). 곁들여 `_isLoading` try/finally + 실패 시 `WaitUntil` 영구 정지 수정 + 정적 진입점 null 가드 |
+| R7 | `DisposeScope()` 호출부 없음 | ✅ | 3b의 `ClosePopupUI`가 첫 호출부가 되어 해소 |
 
 ### 씬 전환
 | # | 항목 | 상태 |
@@ -195,7 +195,7 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 | # | 항목 | 상태 | 비고 |
 |---|---|---|---|
 | 3a | 팝업 프리팹 → 씬 스코프 | ✅ **검증 완료** | `ShowPopupUIAsync`의 `isGlobal` 제거 + `_isLoadingPopup` try/finally. 팝업 세션 Global 영구증가 **+56.0 → +10.4MB(−81%)**, Scene 버킷 101.4 → 160.7 → **101.4 왕복 복귀**(회수 증명), 히치 무변화. 측정 상세 [Baseline.md §9](./Baseline.md) |
-| 3b | 스탠딩 → 팝업 스코프 신설 | 🔜 **다음** | `UI_Info:95`·`UI_EscapeMenu:47`. **`UI_Info` 첫 오픈 히치 420~597ms 미해결 조사와 병합** |
+| 3b | 스탠딩 → 팝업 스코프 신설 | ✅ **구현·측정 대기** | Popup 스코프 신설(스택 0→1 생성, 1→0 Dispose, 중첩은 공유). `UI_Info:95`·`UI_EscapeMenu:47` → Popup. **첫 수동 Dispose 훅** = 닫기 경로 누락이 곧 누수, `[?]` 버킷으로 검출. **`UI_Info` 첫 오픈 히치 420~597ms 조사는 미착수** |
 | 3c | 파티 스코프 + 라벨 다이어트 | ✅ **검증 완료** | Global 라벨 42→12개. 진입 Global **513.0 → 65.8MB(−87%)**, 합계 616.7 → 362.4MB. Party 54.3MB 전 구간 불변(씬 전환 생존). 대가는 팝업 첫 오픈 +14~20ms. 상세 [Baseline.md §10](./Baseline.md) |
 | 3d | 던전 스코프 + AtlasSpriteCache | ⏳ | R3/R5 합류. 잔여 단조 증가의 아틀라스 8종 몫 |
 
