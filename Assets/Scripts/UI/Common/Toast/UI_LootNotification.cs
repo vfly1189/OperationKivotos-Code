@@ -99,7 +99,11 @@ public class UI_LootNotification : UI_Base
         // UI 컴포넌트는 미리 세팅해두고 (이름, 개수, 테두리 색상 등)
         // 아이콘은 로드되는 대로 나중에 들어가도록 처리할 수도 있고, 기다렸다가 넘길 수도 있습니다.
         //Sprite loadedIcon = await Managers.Resource.LoadAsync<Sprite>(info.IconKey);
-        Sprite loadedIcon = await Managers.Resource.GetSpriteFromAtlasAsync(atlasKey, iconName);
+        // [Phase 3d] 이 토스트는 DontDestroyOnLoad 캔버스에 살면서 씬을 넘나든다 —
+        //  아이콘 아틀라스도 Global이어야 한다. Scene(기본값)으로 두면 씬 회전 때
+        //  아틀라스가 해제되며 캐시 클론까지 파기돼, 표시 중인 토스트가 빈칸이 된다(R6와 같은 계열).
+        Sprite loadedIcon = await Managers.Resource.GetSpriteFromAtlasAsync(
+            atlasKey, iconName, ResourceScopeType.Global);
 
         // 로드되는 동안 삭제되었을 수 있으니 방어 코드
         if (toastItem != null)

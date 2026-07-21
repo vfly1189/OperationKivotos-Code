@@ -34,8 +34,15 @@ public enum ResourceScopeType
 
 public class ResourceManager
 {
-    //아틀라스 파편(Sprite) 보호용 강력한 글로벌 캐시
+    // 아틀라스 파편(Sprite) 캐시. spriteName → 클론 Sprite.
+    //  [Phase 3d] 예전엔 해제 경로가 없는 영구 캐시였다. atlas.GetSprites()가 돌려주는 것은
+    //  **클론 Sprite**라 붙잡고 있으면 (1)클론 자체가 누수되고 (2)핸들 refCount와 무관하게
+    //  아틀라스 텍스처가 고정된다 = 스코프를 정확히 잡아도 회수가 무효화된다.
+    //  → 아틀라스 핸들이 실제 해제될 때 함께 버리도록 수명을 동행시킨다.
     private Dictionary<string, Sprite> _atlasSpriteCache = new Dictionary<string, Sprite>();
+
+    // 아틀라스 키 → 그 아틀라스가 캐시에 넣은 spriteName 목록 (해제 시 역추적용)
+    private Dictionary<string, List<string>> _atlasCacheOwners = new Dictionary<string, List<string>>();
 
 
     private ResourceRegistry _registry;
@@ -44,8 +51,27 @@ public class ResourceManager
     public void Init()
     {
         _registry = new ResourceRegistry();
+        _registry.OnReleased += OnRegistryEntryReleased;   // [Phase 3d] 아틀라스 캐시 수명 동행
+
         _scopes[ResourceScopeType.Global] = new ResourceScope(_registry, "Global");
         _scopes[ResourceScopeType.Scene] = new ResourceScope(_registry, "Scene");
+    }
+
+    // [Phase 3d] 아틀라스 핸들이 실제 해제되면 그 아틀라스에서 뽑아둔 클론 스프라이트도 함께 파기.
+    //  이 훅이 없으면 캐시가 아틀라스를 붙잡아 스코프 회수가 장부상으로만 끝난다.
+    private void OnRegistryEntryReleased(ResourceKey key)
+    {
+        if (!_atlasCacheOwners.TryGetValue(key.Key, out List<string> spriteNames)) return;
+
+        for (int i = 0; i < spriteNames.Count; i++)
+        {
+            if (_atlasSpriteCache.TryGetValue(spriteNames[i], out Sprite clone) && clone != null)
+                Object.Destroy(clone);   // GetSprites가 만든 클론 — 우리가 만들었으므로 우리가 치운다
+
+            _atlasSpriteCache.Remove(spriteNames[i]);
+        }
+
+        _atlasCacheOwners.Remove(key.Key);
     }
 
     #region 리소스 관리 신버전
@@ -216,7 +242,10 @@ public class ResourceManager
     // =========================================================================
     //  SpriteAtlas 특화 로드 및 추출 함수
     // =========================================================================
-    public async UniTask<Sprite> GetSpriteFromAtlasAsync(string atlasKey, string spriteName)
+    // [Phase 3d] scope 기본값이 Scene — 예전엔 isGlobal:true로 무조건 영구 상주였다.
+    //  씬을 넘어 사는 소비자(DontDestroyOnLoad UI 등)만 명시적으로 Global을 넘긴다.
+    public async UniTask<Sprite> GetSpriteFromAtlasAsync(string atlasKey, string spriteName,
+        ResourceScopeType scope = ResourceScopeType.Scene)
     {
         if (string.IsNullOrEmpty(spriteName)) return null;
 
@@ -227,7 +256,7 @@ public class ResourceManager
         }
 
         // 2. 캐시에 없으면 아틀라스 자체를 어드레서블로 로드
-        SpriteAtlas atlas = await LoadAsync<SpriteAtlas>(atlasKey, isGlobal: true);
+        SpriteAtlas atlas = await LoadAsync<SpriteAtlas>(atlasKey, scope);
 
         if (atlas != null)
         {
@@ -243,10 +272,20 @@ public class ResourceManager
                 // (Clone) 글자 떼기
                 string cleanName = s.name.Replace("(Clone)", "");
 
-                // 캐시에 등록
+                // 캐시에 등록 + 소유 아틀라스 기록 (해제 시 함께 버리기 위해)
                 if (!_atlasSpriteCache.ContainsKey(cleanName))
                 {
                     _atlasSpriteCache.Add(cleanName, s);
+
+                    if (!_atlasCacheOwners.TryGetValue(atlasKey, out List<string> owned))
+                        _atlasCacheOwners[atlasKey] = owned = new List<string>();
+                    owned.Add(cleanName);
+                }
+                else
+                {
+                    // 이미 같은 이름이 캐시에 있으면 이번 클론은 쓰이지 않는다 — 즉시 파기.
+                    // (동시 요청이 캐시 채워지기 전에 각자 전개하는 경우 = Baseline §7-4의 중복 전개)
+                    Object.Destroy(s);
                 }
             }
 

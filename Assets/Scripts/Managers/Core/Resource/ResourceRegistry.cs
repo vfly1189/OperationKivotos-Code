@@ -16,6 +16,12 @@ public sealed class ResourceRegistry
 
     private readonly Dictionary<ResourceKey, Entry> _entries = new Dictionary<ResourceKey, Entry>();
 
+    // [Phase 3d] 핸들이 "실제로" 해제된 순간(refCount 0) 알림.
+    //  핸들 바깥에 파생물을 들고 있는 쪽(아틀라스 스프라이트 캐시 등)이
+    //  자기 것을 같이 버릴 수 있게 한다 — 이게 없으면 스코프를 아무리 정확히
+    //  잡아도 캐시가 에셋을 붙잡아 회수가 무효화된다.
+    public event System.Action<ResourceKey> OnReleased;
+
     // 특정 scope의 첫 참조일때만 incrementRef 값 증가
     public async UniTask<T> LoadAsync<T> (ResourceKey key, bool incrementRef, CancellationToken tok)
         where T : UnityEngine.Object
@@ -94,6 +100,8 @@ public sealed class ResourceRegistry
         {
             if(entry.handle.IsValid()) Addressables.Release(entry.handle);
             _entries.Remove(key);
+
+            OnReleased?.Invoke(key);   // [Phase 3d] 파생물 보유자에게 통지 (제거 후에 호출 — 재진입 안전)
         }
     }
 
