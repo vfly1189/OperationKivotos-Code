@@ -109,36 +109,42 @@ public class UIManager
         if (_isLoadingPopup) return null;
         _isLoadingPopup = true;
 
-        if (string.IsNullOrEmpty(addressableKey))
-            addressableKey = typeof(T).Name;
+        try
+        {
+            if (string.IsNullOrEmpty(addressableKey))
+                addressableKey = typeof(T).Name;
 
-        ResourceMetrics.BeginUIOpen(addressableKey); // [Phase 0.5 계측] 오픈 레이턴시 + 히치 관찰 시작
+            ResourceMetrics.BeginUIOpen(addressableKey); // [Phase 0.5 계측] 오픈 레이턴시 + 히치 관찰 시작
 
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, isGlobal: true);
-        if (prefab == null) return null;
+            // [Phase 3a] isGlobal 제거 → 기본 Scene 스코프(씬 전환 시 자동 회수). 팝업 프리팹 영구 상주 해소.
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
+            if (prefab == null) return null;
 
-        // 하드코딩된 @GameSceneCanvas 대신 CanvasPopup 아래에 배치
-        GameObject go = Managers.Resource.Instantiate(prefab, CanvasPopup.transform);
-        go.transform.SetParent(CanvasPopup.transform, false);
-        go.SetActive(true);
+            // 하드코딩된 @GameSceneCanvas 대신 CanvasPopup 아래에 배치
+            GameObject go = Managers.Resource.Instantiate(prefab, CanvasPopup.transform);
+            go.transform.SetParent(CanvasPopup.transform, false);
+            go.SetActive(true);
 
-        RectTransform rect = go.GetComponent<RectTransform>();
-        rect.anchoredPosition = Vector2.zero;
-        rect.localScale = Vector3.one;
+            RectTransform rect = go.GetComponent<RectTransform>();
+            rect.anchoredPosition = Vector2.zero;
+            rect.localScale = Vector3.one;
 
-        T popup = Util.GetOrAddComponent<T>(go);
-        _popupStack.Push(popup);
-        Managers.Input.PushContext(InputContext.UI);   // 팝업 열림 → 게임플레이 입력 차단
+            T popup = Util.GetOrAddComponent<T>(go);
+            _popupStack.Push(popup);
+            Managers.Input.PushContext(InputContext.UI);   // 팝업 열림 → 게임플레이 입력 차단
 
-        GameLog.Log($"팝업 스택 : {_popupStack.Count}");
+            GameLog.Log($"팝업 스택 : {_popupStack.Count}");
 
-       
-        SetCanvas(go, true);
+            SetCanvas(go, true);
 
-        ResourceMetrics.MarkUIShown(addressableKey); // [Phase 0.5 계측] "표시됨" 마킹 (요청→표시 구간 확정)
+            ResourceMetrics.MarkUIShown(addressableKey); // [Phase 0.5 계측] "표시됨" 마킹 (요청→표시 구간 확정)
 
-        _isLoadingPopup = false;
-        return popup;
+            return popup;
+        }
+        finally
+        {
+            _isLoadingPopup = false;   // [Phase 3a] 실패·예외에도 반드시 복구 (팝업 영구 차단 버그 방지)
+        }
     }
 
 
