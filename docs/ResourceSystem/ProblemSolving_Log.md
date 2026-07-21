@@ -149,9 +149,8 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 
 **중요 — 이건 Phase 3c가 만든 버그가 아니다.** `MakeSubItemAsync`는 이전부터 Scene 스코프였고, 버그도 그때부터 있었다. **다버킷 계측을 붙이자 비로소 "핸들은 사라졌는데 인스턴스는 남은" 불일치가 로그에 드러난 것.** 계측이 리팩터의 부산물이 아니라 도구라는 증거.
 
-**해결 방향 (미결)**:
-- (A) 인스턴스 수명에 맞춰 **Global 스코프로** — `DontDestroyOnLoad` 인스턴스라면 에셋도 전역이 맞다. 1줄.
-- (B) **인스턴스를 씬과 함께 파괴** — Scene 스코프를 유지하고 static을 씬 전환 때 정리. 메모리 178MB 이득이지만 손이 더 감.
+**해결 — (A) 채택**: 인스턴스가 `DontDestroyOnLoad` 싱글톤이므로 에셋도 Global이 맞다. (B)는 설계와 싸우는 쪽이고, 178MB도 공유 의존성 중복 계상이 섞인 값이라 실이득이 불확실했다.
+측정 결과 Global +140.8 / Scene −141.0 / **합계 −0.3 = 완벽한 보존** — 메모리가 는 것이 아니라 **어느 버킷에도 안 잡히던 유령이 회계에 드러난 것**이다.
 
 **교훈**: 에셋의 수명 스코프와 그 에셋으로 만든 **인스턴스의 수명이 어긋나면**, refCount가 아무리 정확해도 안전하지 않다. 스코프를 고를 때 "누가 이 에셋을 쓰는가"가 아니라 **"그것으로 만든 것이 언제까지 사는가"**를 물어야 한다.
 
@@ -177,7 +176,7 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 |---|---|---|---|
 | R1 | 옛 딕셔너리 은퇴 | ✅ | `_globalHandles`/`_sceneHandles` 필드 + `LoadAsyncInternal`·`LoadDependenciesAsync`·`Clear()`·`RemoveSceneLoadSources` + 주석 처리된 옛 `LoadAsync`/`Instantiate` 전량 삭제. `Init()`도 슬림화. 라이브 경로는 스코프/레지스트리만 참조 |
 | R2 | **디버그 창/계측을 레지스트리로** | ✅ | `ResourceRegistry.GetSnapshot`/`Count` 신설 + `ResourceScope.Count`/`Contains` 노출. 파사드 `GetHandleSnapshot`/`LogAliveReport`/`AssertSceneHandlesCleared`/카운트를 레지스트리+스코프로 배선. 버킷 라벨=스코프 소유(`ResolveBucket`), Global 우선 방출로 MeasureMemory 귀속 불변식 유지. 로드 출처 추적 복구(`LoadAsync` 파사드+`LoadAsyncPreload`). **측정 차단 해제** — 이제 디버그 창이 실제 값 표시 |
-| R3 | `_atlasSpriteCache` 수명화 | ⏳ | 해제 경로 없는 영구 캐시 → 아틀라스 핸들 수명 동행 (Phase 3d). 아틀라스 대부분 해체돼 우선순위 낮음 |
+| R3 | `_atlasSpriteCache` 수명화 | ✅ | 3d에서 해소. `GetSprites()`가 돌려주는 것이 **클론 Sprite**라 영구 보관 시 (1)클론 누수 (2)refCount와 무관한 텍스처 고정 = 스코프 회수 무효화. 레지스트리 해제 통지로 수명 동행 |
 | R4 | NoCache/JSON use-after-release | ⏳ | `LoadAsyncNoCache`(P2) → `LoadTextAsync`(임시 스코프+`.text` 복사) |
 | R5 | 풀↔에셋 수명 통합 | ⏳ | PoolManager를 스코프 소속으로 (Phase 4) |
 | R6 | `UI_LootNotification` use-after-release | ✅ **구현·검증 대기** | **정책 (A) 채택** — 인스턴스가 `DontDestroyOnLoad` 싱글톤이므로 에셋도 Global. `MakeSubItemAsync`에 스코프 명시 오버로드 추가(기본은 Scene 유지). 곁들여 `_isLoading` try/finally + 실패 시 `WaitUntil` 영구 정지 수정 + 정적 진입점 null 가드 |
@@ -196,9 +195,9 @@ Addressables.LoadAssetAsync<Object>(location);                // Object로 담�
 |---|---|---|---|
 | 3a | 팝업 프리팹 → 씬 스코프 | ✅ **검증 완료** | `ShowPopupUIAsync`의 `isGlobal` 제거 + `_isLoadingPopup` try/finally. 팝업 세션 Global 영구증가 **+56.0 → +10.4MB(−81%)**, Scene 버킷 101.4 → 160.7 → **101.4 왕복 복귀**(회수 증명), 히치 무변화. 측정 상세 [Baseline.md §9](./Baseline.md) |
 | 3b | 스탠딩 → 팝업 스코프 신설 | ✅ **검증 완료** | Popup 스코프(스택 0→1 생성, 1→0 Dispose, 중첩 공유). Global 단조 증가 **+40.1 → +30.9MB**, 스탠딩·데코가 Global에서 소멸, `[?]` 고아 0건. `UI_Info` 첫 오픈 히치 563.6 → **119.8ms**(v2 수준 복귀, **메커니즘 미설명 — 11-3**). 상세 [Baseline.md §11](./Baseline.md) |
-| — | 3d 대비 미결 | ⏳ | Popup 스코프의 "회수"가 실제 언로드인지 장부상인지 미확인. 복구된 `[LoadStats]`로 스탠딩 키 재로드 횟수를 보면 판정 가능 |
+| — | Popup 회수의 실체 | ✅ | **실제 회수 확정.** `[LoadStats]`상 `Img_Hoshino_Standing` 2회 로드 / `UI_Info` 2회 오픈 = **1오픈 1로드**. 첫 로드 197ms · 재로드 ~4ms라 히치로 안 나타났을 뿐 (Use Existing Build = 실제 번들 환경 값) |
 | 3c | 파티 스코프 + 라벨 다이어트 | ✅ **검증 완료** | Global 라벨 42→12개. 진입 Global **513.0 → 65.8MB(−87%)**, 합계 616.7 → 362.4MB. Party 54.3MB 전 구간 불변(씬 전환 생존). 대가는 팝업 첫 오픈 +14~20ms. 상세 [Baseline.md §10](./Baseline.md) |
-| 3d | 던전 스코프 + AtlasSpriteCache | ⏳ | R3/R5 합류. 잔여 단조 증가의 아틀라스 8종 몫 |
+| 3d | 아틀라스 캐시 수명 동행 (R3) | ✅ **검증 완료** | `ResourceRegistry.OnReleased` 신설 → 아틀라스 해제 시 클론 스프라이트 동반 파기. `AtlasSpriteCache` **278 고정 → 씬마다 순환**, 단조 증가 +30.9 → **+16.1MB**. **던전 스코프는 미착수** — 목표(+18.7→0)가 3a/3c로 이미 달성돼 근거 없이 스코프를 늘리지 않음 |
 
 ### 검증 (막힘 순서)
 ~~**R2(디버그 창 레지스트리 이관)가 선행되어야** Phase 2 성공 기준을 잴 수 있다~~ → **해소**. R1/R2 완료로 측정 재개, Phase 3a에서 실제 수치가 움직였다(§9).
