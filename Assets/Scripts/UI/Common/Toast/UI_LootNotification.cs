@@ -131,38 +131,55 @@ public class UI_LootNotification : UI_Base
 
         if (_isLoading)
         {
-            await UniTask.WaitUntil(() => _instance != null);
+            // 로드가 실패하면 _instance는 null인 채 _isLoading만 내려간다 —
+            // 두 조건을 모두 봐야 영구 대기에 빠지지 않는다.
+            await UniTask.WaitUntil(() => _instance != null || !_isLoading);
             return;
         }
 
         _isLoading = true;
 
-        _instance = await Managers.UI.MakeSubItemAsync<UI_LootNotification>(
-            "UI_LootNotification",
-            Managers.UI.CanvasSystem.transform
-        );
+        try
+        {
+            // [R6] Global 스코프 — 이 인스턴스는 DontDestroyOnLoad 캔버스에 붙어 게임 내내 산다.
+            //  Scene 스코프로 로드하면 씬 회전에서 핸들만 반납되고 인스턴스는 남아
+            //  use-after-release가 된다(던전 왕복 후 재로드도 안 됨). 수명을 일치시킨다.
+            _instance = await Managers.UI.MakeSubItemAsync<UI_LootNotification>(
+                "UI_LootNotification",
+                ResourceScopeType.Global,
+                Managers.UI.CanvasSystem.transform
+            );
 
-        _instance.Init();
-        _instance.transform.localPosition = new Vector3(300, 0, 0);
+            if (_instance == null) return;   // 로드 실패 — 다음 호출이 다시 시도할 수 있게 둔다
 
-        _isLoading = false;
+            _instance.Init();
+            _instance.transform.localPosition = new Vector3(300, 0, 0);
+        }
+        finally
+        {
+            _isLoading = false;   // 실패·예외에도 반드시 복구 (안 그러면 WaitUntil 대기자가 영구 정지)
+        }
     }
 
+    // 로드 실패 시 _instance가 null일 수 있다 — 토스트는 부가 연출이므로 조용히 건너뛴다.
     public static async UniTask ShowToast(ItemCategory category, string itemName, int amount, string iconKey, Color gradeColor)
     {
         await PreloadAsync();
+        if (_instance == null) return;
         _instance.ShowLootToast(category, itemName, amount, iconKey, gradeColor);
     }
 
     public static async UniTask ShowGainExp(int amount)
     {
         await PreloadAsync();
+        if (_instance == null) return;
         _instance.GainExp(amount);
     }
 
     public static async UniTask ShowGainCredit(int amount)
     {
         await PreloadAsync();
+        if (_instance == null) return;
         _instance.GainCredit(amount);
     }
 

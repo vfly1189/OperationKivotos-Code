@@ -93,9 +93,19 @@ public class UIManager
         Util.GetOrAddComponent<GraphicRaycaster>(go);
     }
 
-    public async UniTask<T> MakeSubItemAsync<T>(string addressableKey, Transform parent = null, CancellationToken token = default) where T : UI_Base
+    // 기본은 Scene 스코프 — 서브아이템 대부분은 씬 UI에 붙어 씬과 함께 사라진다.
+    public UniTask<T> MakeSubItemAsync<T>(string addressableKey, Transform parent = null, CancellationToken token = default)
+        where T : UI_Base
+        => MakeSubItemAsync<T>(addressableKey, ResourceScopeType.Scene, parent, token);
+
+    // [R6] 수명 스코프를 명시하는 버전.
+    //  DontDestroyOnLoad 캔버스에 붙는 싱글톤 UI(토스트 등)는 인스턴스가 게임 내내 살아남으므로
+    //  에셋도 Global이어야 한다. Scene 스코프로 두면 씬 회전에서 핸들만 반납되고
+    //  인스턴스는 남는 use-after-release가 된다 (ProblemSolving_Log 5-4).
+    public async UniTask<T> MakeSubItemAsync<T>(string addressableKey, ResourceScopeType scope,
+        Transform parent = null, CancellationToken token = default) where T : UI_Base
     {
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, token: token);
+        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey, scope, token);
         if (prefab == null) return null;
 
         GameObject go = Managers.Resource.Instantiate(prefab, parent);
@@ -115,6 +125,14 @@ public class UIManager
                 addressableKey = typeof(T).Name;
 
             ResourceMetrics.BeginUIOpen(addressableKey); // [Phase 0.5 계측] 오픈 레이턴시 + 히치 관찰 시작
+
+            // [Phase 3b] 팝업 스택이 비어있다가 열리는 순간 = Popup 스코프의 생성 지점.
+            //  중첩 팝업은 스코프를 공유한다(스코프는 타입당 1개). 스택이 다시 빌 때
+            //  ClosePopupUI가 Dispose → 스탠딩/데코 같은 대형 콘텐츠가 즉시 회수된다.
+            //  프리팹 자체는 3a대로 Scene 스코프 — 여기 담는 건 "팝업이 열려 있는 동안만 필요한 콘텐츠".
+            //  Instantiate보다 먼저 만들어야 팝업의 Init에서 거는 로드가 이 스코프를 찾는다.
+            if (_popupStack.Count == 0)
+                Managers.Resource.CreateScope(ResourceScopeType.Popup, "Popup");
 
             // [Phase 3a] isGlobal 제거 → 기본 Scene 스코프(씬 전환 시 자동 회수). 팝업 프리팹 영구 상주 해소.
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
@@ -181,6 +199,11 @@ public class UIManager
         Managers.Resource.Destroy(popup.gameObject);
 
         _order--;
+
+        // [Phase 3b] 마지막 팝업이 닫혔다 = Popup 스코프의 Dispose 지점.
+        //  인스턴스를 먼저 파괴한 뒤에 반납해야 실제 언로드가 일어난다(3c와 같은 순서 규칙).
+        if (_popupStack.Count == 0)
+            Managers.Resource.DisposeScope(ResourceScopeType.Popup);
     }
 
     public void CloseAllPopupUI()
