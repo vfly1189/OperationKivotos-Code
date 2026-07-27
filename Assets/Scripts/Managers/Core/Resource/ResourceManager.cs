@@ -44,6 +44,11 @@ public class ResourceManager
     // 아틀라스 키 → 그 아틀라스가 캐시에 넣은 spriteName 목록 (해제 시 역추적용)
     private Dictionary<string, List<string>> _atlasCacheOwners = new Dictionary<string, List<string>>();
 
+    // [중복 전개 가드] 이미 전량 전개(GetSprites)를 마친 아틀라스 키.
+    //  atlas 로드 await에서 동시 요청 여럿이 함께 깨어나도 각자 GetSprites로 전개하던 낭비를 한 번으로 접는다.
+    //  아틀라스 핸들이 실제 해제될 때(OnRegistryEntryReleased) 함께 지워 재로드 시 다시 전개되게 한다.
+    private readonly HashSet<string> _expandedAtlases = new HashSet<string>();
+
 
     private ResourceRegistry _registry;
     private Dictionary<ResourceScopeType, ResourceScope> _scopes = new Dictionary<ResourceScopeType, ResourceScope>();
@@ -61,6 +66,9 @@ public class ResourceManager
     //  이 훅이 없으면 캐시가 아틀라스를 붙잡아 스코프 회수가 장부상으로만 끝난다.
     private void OnRegistryEntryReleased(ResourceKey key)
     {
+        // 재로드 시 다시 전개되도록 전개 기록을 먼저 지운다 (아틀라스가 아닌 키면 무해한 no-op).
+        _expandedAtlases.Remove(key.Key);
+
         if (!_atlasCacheOwners.TryGetValue(key.Key, out List<string> spriteNames)) return;
 
         for (int i = 0; i < spriteNames.Count; i++)
@@ -278,39 +286,45 @@ public class ResourceManager
 
         if (atlas != null)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            var expandSw = System.Diagnostics.Stopwatch.StartNew(); // [Phase 0.5 계측] 전량 전개 = 메인 스레드 히치 후보
-#endif
-            // 3. 아틀라스를 여는 순간, 내부의 모든 Sprite 조각을 캐시에 등록
-            Sprite[] allSprites = new Sprite[atlas.spriteCount];
-            atlas.GetSprites(allSprites);
-
-            foreach (var s in allSprites)
+            // [중복 전개 가드] atlas 로드 await에서 동시 요청 여럿이 함께 깨어나도 전개는 최초 1회만.
+            //  이 블록엔 await가 없어(동기 구간) 최초 전개가 끝난 뒤에야 다음 호출이 재개되므로,
+            //  Add가 false면 캐시는 이미 다 채워져 있다 → 곧장 꺼내 쓴다 (Baseline §7-4 중복 전개 소멸).
+            if (_expandedAtlases.Add(atlasKey))
             {
-                // (Clone) 글자 떼기
-                string cleanName = s.name.Replace("(Clone)", "");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                var expandSw = System.Diagnostics.Stopwatch.StartNew(); // [Phase 0.5 계측] 전량 전개 = 메인 스레드 히치 후보
+#endif
+                // 3. 아틀라스를 여는 순간, 내부의 모든 Sprite 조각을 캐시에 등록
+                Sprite[] allSprites = new Sprite[atlas.spriteCount];
+                atlas.GetSprites(allSprites);
 
-                // 캐시에 등록 + 소유 아틀라스 기록 (해제 시 함께 버리기 위해)
-                if (!_atlasSpriteCache.ContainsKey(cleanName))
+                foreach (var s in allSprites)
                 {
-                    _atlasSpriteCache.Add(cleanName, s);
+                    // (Clone) 글자 떼기
+                    string cleanName = s.name.Replace("(Clone)", "");
 
-                    if (!_atlasCacheOwners.TryGetValue(atlasKey, out List<string> owned))
-                        _atlasCacheOwners[atlasKey] = owned = new List<string>();
-                    owned.Add(cleanName);
+                    // 캐시에 등록 + 소유 아틀라스 기록 (해제 시 함께 버리기 위해)
+                    if (!_atlasSpriteCache.ContainsKey(cleanName))
+                    {
+                        _atlasSpriteCache.Add(cleanName, s);
+
+                        if (!_atlasCacheOwners.TryGetValue(atlasKey, out List<string> owned))
+                            _atlasCacheOwners[atlasKey] = owned = new List<string>();
+                        owned.Add(cleanName);
+                    }
+                    else
+                    {
+                        // 다른 아틀라스가 같은 이름을 이미 캐시에 넣었을 때만 도달
+                        // (동일 아틀라스 중복 전개는 위 가드로 소멸 — 이 클론은 안 쓰이므로 즉시 파기).
+                        Object.Destroy(s);
+                    }
                 }
-                else
-                {
-                    // 이미 같은 이름이 캐시에 있으면 이번 클론은 쓰이지 않는다 — 즉시 파기.
-                    // (동시 요청이 캐시 채워지기 전에 각자 전개하는 경우 = Baseline §7-4의 중복 전개)
-                    Object.Destroy(s);
-                }
-            }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            expandSw.Stop();
-            ResourceMetrics.RecordAtlasExpansion(atlasKey, allSprites.Length, expandSw.ElapsedMilliseconds); // [Phase 0.5 계측]
+                expandSw.Stop();
+                ResourceMetrics.RecordAtlasExpansion(atlasKey, allSprites.Length, expandSw.ElapsedMilliseconds); // [Phase 0.5 계측]
 #endif
+            }
 
             // 4. 이제 안전하게 캐시에서 꺼내서 반환
             if (_atlasSpriteCache.TryGetValue(spriteName, out Sprite targetSprite))

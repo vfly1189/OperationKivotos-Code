@@ -45,14 +45,24 @@ public sealed class ResourceScope : IDisposable
     }
 
     // ResourceScope — location 기반 추가
-    public UniTask<UnityEngine.Object> LoadAsync(IResourceLocation location, CancellationToken tok = default)
+    public async UniTask<UnityEngine.Object> LoadAsync(IResourceLocation location, CancellationToken tok = default)
     {
-        if (_disposed || location == null) return UniTask.FromResult<UnityEngine.Object>(null);
+        if (_disposed || location == null) return null;
 
         ResourceKey rk = new ResourceKey(location.PrimaryKey, location.ResourceType);   //실제 타입으로 키잉
         bool isFirstTimeToLoad = _acquired.Add(rk);
 
-        return _registry.LoadAsync(rk, location, isFirstTimeToLoad, tok);
+        try
+        {
+            return await _registry.LoadAsync(rk, location, isFirstTimeToLoad, tok);
+        }
+        catch
+        {
+            // 제네릭 오버로드와 동일 규약: 취소·실패 시 소유 기록을 되돌려 레지스트리 정산과 짝을 맞춘다.
+            // 안 그러면 레지스트리는 롤백했는데 스코프만 유령 소유가 남아 Dispose가 헛돌고 계측이 오염된다.
+            if (isFirstTimeToLoad) _acquired.Remove(rk);
+            throw;
+        }
     }
 
     public void Dispose()

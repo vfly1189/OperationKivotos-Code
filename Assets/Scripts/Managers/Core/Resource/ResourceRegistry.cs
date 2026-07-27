@@ -31,9 +31,18 @@ public sealed class ResourceRegistry
         {
             if (incrementRef) entry.RefCount++;
 
-            //만약 아직 로딩 중이라면 핸들 공유 대기
-            if (!entry.handle.IsDone)
-                await entry.handle.ToUniTask(cancellationToken: tok);
+            try
+            {
+                //만약 아직 로딩 중이라면 핸들 공유 대기
+                if (!entry.handle.IsDone)
+                    await entry.handle.ToUniTask(cancellationToken: tok);
+            }
+            catch
+            {
+                // 대기 중 취소/실패 — 방금 더한 참조를 되돌린다 (스코프의 _acquired 롤백과 정산 일치).
+                RollbackLoad(key, entry, incrementRef);
+                throw;
+            }
 
             return entry.handle.Result as T;
         }
@@ -46,13 +55,23 @@ public sealed class ResourceRegistry
         AsyncOperationHandle handle = Addressables.LoadAssetAsync<T>(key.Key);
         entry = new Entry { handle = handle, RefCount = incrementRef ? 1 : 0 };
         _entries[key] = entry;
-        await handle.ToUniTask(cancellationToken:tok);
+
+        try
+        {
+            await handle.ToUniTask(cancellationToken:tok);
+        }
+        catch
+        {
+            // 취소/예외로 방금 만든 엔트리를 유령(어느 스코프도 소유 안 하는 refCount>0)으로 남기지 않는다.
+            RollbackLoad(key, entry, incrementRef);
+            throw;
+        }
 
         ResourceMetrics.RecordLoad(key.Key, sw.ElapsedMilliseconds);
 
         if (handle.Status != AsyncOperationStatus.Succeeded)
         {
-            _entries.Remove(key);
+            RollbackLoad(key, entry, incrementRef);
             return null;
         }
         else
@@ -66,8 +85,16 @@ public sealed class ResourceRegistry
         {
             if (incrementRef) entry.RefCount++;
 
-            if (!entry.handle.IsDone) 
-                await entry.handle.ToUniTask(cancellationToken: tok);
+            try
+            {
+                if (!entry.handle.IsDone)
+                    await entry.handle.ToUniTask(cancellationToken: tok);
+            }
+            catch
+            {
+                RollbackLoad(key, entry, incrementRef);   // 제네릭 오버로드와 동일 규약
+                throw;
+            }
 
             return entry.handle.Result as Object;
         }
@@ -78,17 +105,42 @@ public sealed class ResourceRegistry
 
         entry = new Entry { handle = handle, RefCount = incrementRef ? 1 : 0 };
         _entries[key] = entry;
-        await handle.ToUniTask(cancellationToken: tok);
+
+        try
+        {
+            await handle.ToUniTask(cancellationToken: tok);
+        }
+        catch
+        {
+            RollbackLoad(key, entry, incrementRef);
+            throw;
+        }
 
         ResourceMetrics.RecordLoad(key.Key, sw.ElapsedMilliseconds);
 
         if (handle.Status != AsyncOperationStatus.Succeeded)
-        { 
-            _entries.Remove(key); 
-            return null; 
+        {
+            RollbackLoad(key, entry, incrementRef);
+            return null;
         }
 
         return handle.Result as Object;
+    }
+
+    // [취소 정산] 취소·실패로 로드가 중단됐을 때 "이 호출이 더한 참조"만 되돌린다.
+    //  되돌린 뒤 아무 소유자도 없으면(RefCount ≤ 0) 엔트리와 핸들을 함께 정리한다.
+    //  - 다른 소유자가 같은 in-flight 핸들을 대기 중일 수 있으므로 무조건 Release하지 않고 RefCount로 판단한다.
+    //  - cur == entry 확인: 그 사이 다른 로더가 엔트리를 이미 치웠거나 교체했으면 건드리지 않는다(재진입 안전).
+    //  토큰 취소는 밑단 Addressables 로드를 멈추지 않으므로(핸들은 결국 완료됨), 소유자가 없을 때 Release가 정확하다.
+    private void RollbackLoad(ResourceKey key, Entry entry, bool addedRef)
+    {
+        if (addedRef) entry.RefCount--;
+
+        if (entry.RefCount <= 0 && _entries.TryGetValue(key, out Entry cur) && cur == entry)
+        {
+            _entries.Remove(key);
+            if (entry.handle.IsValid()) Addressables.Release(entry.handle);
+        }
     }
 
     // [Phase 4] 로드 없이 refCount만 +1. 이미 로드된 엔트리에 "추가 소유자"를 등록한다.
