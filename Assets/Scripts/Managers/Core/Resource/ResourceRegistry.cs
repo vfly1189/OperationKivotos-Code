@@ -91,6 +91,16 @@ public sealed class ResourceRegistry
         return handle.Result as Object;
     }
 
+    // [Phase 4] 로드 없이 refCount만 +1. 이미 로드된 엔트리에 "추가 소유자"를 등록한다.
+    //  풀이 원본 프리팹 핸들의 수명을 붙잡는 용도 — 엔트리가 없으면(부류 B: SO 직접 참조 등)
+    //  false를 돌려주고 아무것도 하지 않는다(Addressables 관리 대상이 아니므로 잡을 것이 없음).
+    public bool TryAddRef(ResourceKey key)
+    {
+        if (!_entries.TryGetValue(key, out Entry entry)) return false;
+        entry.RefCount++;
+        return true;
+    }
+
     public void Release(ResourceKey key)
     {
         //없는걸 해제하려고 할때

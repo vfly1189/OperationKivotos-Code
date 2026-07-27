@@ -160,12 +160,12 @@ public class BossDungeonScene : BaseScene
         if (_preloadData.bullet != null)
         {
             GameObject p = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
-            if (p != null) Managers.Pool.CreatePool(p, 30);
+            if (p != null) Managers.Pool.CreatePool(p, _preloadData.bullet.RuntimeKey.ToString(), 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
         }
         if (_preloadData.monsterRL != null)
         {
             GameObject p = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterRL);
-            if (p != null) Managers.Pool.CreatePool(p, 16);
+            if (p != null) Managers.Pool.CreatePool(p, _preloadData.monsterRL.RuntimeKey.ToString(), 16);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
         }
     }
 

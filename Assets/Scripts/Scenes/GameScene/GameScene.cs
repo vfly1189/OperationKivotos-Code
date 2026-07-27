@@ -110,28 +110,28 @@ public class GameScene : BaseScene
         if (_preloadData.bullet != null)
         {
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
-            if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
+            if (prefab != null) Managers.Pool.CreatePool(prefab, _preloadData.bullet.RuntimeKey.ToString(), 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
         }
 
         if (_preloadData.monsterAR != null)
         {
             string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2000).AddressableKey;
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
-            if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
+            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
         }
 
         if (_preloadData.monsterRL != null)
         {
             string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2001).AddressableKey;
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
-            if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
+            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
         }
 
         if (_preloadData.monsterTank != null)
         {
             string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2002).AddressableKey;
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
-            if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
+            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
         }
     }
 

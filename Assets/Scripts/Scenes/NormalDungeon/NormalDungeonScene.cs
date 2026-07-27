@@ -299,7 +299,7 @@ public class NormalDungeonScene : BaseScene
     {
         if (_preloadData.bullet == null) return;
         GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
-        if (prefab != null) Managers.Pool.CreatePool(prefab, 30);
+        if (prefab != null) Managers.Pool.CreatePool(prefab, _preloadData.bullet.RuntimeKey.ToString(), 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
     }
 
     async UniTask CreateEffectStage()

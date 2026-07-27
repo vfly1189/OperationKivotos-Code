@@ -114,6 +114,20 @@ public class ResourceManager
         old.Dispose();
     }
 
+    // [Phase 4] 풀 전용 refCount 티켓 — 스코프를 거치지 않고 레지스트리에 직접 건다.
+    //  스코프로 잡으면 (1) 같은 키를 이미 쥔 Scene 스코프에서 중복 제거돼 no-op이고
+    //  (2) ChangeSceneScope가 스코프를 통째로 Dispose할 때 티켓도 함께 날아가 위험 창이 부활한다.
+    //  풀 원본은 항상 GameObject이므로 타입을 고정 키잉한다.
+    //  AcquirePoolRef가 false면 부류 B(레지스트리에 없는 SO 직접 참조 프리팹) — 잡을 핸들이 없어 그대로 진행.
+    public bool AcquirePoolRef(string key)
+        => !string.IsNullOrEmpty(key) && _registry.TryAddRef(new ResourceKey(key, typeof(GameObject)));
+
+    public void ReleasePoolRef(string key)
+    {
+        if (!string.IsNullOrEmpty(key))
+            _registry.Release(new ResourceKey(key, typeof(GameObject)));
+    }
+
     public async UniTask LoadAsyncPreload(
     string[] labels, bool isGlobal = false,
     System.Action<string, float> onProgress = null, CancellationToken token = default)
