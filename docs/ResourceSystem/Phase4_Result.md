@@ -120,8 +120,27 @@ foreach (var slot in _activeSlots)
 
 ---
 
-## 7. 남은 것
+## 7. 후속 — R4 + UI DDOL(진단 기반 재결론)
+
+### R4 — NoCache use-after-release 차단
+`LoadAsyncNoCache<T>`(핸들 Release 후 참조 반환)를 **`LoadTextAsync(key)`**로 교체 — 핸들 Release 전에 `.text`를 값으로 복사해 반환. JSON 파서(`DataManager.LoadAndCacheJsonAsync`)가 언로드 가능한 에셋을 만지던 잠재 크래시 제거. 구 메서드(footgun)는 삭제.
+
+### UI 루트 DDOL — 진단 계측 → 스코프 재배치로 귀결
+"전환 중 인플라이트 낭비"를 진단하려 프로브를 넣었으나, **기존 `[ResourceReport]`+`[LoadStats]`가 이미 범인을 담고 있었다**: 파티 HUD 아틀라스가 Scene 스코프라 전환마다 재로드(churn).
+
+| 범인 | 조치 |
+|---|---|
+| `ActiveCharacterHUD.ChangeStaticDataAsync` → SkillIconAtlas | Scene → **Party** 스코프 |
+| `PartyHUD.LoadEmblemFromAtlasAsync` → CharacterEmblemsAtlas | Scene → **Party** 스코프 |
+
+**측정 근거로 DDOL 캔버스 대공사는 기각** — 메모리 왕복 flat(누수 0)이라 use-after-release가 없다. Phase 3에서 Dungeon 스코프를 근거 없이 안 만든 것과 같은 "근거 기반 축소". 진단 프로브는 목적 달성 후 제거(기존 계측과 중복).
+
+**실측 결과(2026-07-28 02:24 세션)**:
+- SkillIconAtlas·CharacterEmblemsAtlas: 재로드 **3회 → 0**(목록에서 소멸), `[AtlasMetric]` 재전개 없음. 두 아틀라스 [Party] 버킷으로 이동(party 4→6).
+- 왕복 후 합계 358.6 → 359.1MB, Party +1.5MB(상주) = 의도된 "재로드 churn ↔ 소량 상주" 트레이드. 누수 0.
+
+## 8. 남은 것
 
 - 개발 빌드 실측 1회 (리팩터 전체 완성 조건 — 이월).
-- UI_ItemSlot 반납 누락 조사 (§5).
 - (선택) 잔존 경고를 "풀 created 수가 재사용 없이 증가"(무한증식 신호)로 정밀화 — 현재는 진단용.
+- (선택) Phase 5 매니페스트.

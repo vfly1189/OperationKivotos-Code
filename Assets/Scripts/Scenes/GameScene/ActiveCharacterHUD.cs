@@ -59,13 +59,15 @@ public class ActiveCharacterHUD : MonoBehaviour
         var token = this.GetCancellationTokenOnDestroy();
 
         // 규칙: "캐릭터ID_Q_Icon"
+        //  [R5 후속] 스킬 아이콘 아틀라스는 '파티'의 수명 — 파티가 GameScene↔던전을 넘나들어도 유지된다.
+        //  Scene 스코프면 전환마다 언로드→재로드(churn)라, Party 스코프로 재배치해 재사용한다.
         string qIconName = $"{charData.nameKey}_Q_Icon";
-        Sprite qIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", qIconName, token: token);
+        Sprite qIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", qIconName, ResourceScopeType.Party, token);
         if (qIcon != null) _qSkill.SetIcon(qIcon);
 
         // 규칙: "캐릭터ID_E_Icon"
         string eIconName = $"{charData.nameKey}_E_Icon";
-        Sprite eIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", eIconName, token: token);
+        Sprite eIcon = await Managers.Resource.GetSpriteFromAtlasAsync("SkillIconAtlas", eIconName, ResourceScopeType.Party, token);
         if (eIcon != null) _eSkill.SetIcon(eIcon);
     }
 

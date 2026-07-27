@@ -46,7 +46,8 @@ public class PartyHUD : MonoBehaviour
 
     private async UniTask LoadEmblemFromAtlasAsync(string emblemName, int index)
     {
-        Sprite loadedSprite = await Managers.Resource.GetSpriteFromAtlasAsync("CharacterEmblemsAtlas", emblemName);
+        // [R5 후속] 엠블럼 아틀라스도 '파티' 수명 — 전환마다 재로드되던 churn을 Party 스코프로 제거.
+        Sprite loadedSprite = await Managers.Resource.GetSpriteFromAtlasAsync("CharacterEmblemsAtlas", emblemName, ResourceScopeType.Party);
         if (loadedSprite != null)
         {
             _slots[index].SetEmblem(loadedSprite);

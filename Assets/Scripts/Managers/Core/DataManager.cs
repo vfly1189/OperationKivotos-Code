@@ -70,16 +70,17 @@ public class DataManager
     private async UniTask LoadAndCacheJsonAsync<Loader, TKey, TValue>(string addressableKey)
     where Loader : ILoader<TKey, TValue>
     {
-        TextAsset textAsset = await Managers.Resource.LoadAsyncNoCache<TextAsset>(addressableKey);
+        // [R4] 값(문자열)만 받는다 — 에셋을 반납한 뒤에도 안전 (use-after-release 차단)
+        string json = await Managers.Resource.LoadTextAsync(addressableKey);
 
         // [추가] 실패 시 명시적 로그 출력
-        if (textAsset == null)
+        if (string.IsNullOrEmpty(json))
         {
             GameLog.LogError($"[DataManager] JSON 로드 실패: '{addressableKey}' (Type: {typeof(TValue).Name})");
             return;
         }
 
-        Loader loader = JsonUtility.FromJson<Loader>(textAsset.text);
+        Loader loader = JsonUtility.FromJson<Loader>(json);
 
         // [변경] Add() → 인덱서로 교체
         // Add()는 중복 키 시 ArgumentException을 던지지만

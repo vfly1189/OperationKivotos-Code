@@ -219,37 +219,36 @@ public class ResourceManager
     }
 
     // =========================================================================
-    // 3. NoCache 로드 (문자열 string Key 기반) -> DataManager에서 JSON 부를 때 사용
+    // 3. Text 로드 (JSON 등) — DataManager가 JSON 부를 때 사용.
+    //  [R4] use-after-release 차단: 핸들을 Release하기 '전에' .text를 값으로 복사해 반환한다.
+    //  문자열은 값 복사라 반환 후 에셋이 언로드돼도 안전하다 — "취소 ≠ 해제, 값은 복사 후 해제".
+    //  (구 LoadAsyncNoCache<T>는 Release한 에셋의 '참조'를 돌려줘 호출부(JSON 파서)가 언로드
+    //   가능한 에셋을 만졌다 = 지연 언로드에만 기대던 잠재 크래시.)
     // =========================================================================
-    public async UniTask<T> LoadAsyncNoCache<T>(string key) where T : UnityEngine.Object
+    public async UniTask<string> LoadTextAsync(string key)
     {
         if (string.IsNullOrEmpty(key)) return null;
 
-        // string key를 사용해 로드
-        var handle = Addressables.LoadAssetAsync<T>(key);
-
-        // ToUniTask로 대기할 때 에러가 나면 잡을 수 있도록 안전하게 처리
-        T result = null;
+        AsyncOperationHandle<TextAsset> handle = Addressables.LoadAssetAsync<TextAsset>(key);
         try
         {
-            result = await handle.ToUniTask();
+            TextAsset asset = await handle.ToUniTask();
+            if (handle.Status != AsyncOperationStatus.Succeeded || asset == null)
+            {
+                GameLog.LogError($"[ResourceManager] Text 로드 실패: {key}");
+                return null;
+            }
+            return asset.text;   // 값 복사 — 반환값이 에셋 수명과 무관해진다
         }
         catch (Exception e)
         {
-            GameLog.LogError($"[ResourceManager] NoCache Load Exception: {key} / {e.Message}");
-        }
-
-        if (handle.Status == AsyncOperationStatus.Succeeded && result != null)
-        {
-            Addressables.Release(handle);
-            return result;
-        }
-        else
-        {
-            GameLog.LogError($"[ResourceManager] Addressable NoCache Load Failed: {key}");
-            // 실패했을 때도 핸들이 유효하면 메모리 해제
-            if (handle.IsValid()) Addressables.Release(handle);
+            GameLog.LogError($"[ResourceManager] Text 로드 예외: {key} / {e.Message}");
             return null;
+        }
+        finally
+        {
+            // 값 복사(return asset.text 평가)가 끝난 '뒤' 반납된다 — finally는 반환값 계산 후 실행.
+            if (handle.IsValid()) Addressables.Release(handle);
         }
     }
 
