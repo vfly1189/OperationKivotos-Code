@@ -9,11 +9,17 @@ public class AbilityRunner
     // 쿨다운은 이 Runner(=캐스터)에서만 소유하는 상태. 어빌리티별 종료 시각을 기록한다.
     private readonly Dictionary<AbilityData, float> _cooldownEnd = new();
 
+    // 현재 시각 소스. 기본은 Time.time(UnityClock)이라 동작은 이전과 동일하다.
+    // 테스트/선택적 시간 제어가 필요하면 생성자로 다른 IClock을 주입한다.
+    private readonly IClock _clock;
+
+    public AbilityRunner(IClock clock = null) => _clock = clock ?? UnityClock.Instance;
+
     public bool IsOnCooldown(AbilityData a)
-        => _cooldownEnd.TryGetValue(a, out float end) && Time.time < end;
+        => _cooldownEnd.TryGetValue(a, out float end) && _clock.Now < end;
 
     private void StartCooldown(AbilityData a)
-        => _cooldownEnd[a] = Time.time + a.Cooldown;
+        => _cooldownEnd[a] = _clock.Now + a.Cooldown;
 
     // token = 캐스터의 액션 토큰(몹 _monsterCts / 캐릭터 _actionCts). 캐스터가 죽거나 상태가 바뀌면 캐스트 중단.
     public async UniTask TryCast(AbilityData ability, AbilityContext ctx, CancellationToken token)

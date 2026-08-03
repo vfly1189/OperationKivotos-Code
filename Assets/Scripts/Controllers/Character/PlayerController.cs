@@ -28,10 +28,21 @@ public class PlayerController
         Managers.Input.MouseAction -= HandleMouse;
         Managers.Input.MouseAction += HandleMouse;
 
+        // 액션 인텐트도 중복 구독 방지 (이동/마우스와 동일한 unregister→register 패턴).
+        // 이 콜백들은 Dispose에서 대칭으로 해제한다 (씬 재진입 시 스택 방지).
+        Managers.Input.UnregisterAction(InputIntent.Info, HandleInfo);
         Managers.Input.RegisterAction(InputIntent.Info, HandleInfo);
+
+        Managers.Input.UnregisterAction(InputIntent.Inventory, HandleInventory);
         Managers.Input.RegisterAction(InputIntent.Inventory, HandleInventory);
+
+        Managers.Input.UnregisterAction(InputIntent.SkillQ, HandleSkillQ);
         Managers.Input.RegisterAction(InputIntent.SkillQ, HandleSkillQ);
+
+        Managers.Input.UnregisterAction(InputIntent.SkillE, HandleSkillE);
         Managers.Input.RegisterAction(InputIntent.SkillE, HandleSkillE);
+
+        Managers.Input.UnregisterAction(InputIntent.Interact, HandleInteract);
         Managers.Input.RegisterAction(InputIntent.Interact, HandleInteract);
     }
 
@@ -131,5 +142,12 @@ public class PlayerController
     {
         Managers.Input.OnMoveInput -= HandleMove;
         Managers.Input.MouseAction -= HandleMouse;
+
+        // RegisterAction으로 건 콜백들도 대칭 해제 (이전엔 누락 → 재진입 시 중복 발동).
+        Managers.Input.UnregisterAction(InputIntent.Info, HandleInfo);
+        Managers.Input.UnregisterAction(InputIntent.Inventory, HandleInventory);
+        Managers.Input.UnregisterAction(InputIntent.SkillQ, HandleSkillQ);
+        Managers.Input.UnregisterAction(InputIntent.SkillE, HandleSkillE);
+        Managers.Input.UnregisterAction(InputIntent.Interact, HandleInteract);
     }
 }
