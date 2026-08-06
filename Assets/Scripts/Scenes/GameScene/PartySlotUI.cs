@@ -24,7 +24,6 @@ public class PartySlotUI : MonoBehaviour
         if (_connectedCharacter != null && _connectedCharacter.Stat != null)
         {
             _connectedCharacter.Stat.HealthComp.OnHpChanged -= UpdateHP;
-            _connectedCharacter.Stat.OnUltimateStateChanged -= SetUltimateReady;
         }
 
         _connectedCharacter = character;
@@ -32,14 +31,19 @@ public class PartySlotUI : MonoBehaviour
         if (_connectedCharacter != null && _connectedCharacter.Stat != null)
         {
             _connectedCharacter.Stat.HealthComp.OnHpChanged += UpdateHP;
-            _connectedCharacter.Stat.OnUltimateStateChanged += SetUltimateReady;
 
-            // 초기화
+            // 초기화 (HP는 이벤트, 궁 준비는 아래 Update 폴링이 매 프레임 갱신)
             UpdateHP(_connectedCharacter.Stat.HealthComp.CurrentHp, _connectedCharacter.Stat.MaxHp.Value);
-            bool isReady = (_connectedCharacter.Stat.CurrentQSkillCoolTime <= 0) &&
-                           (_connectedCharacter.Stat.CurrentEnergy >= _connectedCharacter.Stat.MaxEnergy.Value);
-            SetUltimateReady(isReady);
+            SetUltimateReady(_connectedCharacter.IsUltimateReady);
         }
+    }
+
+    // 궁 준비 글로우 폴링 — 벤치(스왑아웃) 멤버도 Q 쿨(절대시각)이 끝나면 점등돼야 하는데
+    // 러너 쿨엔 "끝남" 이벤트가 없다. 슬롯 UI는 벤치 중에도 활성이라 여기서 폴링한다.
+    private void Update()
+    {
+        if (_connectedCharacter != null)
+            SetUltimateReady(_connectedCharacter.IsUltimateReady);
     }
 
     // 람다 대신 쓸 정식 이벤트 핸들러들

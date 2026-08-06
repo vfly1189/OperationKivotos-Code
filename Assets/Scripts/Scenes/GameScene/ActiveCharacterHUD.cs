@@ -21,7 +21,6 @@ public class ActiveCharacterHUD : MonoBehaviour
         Managers.Party.OnPartyLevelChanged  -= HandleLevelChanged;
 
         stat.OnEnergyChanged -= HandleActiveSkillEnergy;
-        stat.OnUltimateStateChanged -= HandleActiveSkillReady;
     }
 
     public void SubscribeEvent(BaseCharacter character)
@@ -36,11 +35,9 @@ public class ActiveCharacterHUD : MonoBehaviour
         Managers.Party.OnPartyLevelChanged += HandleLevelChanged;
 
         _qSkill.UpdateEnergy(stat.CurrentEnergy, stat.MaxEnergy.Value);
-        bool isReady = (stat.CurrentQSkillCoolTime <= 0) && (stat.CurrentEnergy >= stat.MaxEnergy.Value);
-        _qSkill.SetUltimateReady(isReady);
+        _qSkill.SetUltimateReady(character.IsUltimateReady);   // 준비 상태는 이후 매 프레임 UpdateCooldowns 폴링이 갱신
 
         stat.OnEnergyChanged += HandleActiveSkillEnergy;
-        stat.OnUltimateStateChanged += HandleActiveSkillReady;
     }
 
     // 비동기 스킬 아이콘 갱신 함수
@@ -71,14 +68,16 @@ public class ActiveCharacterHUD : MonoBehaviour
         if (eIcon != null) _eSkill.SetIcon(eIcon);
     }
 
-    public void UpdateCooldowns(CharacterStat stat)
+    public void UpdateCooldowns(BaseCharacter bc)
     {
-        _qSkill.UpdateCooldown(stat.CurrentQSkillCoolTime, stat.QSkillCoolTime.Value);
-        _eSkill.UpdateCooldown(stat.CurrentESkillCoolTime, stat.ESkillCoolTime.Value);
+        _qSkill.UpdateCooldown(bc.SlotCooldownRemaining(CharacterAbilitySlot.Q_Skill), bc.SlotCooldownDuration(CharacterAbilitySlot.Q_Skill));
+        _eSkill.UpdateCooldown(bc.SlotCooldownRemaining(CharacterAbilitySlot.E_Skill), bc.SlotCooldownDuration(CharacterAbilitySlot.E_Skill));
+
+        // 궁 준비 글로우: Q 쿨이 절대시각(이벤트 없음)이라 여기서 폴링으로 갱신. (에너지 바는 OnEnergyChanged 이벤트가 담당)
+        _qSkill.SetUltimateReady(bc.IsUltimateReady);
     }
 
     // 래퍼 함수들
     private void HandleLevelChanged(int level) => _statUI.SetLevel(level);
     private void HandleActiveSkillEnergy(float cur, float max) => _qSkill.UpdateEnergy(cur, max);
-    private void HandleActiveSkillReady(bool isReady) => _qSkill.SetUltimateReady(isReady);
 }

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Phase 1 — 게이팅 단일화 (완료 보고)</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --red:#e03131; --red-soft:#fff0f0; --red-ink:#b02020;
+    --code:#333a48;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:15mm 14mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif;
+        color:var(--ink); margin:0; line-height:1.62; font-size:10.3pt; background:#fff; }
+  h1{ font-size:22pt; line-height:1.15; margin:0 0 10px; letter-spacing:-.02em; font-weight:800; }
+  .kicker{ font-size:8.6pt; letter-spacing:.28em; color:var(--green); font-weight:700; text-transform:uppercase; margin-bottom:10px; }
+  .sub{ font-size:10.6pt; color:var(--muted); margin:0; max-width:42em; }
+  h2{ font-size:14pt; margin:24px 0 4px; font-weight:800; display:flex; align-items:baseline; gap:10px; padding-top:6px; break-after:avoid; }
+  h2 .n{ font-size:9.4pt; color:var(--green); font-weight:800; }
+  .h2sub{ color:var(--muted); font-size:9.3pt; margin:0 0 12px; padding-bottom:9px; border-bottom:1px solid var(--line); }
+  h3{ font-size:11pt; margin:16px 0 5px; font-weight:700; break-after:avoid; }
+  p{ margin:0 0 9px; }
+  em{ font-style:normal; background:linear-gradient(transparent 62%,#ffe8a3 62%); font-weight:600; }
+  strong{ font-weight:700; }
+  ul{ margin:0 0 9px; padding-left:20px; } li{ margin:2px 0; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.6pt; background:var(--shade); padding:1px 5px; border-radius:5px; color:var(--code); border:1px solid var(--line2); }
+  .muted{ color:var(--muted); }
+  pre{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.3pt; line-height:1.5; background:#1c2027; color:#d7dbe3; border-radius:9px; padding:12px 15px; margin:10px 0; overflow-x:auto; break-inside:avoid; border:1px solid #2a2f38; }
+  pre .c{ color:#7f8a9c; } pre .k{ color:#7aa2f7; } pre .t{ color:#7dcfff; } pre .f{ color:#e0af68; }
+  table{ width:100%; border-collapse:collapse; margin:12px 0; font-size:9.3pt; break-inside:avoid; }
+  th{ text-align:left; padding:7px 10px; background:var(--ink); color:#fff; font-weight:700; font-size:8.8pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:7px 10px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  .lead-box{ border:1px solid var(--line); border-left:4px solid var(--green); border-radius:9px; padding:12px 16px; margin:14px 0; font-size:9.9pt; background:#fbfcfe; }
+  .lead-box b{ color:var(--green-ink); }
+  .callout{ border-radius:10px; padding:12px 16px; margin:14px 0; font-size:9.7pt; line-height:1.58; break-inside:avoid; }
+  .callout .lbl{ font-weight:800; font-size:8.5pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:4px; }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .tag{ font-size:7.6pt; font-weight:800; padding:1px 7px; border-radius:20px; white-space:nowrap; }
+  .tag.del{ background:var(--red-soft); color:var(--red); } .tag.new{ background:var(--green-soft); color:var(--green); } .tag.keep{ background:var(--blue-soft); color:var(--blue); }
+  .footer{ margin-top:22px; padding-top:8px; border-top:1px solid var(--line); font-size:8.2pt; color:var(--faint); display:flex; justify-content:space-between; }
+  .flow{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.6pt; background:var(--shade); border:1px solid var(--line2); border-radius:8px; padding:10px 14px; margin:8px 0; line-height:1.7; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · Player AbilitySystem · Phase 1 · 완료</div>
+<h1>게이팅 단일화 — 완료 보고</h1>
+<p class="sub">세 곳의 게이트와 두 벌의 쿨 상태를 AbilityRunner 한 권위로. 쿨=절대시각, 코스트만 위임, UI는 러너 폴링. 죽은 코드 정리까지.</p>
+
+<div class="lead-box">
+  <b>한 줄 요약</b> — <code>CharacterCombat</code> 평타레이트 · <code>CharacterStat</code> Q/E 쿨 · <code>AbilityRunner</code> 쿨로 흩어져 있고
+  두 벌로 평행하던 쿨 상태를 <b><code>AbilityRunner</code> 한 권위</b>로 모았다. 쿨은 절대시각(IClock)으로만 존재 →
+  <code>PartyManager.TickCooldowns</code> 삭제. 코스트(궁게이지)만 Stat에 남기고 러너가 위임 소비, UI(쿨 채움·궁 준비)는 러너를 폴링.
+  <br><span class="muted" style="font-size:9pt;">계획: Phase1_Plan.pdf · 선행: Phase0_Result.md</span>
+</div>
+
+<!-- 1 -->
+<h2><span class="n">01</span>AbilityRunner — admission / fire 분리 + 읽기 API</h2>
+<p class="h2sub"><code>TryCast</code> 한 덩이를 셋으로. 몹/보스 호출부는 <code>TryCast</code>(=Commit+Fire)라 무변경.</p>
+<pre><span class="c">// 게이트+커밋: 통과 시 쿨만 시작(이펙트 X). 입력 시점 상태 전이 결정용</span>
+<span class="k">public bool</span> <span class="f">Commit</span>(<span class="t">AbilityData</span> a, <span class="t">AbilityContext</span> ctx);
+<span class="c">// 비게이트: 캐스트타임 + 이펙트 + GrantsTags try/finally</span>
+<span class="k">public</span> <span class="t">UniTask</span> <span class="f">Fire</span>(<span class="t">AbilityData</span> a, <span class="t">AbilityContext</span> ctx, <span class="t">CancellationToken</span> token);
+<span class="c">// 편의(몹/보스/E 즉발): Commit 성공 시 Fire</span>
+<span class="k">public</span> <span class="t">UniTask</span> <span class="f">TryCast</span>(<span class="t">AbilityData</span> a, <span class="t">AbilityContext</span> ctx, <span class="t">CancellationToken</span> token);
+<span class="c">// 읽기 API — 쿨 상태 _cd:(end,dur) 저장 → CDR에도 채움비율 정확</span>
+<span class="k">public float</span> <span class="f">CooldownRemaining</span>(<span class="t">AbilityData</span> a);
+<span class="k">public float</span> <span class="f">CooldownDuration</span>(<span class="t">AbilityData</span> a);</pre>
+
+<!-- 2 -->
+<h2><span class="n">02</span>쿨 값의 출처 = CharacterDataSO (러너는 모름)</h2>
+<p class="h2sub">쿨 "값"은 SO에 두고 캐스터가 <code>ctx.CoolDown</code>으로 건넨다. 러너는 결합되지 않는다.</p>
+<pre><span class="c">// AbilityRunner.StartCooldown</span>
+<span class="k">float</span> cd = ctx.CoolDown &gt;= <span class="f">0f</span> ? ctx.CoolDown : a.Cooldown;   <span class="c">// 몹은 안 건넴 → a.Cooldown 폴백</span>
+_cd[a] = (_clock.Now + cd, cd);</pre>
+<ul>
+  <li><code>BaseCharacter.SlotCooldown(slot)</code> = 슬롯 → <code>Stat.GetData().QSkillCoolTime/ESkillCoolTime</code> 매핑.</li>
+  <li>쿨 <b>상태</b>는 러너 인스턴스(캐스터별)가 소유 → 같은 E 에셋을 공유해도 캐릭터 간 쿨이 안 섞인다.</li>
+</ul>
+
+<!-- 3 -->
+<h2><span class="n">03</span>BaseCharacter — 입력=Commit, 비트=Fire</h2>
+<p class="h2sub">쿨·궁게이지는 입력 시점 소비(컷신 내내 쿨이 도는 게 보임), 이펙트는 애니 비트가 발사.</p>
+<div class="flow">
+UseSkillQ → <b>궁게이지 만충 검사</b> → <b>Commit</b>(쿨 입력 시점 시작) → ConsumeUltimateGauge → ChangeState(QSkillCutScene)<br>
+&nbsp;&nbsp;⋯ 컷신(OnSkillEnter/OnCutsceneEnded 무변경) → Q_Skill 애니 ⋯<br>
+&nbsp;&nbsp;→ <b>[AbilityBeat]</b> → UseAbility(Q_Skill,beat) → <b>Fire</b>(이펙트)
+</div>
+<ul>
+  <li><code>UseSkillE</code> — <code>Commit</code> → <code>ChangeState(E_Skill)</code> → <code>Fire</code>(즉발). UseAbility 안 거침 → 쿨 시작 보장.</li>
+  <li><code>UseAbility</code> — <b>Fire 전용</b>(비트 경로). 쿨/코스트 안 건드림.</li>
+  <li>읽기 파사드 — <code>SlotCooldownRemaining/Duration(slot)</code>, <code>IsUltimateReady</code>(에너지 만충 &amp;&amp; Q 쿨 0).</li>
+  <li>평타 — 쿨 없이 <b>StateMachine으로 게이팅</b>(Attack 재진입 차단 = 애니 길이가 발사 간격). <code>CharacterCombat</code> 소멸.</li>
+</ul>
+
+<!-- 4 -->
+<h2><span class="n">04</span>UI — 러너 폴링으로 이관</h2>
+<p class="h2sub">쿨이 절대시각(무tick)이라 "쿨 끝남" 이벤트가 없어졌다 → 폴링.</p>
+<table>
+  <thead><tr><th>UI</th><th>소스</th><th>방식</th></tr></thead>
+  <tbody>
+    <tr><td>쿨 채움 링</td><td>러너 <code>CooldownRemaining/Duration</code> (파사드 경유)</td><td>매 프레임 폴링(GameSceneCanvas.Update)</td></tr>
+    <tr><td>궁 준비 글로우(활성)</td><td><code>bc.IsUltimateReady</code></td><td>UpdateCooldowns 폴링에 얹음</td></tr>
+    <tr><td>궁 준비 글로우(벤치)</td><td><code>bc.IsUltimateReady</code></td><td><code>PartySlotUI.Update()</code> 폴링 → 절대시각 쿨 끝나는 순간 점등</td></tr>
+    <tr><td>에너지 바 · HP</td><td><code>OnEnergyChanged</code> · <code>OnHpChanged</code></td><td>이벤트 유지</td></tr>
+  </tbody>
+</table>
+<p class="muted" style="font-size:9pt;">미발동 스킬은 <code>CooldownRemaining=0</code> → <code>SkillIconUI</code>가 <code>currentCool&gt;0</code>일 때만 나눗셈 → 0 나눗셈 없음.</p>
+
+<!-- 5 -->
+<h2><span class="n">05</span>죽은 코드 정리</h2>
+<table>
+  <thead><tr><th>대상</th><th>처리</th><th></th></tr></thead>
+  <tbody>
+    <tr><td><code>CharacterCombat.cs</code></td><td>평타레이트·Q/E 포워딩 전부 흡수됨 → 파일 삭제</td><td><span class="tag del">DELETE</span></td></tr>
+    <tr><td><code>CharacterStat</code></td><td>Q/E 쿨(Stat·Current·SO값세팅), <code>TickCooldowns</code>, <code>TryUseSkillQ/E</code>, <code>CheckUltimateReadyState</code>, <code>_isUltimateReady</code>, <code>OnUltimateStateChanged</code> 제거</td><td><span class="tag del">삭제</span></td></tr>
+    <tr><td><code>PartyManager.TickCooldowns</code> + <code>Managers.Update</code> 호출</td><td>절대시각이라 불필요 → 제거</td><td><span class="tag del">삭제</span></td></tr>
+    <tr><td><code>BaseCharacter</code></td><td><code>_combat</code>/<code>_attackRate</code> 필드·생성 제거. 러너 미사용 <code>using</code> 정리</td><td><span class="tag del">삭제</span></td></tr>
+    <tr><td><code>ConsumeUltimateGauge</code>·<code>AddEnergy</code>·에너지 regen·<code>OnEnergyChanged</code></td><td>유지</td><td><span class="tag keep">유지</span></td></tr>
+  </tbody>
+</table>
+
+<!-- verify -->
+<h2><span class="n">06</span>검증 &amp; 남은 것</h2>
+<div class="callout c-amber">
+  <span class="lbl">에디터에서 필요</span>
+  소스 레벨은 죽은 심볼 전수 grep 후 잔여 참조 0(단 <code>Stat.GetData().QSkillCoolTime</code>은 CharacterDataSO 값이라 의도적 유지). <b>에디터 컴파일 + 플레이 실측 필요.</b>
+  특히 <b>Q 이펙트는 Q_Skill 애니 클립에 <code>AbilityBeat</code> 이벤트를 꽂아야</b> 나온다(쿨·궁게이지·글로우는 이벤트 없이 동작). 인스펙터 <code>_abilities</code> Q_Skill 슬롯 할당 확인.
+</div>
+<div class="callout c-green">
+  <span class="lbl">남은 것 (선택)</span>
+  <b>E 발동을 AbilityBeat로</b> — 지금 E는 즉발. 투사체 E가 생기면 <code>SlotForState</code>에 <code>E_Skill→E_Skill</code> + 비트 승격(= Phase 2). ·
+  <b>CDR(쿨감)</b> — <code>_cd</code>가 이미 dur를 저장하므로 <code>ctx.CoolDown = base × CDR</code>만 곱하면 됨(Phase 4).
+</div>
+
+<div class="footer">
+  <span>Operation Kivotos · Player AbilitySystem 재설계 · Phase 1 완료</span>
+  <span>계획: Phase1_Plan.pdf · 청사진: Player_Refactor_Blueprint.pdf</span>
+</div>
+
+</body>
+</html>

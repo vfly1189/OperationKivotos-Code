@@ -69,8 +69,7 @@ public class Managers : MonoBehaviour
 
         if (_party != null)
         {
-            _party.TickCooldowns(Time.deltaTime);   // 쿨타임은 스왑 중(비활성 멤버)에도 진행
-
+            // 스킬 쿨타임은 AbilityRunner가 절대시각으로 소유 → 스왑아웃 멤버도 자동 경과(별도 tick 불필요).
             if (_party.PlayerController != null)
                 _party.PlayerController.OnUpdate();
         }

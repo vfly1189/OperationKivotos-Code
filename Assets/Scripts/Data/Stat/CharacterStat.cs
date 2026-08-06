@@ -20,22 +20,13 @@ public class CharacterStat : BaseStat
     public Stat MoveSpeed => GetStat(EStatType.MoveSpeed);
     public Stat EnergyRecharge => GetStat(EStatType.EnergyRegen);
 
-    public Stat QSkillCoolTime;
-    public Stat ESkillCoolTime;
-
-
     public int WeaponLevel { get; private set; } = 1;
     public float CurrentEnergy { get; private set; }
-    public float CurrentQSkillCoolTime { get; private set; }
-    public float CurrentESkillCoolTime { get; private set; }
 
     // 무적/HP/사망 상태는 Health가 소유(HealthComp). 캐릭터 상태 복원 시 HP 부분만 HealthComp로 위임한다.
-
-    private bool _isUltimateReady = false;
-
+    // 스킬 쿨타임은 AbilityRunner(캐스터별, 절대시각)가 소유한다. 궁 준비 판정은 BaseCharacter.IsUltimateReady를 UI가 폴링.
 
     public event Action<float, float> OnEnergyChanged;  // cur, max
-    public event Action<bool> OnUltimateStateChanged;   // isReady
 
     public override void Init()
     {
@@ -49,9 +40,6 @@ public class CharacterStat : BaseStat
         _stats[EStatType.CritRate] = new Stat();
         _stats[EStatType.CritDamage] = new Stat();
         _stats[EStatType.MoveSpeed] = new Stat();
-
-        QSkillCoolTime = new Stat();
-        ESkillCoolTime = new Stat();
 
         if (_data != null) SetCharacterData(_data);
 
@@ -74,14 +62,9 @@ public class CharacterStat : BaseStat
         MoveSpeed.SetBaseValue(data.baseMoveSpeed);
         EnergyRecharge.SetBaseValue(data.baseEnergyRecharge);
 
-        QSkillCoolTime.SetBaseValue(data.QSkillCoolTime);
-        ESkillCoolTime.SetBaseValue(data.ESkillCoolTime);
-
         // 실시간 수치 풀충전
         HealthComp.SetHpRaw(MaxHp.Value);
         CurrentEnergy = 0;
-        CurrentQSkillCoolTime = QSkillCoolTime.Value;
-        CurrentESkillCoolTime = 0;
     }
     public void UpdateBaseStatsByPartyLevel(int partyLevel)
     {
@@ -103,8 +86,6 @@ public class CharacterStat : BaseStat
         HealthComp.IsInvincible = false;
         HealthComp.SetHpRaw(MaxHp.Value);
         CurrentEnergy = 0;
-        CurrentQSkillCoolTime = QSkillCoolTime.Value;
-        CurrentESkillCoolTime = 0;
 
         // Collider 비활성화 (추가 피격 방지)
         Collider col = GetComponent<Collider>();
@@ -140,45 +121,19 @@ public class CharacterStat : BaseStat
 
         HealthComp.IsInvincible = false; // 무적은 무조건 해제
         CurrentEnergy = 0;
-        CurrentQSkillCoolTime = QSkillCoolTime.Value;
-        CurrentESkillCoolTime = 0;
 
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
         HealthComp.RaiseHpChanged(HealthComp.CurrentHp, MaxHp.Value);
     }
 
-    //테스트용
+    //테스트용 — 에너지 자동 충전 (스킬 쿨타임은 AbilityRunner가 절대시각으로 소유하므로 여기서 tick하지 않는다)
     private void Update()
     {
-        // 쿨타임은 스왑 중(비활성)에도 진행돼야 하므로 PartyManager가 전 멤버를 Tick한다(여기서 제외).
         float prevEnergy = CurrentEnergy;
         CurrentEnergy = Mathf.Min(CurrentEnergy + 10.0f * Time.deltaTime, MaxEnergy.Value);
 
         if (!Mathf.Approximately(prevEnergy, CurrentEnergy))
-        {
             OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
-            CheckUltimateReadyState();
-        }
-    }
-
-
-    // Q/E 스킬 쿨타임 진행. 비활성(스왑아웃) 멤버도 진행되도록 PartyManager가 매 프레임 호출한다.
-    public void TickCooldowns(float dt)
-    {
-        // Q 스킬 쿨타임
-        if (CurrentQSkillCoolTime > 0)
-        {
-            CurrentQSkillCoolTime -= dt;
-            if (CurrentQSkillCoolTime <= 0)
-            {
-                CurrentQSkillCoolTime = 0;
-                CheckUltimateReadyState();
-            }
-        }
-
-        // E 스킬 쿨타임
-        if (CurrentESkillCoolTime > 0)
-            CurrentESkillCoolTime -= dt;
     }
 
     // 전투 시스템 등 외부에서 호출해줘야 함
@@ -190,41 +145,15 @@ public class CharacterStat : BaseStat
         if (CurrentEnergy > MaxEnergy.Value) CurrentEnergy = MaxEnergy.Value;
 
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
-        CheckUltimateReadyState(); // 에너지 찼으니 궁극기 상태 체크
     }
 
-
-    public bool TryUseSkillQ()
+    // 궁극기(Q) 발동 시 궁게이지 전량 소비. 쿨은 AbilityRunner가 소유하므로 여기선 에너지만 다룬다.
+    public void ConsumeUltimateGauge()
     {
-        if (CurrentQSkillCoolTime > 0) return false;
-        if (CurrentEnergy < MaxEnergy.Value) return false;
-
         CurrentEnergy = 0;
-        CurrentQSkillCoolTime = QSkillCoolTime.Value;
-
         OnEnergyChanged?.Invoke(CurrentEnergy, MaxEnergy.Value);
-        CheckUltimateReadyState();
-        return true;
     }
 
-    public bool TryUseSkillE()
-    {
-        if (CurrentESkillCoolTime > 0) return false;
-        CurrentESkillCoolTime = ESkillCoolTime.Value;   // 실제 쿨타임 적용 (기존엔 0으로 세팅돼 연타 가능했음)
-        return true;
-    }
-
-    private void CheckUltimateReadyState()
-    {
-        // 준비 완료 조건: (쿨타임 0) 그리고 (에너지 가득 참)
-        bool isNowReady = (CurrentQSkillCoolTime <= 0) && (CurrentEnergy >= MaxEnergy.Value);
-
-        if (_isUltimateReady != isNowReady)
-        {
-            _isUltimateReady = isNowReady;
-            OnUltimateStateChanged?.Invoke(_isUltimateReady); // UI야, 상태 바꼈다!
-        }
-    }
     public AssetReferenceT<AudioClip>[] GetBattleInVoice()
     {
         return _data.battleInVoices;

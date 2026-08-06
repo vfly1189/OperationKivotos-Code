@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Phase 1 — 게이팅 단일화 (계획 + 명세)</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --red:#e03131; --red-soft:#fff0f0; --red-ink:#b02020;
+    --code:#333a48;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:15mm 14mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif;
+        color:var(--ink); margin:0; line-height:1.62; font-size:10.3pt; background:#fff; }
+
+  h1{ font-size:22pt; line-height:1.15; margin:0 0 10px; letter-spacing:-.02em; font-weight:800; }
+  .kicker{ font-size:8.6pt; letter-spacing:.28em; color:var(--blue); font-weight:700;
+           text-transform:uppercase; margin-bottom:10px; }
+  .sub{ font-size:10.6pt; color:var(--muted); margin:0; max-width:42em; }
+
+  h2{ font-size:14pt; margin:26px 0 4px; font-weight:800; display:flex; align-items:baseline; gap:10px;
+      padding-top:6px; break-after:avoid; }
+  h2 .n{ font-size:9.4pt; color:var(--blue); font-weight:800; }
+  .h2sub{ color:var(--muted); font-size:9.3pt; margin:0 0 12px; padding-bottom:9px; border-bottom:1px solid var(--line); }
+  h3{ font-size:11pt; margin:16px 0 5px; font-weight:700; break-after:avoid; }
+  p{ margin:0 0 9px; }
+  em{ font-style:normal; background:linear-gradient(transparent 62%,#ffe8a3 62%); font-weight:600; }
+  strong{ font-weight:700; }
+  ul,ol{ margin:0 0 9px; padding-left:20px; }
+  li{ margin:2px 0; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.6pt; background:var(--shade);
+        padding:1px 5px; border-radius:5px; color:var(--code); border:1px solid var(--line2); }
+  .muted{ color:var(--muted); }
+  a{ color:var(--blue); text-decoration:none; }
+
+  pre{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.3pt; line-height:1.5;
+       background:#1c2027; color:#d7dbe3; border-radius:9px; padding:12px 15px; margin:10px 0;
+       overflow-x:auto; break-inside:avoid; border:1px solid #2a2f38; }
+  pre .c{ color:#7f8a9c; }       /* comment */
+  pre .k{ color:#7aa2f7; }       /* keyword */
+  pre .t{ color:#7dcfff; }       /* type */
+  pre .s{ color:#9ece6a; }       /* string/number */
+  pre .f{ color:#e0af68; }       /* member */
+
+  table{ width:100%; border-collapse:collapse; margin:12px 0; font-size:9.3pt; break-inside:avoid; }
+  thead tr{ break-inside:avoid; }
+  th{ text-align:left; padding:7px 10px; background:var(--ink); color:#fff; font-weight:700; font-size:8.8pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:7px 10px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:nth-child(even){ background:var(--shade); }
+  td.c{ text-align:center; font-weight:800; }
+  .sev.hi{ color:var(--red); } .sev.mid{ color:var(--amber); } .sev.bug{ color:var(--blue); }
+
+  .lead-box{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:9px;
+             padding:12px 16px; margin:14px 0; font-size:9.9pt; background:#fbfcfe; }
+  .lead-box b{ color:var(--blue-ink); }
+
+  .gate{ counter-reset:g; margin:8px 0; }
+  .gstep{ display:flex; gap:11px; align-items:flex-start; padding:4px 0; break-inside:avoid; }
+  .gstep .gd{ counter-increment:g; flex:0 0 22px; height:22px; border-radius:50%; background:var(--green-soft);
+              color:var(--green); font-weight:800; display:flex; align-items:center; justify-content:center; font-size:9.4pt; }
+  .gstep .gd::before{ content:counter(g); }
+  .gstep.fail .gd{ background:var(--red-soft); color:var(--red); }
+  .gstep.fail .gd::before{ content:"✕"; }
+  .gstep .gt{ font-size:9.5pt; line-height:1.45; padding-top:1px; }
+  .gstep .gt b{ font-weight:800; } .gstep .gt .m{ color:var(--muted); }
+
+  .callout{ border-radius:10px; padding:12px 16px; margin:14px 0; font-size:9.7pt; line-height:1.58; break-inside:avoid; }
+  .callout .lbl{ font-weight:800; font-size:8.5pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:4px; }
+  .c-key{ background:var(--blue-soft); color:var(--blue-ink); } .c-key .lbl{ color:var(--blue); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+
+  .tag{ font-size:7.6pt; font-weight:800; padding:1px 7px; border-radius:20px; white-space:nowrap; }
+  .tag.keep{ background:var(--blue-soft); color:var(--blue); }
+  .tag.move{ background:var(--amber-soft); color:var(--amber); }
+  .tag.new{ background:var(--green-soft); color:var(--green); }
+  .tag.del{ background:var(--red-soft); color:var(--red); }
+
+  .phase{ border:1px solid var(--line); border-radius:10px; padding:8px 14px; margin-bottom:6px; break-inside:avoid; }
+  .phase .ph{ display:flex; align-items:center; gap:9px; margin-bottom:2px; }
+  .phase .pn{ font-size:8pt; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff;
+              background:var(--blue); padding:2px 9px; border-radius:20px; }
+  .phase .pttl{ font-weight:800; font-size:10.4pt; }
+  .phase .pbody{ font-size:9.3pt; color:#3f4654; line-height:1.5; }
+
+  .chk{ list-style:none; padding-left:0; }
+  .chk li{ padding-left:22px; position:relative; margin:3px 0; font-size:9.4pt; }
+  .chk li::before{ content:"☐"; position:absolute; left:2px; color:var(--faint); font-size:10pt; }
+  .fileblk{ border:1px solid var(--line); border-radius:9px; padding:9px 14px 11px; margin:8px 0; break-inside:avoid; }
+  .fileblk .fn{ font-family:"Cascadia Code","Consolas",monospace; font-size:9pt; font-weight:700; color:var(--blue-ink);
+                display:inline-block; margin-bottom:3px; }
+  .fileblk .fn.del{ color:var(--red-ink); }
+
+  .footer{ margin-top:22px; padding-top:8px; border-top:1px solid var(--line);
+           font-size:8.2pt; color:var(--faint); display:flex; justify-content:space-between; }
+  .avoid{ break-inside:avoid; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · Player AbilitySystem · Phase 1</div>
+<h1>게이팅 단일화 — 계획 + 명세</h1>
+<p class="sub">세 곳에 흩어진 게이트와 두 벌로 평행 존재하는 쿨 상태를 <b>AbilityRunner 한 권위</b>로. 쿨은 절대시각으로, 코스트만 Stat에 위임.</p>
+
+<div class="lead-box">
+  <b>한 줄 요약</b> — 지금 세 곳(<code>CharacterCombat</code> 평타레이트 · <code>CharacterStat</code> Q/E 쿨 · <code>AbilityRunner</code> 쿨)에 흩어진 게이트와,
+  <b>두 곳(Stat·Runner)에 평행 존재하는 쿨 상태</b>를 <code>AbilityRunner</code> 한 권위로 모은다. 쿨은 절대시각(IClock)으로만 존재 →
+  <code>PartyManager.TickCooldowns</code> 삭제. 코스트(에너지·궁게이지)만 Stat에 남기고 러너가 <em>위임 호출</em>로 소비한다.
+  <br><span class="muted" style="font-size:9pt;">상위 청사진: Player_Refactor_Blueprint §02·§04 · 선행: Phase0_Result.md ·
+  <b>범위</b> — Phase 1만. 발동 경로 통일(E→AbilityBeat)은 Phase 2, 컷신/Q 분리는 Phase 3. 여기선 fire 타이밍을 <u>바꾸지 않는다</u>.</span>
+</div>
+
+<!-- 1 -->
+<h2><span class="n">01</span>지금 상태 — 무엇이 어디에</h2>
+<p class="h2sub">게이트 3주인 · 쿨 상태 2벌 평행 · delta-tick의 우회비용.</p>
+
+<table>
+  <thead><tr><th>게이트</th><th>위치</th><th>판단</th><th>상태 소유</th><th>시각</th></tr></thead>
+  <tbody>
+    <tr><td>평타레이트</td><td><code>CharacterCombat.CanAttack</code></td><td><code>Now - _lastAttackTime ≥ _attackRate</code></td><td><code>_lastAttackTime</code></td><td><code>Time.time</code></td></tr>
+    <tr><td>Q 쿨+궁</td><td><code>CharacterStat.TryUseSkillQ</code></td><td><code>QCool≤0</code> <b>AND</b> <code>Energy≥Max</code></td><td><code>CurrentQSkillCoolTime</code></td><td>delta-tick</td></tr>
+    <tr><td>E 쿨</td><td><code>CharacterStat.TryUseSkillE</code></td><td><code>ECool≤0</code></td><td><code>CurrentESkillCoolTime</code></td><td>delta-tick</td></tr>
+    <tr><td>러너 쿨+태그</td><td><code>AbilityRunner.TryCast</code></td><td><code>IsOnCooldown</code> + Req/Blocked 태그</td><td><code>_cooldownEnd[AbilityData]</code></td><td><code>IClock.Now</code></td></tr>
+  </tbody>
+</table>
+
+<p><b>중복의 핵심</b> — 같은 Q/E 발동이 <em>Stat 게이트(입력 시점)</em> 와 <em>러너 게이트(fire 시점)</em> 를 둘 다 통과한다.
+쿨 상태가 <code>Current*CoolTime</code>(delta-tick)과 <code>_cooldownEnd</code>(절대시각) <b>두 벌</b>로 평행 존재 → "이 스킬 쿨 누가 정함?"이 모호.</p>
+<p><b>delta-tick의 대가</b> — 스왑아웃(비활성) 멤버는 <code>CharacterStat.Update</code>가 안 돌아 쿨이 멈춘다. 이를 메우려
+<code>PartyManager.TickCooldowns(dt)</code>가 매 프레임 전 멤버를 대신 tick한다. <em>절대시각으로 가면 이 우회가 통째로 불필요.</em></p>
+
+<h3>발동 흐름 (fire 타이밍 — Phase 1에서 유지)</h3>
+<table>
+  <thead><tr><th>슬롯</th><th>입력 진입점</th><th>입력 시점 게이트(현재)</th><th>상태 전이</th><th>fire(이펙트) 시점</th></tr></thead>
+  <tbody>
+    <tr><td>평타</td><td><code>Attack</code></td><td><code>_combat.CanAttack</code>+<code>TryAttack</code></td><td>→ Attack</td><td>애니 <code>AbilityBeat</code> → <code>UseAbility(Attack,beat)</code></td></tr>
+    <tr><td>Q</td><td><code>UseSkillQ</code></td><td><code>_combat.TryUseSkillQ</code>(=Stat)</td><td>→ CutScene→Q_Skill</td><td>애니 <code>AbilityBeat</code> → <code>UseAbility(Skill,beat)</code></td></tr>
+    <tr><td>E</td><td><code>UseSkillE</code></td><td><code>_combat.TryUseSkillE</code>(=Stat)</td><td>→ E_Skill</td><td><b>즉발</b> <code>UseAbility(Ex)</code> (입력 시점)</td></tr>
+  </tbody>
+</table>
+<div class="callout c-amber">
+  <span class="lbl">게이트의 두 역할</span>
+  <b>(A) 입장(admission)</b> — 스킬 상태로 들어갈지(입력 시점) · <b>(B) 발사(fire)</b> — 이펙트 실행(비트/즉발).
+  Phase 1의 과제는 A·B <b>둘 다</b> 러너가 소유하는 쿨/코스트/태그를 보게 만드는 것. <u>fire 타이밍 자체는 안 건드린다.</u>
+</div>
+
+<!-- 2 -->
+<h2><span class="n">02</span>목표 설계 — 러너가 admission과 fire를 분리 소유</h2>
+<p class="h2sub"><code>TryCast</code> 한 덩이(게이트+코스트+쿨+캐스트+이펙트)를 admission(동기·부작용)과 fire(비동기·무게이트)로 쪼갠다.</p>
+
+<h3>2.1 AbilityRunner 새 공개 API (명세)</h3>
+<pre><span class="k">public class</span> <span class="t">AbilityRunner</span>
+{
+    <span class="c">// ── 판독 (부작용 없음) — UI/스펙 체크. 아무것도 소비/변경 X ──</span>
+    <span class="k">public bool</span>  <span class="f">CanCast</span>(<span class="t">AbilityData</span> a, <span class="t">AbilityContext</span> ctx);
+
+    <span class="k">public float</span> <span class="f">CooldownRemaining</span>(<span class="t">AbilityData</span> a);  <span class="c">// 남은 쿨(초). 준비되면 0</span>
+    <span class="k">public float</span> <span class="f">CooldownDuration</span>(<span class="t">AbilityData</span> a);   <span class="c">// 이번 쿨 총 길이(CDR 반영값 저장 → UI 정확)</span>
+
+    <span class="c">// ── admission (동기·커밋) — 통과 시 코스트 소비 + 쿨 시작. 이펙트는 안 함 ──</span>
+    <span class="k">public bool</span> <span class="f">Commit</span>(<span class="t">AbilityData</span> a, <span class="t">AbilityContext</span> ctx);
+
+    <span class="c">// ── fire (비동기·무게이트) — 캐스트타임 → 이펙트 순차 → GrantsTags try/finally ──</span>
+    <span class="k">public</span> <span class="t">UniTask</span> <span class="f">Fire</span>(<span class="t">AbilityData</span> a, <span class="t">AbilityContext</span> ctx, <span class="t">CancellationToken</span> token);
+
+    <span class="c">// ── 편의: Commit+Fire 동시. 몬스터/보스처럼 게이트·발사가 같은 순간인 호출부용 ──</span>
+    <span class="c">//     기존 시그니처 유지 → BaseMonsterController 등 호출부 무변경</span>
+    <span class="k">public async</span> <span class="t">UniTask</span> <span class="f">TryCast</span>(<span class="t">AbilityData</span> a, <span class="t">AbilityContext</span> ctx, <span class="t">CancellationToken</span> token)
+    {
+        <span class="k">if</span> (!<span class="f">Commit</span>(a, ctx)) <span class="k">return</span>;
+        <span class="k">await</span> <span class="f">Fire</span>(a, ctx, token);
+    }
+}</pre>
+
+<p><b>책임 분해</b></p>
+<ul>
+  <li><code>Commit</code>: ① 쿨 검사 → ② 코스트 검사·소비(§3) → ③ 태그 게이트(Req/Blocked) → ④ 쿨 시작(<code>_cooldownEnd = Now + Cooldown·CDR</code>). <b>하나라도 실패 시 부작용 0으로 조용히 false.</b></li>
+  <li><code>Fire</code>: 캐스트타임 대기 → <code>BuildRuntimeEffects()</code> 순차 실행 → <code>GrantsTags</code>(캐스트 스코프, 예 <code>State.Casting</code>) try/finally 해제. <b>쿨/코스트/Req·Blocked 재검사 없음.</b></li>
+  <li><code>GrantsTags</code>는 fire 소유(발동 지속), <code>RequiredTags</code>/<code>BlockedTags</code>는 admission 소유(입장 판정).</li>
+</ul>
+
+<h3>2.2 게이트 순서 (Commit 내부 — 청사진 §04와 동일)</h3>
+<div class="gate">
+  <div class="gstep"><div class="gd"></div><div class="gt"><b>쿨다운</b> <span class="m">— <code>IClock.Now &lt; _cooldownEnd[a]</code> 이면 아직 쿨 → 중단 (절대시각, tick 불필요)</span></div></div>
+  <div class="gstep"><div class="gd"></div><div class="gt"><b>코스트</b> <span class="m">— <code>resource.CanPay(a)</code> 부족하면 중단(미소모). 통과 시 <code>resource.Pay(a)</code></span></div></div>
+  <div class="gstep"><div class="gd"></div><div class="gt"><b>태그</b> <span class="m">— <code>HasAll(Required) &amp;&amp; HasNone(Blocked)</code> (기절 중 발동 불가 등)</span></div></div>
+  <div class="gstep"><div class="gd"></div><div class="gt"><b>쿨 시작</b> <span class="m">— <code>_cooldownEnd[a] = Now + Cooldown·CDR</code> → (Fire에서 캐스트타임 + 이펙트)</span></div></div>
+  <div class="gstep fail"><div class="gd"></div><div class="gt"><b style="color:var(--red-ink);">1~3 실패 시</b> <span class="m">— 상태변화 없이 조용히 중단, 쿨·코스트 미소모</span></div></div>
+</div>
+<div class="callout c-amber">
+  <span class="lbl">순서 결정 필요</span>
+  코스트 소비를 태그 게이트 <b>앞</b>에 두면 태그 실패 시 궁게이지가 샌다. <b>안전하게 "검사 전부 통과 → 마지막에 <code>Pay</code>+쿨시작"</b> 으로 짜길 권장(§8-c).
+</div>
+
+<!-- 3 -->
+<h2><span class="n">03</span>코스트 이음새 — 유일하게 새로 잇는 배선</h2>
+<p class="h2sub">에너지는 Stat에 남고, 러너는 소비 순서만 소유. <code>AbilityData.Cost</code>는 지금 죽은 필드 — 여기가 실제 배선점.</p>
+
+<h3>3.1 비용 종류 (Q의 "궁게이지" 의미 보존)</h3>
+<p>Q의 코스트는 정수가 아니라 <em>"에너지 만충 요구 + 전량 소비"</em>. E·평타는 없음. 이를 담으려면 <code>AbilityData</code>에 종류 필드를 둔다.</p>
+<pre><span class="k">public enum</span> <span class="t">EAbilityCostType</span> { <span class="f">None</span>, <span class="f">Energy</span>, <span class="f">UltimateGauge</span> }
+
+<span class="c">// AbilityData 에 추가</span>
+<span class="k">public</span> <span class="t">EAbilityCostType</span> CostType = <span class="t">EAbilityCostType</span>.<span class="f">None</span>;
+<span class="c">// Cost(int) 는 CostType==Energy 일 때만 의미 (기존 필드 재사용)</span></pre>
+<table>
+  <thead><tr><th>슬롯</th><th>CostType</th><th>CanPay</th><th>Pay</th></tr></thead>
+  <tbody>
+    <tr><td>평타 / E</td><td><code>None</code></td><td>항상 true</td><td>no-op</td></tr>
+    <tr><td>Q</td><td><code>UltimateGauge</code></td><td><code>CurrentEnergy ≥ MaxEnergy</code></td><td><code>CurrentEnergy = 0</code></td></tr>
+    <tr><td>(미래 스킬)</td><td><code>Energy</code></td><td><code>CurrentEnergy ≥ Cost</code></td><td><code>CurrentEnergy -= Cost</code></td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 자원 제공자 인터페이스</h3>
+<p><code>AbilityContext.CasterStat</code>은 <code>BaseStat</code>. 코스트는 캐릭터 전용이라 <b>인터페이스로 얇게</b> 얹고 러너는 널체크한다(몬스터 미구현 → 코스트 없음).</p>
+<pre><span class="k">public interface</span> <span class="t">IAbilityResource</span>
+{
+    <span class="k">bool</span> <span class="f">CanPay</span>(<span class="t">AbilityData</span> a);
+    <span class="k">void</span> <span class="f">Pay</span>(<span class="t">AbilityData</span> a);   <span class="c">// 호출 후 OnEnergyChanged / 궁 준비 재평가는 구현체 책임</span>
+}
+<span class="c">// CharacterStat : BaseStat, IAbilityResource  → 위 표대로 구현</span>
+<span class="c">// 러너 Commit 내부:</span>
+<span class="k">var</span> res = ctx.CasterStat <span class="k">as</span> <span class="t">IAbilityResource</span>;
+<span class="k">if</span> (res != <span class="k">null</span> &amp;&amp; !res.<span class="f">CanPay</span>(a)) <span class="k">return false</span>;
+<span class="c">// ... 전 게이트 통과 후 ...</span>  res?.<span class="f">Pay</span>(a);</pre>
+
+<!-- 4 -->
+<h2><span class="n">04</span>슬롯별 admission / fire 매핑 (Phase 1)</h2>
+<p class="h2sub">규약 — 슬롯의 쿨·코스트 대표 어빌리티는 <code>_slotMap[slot][0]</code>. 비트는 각자 <code>list[beat]</code> 이펙트만 발사(무게이트).</p>
+
+<table>
+  <thead><tr><th>슬롯</th><th>admission (입력)</th><th>fire</th></tr></thead>
+  <tbody>
+    <tr><td>평타</td><td><code>Commit(atk0)</code> 로 Attack 입장 게이트</td><td>각 비트 → <code>Fire(list[beat])</code></td></tr>
+    <tr><td>Q</td><td><code>Commit(q0)</code> 로 컷신 입장 (궁게이지 여기서 소비)</td><td>각 비트 → <code>Fire(list[beat])</code></td></tr>
+    <tr><td>E</td><td><code>TryCast(ex0)</code> <b>입력 시점 즉발</b>(Commit+Fire) — Phase 1 경로 유지</td><td>— (Phase 2에서 비트로)</td></tr>
+  </tbody>
+</table>
+<p class="muted" style="font-size:9pt;"><code>atk0=_slotMap[Attack][0]</code>, <code>q0=_slotMap[Skill][0]</code>, <code>ex0=_slotMap[Ex][0]</code>.</p>
+
+<h3>BaseCharacter 진입점 재작성 (명세)</h3>
+<pre><span class="c">// 평타</span>
+<span class="k">public void</span> <span class="f">Attack</span>(<span class="k">bool</span> isPressing) {
+    <span class="k">if</span> (!isPressing) <span class="k">return</span>;
+    <span class="k">if</span> (!_stateMachine.CanAttack || IsUsingSkill || Stat.HealthComp.IsDead) <span class="k">return</span>;
+    <span class="k">if</span> (!<span class="f">TryCommitSlot</span>(<span class="t">CharacterAbilitySlot</span>.Attack)) <span class="k">return</span>;   <span class="c">// ← _combat.CanAttack/TryAttack 대체</span>
+    _stateMachine.<span class="f">ChangeState</span>(PlayerState.Attack);
+}
+<span class="c">// Q</span>
+<span class="k">public void</span> <span class="f">UseSkillQ</span>() {
+    <span class="k">if</span> (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.HealthComp.IsDead) <span class="k">return</span>;
+    <span class="k">if</span> (!<span class="f">TryCommitSlot</span>(<span class="t">CharacterAbilitySlot</span>.Skill)) <span class="k">return</span>;    <span class="c">// ← _combat.TryUseSkillQ 대체 (궁+쿨)</span>
+    _stateMachine.<span class="f">ChangeState</span>(PlayerState.QSkillCutScene);
+}
+<span class="c">// E (Phase 1: 즉발 유지)</span>
+<span class="k">public void</span> <span class="f">UseSkillE</span>() {
+    <span class="k">if</span> (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.HealthComp.IsDead) <span class="k">return</span>;
+    <span class="k">if</span> (!<span class="f">CanCastSlot</span>(<span class="t">CharacterAbilitySlot</span>.Ex)) <span class="k">return</span>;              <span class="c">// 입장 판정만(소비 X)</span>
+    _stateMachine.<span class="f">ChangeState</span>(PlayerState.E_Skill);
+    <span class="f">FireSlotImmediate</span>(<span class="t">CharacterAbilitySlot</span>.Ex);                   <span class="c">// TryCast(ex0)=Commit+Fire</span>
+}
+<span class="c">// 비트: 이펙트만 (무게이트)</span>
+<span class="k">public void</span> <span class="f">UseAbility</span>(<span class="t">CharacterAbilitySlot</span> slot, <span class="k">int</span> beat = <span class="s">0</span>) {
+    <span class="k">if</span> (_slotMap.<span class="f">TryGetValue</span>(slot, <span class="k">out var</span> list) &amp;&amp; beat &gt;= <span class="s">0</span> &amp;&amp; beat &lt; list.Count)
+        <span class="f">FireEffectsOnly</span>(list[beat]);   <span class="c">// ← 기존 TryCast(list[beat]) 를 Fire 로 교체</span>
+}</pre>
+<ul>
+  <li><code>TryCommitSlot(slot)</code> = <code>_slotMap[slot]?[0]</code>로 ctx 만들어 <code>_abilityRunner.Commit(a,ctx)</code>.</li>
+  <li><code>FireEffectsOnly(a)</code> = ctx+token 만들어 <code>_abilityRunner.Fire(a,ctx,token).Forget()</code>.</li>
+  <li>E도 <code>TryCommitSlot</code>+<code>FireEffectsOnly</code>로 통일해도 됨(권장, 경로 일관).</li>
+</ul>
+<div class="callout c-key">
+  <span class="lbl">다중 비트 자기차단 주의 (덤으로 잡히는 버그)</span>
+  지금 비트마다 <code>TryCast(list[beat])</code>라 같은 어빌리티를 2비트에서 쓰면 두 번째가 자기 쿨에 막혀 조용히 씹힌다.
+  비트를 <b>무게이트 <code>Fire</code></b> 로 바꾸면 이 잠복 버그도 사라진다(쿨은 admission 한 번만).
+</div>
+
+<!-- 5 -->
+<h2><span class="n">05</span>UI 읽기 — Stat 쿨 필드 → 러너 조회</h2>
+<p class="h2sub">HUD/슬롯UI가 읽던 <code>stat.CurrentQSkillCoolTime</code> 가 사라진다. BaseCharacter 얇은 파사드로 러너를 조회.</p>
+<pre><span class="c">// BaseCharacter (읽기 파사드)</span>
+<span class="k">public float</span> <span class="f">SlotCooldownRemaining</span>(<span class="t">CharacterAbilitySlot</span> s);  <span class="c">// 러너 CooldownRemaining(slot0)</span>
+<span class="k">public float</span> <span class="f">SlotCooldownDuration</span>(<span class="t">CharacterAbilitySlot</span> s);   <span class="c">// 러너 CooldownDuration(slot0)</span>
+<span class="k">public bool</span>  <span class="f">IsUltimateReady</span> =&gt;                              <span class="c">// 궁 준비 = 에너지 만충 &amp;&amp; Q 쿨 0</span>
+    Stat.CurrentEnergy &gt;= Stat.MaxEnergy.Value
+    &amp;&amp; <span class="f">SlotCooldownRemaining</span>(<span class="t">CharacterAbilitySlot</span>.Skill) &lt;= <span class="s">0f</span>;</pre>
+<p><b>바꿀 곳</b></p>
+<ul>
+  <li><code>ActiveCharacterHUD.UpdateCooldowns(stat)</code> → <code>UpdateCooldowns(BaseCharacter c)</code>로 변경, <code>c.SlotCooldownRemaining/Duration(Skill|Ex)</code>로 채움. 호출부 <code>GameSceneCanvas.Update</code>는 이미 매 프레임 폴링 중.</li>
+  <li><code>SubscribeEvent</code>/<code>PartySlotUI</code>의 <code>isReady</code> 계산 → <code>c.IsUltimateReady</code>.</li>
+</ul>
+<div class="callout c-amber">
+  <span class="lbl">궁 준비 이벤트(OnUltimateStateChanged) 처리 — 결정 포인트</span>
+  쿨이 절대시각(무tick)이 되며 "쿨 방금 0 됨" 전이를 쳐줄 주체가 없어진다. <b>활성 캐릭터</b>는 <code>GameSceneCanvas.Update</code> 폴링에서 <code>c.IsUltimateReady</code> 계산해 푸시.
+  <b>벤치 멤버</b>는 §6의 경량 ready 재평가 패스가 전이 시 이벤트를 계속 쳐 주면 슬롯UI 변경 최소화. <br>
+  <b>(a) 이벤트 유지 + 소스만 러너로 (권장)</b> vs (b) 이벤트 제거 + 전부 폴링.
+</div>
+
+<!-- 6 -->
+<h2><span class="n">06</span>PartyManager.TickCooldowns 처리</h2>
+<ul>
+  <li><b>쿨 진행 목적은 삭제</b> — 쿨이 절대시각이라 벤치 멤버도 <code>Now</code>가 흐르면 자동 경과. <code>Stat.TickCooldowns</code>/<code>Current*CoolTime</code>/<code>QSkillCoolTime</code>/<code>ESkillCoolTime</code>(Stat) 전부 제거.</li>
+  <li><b>대체(선택, 5-(a) 채택 시)</b> — 그 자리에 <b>궁 준비 재평가 패스</b>만 남긴다. dt 계산 없이 각 멤버 <code>IsUltimateReady</code>를 재계산해 이전 값과 다르면 <code>OnUltimateStateChanged</code>를 친다(멤버당 bool 비교뿐, 기존보다 가벼움). 이름 <code>RefreshUltimateReady()</code> 등.</li>
+  <li><code>Managers.Update</code>의 <code>TickCooldowns(dt)</code> 호출부도 교체/제거.</li>
+</ul>
+
+<!-- 7 -->
+<h2><span class="n">07</span>파일별 변경 체크리스트</h2>
+<p class="h2sub">신규 · 수정 · 삭제. 커밋 경계는 §10.</p>
+
+<div class="fileblk">
+  <span class="fn new">신규</span> <span class="tag new">NEW</span>
+  <ul class="chk">
+    <li><code>Assets/Scripts/Ability/IAbilityResource.cs</code> — <code>CanPay</code>/<code>Pay</code> 인터페이스</li>
+    <li>(선택) <code>EAbilityCostType</code>는 <code>AbilityData.cs</code> 안에 둬도 됨</li>
+  </ul>
+</div>
+<div class="fileblk">
+  <span class="fn">AbilityRunner.cs</span> <span class="tag keep">유지·강화</span>
+  <ul class="chk">
+    <li><code>TryCast</code> 분해 → <code>CanCast</code>/<code>Commit</code>/<code>Fire</code> 추가, <code>TryCast</code>=Commit+Fire 편의로 남김(시그니처 유지)</li>
+    <li><code>CooldownRemaining</code>/<code>CooldownDuration</code> 공개</li>
+    <li><code>Commit</code>에 코스트 이음새(<code>ctx.CasterStat as IAbilityResource</code>). 쿨 길이 저장 시 CDR 곱 지점 마련(값은 Phase 4)</li>
+    <li>태그: Req/Blocked → <code>Commit</code>, Grants → <code>Fire</code>(try/finally 유지)</li>
+  </ul>
+</div>
+<div class="fileblk">
+  <span class="fn">AbilityData.cs</span> <span class="tag new">필드 추가</span>
+  <ul class="chk">
+    <li><code>EAbilityCostType CostType</code> 추가. <code>Cost</code>(int)는 Energy용 재사용</li>
+    <li>Q SO: <code>CostType=UltimateGauge</code> · E/평타 SO: <code>None</code></li>
+    <li><b>데이터 이관</b> — <code>CharacterDataSO.QSkillCoolTime/ESkillCoolTime</code> · <code>_attackRate</code>(0.5) 값을 각 슬롯 대표 어빌리티 <code>Cooldown</code>으로 복사(디자이너)</li>
+  </ul>
+</div>
+<div class="fileblk">
+  <span class="fn">CharacterStat.cs</span> <span class="tag move">축소</span>
+  <ul class="chk">
+    <li><code>IAbilityResource</code> 구현(<code>CanPay</code>/<code>Pay</code> — §3 표)</li>
+    <li>삭제: <code>QSkillCoolTime</code>/<code>ESkillCoolTime</code>(Stat), <code>Current*CoolTime</code>, <code>TickCooldowns</code>, <code>TryUseSkillQ</code>, <code>TryUseSkillE</code></li>
+    <li><code>CheckUltimateReadyState</code>의 쿨 참조 제거 → 궁 준비는 러너 쿨 기준(§5). 에너지 만충 판정만</li>
+    <li><code>SetCharacterData</code>/<code>ResetState</code>/<code>ReturnToTownState</code>의 <code>Current*CoolTime</code> 초기화 제거. 쿨 리셋 필요 시 <code>AbilityRunner.ResetCooldowns()</code></li>
+    <li><code>AddEnergy</code>·에너지 regen(<code>Update</code>)·<code>OnEnergyChanged</code>는 유지</li>
+  </ul>
+</div>
+<div class="fileblk">
+  <span class="fn del">CharacterCombat.cs</span> <span class="tag del">해체·삭제</span>
+  <ul class="chk">
+    <li><code>CanAttack</code>/<code>TryAttack</code>/<code>TryUseSkillQ</code>/<code>TryUseSkillE</code> 전부 러너/Stat로 흡수 → 파일 제거</li>
+  </ul>
+</div>
+<div class="fileblk">
+  <span class="fn">BaseCharacter.cs</span> <span class="tag move">배선 변경</span>
+  <ul class="chk">
+    <li><code>_combat</code> 필드·생성 제거. <code>_attackRate</code> 직렬 필드는 어빌리티 <code>Cooldown</code>으로 이관 후 제거</li>
+    <li><code>Attack</code>/<code>UseSkillQ</code>/<code>UseSkillE</code> → §4 명세대로 <code>Commit</code>/<code>CanCast</code>/<code>Fire</code></li>
+    <li><code>UseAbility</code>(비트) → <code>TryCast(list[beat])</code> 대신 <code>Fire(list[beat])</code></li>
+    <li>읽기 파사드 <code>SlotCooldownRemaining/Duration</code>, <code>IsUltimateReady</code> 추가</li>
+  </ul>
+</div>
+<div class="fileblk">
+  <span class="fn">PartyManager.cs / Managers.cs</span> <span class="tag del">tick 제거</span>
+  <ul class="chk">
+    <li><code>TickCooldowns</code> 제거 또는 <code>RefreshUltimateReady</code>로 대체(§6). <code>Managers.Update</code> 호출부 갱신</li>
+  </ul>
+</div>
+<div class="fileblk">
+  <span class="fn">ActiveCharacterHUD / GameSceneCanvas / PartySlotUI</span> <span class="tag move">읽기 소스 변경</span>
+  <ul class="chk">
+    <li><code>UpdateCooldowns</code>가 BaseCharacter 파사드를 읽도록</li>
+    <li><code>isReady</code> 계산을 <code>c.IsUltimateReady</code>로</li>
+    <li>(5-(a) 채택 시) <code>OnUltimateStateChanged</code> 구독 유지 — 소스가 러너 쿨</li>
+  </ul>
+</div>
+
+<!-- 8 -->
+<h2><span class="n">08</span>엣지케이스 &amp; 결정 포인트</h2>
+<table>
+  <thead><tr><th>#</th><th>사안</th><th>처리</th></tr></thead>
+  <tbody>
+    <tr><td class="c">a</td><td>다중 비트 대표 어빌리티</td><td>슬롯 쿨/코스트는 <code>list[0]</code>만. 비트는 무게이트 <code>Fire</code> → 자기차단 버그 소멸</td></tr>
+    <tr><td class="c">b</td><td>절대시각 쿨 + 전투 재시작</td><td>러너 쿨은 timestamp라 리셋하려면 <code>AbilityRunner.ResetCooldowns()</code> 필요. <b>매 판 쿨 초기화가 스펙이면</b> BaseCharacter 리셋 경로에서 호출(누락 시 이전 판 쿨 잔류)</td></tr>
+    <tr><td class="c">c</td><td>코스트 vs 태그 소비 순서</td><td>"검사 전부 통과 → 마지막에 <code>Pay</code>+쿨시작"으로 태그 실패 시 궁게이지 새는 것 방지</td></tr>
+    <tr><td class="c">d</td><td>벤치 멤버 에너지</td><td>지금도 <code>Stat.Update</code> 비활성이라 벤치 에너지 안 참(변경 없음). 쿨만 절대시각 자동 경과 — 의도 일치</td></tr>
+    <tr><td class="c">e</td><td>몬스터/보스</td><td><code>TryCast</code> 시그니처 유지 → 무변경. 코스트 인터페이스 미구현 → <code>as IAbilityResource==null</code> → 코스트 없음</td></tr>
+    <tr><td class="c">f</td><td>CDR(쿨감)</td><td><code>_cooldownEnd = Now + Cooldown·CDR</code> 곱 지점만 마련. 실제 배선은 Phase 4(여기선 ×1.0)</td></tr>
+    <tr><td class="c">g</td><td>E의 CanCast→Fire 창</td><td>Phase 1 E는 즉발이라 창 없음. Phase 2에서 비트로 가면 admission·fire가 벌어지므로 그때 Q와 동일 패턴</td></tr>
+  </tbody>
+</table>
+
+<!-- 9 -->
+<h2><span class="n">09</span>검증 시나리오</h2>
+<ul class="chk">
+  <li><b>평타</b> — 연타 시 어빌리티 <code>Cooldown</code>(구 attackRate) 간격으로만 발동. 상태/이펙트 정상</li>
+  <li><b>Q</b> — 에너지 만충에서만 발동, 발동 즉시 에너지 바 0, Q 쿨 게이지 채워짐(러너 조회). 쿨 중 재입력 씹힘</li>
+  <li><b>E</b> — E 쿨 간격 준수(구 <code>ESkillCoolTime</code>). 연타 방지 유지</li>
+  <li><b>스왑아웃 쿨 진행</b> — Q/E 쓰고 스왑아웃 → 시간 경과 후 스왑인 시 쿨이 절대시각만큼 경과. <code>TickCooldowns</code> 없이 동작</li>
+  <li><b>궁 준비 표시</b> — 활성 HUD·벤치 슬롯UI 모두 (에너지 만충 &amp;&amp; Q 쿨 0)에서 ready 점등. 쿨 완료 순간 전이 반영</li>
+  <li><b>쿨 UI 채움</b> — HUD Q/E 아이콘 fill이 <code>1 - Remaining/Duration</code>로 매끄럽게</li>
+  <li><b>다중 비트</b> — 한 평타/Q 애니의 여러 비트가 전부 발사(자기차단 없음)</li>
+  <li><b>재진입/전투 재시작</b> — 쿨 초기화 정책(§8-b) 의도대로</li>
+  <li><b>몬스터 회귀 없음</b> — 몹 어빌리티 발동·쿨·태그 이전과 동일</li>
+</ul>
+
+<!-- 10 -->
+<h2><span class="n">10</span>커밋 경계 — 독립 배포 가능하게</h2>
+<div class="phase"><div class="ph"><span class="pn">커밋 1</span><span class="pttl">씨앗 (동작 불변)</span></div>
+  <div class="pbody"><code>IAbilityResource</code> + <code>AbilityData.CostType</code> + <code>AbilityRunner</code> API 분해(<code>CanCast/Commit/Fire</code>, <code>TryCast</code>=편의). 아직 아무도 새 API 안 씀. 몬스터 회귀 없음 확인.</div></div>
+<div class="phase"><div class="ph"><span class="pn">커밋 2</span><span class="pttl">코스트 이관</span></div>
+  <div class="pbody"><code>CharacterStat</code>가 <code>IAbilityResource</code> 구현, <code>Commit</code>에 코스트 이음새. Q 궁게이지 러너 경유로.</div></div>
+<div class="phase"><div class="ph"><span class="pn">커밋 3</span><span class="pttl">admission 이관 + CharacterCombat 삭제</span></div>
+  <div class="pbody"><code>Attack/UseSkillQ/UseSkillE</code>를 러너 게이트로, <code>UseAbility</code> 비트를 <code>Fire</code>로. <code>CharacterCombat</code> 제거.</div></div>
+<div class="phase"><div class="ph"><span class="pn">커밋 4</span><span class="pttl">UI 이관</span></div>
+  <div class="pbody">HUD/슬롯UI가 러너 파사드 읽기. <code>OnUltimateStateChanged</code> 소스 러너로.</div></div>
+<div class="phase"><div class="ph"><span class="pn">커밋 5</span><span class="pttl">tick 제거</span></div>
+  <div class="pbody"><code>Stat.Current*CoolTime</code>/<code>TickCooldowns</code> 삭제, <code>PartyManager.TickCooldowns</code> → <code>RefreshUltimateReady</code>(또는 제거).</div></div>
+<div class="callout c-green">
+  <span class="lbl">롤백면</span>
+  각 커밋 뒤 에디터 플레이 실측. 커밋 3에서 회귀 시 게이트만 되돌리면 됨 — 상태 소유가 러너로 단일화돼 롤백면이 좁다.
+</div>
+
+<div class="callout c-key">
+  <span class="lbl">다음 — Phase 2 (발동 경로 통일)</span>
+  E를 <code>AbilityBeat</code>(Ex 슬롯)로 옮겨 admission(Commit)과 fire(beat)를 Q·평타와 같은 결로. <code>SlotForState</code>에 <code>E_Skill → Ex</code> 한 줄.
+</div>
+
+<div class="footer">
+  <span>Operation Kivotos · Player AbilitySystem 재설계 · Phase 1</span>
+  <span>선행: Phase0_Result.md · 청사진: Player_Refactor_Blueprint.pdf</span>
+</div>
+
+</body>
+</html>

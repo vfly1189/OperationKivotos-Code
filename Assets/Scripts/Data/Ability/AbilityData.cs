@@ -12,6 +12,7 @@ public class AbilityContext
     public BaseStat CasterStat;     // 데미지 계산용
     public Vector3 TargetPoint;     // 착탄/조준 월드 좌표 (AoE·포격 등)
     public GameplayTagContainer Tags; // 캐스터 보유 태그 (게이트 판독·GrantsTags 부여 대상). 없으면 태그 제약 없음.
+    public float CoolDown = -1f;
 
     public AbilityContext CloneAt(Vector3 point) => new AbilityContext
     {
@@ -22,6 +23,7 @@ public class AbilityContext
         CasterStat = CasterStat,
         Tags = Tags,
         TargetPoint = point, //  이것만 교체
+        CoolDown = CoolDown
     };
 }
 

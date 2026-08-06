@@ -4,9 +4,9 @@ using System;
 // 값은 애니메이션 이벤트의 intParameter와 1:1 대응하므로 고정한다.
 public enum CharacterAbilitySlot
 {
-    Attack = 0,   // 평타
-    Skill  = 1,   // Q
-    Ex     = 2,   // E (역할에서 해석됨)
+    BaseAttack = 0,   // 평타
+    Q_Skill  = 1,   // Q
+    E_Skill  = 2,   // E (역할에서 해석됨)
 }
 
 // 인스펙터에서 슬롯 ↔ 어빌리티를 명시적으로 엮는 쌍.

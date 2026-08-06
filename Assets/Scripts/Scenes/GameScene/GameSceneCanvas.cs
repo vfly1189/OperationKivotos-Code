@@ -79,9 +79,9 @@ public class GameSceneCanvas : UI_Scene
 
     void Update()
     {
-        if (_cachedActiveCharacter != null && _cachedActiveCharacter.Stat != null)
+        if (_cachedActiveCharacter != null)
         {
-            _activeCharacterHUD.UpdateCooldowns(_cachedActiveCharacter.Stat);
+            _activeCharacterHUD.UpdateCooldowns(_cachedActiveCharacter);
         }
     }
 

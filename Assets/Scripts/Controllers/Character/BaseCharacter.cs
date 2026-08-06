@@ -10,7 +10,6 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 {
     [Header("Base Settings")]
     [SerializeField] protected float _speed = 5.0f;
-    [SerializeField] protected float _attackRate = 0.5f;
     [SerializeField] protected Animator anim;
 
     [Header("Skill Settings")]
@@ -39,7 +38,6 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     protected CharacterStateMachine _stateMachine;
     protected CharacterMovement _movement;
-    protected CharacterCombat _combat;
     protected CharacterAnimationController _animController;
     protected GameObject _gameCanvas;
 
@@ -69,39 +67,55 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         // 역할이 부여한 E를 Ex 슬롯 [0]으로 흡수 (별도 경로 제거)
         if (_eAbility != null)
         {
-            if (!_slotMap.TryGetValue(CharacterAbilitySlot.Ex, out var exList))
-                _slotMap[CharacterAbilitySlot.Ex] = exList = new List<AbilityData>();
+            if (!_slotMap.TryGetValue(CharacterAbilitySlot.E_Skill, out var exList))
+                _slotMap[CharacterAbilitySlot.E_Skill] = exList = new List<AbilityData>();
             exList.Insert(0, _eAbility);
         }
     }
 
-    // 키 기반 발동 진입점. slot = 어느 스킬(상태가 결정), beat = 그 스킬 안에서 몇 번째 발사.
-    // 평타·Q는 애니메이션 이벤트(AbilityBeat)가, E는 입력(UseSkillE)이 직접 부른다.
+    // 비트(fire) 전용 진입점. slot = 어느 스킬(상태가 결정), beat = 그 슬롯 안에서 몇 번째 발사.
+    // 평타·Q는 애니메이션 이벤트(AbilityBeat)가 이걸 부른다. 쿨/코스트는 admission(UseSkillQ 등의 Commit)이 소유하므로
+    // 여기선 이펙트만 발사한다(무게이트).
     public void UseAbility(CharacterAbilitySlot slot, int beat = 0)
     {
-        if (_slotMap != null && _slotMap.TryGetValue(slot, out var list)
-            && beat >= 0 && beat < list.Count)
-            TryCast(list[beat]);
+        var token = _actionCts?.Token ?? CancellationToken.None;
+        if (_slotMap.TryGetValue(slot, out var list) && beat >= 0 && beat < list.Count)
+            _abilityRunner.Fire(list[beat], BuildCtx(), token).Forget();
     }
 
-    // 어빌리티 데이터를 직접 캐스트 (E처럼 인덱스 없이 발동하는 경우에도 사용)
-    protected void TryCast(AbilityData ability)
-    {
-        if (ability == null) return;
-        if (Stat == null || Stat.HealthComp.IsDead) return;
 
-        var token = _actionCts?.Token ?? CancellationToken.None;
+    private float SlotCooldown(CharacterAbilitySlot slot) => slot switch
+    {
+        CharacterAbilitySlot.Q_Skill => Stat.GetData().QSkillCoolTime,
+        CharacterAbilitySlot.E_Skill => Stat.GetData().ESkillCoolTime,
+        _ => 0f,   // 평타: 쿨 없음
+    };
+
+    public float SlotCooldownRemaining(CharacterAbilitySlot slot) => _slotMap.TryGetValue(slot, out var ability)
+        && ability.Count > 0 ? _abilityRunner.CooldownRemaining(ability[0]) : 0f;
+
+    public float SlotCooldownDuration(CharacterAbilitySlot slot) => _slotMap.TryGetValue(slot, out var ability)
+        && ability.Count > 0 ? _abilityRunner.CooldownDuration(ability[0]) : 0f;
+
+    // 궁극기(Q) 준비 = 에너지 만충 && Q 쿨 0. 쿨은 러너(절대시각)라 "쿨 끝남" 이벤트가 없어 UI가 폴링으로 읽는다.
+    public bool IsUltimateReady =>
+        Stat != null
+        && Stat.CurrentEnergy >= Stat.MaxEnergy.Value
+        && SlotCooldownRemaining(CharacterAbilitySlot.Q_Skill) <= 0f;
+
+    private AbilityContext BuildCtx()
+    {
         var ctx = new AbilityContext
         {
-            Caster      = this,
-            CasterGO    = gameObject,
-            CasterStat  = Stat,
-            Object      = _firePoint,   // 총구 = 스폰 기준 (aim은 캐릭터 회전이 firePoint에 반영됨)
-            Target      = null,
+            Caster = this,
+            CasterGO = gameObject,
+            CasterStat = Stat,
+            Object = _firePoint,   // 총구 = 스폰 기준 (aim은 캐릭터 회전이 firePoint에 반영됨)
+            Target = null,
             TargetPoint = transform.position + transform.forward,
-            Tags        = _ownedTags,   // 태그 게이트 판독 대상
+            Tags = _ownedTags,   // 태그 게이트 판독 대상
         };
-        _abilityRunner.TryCast(ability, ctx, token).Forget();
+        return ctx;
     }
 
     #endregion
@@ -131,7 +145,6 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
         _stateMachine = new CharacterStateMachine();
         _movement = new CharacterMovement(transform, _speed);
-        _combat = new CharacterCombat(Stat, _attackRate);
         _animController = new CharacterAnimationController(anim);
 
         _stateMachine.OnStateChanged += OnStateChanged;
@@ -193,32 +206,56 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
             _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Idle);
     }
 
-    public void Attack(bool isPressing)
+    public void BaseAttack(bool isPressing)
     {
         if (!isPressing) return;
-        if (!_stateMachine.CanAttack || IsUsingSkill || Stat.HealthComp.IsDead) return;
-        if (!_combat.CanAttack) return;
 
-        if (_combat.TryAttack())
-            _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Attack);
+        // 평타는 별도 쿨 없이 상태로 게이팅한다 — Attack 상태 진입 후 애니가 끝나야(→Idle) 재진입 가능.
+        // 발사 간격 = 평타 애니 길이. (쿨을 원하면 평타 AbilityData.Cooldown으로 부여)
+        if (!_stateMachine.CanAttack || IsUsingSkill || Stat.HealthComp.IsDead) return;
+
+        _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Attack);
     }
 
     public void UseSkillQ()
     {
         if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.HealthComp.IsDead) return;
-        if (!_combat.TryUseSkillQ()) return;
+        if (!_slotMap.TryGetValue(CharacterAbilitySlot.Q_Skill, out var list) || list.Count == 0) return;
+
+        AbilityData q0 = list[0];
+        if (Stat.CurrentEnergy < Stat.MaxEnergy.Value) return;   // 궁게이지 만충이어야 발동
+
+        // 쿨·궁게이지는 '입력 시점'에 소비한다(컷신 내내 쿨이 도는 게 보여야 함).
+        // 이펙트는 이후 Q_Skill 애니의 AbilityBeat → UseAbility(Q_Skill) → Fire 로 나간다.
+        var ctx = BuildCtx();
+        ctx.CoolDown = SlotCooldown(CharacterAbilitySlot.Q_Skill);
+        if (!_abilityRunner.Commit(q0, ctx)) return;             // 쿨 검사+시작(입력 시점)
+        Stat.ConsumeUltimateGauge();                             // 궁게이지 0 + OnEnergyChanged
+
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.QSkillCutScene);
     }
 
     public void UseSkillE()
     {
         if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.HealthComp.IsDead) return;
-        if (!_combat.TryUseSkillE()) return;
+
+        if (!_slotMap.TryGetValue(CharacterAbilitySlot.E_Skill, out var list) || list.Count == 0) return;
+
+        AbilityData e0 = list[0];
+
+        // E는 즉발: 게이트(쿨)와 발사가 같은 순간. Commit(쿨 검사+시작) 통과 시에만 상태전이 후 Fire.
+        var ctx = BuildCtx();
+        ctx.CoolDown = SlotCooldown(CharacterAbilitySlot.E_Skill);
+        if (!_abilityRunner.Commit(e0, ctx)) return;
+
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.E_Skill);
 
-        // 역할이 부여한 E 어빌리티 발동 (게이트는 위 TryUseSkillE, 이펙트는 데이터 주도)
-        UseAbility(CharacterAbilitySlot.Ex);
+        // ChangeState 후 새로 만들어진 액션 토큰으로 발사(상태가 다시 바뀌면 캐스트 취소되도록)
+        var token = _actionCts?.Token ?? CancellationToken.None;
+        _abilityRunner.Fire(e0, ctx, token).Forget();
     }
+
+
 
     public void Victory() =>
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.Victory);
@@ -399,8 +436,8 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     // 현재 상태에 대응하는 슬롯. 대응이 없으면 -1(무효)을 돌려 비트를 무시하게 한다.
     private static CharacterAbilitySlot SlotForState(CharacterStateMachine.PlayerState s) => s switch
     {
-        CharacterStateMachine.PlayerState.Attack  => CharacterAbilitySlot.Attack,
-        CharacterStateMachine.PlayerState.Q_Skill => CharacterAbilitySlot.Skill,
+        CharacterStateMachine.PlayerState.Attack  => CharacterAbilitySlot.BaseAttack,
+        CharacterStateMachine.PlayerState.Q_Skill => CharacterAbilitySlot.Q_Skill,
         _ => (CharacterAbilitySlot)(-1),
     };
 
@@ -412,7 +449,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     // 기본 평타 = Attack 슬롯 발동. 대부분의 캐릭터는 이 기본만으로 충분하다(서브클래스 불필요).
     // 차징·특수 발동이 필요한 캐릭터만 override 한다.
-    protected virtual void PerformAttackAction() => UseAbility(CharacterAbilitySlot.Attack);
+    protected virtual void PerformAttackAction() => UseAbility(CharacterAbilitySlot.BaseAttack);
 
     protected virtual void PlaySFXOnly() { }
     protected virtual void PlaySFX() { }

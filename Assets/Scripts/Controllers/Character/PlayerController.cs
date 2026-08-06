@@ -87,11 +87,13 @@ public class PlayerController
 
         if (evt == Define.MouseEvent.Press)
         {
-            _isMousePressed = true;
+            _currentTarget.BaseAttack(true);
+            //_isMousePressed = true;       
         }
         else if (evt == Define.MouseEvent.Click)
         {
-            _isMousePressed = false;
+            _currentTarget.BaseAttack(true);
+            //_isMousePressed = false;
         }
     }
 
@@ -126,9 +128,9 @@ public class PlayerController
     // Update 로직 -> Managers.Update에서 호출
     public void OnUpdate()
     {
-        if (_currentTarget == null || _currentTarget.Stat.HealthComp.IsDead) return;
+        //if (_currentTarget == null || _currentTarget.Stat.HealthComp.IsDead) return;
 
-        _currentTarget.Attack(_isMousePressed);
+        //_currentTarget.Attack(_isMousePressed);
     }
 
     // PlayerController.cs
