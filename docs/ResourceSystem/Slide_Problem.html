@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ResourceSystem 문제상황 슬라이드</title>
+<style>
+  :root{
+    --slate:#3f4b5b; --ink:#1f2937; --muted:#8a93a0; --rule:#d9dee6;
+    --pblue:#4472c4; --pblue-d:#2f5597; --red:#e03131; --red-d:#c00000;
+    --bracket:#a9c0e8; --gray:#7b8494; --graybox:#8a94a3;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  @page{ size:338.66mm 190.5mm; margin:0; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); }
+  .slide{ width:338.66mm; height:190.5mm; padding:13mm 17mm 10mm; position:relative; overflow:hidden; page-break-after:always; background:#fff; }
+  .slide:last-child{ page-break-after:auto; }
+  .proj{ font-size:13pt; color:var(--gray); font-weight:600; letter-spacing:.01em; }
+  .proj b{ color:var(--slate); font-weight:700; }
+  h1{ font-size:35pt; color:var(--slate); font-weight:800; letter-spacing:-.01em; margin:1mm 0 0; }
+  .rule{ height:1.5px; background:var(--rule); margin:4mm 0 6mm; }
+  h2{ font-size:19pt; color:var(--ink); font-weight:800; margin-bottom:5mm; }
+  .prob{ font-size:15.5pt; font-weight:700; margin-bottom:1.5mm; }
+  .prob .ico{ color:var(--red); margin-right:4px; }
+  .bullet{ font-size:13.5pt; color:#2b3340; margin:0 0 0 12mm; line-height:1.5; text-indent:-5mm; padding-left:5mm; }
+  .bullet::before{ content:"•"; color:#2b3340; margin-right:6px; }
+  .r{ color:var(--red); font-weight:800; }
+  .flow{ display:flex; align-items:center; justify-content:center; gap:0; margin:7mm 0 2mm; }
+  .box{ border-radius:9px; color:#fff; font-weight:800; font-size:16.5pt; padding:6.5mm 0; text-align:center; box-shadow:0 2px 5px rgba(40,60,110,.18); }
+  .box.b{ background:var(--pblue); border:1.5px solid var(--pblue-d); }
+  .box.g{ background:var(--graybox); border:1.5px solid #6b7480; }
+  .box.rd{ background:var(--red); border:1.5px solid var(--red-d); }
+  .arrow{ flex:0 0 auto; padding:0 3mm; }
+  .cap{ text-align:center; color:var(--red); font-weight:800; font-size:14pt; margin:2mm 0 0; }
+  .bracket{ border:2px solid var(--bracket); border-radius:16px; padding:5mm 8mm 4.5mm; margin-top:4.5mm; }
+  .item{ margin-bottom:2.8mm; }
+  .item:last-child{ margin-bottom:0; }
+  .item .h{ font-size:14.5pt; font-weight:800; color:var(--ink); }
+  .item .h .n{ color:var(--pblue-d); }
+  .item .s{ font-size:13pt; color:#39424f; margin:0.5mm 0 0 9mm; text-indent:-5mm; padding-left:5mm; line-height:1.45; }
+  .item .s::before{ content:"•"; color:#98a0ae; margin-right:6px; }
+  .concl{ margin-top:3.5mm; background:#fff0f0; border:1.5px solid #f3b0b0; border-radius:11px; padding:3.2mm 7mm; font-size:13pt; font-weight:700; color:var(--red-d); }
+  .toc{ position:absolute; right:17mm; bottom:8mm; color:var(--pblue); font-size:12.5pt; font-weight:600; }
+  .num-big{ letter-spacing:.06em; }
+</style>
+</head>
+<body>
+
+<!-- =================== SLIDE 1 =================== -->
+<div class="slide">
+  <div class="proj">PROJECT : <b>블루 아카이브 ( Unity )</b></div>
+  <h1 class="num-big">문제상황 ( 2 ) - 1</h1>
+  <div class="rule"></div>
+
+  <h2>리소스 수명 관리 : 2버킷 구조의 한계와 수명 스코프 도입</h2>
+
+  <div class="prob"><span class="ico">🚨</span>문제 상황</div>
+  <div class="bullet">리소스의 실제 수명은 5종 이상인데 표현 수단은 <span class="r">Global / Scene 2개뿐</span> — 수명이 애매한 리소스가 전부 <span class="r">"안전한 쪽 = Global"로 도피</span></div>
+
+  <!-- flow -->
+  <div class="flow">
+    <div class="box b" style="width:64mm">다양한 실제 수명<br><span style="font-size:11pt;font-weight:600">팝업·던전·파티·영구…</span></div>
+    <div class="arrow"><svg width="70" height="46"><path d="M0,15 L38,15 L38,6 L64,23 L38,40 L38,31 L0,31 Z" fill="#4472c4"/></svg></div>
+    <div class="box b" style="width:58mm">표현은 2개뿐<br><span style="font-size:11pt;font-weight:600">Global / Scene</span></div>
+    <div class="arrow"><svg width="70" height="46"><path d="M0,15 L38,15 L38,6 L64,23 L38,40 L38,31 L0,31 Z" fill="#4472c4"/></svg></div>
+    <div class="box g" style="width:52mm">애매하면<br>Global 선택</div>
+    <div class="arrow"><svg width="70" height="46"><path d="M0,15 L38,15 L38,6 L64,23 L38,40 L38,31 L0,31 Z" fill="#e03131"/></svg></div>
+    <div class="box rd" style="width:58mm">Global 비대<br><span style="font-size:11pt;font-weight:600">거의 전체 영구 상주</span></div>
+  </div>
+  <div class="cap">2버킷의 구조적 한계</div>
+
+  <div class="bracket">
+    <div class="item">
+      <div class="h"><span class="n">1.</span> 수명 표현력 부족</div>
+      <div class="s">팝업(스택 동안)·파티(씬 넘어 생존)·던전(던전 동안)을 담을 <span class="r">중간 수명 계층이 없음</span></div>
+    </div>
+    <div class="item">
+      <div class="h"><span class="n">2.</span> Global 도피 관성</div>
+      <div class="s">"언제 Release?"가 애매 → 안전한 Global 선택 → <span class="r">한 번 올리면 게임 종료까지 안 내려옴</span></div>
+    </div>
+    <div class="item">
+      <div class="h"><span class="n">3.</span> 그 결과</div>
+      <div class="s">진입 직후 핸들 메모리의 <span class="r">95%가 Global 버킷</span> (1287MB vs Scene 65MB) — 거의 전체가 항상 메모리 상주</div>
+    </div>
+  </div>
+
+  <div class="toc">↰ 프로젝트 목차로 이동</div>
+</div>
+
+<!-- =================== SLIDE 2 =================== -->
+<div class="slide">
+  <div class="proj">PROJECT : <b>블루 아카이브 ( Unity )</b></div>
+  <h1 class="num-big">문제상황 ( 2 ) - 2</h1>
+  <div class="rule"></div>
+
+  <h2>리소스 수명 관리 : 수동 짝맞추기의 함정과 실측 비용</h2>
+
+  <div class="prob"><span class="ico">🚨</span>문제 상황</div>
+  <div class="bullet">Addressables는 <span class="r">Load ↔ Release 짝맞추기</span>를 요구(공식 문서) — 호출부가 Release를 '기억'해야 하고, 그 <span class="r">기억의 실패가 곧 메모리 누수</span></div>
+
+  <!-- flow -->
+  <div class="flow">
+    <div class="box b" style="width:48mm">Load</div>
+    <div class="arrow"><svg width="70" height="46"><path d="M0,15 L38,15 L38,6 L64,23 L38,40 L38,31 L0,31 Z" fill="#4472c4"/></svg></div>
+    <div class="box b" style="width:48mm">사용</div>
+    <div class="arrow"><svg width="70" height="46"><path d="M0,15 L38,15 L38,6 L64,23 L38,40 L38,31 L0,31 Z" fill="#4472c4"/></svg></div>
+    <div class="box g" style="width:62mm">Release 필요<br><span style="font-size:11pt;font-weight:600">호출부가 수동 호출</span></div>
+    <div class="arrow"><svg width="70" height="46"><path d="M0,15 L38,15 L38,6 L64,23 L38,40 L38,31 L0,31 Z" fill="#e03131"/></svg></div>
+    <div class="box rd" style="width:56mm">기억 실패<br><span style="font-size:11pt;font-weight:600">= 메모리 누수</span></div>
+  </div>
+  <div class="cap">수동 짝맞추기의 함정</div>
+
+  <div class="bracket">
+    <div class="item">
+      <div class="h"><span class="n">1.</span> 팝업 세션의 영구 고정</div>
+      <div class="s">팝업 한 세션 열람 = Global에 <span class="r">+287MB 영구 고정</span> — 닫아도·씬을 옮겨도 게임 종료까지 안 내려옴</div>
+    </div>
+    <div class="item">
+      <div class="h"><span class="n">2.</span> 몬스터 HP바 누수 (실제 발견·수정)</div>
+      <div class="s">DontDestroyOnLoad 캔버스에 방치돼 자가정리가 안 됨 → Memory Profiler <span class="r">GameObject +291</span></div>
+    </div>
+    <div class="item">
+      <div class="h"><span class="n">3.</span> 구조적 원인</div>
+      <div class="s">수명 관리가 <span class="r">개인의 주의력</span>에 의존 → 실패가 반복 → "기억"이 아니라 <span class="r">구조로 정산</span>할 필요</div>
+    </div>
+    <div class="item">
+      <div class="h"><span class="n">→</span> 개인의 기억이 아니라 <span class="r">한 곳에서 수명 단위로 자동 정산</span>하는 통합 관리가 필요 &nbsp;(→ 문제해결)</div>
+    </div>
+  </div>
+
+  <div class="toc">↰ 프로젝트 목차로 이동</div>
+</div>
+
+</body>
+</html>

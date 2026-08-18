@@ -198,6 +198,20 @@ public static class ResourceMetrics
         GameLog.Log($"[Checkpoint] ━━━━━ {label} ━━━━━");
     }
 
+    // 런타임 안전 메모리 총량 — 빌드에서 유효한 절대값.
+    //  에디터 창의 버킷별 MB는 EditorUtility.CollectDependencies(에디터 전용)에 의존해 빌드에서 못 쓴다.
+    //  이 총량은 Profiler 런타임 API라 빌드에서 그대로 동작하고, 에디터 ×2 텍스처 CPU 사본이 없는
+    //  '진짜 절대값'이다. 체크포인트마다 호출해 팝업 세션 증가·왕복 flat(누수 0)을 총량으로 확인한다.
+    //  (버킷별 분해가 필요하면 Memory Profiler 스냅샷 — 버킷 '수'는 [ResourceReport]가 빌드에서 제공)
+    [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+    public static void LogRuntimeMemory(string label)
+    {
+        GameLog.Log($"[ResourceMemory] ({label}) 총 할당 {ToMB(Profiler.GetTotalAllocatedMemoryLong())} | " +
+                    $"예약 {ToMB(Profiler.GetTotalReservedMemoryLong())} | " +
+                    $"그래픽스 {ToMB(Profiler.GetAllocatedMemoryForGraphicsDriver())} | " +
+                    $"텍스처 {ToMB((long)Texture.currentTextureMemory)}");
+    }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static readonly string[] CaptureTags =
     {

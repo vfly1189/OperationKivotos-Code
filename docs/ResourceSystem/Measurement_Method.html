@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ResourceSystem — 측정 방법론 (도식)</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --red:#c92a2a; --red-soft:#fff0f0; --red-ink:#a31414;
+    --purp:#6741d9; --purp-soft:#f3f0ff; --purp-ink:#4d2fa8;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:14mm 15mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.58; font-size:10.3pt; }
+  h1{ font-size:20pt; margin:0 0 6px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8.2pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:9px; }
+  h2{ font-size:13pt; margin:22px 0 3px; font-weight:800; break-after:avoid; }
+  .num{ color:var(--faint); font-weight:800; margin-right:7px; }
+  .h2sub{ color:var(--muted); font-size:9.2pt; margin:2px 0 10px; padding-bottom:7px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 7px; }
+  strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.6pt; background:var(--shade); padding:1px 5px; border-radius:5px; border:1px solid var(--line2); }
+  ul{ margin:0 0 7px; padding-left:17px; } li{ margin:3px 0; }
+  .big{ border:1px solid var(--line); border-left:5px solid var(--blue); border-radius:11px; padding:12px 16px; margin:13px 0; background:#fbfcfe; font-size:10.6pt; }
+  .big b{ color:var(--blue-ink); }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:12px 14px 6px; margin:12px 0; background:#fff; break-inside:avoid; }
+  .figcap{ font-size:8.4pt; color:var(--faint); text-align:center; margin:2px 0 4px; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .s-b{ font-size:11.5px; font-weight:700; } .s-t{ font-size:11px; } .s-s{ font-size:9px; fill:#5b6270; }
+  table{ width:100%; border-collapse:collapse; margin:10px 0; font-size:9.2pt; break-inside:avoid; }
+  th{ text-align:left; padding:6px 9px; background:var(--ink); color:#fff; font-weight:700; font-size:8.6pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:6px 9px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); }
+  .tier{ display:grid; grid-template-columns:88px 1fr; gap:8px; margin:6px 0; align-items:stretch; break-inside:avoid; }
+  .tier .lab{ border-radius:8px; color:#fff; font-weight:800; font-size:9pt; display:flex; align-items:center; justify-content:center; text-align:center; padding:6px; }
+  .tier .desc{ border:1px solid var(--line); border-radius:8px; padding:7px 11px; font-size:9.1pt; background:#fff; }
+  .callout{ border-radius:11px; padding:11px 15px; margin:12px 0; font-size:9.4pt; line-height:1.5; break-inside:avoid; }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-purp{ background:var(--purp-soft); color:var(--purp-ink); } .c-purp .lbl{ color:var(--purp); }
+  .callout .lbl{ font-weight:800; font-size:8.2pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  .lead{ font-size:10.8pt; color:var(--muted); margin:0 0 2px; }
+  .footer{ margin-top:18px; padding-top:8px; border-top:1px solid var(--line); font-size:8pt; color:var(--faint); }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.4px; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · ResourceSystem · 측정 방법론</div>
+<h1>어떻게 측정했나</h1>
+<p class="lead">측정치를 믿기 전에 측정기를 검증하는 루프 — 계측 인프라 · 지표 등급 · 재현 시나리오 · 신뢰도.</p>
+
+<div class="big">
+  이 리팩터의 핵심 가치는 감축량이 아니라 <b>"측정 → 진단 → 구조 → 검증"을 도구의 신뢰도까지 등급 매겨가며 돌린 규율</b>이다.
+  이 문서는 <em>무엇을·어떻게 쟀고, 그 숫자를 얼마나 믿을 수 있는지</em>를 도식으로 정리한다.
+</div>
+
+<!-- ============ 1. 계측 파이프라인 ============ -->
+<h2><span class="num">1</span>계측 파이프라인 — 3 소스 → 자동 파일 기록</h2>
+<p class="h2sub">콘솔 복사 없이, 태그 붙은 로그만 걸러 파일에 실시간 append.</p>
+
+<div class="fig">
+<svg width="100%" viewBox="0 0 700 232" role="img" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+  <!-- 3 sources -->
+  <text class="s-s" x="78" y="20" text-anchor="middle" fill="#8a91a0">측정 소스 3</text>
+  <rect x="10" y="28" width="140" height="30" rx="8" fill="#eef2ff" stroke="#3b5bdb"/><text class="s-t" x="80" y="47" text-anchor="middle">에디터 창 버튼 ①~⑤</text>
+  <rect x="10" y="66" width="140" height="30" rx="8" fill="#eef2ff" stroke="#3b5bdb"/><text class="s-t" x="80" y="85" text-anchor="middle">런타임 핫키 F5~F9</text>
+  <rect x="10" y="104" width="140" height="30" rx="8" fill="#eef2ff" stroke="#3b5bdb"/><text class="s-t" x="80" y="118" text-anchor="middle">자동 계측</text>
+  <text class="s-s" x="80" y="130" text-anchor="middle">(씬 전환 · UI 오픈)</text>
+
+  <path d="M152 43 C180 43 180 100 205 100" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#a)"/>
+  <path d="M152 81 L205 88" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#a)"/>
+  <path d="M152 119 C180 119 180 108 205 108" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#a)"/>
+
+  <!-- metrics functions -->
+  <rect x="207" y="78" width="128" height="48" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="s-b" x="271" y="97" text-anchor="middle" fill="#8a3708">계측 함수</text>
+  <text class="s-s" x="271" y="112" text-anchor="middle">LogAliveReport ·</text>
+  <text class="s-s" x="271" y="122" text-anchor="middle">LogRuntimeMemory …</text>
+
+  <path d="M337 102 L372 102" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#a)"/>
+
+  <!-- GameLog gate -->
+  <rect x="374" y="78" width="120" height="48" rx="9" fill="#f3f0ff" stroke="#6741d9"/>
+  <text class="s-b" x="434" y="97" text-anchor="middle" fill="#4d2fa8">GameLog.Log</text>
+  <text class="s-s" x="434" y="113" text-anchor="middle">→ Debug.Log</text>
+  <text class="s-s" x="434" y="123" text-anchor="middle" fill="#c92a2a">gate: ENABLE_GAME_LOG</text>
+
+  <path d="M496 102 L531 102" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#a)"/>
+
+  <!-- filter + file -->
+  <rect x="533" y="78" width="158" height="48" rx="9" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="s-b" x="612" y="96" text-anchor="middle" fill="#1f6b2e">logMessageReceived</text>
+  <text class="s-s" x="612" y="111" text-anchor="middle">태그 필터 (CaptureTags)</text>
+  <text class="s-s" x="612" y="122" text-anchor="middle">→ metrics_*.log</text>
+
+  <!-- bottom: file note -->
+  <rect x="207" y="160" width="484" height="54" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+  <text class="s-s" x="220" y="178" text-anchor="start" fill="#1a1c22">캡처 태그:</text>
+  <text class="mono" x="285" y="178" text-anchor="start" fill="#5b6270">[ResourceReport] [ResourceMemory] [UIMetric] [TransitionMetric]</text>
+  <text class="mono" x="285" y="192" text-anchor="start" fill="#5b6270">[LoadStats] [AtlasMetric] [ResourceLeak] [Checkpoint] [Preload] [Resource]</text>
+  <text class="s-s" x="220" y="208" text-anchor="start" fill="#8a3708">⚠ 빌드에선 ENABLE_GAME_LOG 심볼이 없으면 GameLog.Log가 통째로 스트립 → 파일 미생성</text>
+</svg>
+<div class="figcap">Fig 1 — 어느 소스에서 찍든 GameLog → 태그 필터 → 한 파일로 수렴. 에디터/개발 빌드 전용(<code>Conditional</code>).</div>
+</div>
+
+<!-- ============ 2. 지표 4계층 ============ -->
+<h2><span class="num">2</span>지표를 역할별로 등급화</h2>
+<p class="h2sub">아무거나 재지 않는다 — 개선을 증명할 것 / 대가 / 회귀 방지 / 참고를 나눈다.</p>
+
+<div class="tier"><div class="lab" style="background:var(--green)">주 지표</div><div class="desc"><strong>메모리</strong> — 버킷별 핸들 메모리(에디터) · 런타임 총량(빌드). <em>개선을 증명하는 축.</em></div></div>
+<div class="tier"><div class="lab" style="background:var(--amber)">비용</div><div class="desc"><strong>히치</strong>(UI 오픈 요청→표시 + 이후 60프레임 최악) · <strong>씬 전환 피크</strong> · <strong>재로드 횟수</strong>. <em>상주를 포기한 대가.</em></div></div>
+<div class="tier"><div class="lab" style="background:var(--blue)">불변</div><div class="desc"><strong>회귀 없음</strong> — 버킷 왕복 정합, 잔존 0, <code>[?]</code>·<code>[ResourceLeak]</code> 0. <em>"딴 거 안 망가뜨렸다"는 증명.</em></div></div>
+<div class="tier"><div class="lab" style="background:var(--faint)">참고</div><div class="desc"><strong>프리로드 시간</strong> — 개선 축이 아니라고 판단 → 참고로 강등(에셋 8~9개라 순차→배치 이득 작음).</div></div>
+
+<!-- ============ 3. 측정 방법별 ============ -->
+<h2><span class="num">3</span>지표별 측정 방법 (API)</h2>
+<table>
+  <thead><tr><th style="width:20%">지표</th><th style="width:44%">측정 방법</th><th>핵심</th></tr></thead>
+  <tbody>
+    <tr><td class="who">메모리 (에디터)</td><td><code>EditorUtility.CollectDependencies</code> + <code>GetRuntimeMemorySizeLong</code></td><td>버킷 합계 = <strong>Global 우선 귀속</strong>(공유 의존성 1회만). SpriteAtlas는 <strong>런타임 페이지</strong> 기준 특례</td></tr>
+    <tr><td class="who">메모리 (빌드)</td><td><code>GetTotalAllocatedMemoryLong</code> + <code>Graphics</code> + <code>Texture.currentTextureMemory</code></td><td>에디터 ×2 CPU 사본 없는 <strong>진짜 절대값</strong>. 회수 주신호 = 텍스처</td></tr>
+    <tr><td class="who">히치 (UI 오픈)</td><td><code>realtimeSinceStartup</code>(요청→표시) + <code>UniTask.Yield</code>로 <strong>60프레임 관찰</strong> <code>unscaledDeltaTime</code> 최악</td><td>콘텐츠는 표시 <strong>이후</strong> 프레임에 로드 → 그 히치까지 포착</td></tr>
+    <tr><td class="who">전환 피크</td><td>전환 시작~활성화까지 <strong>매 프레임</strong> 총할당 샘플링</td><td>피크/시작/종료 + 피크 발생 프레임(#N)</td></tr>
+    <tr><td class="who">로드 통계</td><td>캐시 히트 제외, <strong>실제 Addressables 로드만</strong> 키별 횟수·시간</td><td>재로드 = lazy화 비용의 직접 증거</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ 4. 히치 측정 window ============ -->
+<div class="fig">
+<svg width="100%" viewBox="0 0 700 118" role="img" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <!-- baseline -->
+  <line x1="40" y1="86" x2="660" y2="86" stroke="#c3c8d2" stroke-width="1"/>
+  <!-- request / shown markers -->
+  <line x1="80" y1="40" x2="80" y2="92" stroke="#3b5bdb" stroke-width="1.6"/>
+  <text class="s-s" x="80" y="34" text-anchor="middle" fill="#2b3a8f">요청</text>
+  <line x1="150" y1="40" x2="150" y2="92" stroke="#3b5bdb" stroke-width="1.6"/>
+  <text class="s-s" x="150" y="34" text-anchor="middle" fill="#2b3a8f">표시</text>
+  <path d="M82 46 L148 46" stroke="#3b5bdb" stroke-width="1" marker-start="url(#b)" marker-end="url(#b)"/>
+  <text class="s-s" x="115" y="59" text-anchor="middle">요청→표시</text>
+  <!-- frame ticks -->
+  <g stroke="#adb5bd" stroke-width="1">
+    <line x1="150" y1="82" x2="150" y2="90"/><line x1="175" y1="82" x2="175" y2="90"/><line x1="200" y1="82" x2="200" y2="90"/>
+    <line x1="225" y1="82" x2="225" y2="90"/><line x1="275" y1="82" x2="275" y2="90"/><line x1="325" y1="82" x2="325" y2="90"/>
+    <line x1="400" y1="82" x2="400" y2="90"/><line x1="500" y1="82" x2="500" y2="90"/><line x1="600" y1="82" x2="600" y2="90"/>
+  </g>
+  <!-- spike (worst frame) -->
+  <rect x="196" y="52" width="9" height="34" fill="#e8590c"/>
+  <text class="s-s" x="200" y="48" text-anchor="middle" fill="#8a3708">최악 프레임</text>
+  <!-- window bracket -->
+  <path d="M150 100 L640 100" stroke="#2b8a3e" stroke-width="1.2" marker-start="url(#b)" marker-end="url(#b)"/>
+  <text class="s-s" x="395" y="113" text-anchor="middle" fill="#1f6b2e">표시 후 60프레임(~1초) 관찰 — 콘텐츠 로드 히치까지 포착</text>
+</svg>
+<div class="figcap">Fig 2 — 히치는 "요청→표시"만이 아니라 표시 후 60프레임의 최악값까지 본다(콘텐츠는 표시 이후에 로드됨).</div>
+</div>
+
+<!-- ============ 5. 시나리오 타임라인 ============ -->
+<h2><span class="num">4</span>재현 가능한 시나리오 — 체크포인트 ①~⑤</h2>
+<p class="h2sub">사람 손 안 타게 고정 시나리오 + 버튼/핫키 마킹. Before/After를 같은 흐름으로.</p>
+
+<div class="fig">
+<svg width="100%" viewBox="0 0 700 150" role="img" xmlns="http://www.w3.org/2000/svg">
+  <line x1="30" y1="52" x2="672" y2="52" stroke="#c3c8d2" stroke-width="1.5"/>
+  <!-- nodes -->
+  <g>
+    <circle cx="70" cy="52" r="15" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/><text class="s-b" x="70" y="57" text-anchor="middle" fill="#2b3a8f">①</text>
+    <text class="s-s" x="70" y="82" text-anchor="middle">진입 직후</text>
+    <text class="s-s" x="70" y="94" text-anchor="middle" fill="#8a91a0">기준선</text>
+
+    <circle cx="215" cy="52" r="15" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/><text class="s-b" x="215" y="57" text-anchor="middle" fill="#2b3a8f">②</text>
+    <text class="s-s" x="215" y="82" text-anchor="middle">팝업 첫오픈</text>
+    <text class="s-s" x="215" y="94" text-anchor="middle" fill="#8a91a0">세션 비용</text>
+
+    <circle cx="360" cy="52" r="15" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/><text class="s-b" x="360" y="57" text-anchor="middle" fill="#2b3a8f">③</text>
+    <text class="s-s" x="360" y="82" text-anchor="middle">재오픈</text>
+    <text class="s-s" x="360" y="94" text-anchor="middle" fill="#8a91a0">캐시 히트</text>
+
+    <circle cx="505" cy="52" r="15" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/><text class="s-b" x="505" y="57" text-anchor="middle" fill="#1f6b2e">④</text>
+    <text class="s-s" x="505" y="82" text-anchor="middle">던전 왕복</text>
+    <text class="s-s" x="505" y="94" text-anchor="middle" fill="#1f6b2e">회수 검증</text>
+
+    <circle cx="640" cy="52" r="15" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/><text class="s-b" x="640" y="57" text-anchor="middle" fill="#1f6b2e">⑤</text>
+    <text class="s-s" x="640" y="82" text-anchor="middle">종료</text>
+    <text class="s-s" x="640" y="94" text-anchor="middle" fill="#1f6b2e">flat</text>
+  </g>
+  <text class="s-s" x="351" y="128" text-anchor="middle" fill="#5b6270">각 체크포인트 = 구분선 + 버킷 스냅샷 + 메모리 자동 기록 · 팝업이 씬 스코프에 적재됐다 ④에서 회수됨</text>
+</svg>
+<div class="figcap">Fig 3 — 5개 체크포인트가 각각 다른 주장을 검증(기준선/세션비용/캐시히트/회수/flat).</div>
+</div>
+
+<!-- ============ 6. 단일 변수 A/B ============ -->
+<h2><span class="num">5</span>단일 변수 A/B — 도구 변화분과 개선분 분리</h2>
+<p class="h2sub">계측 도구가 중간에 바뀐 구간을 넘어 직접 차감하면 "내 개선"과 "도구 변화"가 섞인다.</p>
+<div class="fig">
+<svg width="100%" viewBox="0 0 700 120" role="img" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="14" y="40" width="150" height="42" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="s-t" x="89" y="60" text-anchor="middle" fill="#8a3708">Before</text>
+  <text class="s-s" x="89" y="74" text-anchor="middle">isGlobal = true</text>
+
+  <path d="M166 61 L214 61" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#c)"/>
+  <text class="s-s" x="190" y="52" text-anchor="middle" fill="#c92a2a">한 줄만 토글</text>
+
+  <rect x="216" y="40" width="150" height="42" rx="9" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="s-t" x="291" y="60" text-anchor="middle" fill="#1f6b2e">After</text>
+  <text class="s-s" x="291" y="74" text-anchor="middle">isGlobal = false</text>
+
+  <path d="M368 61 L416 61" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#c)"/>
+
+  <rect x="418" y="34" width="268" height="54" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+  <text class="s-s" x="432" y="53" text-anchor="start" fill="#1a1c22">같은 도구·같은 세션 → 단일 변수 비교</text>
+  <text class="s-s" x="432" y="69" text-anchor="start" fill="#1f6b2e">부수 소득: 재측정 Before가 v2와 소수점 일치</text>
+  <text class="s-s" x="432" y="81" text-anchor="start" fill="#1f6b2e">(512.8MB) → 도구 등가성까지 실측</text>
+</svg>
+<div class="figcap">Fig 4 — 배선(isGlobal) 한 줄만 바꿔 같은 도구로 Before를 재측정 = 단일 변수 통제.</div>
+</div>
+
+<!-- ============ 7. 신뢰도 등급 ============ -->
+<h2><span class="num">6</span>신뢰도 등급제 — 주장 전에 등급을 매긴다</h2>
+<p class="h2sub">모든 수치를 같은 무게로 인용하지 않는다.</p>
+<div class="tier"><div class="lab" style="background:var(--green)">강</div><div class="desc">로드 개수·출처 · 피크 발생 프레임 · 재로드 키 목록 · 버킷 라벨 전환 → <strong>그대로 인용</strong></div></div>
+<div class="tier"><div class="lab" style="background:var(--amber)">중</div><div class="desc">히치 ms(n=1, <strong>15ms 이하 차이 주장 금지</strong>) · 메모리 MB(에디터 = 증감·비율만, 내부 비교 전용)</div></div>
+<div class="tier"><div class="lab" style="background:var(--faint)">약</div><div class="desc">근거 미비 → <strong>방향만</strong> (예: 원인 미검증 가설)</div></div>
+<div class="callout c-green">
+  <span class="lbl">등급 상향 근거</span>
+  Addressables Play Mode = <b>Use Existing Build(실제 번들)</b> 확인 → Release·언로드·번들 마운트가 실제와 동일 → <b>증감·비율은 "강"</b>.
+  남은 절대값 각주는 <b>개발 빌드 실측(2026-08-11)</b>으로 확정.
+</div>
+
+<!-- ============ 8. 도구 검증 ============ -->
+<h2><span class="num">7</span>측정기 자체를 검증 (방법론의 정점)</h2>
+<p class="h2sub">"숫자를 믿기 전에 도구를 의심했다" — 이게 감축 수치보다 희소한 신호.</p>
+<div class="callout c-purp">
+  <span class="lbl">교차 검증으로 잡은 것 3</span>
+  <b>① 측정 도구 ×6.8 과대계상</b> — 에디트 모드(원본 폴백처럼 보임) vs 플레이 모드(DXT5 페이지 정상) 상반 → 아틀라스가 원본 텍스처까지 세던 계통 오차 발견·보정(436MB → 실제 64MB).<br>
+  <b>② 계측이 죽은 코드와 함께 소멸</b> — <code>RecordLoad</code>가 죽은 코드 제거 때 함께 삭제돼 로드 통계가 비어 있던 걸 "왜 이 지표가 비지?"로 역추적.<br>
+  <b>③ assert 위치 오류</b> — "이전 씬 미반납"이 아니라 "회전 후 새 적재"를 오탐하던 검사를 <code>await</code> 이전으로 이동.
+</div>
+
+<h3 style="margin-top:14px">측정 운영 함정 (같이 기록)</h3>
+<ul>
+  <li><strong>TMP 동적 폰트</strong>가 세션마다 절대값을 최대 16MB 흔듦(화면에 띄운 글자만 런타임 베이크) → <strong>버킷 합계를 주 지표</strong>로, 폰트 <code>.asset</code> <strong>커밋 금지</strong>(<code>git checkout</code>).</li>
+  <li>에디터는 텍스처 <strong>CPU 사본</strong>까지 계상 → 개발 빌드 실측으로 보정.</li>
+</ul>
+
+<div class="callout c-amber">
+  <span class="lbl">한 줄 요약</span>
+  측정 → 진단 → 구조 → 검증 루프를, <b>측정기의 신뢰도까지 등급 매겨가며</b> 돌렸다. 감축(−60%)보다 이 규율이 값이다.
+</div>
+
+<div class="footer">
+  Operation Kivotos · ResourceSystem · 측정 방법론 · 2026-08-11 ·
+  도구: ResourceMetrics.cs · ResourceDebugWindow.cs · MetricsHotkeys.cs ·
+  근거: Baseline.md(§0·§6-2·§8-5·§9-1·§12-5·§13) · ProblemSolving_Log.md
+</div>
+
+</body>
+</html>

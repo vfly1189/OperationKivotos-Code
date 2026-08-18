@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ResourceSystem — 수명 스코프 리팩터 (포트폴리오 전체 서사)</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --red:#c92a2a; --red-soft:#fff0f0; --red-ink:#a31414;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:14mm 15mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.6; font-size:10.4pt; }
+  h1{ font-size:21pt; margin:0 0 6px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8.4pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:9px; }
+  h2{ font-size:13.5pt; margin:24px 0 3px; font-weight:800; break-after:avoid; }
+  .num{ color:var(--faint); font-weight:800; margin-right:7px; }
+  h3{ font-size:10.6pt; margin:14px 0 3px; font-weight:800; color:var(--blue-ink); break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:9.3pt; margin:2px 0 11px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 8px; }
+  strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.7pt; background:var(--shade); padding:1px 5px; border-radius:5px; border:1px solid var(--line2); }
+  ul{ margin:0 0 8px; padding-left:17px; } li{ margin:3px 0; }
+  .big{ border:1px solid var(--line); border-left:5px solid var(--blue); border-radius:11px; padding:13px 17px; margin:14px 0; background:#fbfcfe; font-size:10.8pt; }
+  .big b{ color:var(--blue-ink); }
+  table{ width:100%; border-collapse:collapse; margin:11px 0; font-size:9.4pt; break-inside:avoid; }
+  th{ text-align:left; padding:7px 10px; background:var(--ink); color:#fff; font-weight:700; font-size:8.8pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:6px 10px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); }
+  .hi{ color:var(--green-ink); font-weight:800; }
+  .hb td{ background:var(--green-soft) !important; }
+  .callout{ border-radius:11px; padding:12px 16px; margin:13px 0; font-size:9.6pt; line-height:1.55; break-inside:avoid; }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-red{ background:var(--red-soft); color:var(--red-ink); } .c-red .lbl{ color:var(--red); }
+  .callout .lbl{ font-weight:800; font-size:8.3pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .s-b{ font-size:12px; font-weight:700; } .s-t{ font-size:11px; } .s-s{ font-size:9.5px; fill:#5b6270; }
+  .footer{ margin-top:20px; padding-top:8px; border-top:1px solid var(--line); font-size:8pt; color:var(--faint); }
+  .lead{ font-size:11pt; color:var(--muted); margin:0 0 2px; }
+  .kpi{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin:14px 0; }
+  .kpi .box{ border:1px solid var(--line); border-radius:11px; padding:11px 12px; text-align:center; background:#fff; }
+  .kpi .v{ font-size:16pt; font-weight:800; color:var(--green-ink); line-height:1.1; }
+  .kpi .k{ font-size:8pt; color:var(--muted); margin-top:3px; }
+  .kpi .b4{ color:var(--faint); font-size:8pt; text-decoration:line-through; }
+  .pill{ font-size:8.2pt; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · ResourceSystem · 포트폴리오 전체 서사</div>
+<h1>Addressables 위의 수명 스코프 리팩터</h1>
+<p class="lead">"안전한 쪽 = Global"로 도피하던 리소스 수명을, refCount 레지스트리 + 수명 스코프로 재구축해<br>상주 메모리를 회수하고 — 개발 빌드로 회수를 실측했다.</p>
+
+<div class="big">
+  리소스의 실제 수명은 5종 이상인데 표현 수단이 <b>2개(Global/Scene)뿐</b>이라, 애매한 것이 전부 "안전한 쪽 = Global"로 도피해 영구 상주했다.
+  이를 <b><code>(key,type)</code> refCount 레지스트리 + 수명 스코프</b>로 재구축해 상주 메모리를 회수하고,
+  <em>수동 Release 코드는 한 줄도 추가하지 않았다.</em> 이 문서는 문제 → 설계 → 여정 → 실측 → 방법론을 처음부터 정리한다.
+</div>
+
+<!-- ============ 1. 문제 ============ -->
+<h2><span class="num">1</span>문제 — 2버킷의 구조적 결함</h2>
+<p class="h2sub">"버그"가 아니라 "표현력 부족" — 개발자를 Global 도피로 몰아넣는 구조였다.</p>
+<p>초기 리소스 관리는 <strong>Global(영구) / Scene(씬)</strong> 두 버킷뿐이었다. 그런데 실제 수명은 훨씬 다양하다 — <strong>팝업(스택 있는 동안)·파티(씬 넘어 생존)·던전(던전 동안)·영구</strong>. 표현할 계층이 없으니, "언제 해제해야 할지 애매한 것"은 전부 <strong>안전한 쪽(Global)으로 도피</strong>했고, 한 번 Global에 박힌 것은 게임 종료까지 안 내려왔다.</p>
+<ul>
+  <li><strong>중복·비대칭</strong> — 같은 UI 기능인데 본체는 Global, 서브아이템은 Scene으로 수명이 갈라짐.</li>
+  <li><strong>수동 Release의 함정</strong> — Addressables는 핸들 단위 수동 짝맞추기라, 호출부가 Release를 "기억"해야 하고 그 기억의 실패가 곧 누수였다.</li>
+</ul>
+
+<!-- ============ 2. Before ============ -->
+<h2><span class="num">2</span>Before — 문제를 숫자로 (Baseline)</h2>
+<p class="h2sub">"애매하면 Global"의 비용을 MB로 환산. 개선의 근거를 먼저 측정으로 확보.</p>
+<table>
+  <thead><tr><th style="width:34%">증상</th><th>측정치 (Before)</th></tr></thead>
+  <tbody>
+    <tr><td class="who">팝업 한 세션 열람 = 영구 고정</td><td>global 핸들 <strong>50→58→61 단조 증가</strong> / 메모리 <strong>+287MB 영구 고정</strong> (닫아도·씬 옮겨도 안 내려옴)</td></tr>
+    <tr><td class="who">핸들 메모리의 95%가 Global</td><td>1287MB(Global) vs 65MB(Scene) — "씬 버킷은 정상, 문제는 스코프"가 수치로 확인</td></tr>
+    <tr><td class="who">아틀라스 캐시 폭증</td><td>루트 UI 1회 노출에 AtlasSpriteCache <strong>36→220</strong>, 장시간 ~300 포화 + 해제 경로 없음</td></tr>
+    <tr><td class="who">몬스터 HP바 누수</td><td>DDOL 캔버스에 방치돼 자가정리 안 됨 → Memory Profiler <strong>GameObject +291</strong></td></tr>
+  </tbody>
+</table>
+<div class="callout c-blue">
+  <span class="lbl">진단</span>
+  씬 버킷의 씬 단위 해제는 <b>정상</b>. 진짜 문제는 <b>"씬보다 짧은 수명(팝업·던전)"과 "씬보다 긴 수명(파티)"을 표현할 계층이 없다</b>는 것.
+  → 스코프 도입의 근거가 수치로 확보됨.
+</div>
+
+<!-- ============ 3. 설계 ============ -->
+<h2><span class="num">3</span>설계 — 2버킷 → 레지스트리 + 스코프</h2>
+<p class="h2sub">"누가 Release하나"라는 기억의 문제를, 수명 단위 자동 정산이라는 구조로 대체.</p>
+<svg width="100%" viewBox="0 0 700 96" role="img" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="8" y="34" width="150" height="34" rx="9" fill="#eef2ff" stroke="#3b5bdb"/><text class="s-t" x="83" y="55" text-anchor="middle">ResourceManager</text>
+  <text class="s-s" x="83" y="82" text-anchor="middle">파사드</text>
+  <path d="M160 51 L192 51" fill="none" stroke="#8a91a0" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="194" y="34" width="150" height="34" rx="9" fill="#ebfbee" stroke="#2b8a3e"/><text class="s-t" x="269" y="55" text-anchor="middle" fill="#1f6b2e">ResourceScope</text>
+  <text class="s-s" x="269" y="82" text-anchor="middle">수명 티켓 (IDisposable)</text>
+  <path d="M346 51 L378 51" fill="none" stroke="#8a91a0" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="380" y="34" width="158" height="34" rx="9" fill="#fff4ec" stroke="#e8590c"/><text class="s-t" x="459" y="55" text-anchor="middle" fill="#8a3708">ResourceRegistry</text>
+  <text class="s-s" x="459" y="82" text-anchor="middle">핸들 소유·refCount</text>
+  <path d="M540 51 L572 51" fill="none" stroke="#8a91a0" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="574" y="34" width="118" height="34" rx="9" fill="#fff" stroke="#868e96"/><text class="s-t" x="633" y="55" text-anchor="middle">Addressables</text>
+</svg>
+<h3>설계 3원칙</h3>
+<table>
+  <tbody>
+    <tr><td class="who" style="width:30%">① 소유는 한 곳</td><td>핸들 소유는 <strong>레지스트리 한 곳</strong>, 스코프는 티켓(<code>HashSet&lt;ResourceKey&gt;</code>)만 쥔다 → "누가 Release하나" 문제 소멸.</td></tr>
+    <tr><td class="who">② refCount = 스코프 수</td><td>스코프 내 중복 로드는 <code>HashSet.Add</code> 반환값으로 <strong>refCount 1</strong>. refCount = "이 핸들을 소유한 서로 다른 스코프 수".</td></tr>
+    <tr><td class="who">③ 취소 ≠ 해제</td><td>토큰은 <strong>기다림 중단</strong>만. 수명은 스코프 소유가 결정 → <strong>use-after-release가 구조적으로 불가</strong>.</td></tr>
+  </tbody>
+</table>
+<p><strong>수명 계층:</strong> <code>Global</code>(영구) · <code>Scene</code>(씬) · <code>Party</code>(파티 유지, 씬 전환 생존) · <code>Popup</code>(스택 있는 동안). — <em>Dungeon 스코프는 측정상 이미 해결돼 만들지 않았다(§7 근거 기반 축소).</em></p>
+
+<!-- ============ 4. 여정 ============ -->
+<h2><span class="num">4</span>여정 — Phase 0 → 4 + 후속</h2>
+<p class="h2sub">"재배치가 목적, 스코프는 수단" — 수치는 전부 수명 재배치(Phase 3)가 움직인다.</p>
+<table>
+  <thead><tr><th style="width:16%">단계</th><th style="width:40%">한 일</th><th>성과 / 검증</th></tr></thead>
+  <tbody>
+    <tr><td class="who">Phase 0</td><td>Baseline 측정 + 계측 도구(<code>ResourceMetrics</code>, 디버그 창)</td><td>P1 정량 확인, 측정 시나리오 고정</td></tr>
+    <tr><td class="who">Phase 0.5</td><td>아틀라스 콘텐츠 트랙 — Standing/EscapeMenu 해체(전량→사용량 비례 로드)</td><td>UI_Info 히치 219.7→123.4ms, 1명=1장 로드. <strong>측정 도구 ×6.8 오차 발견·보정</strong></td></tr>
+    <tr><td class="who">Phase 2</td><td>레지스트리+스코프 코어 신설, 파사드·씬 흐름 이관</td><td>씬 왕복 잔존 = Baseline과 동일(수치 불변 = 구조 교체 성공)</td></tr>
+    <tr><td class="who">Phase 3a~d</td><td><strong>수명 재배치</strong> — 팝업→Scene, 캐릭→Party, Global 라벨 42→12, 아틀라스 캐시 수명화</td><td class="hi">진입 Global −60%, 합계 −41%, 던전 왕복 +18.7→0</td></tr>
+    <tr><td class="who">Phase 4</td><td>풀↔에셋 <strong>수명 통합(refCount 티켓)</strong> + <code>@Pool_Root</code> DDOL 제거</td><td class="hi">왕복 flat 358.6→359.1MB, 순서 의존→구조 보장</td></tr>
+    <tr><td class="who">후속</td><td>R4(NoCache 값복사) · HUD 아틀라스 Party 재배치(churn 제거) · 셀프 코드리뷰 2건</td><td>재로드 3→0, 취소 유령 핸들 + 아틀라스 중복 전개 자가 발견·수정</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ 5. 헤드라인 ============ -->
+<h2><span class="num">5</span>헤드라인 숫자</h2>
+<p class="h2sub">진입 직후, Baseline v2 → 완료. 절대값이 아니라 증감·비율(신뢰도 "강").</p>
+<div class="kpi">
+  <div class="box"><div class="v">−60%</div><div class="k">Global 핸들 메모리<br><span class="b4">513MB</span> → 205MB</div></div>
+  <div class="box"><div class="v">−41%</div><div class="k">진입 전체 합계<br><span class="b4">617MB</span> → 363MB</div></div>
+  <div class="box"><div class="v">−72%</div><div class="k">Global 단조 증가<br><span class="b4">+56MB</span> → +16MB</div></div>
+  <div class="box"><div class="v">≈0</div><div class="k">던전 왕복 영구 증가<br><span class="b4">+18.7MB</span> → 해소</div></div>
+</div>
+<p><strong>대가(정직하게):</strong> 진입 −308MB ↔ 팝업 첫 오픈 <strong>+14~20ms</strong>. <em>상시 부담을 일회성 지연으로 바꾼 거래.</em> 재오픈은 회귀 없음(~9ms). 풀↔에셋 수명은 순서 의존(핑크 위험) → <strong>왕복 flat</strong>으로 구조 보장.</p>
+
+<!-- ============ 6. 개발 빌드 실측 ============ -->
+<h2><span class="num">6</span>개발 빌드 실측 (2026-08-11) — 회수를 눈으로</h2>
+<p class="h2sub">에디터 ×2 텍스처 CPU 사본이 없는 런타임 총량. "개발 빌드 실측 0회" 각주 해소.</p>
+<table>
+  <thead><tr><th>체크포인트</th><th>총 할당</th><th>텍스처</th><th>그래픽스 드라이버</th></tr></thead>
+  <tbody>
+    <tr><td class="who">① 진입 직후</td><td>332.9</td><td><strong>140.7</strong></td><td>471.2</td></tr>
+    <tr><td class="who">② 팝업 5종 첫 오픈 후</td><td>337.1</td><td><strong>168.8</strong> <span class="pill">(+28.1)</span></td><td>505.6</td></tr>
+    <tr><td class="who">③ 재오픈 후</td><td>337.1</td><td><strong>168.8</strong> <span class="pill">(무비용)</span></td><td>505.3</td></tr>
+    <tr class="hb"><td class="who">④ 던전 왕복 후</td><td>343.9</td><td><strong>142.1</strong> <span class="pill">(−26.7, 진입 복귀)</span></td><td>582.9</td></tr>
+    <tr><td class="who">⑤ 종료</td><td>344.1</td><td><strong>142.1</strong></td><td>582.9</td></tr>
+  </tbody>
+</table>
+<div class="callout c-green">
+  <span class="lbl">머니샷 — 텍스처 회수</span>
+  텍스처 메모리가 <b>진입 140.7 → 팝업 세션 168.8(+28) → 던전 왕복 후 142.1(진입 수준 복귀)</b>.
+  팝업이 씬 스코프에 적재됐다가 씬 회전에서 <b>refCount 자동 정산으로 −26.7MB 반납</b> — 수동 Release 0줄, 실제 빌드에서.
+  재오픈은 텍스처·총할당 완전 동일(<code>UI_Info 첫 23.1ms → 재 2.3ms</code>) = 캐시 히트 무비용.
+</div>
+<p><strong>정직한 각주:</strong> 그래픽스 드라이버 메모리(471→583)는 안 내려옴 = 드라이버 지연 반납 특성이라 <strong>회수 판정 주 신호는 텍스처</strong>. 이 <code>[ResourceMemory]</code>는 프로세스 <strong>총 할당</strong>이고 §5의 513MB는 <strong>버킷별 핸들 메모리</strong>라 다른 지표(직접 차감 금지). UI_Info 첫오픈 334ms는 알려진 UI_Info 구조 문제(n=1).</p>
+
+<!-- ============ 7. 방법론 ============ -->
+<h2><span class="num">7</span>방법론 — 결과물보다 "어떻게 판단했나"</h2>
+<p class="h2sub">이 리팩터의 진짜 값은 감축량이 아니라, 측정으로 판단하는 규율이다.</p>
+<ul>
+  <li><strong>"측정 → 진단 → 구조 → 검증" 루프</strong> — 각 단계가 자기 몫만 정리하고 나머지를 다음 단계에 정확히 넘김(잔여 증가가 3b/3d로 깔끔히 분해).</li>
+  <li><strong>숫자를 믿기 전에 도구를 검증</strong> — 측정 도구가 아틀라스를 <strong>×6.8 과대 계상</strong>하던 계통 오차를 플레이 모드 교차 검증으로 발견·보정. 계측 이관 후엔 <code>isGlobal</code> 한 줄만 토글해 <strong>단일 변수 A/B</strong>로 도구 등가성까지 실측(512.8MB 소수점 일치).</li>
+  <li><strong>계측이 기존 버그 3건을 드러냄</strong> — 전부 뿌리가 <em>"에셋 수명 ≠ 인스턴스 수명"</em>. "메모리가 줄었다"가 실은 누수를 못 센 결과일 수 있음을 R6에서 실증(합계 보존 = 유령이 회계에 드러남 = 성과 아닌 비용으로 정직 서술).</li>
+  <li><strong>근거 기반 축소</strong> — Dungeon 스코프·프레임 예산 스트리밍·UI 루트 DDOL 대공사를 <strong>측정 근거로 제외</strong>. "명세를 따르지 않고 측정을 따랐다"(던전 왕복이 이미 +0.9MB).</li>
+  <li><strong>셀프 코드리뷰</strong> — 취소 경로 유령 핸들 누수 + 아틀라스 중복 전개를 자가 발견·수정, 실측으로 누수 0·왕복 flat 재검증.</li>
+</ul>
+
+<!-- ============ 8. 방어 질문 ============ -->
+<h2><span class="num">8</span>면접 방어 질문 3종</h2>
+<table>
+  <thead><tr><th style="width:33%">질문</th><th>답</th></tr></thead>
+  <tbody>
+    <tr><td class="who">"Addressables가 이미 refCount인데 왜 위에 또?"</td><td>Addressables refCount는 <strong>핸들 단위 수동 짝맞추기</strong> — 호출부가 Release를 '기억'해야 하고, 그 기억의 실패가 HP바 누수였다. 스코프는 <strong>기억을 구조(수명 단위 자동 정산)로 대체</strong>한 것.</td></tr>
+    <tr><td class="who">"본인이 만든 문제를 본인이 고친 것 아닌가?"</td><td>맞다, 숨기지 않는다. 2버킷은 초기 설계였고 <strong>계측으로 한계를 발견 → 개인의 주의력이 아니라 구조로 재발 차단</strong>. 이 프레이밍이 성장 서사.</td></tr>
+    <tr><td class="who">"1인 프로젝트에 오버엔지니어링 아닌가?"</td><td>팝업 세션 +287MB라는 측정치가 필요성을 증명. 반대로 던전 스코프·프레임 예산·DDOL 대공사는 <strong>측정 근거로 제외</strong> = 필요한 것만 했다는 증거.</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ 9. 한계 ============ -->
+<h2><span class="num">9</span>한계 (반드시 동반)</h2>
+<ul>
+  <li>버킷별 <strong>절대값</strong>은 에디터 측정(CPU 사본 과대 계상) → 증감·비율만 인용. 단 <strong>총량 절대값은 개발 빌드 실측 확보(§6)</strong>, <code>Use Existing Build = 실제 번들</code>로 증감·비율은 신뢰도 "강".</li>
+  <li>그래픽스 드라이버 메모리는 지연 반납 특성 → 회수 판정 주 신호는 <strong>텍스처</strong>.</li>
+  <li>히치 ms는 n=1~3, <strong>15ms 이하 차이 주장 금지</strong>. TMP 동적 폰트가 세션마다 절대값을 흔드니 버킷 합계를 주 지표로.</li>
+</ul>
+
+<div class="footer">
+  Operation Kivotos · ResourceSystem · Portfolio (Full Narrative) · 2026-08-11 ·
+  근거: Baseline.md(§0~§13) · Phase3_Result.md · Phase4_Result.md · ProblemSolving_Log.md · Portfolio_Summary.md · 빌드 실측 metrics_20260811_004330.log ·
+  코어: Assets/Scripts/Managers/Core/Resource/{ResourceManager,ResourceRegistry,ResourceScope,ResourceMetrics}.cs
+</div>
+
+</body>
+</html>

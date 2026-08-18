@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ResourceSystem — 측정 상세 워크스루 (코드 예시)</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --red:#c92a2a; --red-soft:#fff0f0; --red-ink:#a31414;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:14mm 15mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.56; font-size:10.2pt; }
+  h1{ font-size:19.5pt; margin:0 0 6px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8.2pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:9px; }
+  h2{ font-size:12.8pt; margin:22px 0 3px; font-weight:800; break-after:avoid; }
+  .num{ display:inline-block; min-width:1.5em; color:#fff; background:var(--blue); border-radius:6px; text-align:center; font-weight:800; margin-right:8px; font-size:10pt; padding:0 5px; }
+  .h2sub{ color:var(--muted); font-size:9.1pt; margin:2px 0 9px; padding-bottom:7px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 7px; }
+  strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.6pt; background:var(--shade); padding:1px 5px; border-radius:5px; border:1px solid var(--line2); }
+  ul{ margin:0 0 7px; padding-left:17px; } li{ margin:3px 0; }
+  .big{ border:1px solid var(--line); border-left:5px solid var(--blue); border-radius:11px; padding:12px 16px; margin:12px 0; background:#fbfcfe; font-size:10.4pt; }
+  .big b{ color:var(--blue-ink); }
+  pre{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); border:1px solid var(--line); border-radius:9px; padding:10px 12px; overflow-x:auto; line-height:1.48; margin:8px 0; color:#2b2f38; white-space:pre; }
+  pre .cm{ color:#98a0ae; }
+  pre .hl{ color:var(--blue-ink); font-weight:700; }
+  pre .g{ color:var(--green-ink); font-weight:700; }
+  pre .r{ color:var(--red-ink); font-weight:700; }
+  .filetag{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.6pt; color:var(--faint); margin:8px 0 -3px; }
+  .log{ font-family:"Cascadia Code","Consolas",monospace; font-size:8pt; background:#1c1e26; color:#dfe3ea; border-radius:9px; padding:10px 12px; overflow-x:auto; line-height:1.5; margin:8px 0; white-space:pre; }
+  .log .t{ color:#c3e88d; } .log .b{ color:#82aaff; font-weight:700; } .log .y{ color:#ffcb6b; font-weight:700; } .log .d{ color:#8892a6; }
+  .callout{ border-radius:11px; padding:11px 15px; margin:11px 0; font-size:9.4pt; line-height:1.5; break-inside:avoid; }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .callout .lbl{ font-weight:800; font-size:8.2pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  table{ width:100%; border-collapse:collapse; margin:9px 0; font-size:9.1pt; break-inside:avoid; }
+  th{ text-align:left; padding:6px 9px; background:var(--ink); color:#fff; font-weight:700; font-size:8.5pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:6px 9px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); }
+  .step{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:9px 14px; margin:9px 0; background:#fff; break-inside:avoid; }
+  .step .st{ font-weight:800; font-size:10pt; color:var(--blue-ink); margin-bottom:2px; }
+  .lead{ font-size:10.6pt; color:var(--muted); margin:0 0 2px; }
+  .footer{ margin-top:18px; padding-top:8px; border-top:1px solid var(--line); font-size:8pt; color:var(--faint); }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .s-t{ font-size:11px; } .s-s{ font-size:9px; fill:#5b6270; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · ResourceSystem · 측정 상세 워크스루</div>
+<h1>측정은 실제로 어떻게 돌아가나</h1>
+<p class="lead">"Global 버킷 변화를 보려면 무엇을 측정하고, 버튼을 누르면 무엇이 실행돼 비교값이 나오나" — 코드와 실제 로그로.</p>
+
+<div class="big">
+  측정의 정체는 단순하다: <b>리소스의 살아있는 상태(레지스트리)는 항상 메모리에 있고</b>,
+  체크포인트 버튼을 누르면 <b>그 순간의 상태를 스냅샷으로 로그에 찍는다.</b>
+  두 체크포인트의 스냅샷을 <em>빼면</em> 그게 비교값이다. 이 문서는 그 상태가 어디 살고(§1~3), 스냅샷이 어떻게 찍히며(§4~5),
+  실제로 "Global/텍스처 변화"가 어떻게 측정됐는지(§6)를 코드로 따라간다.
+</div>
+
+<!-- ===== 0. 큰 그림 ===== -->
+<h2><span class="num">0</span>큰 그림</h2>
+<svg width="100%" viewBox="0 0 700 96" role="img" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="8" y="34" width="150" height="32" rx="8" fill="#eef2ff" stroke="#3b5bdb"/><text class="s-t" x="83" y="54" text-anchor="middle">ResourceManager</text>
+  <path d="M160 50 L190 50" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#a)"/>
+  <rect x="192" y="34" width="164" height="32" rx="8" fill="#ebfbee" stroke="#2b8a3e"/><text class="s-t" x="274" y="50" text-anchor="middle" fill="#1f6b2e">Scope (HashSet&lt;Key&gt;)</text>
+  <text class="s-s" x="274" y="62" text-anchor="middle">수명 티켓 · Dispose</text>
+  <path d="M358 50 L388 50" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#a)"/>
+  <rect x="390" y="34" width="190" height="32" rx="8" fill="#fff4ec" stroke="#e8590c"/><text class="s-t" x="485" y="50" text-anchor="middle" fill="#8a3708">Registry (Key→{handle,ref})</text>
+  <text class="s-s" x="485" y="62" text-anchor="middle">살아있는 핸들의 단일 진실</text>
+  <path d="M582 50 L612 50" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#a)"/>
+  <rect x="614" y="34" width="78" height="32" rx="8" fill="#fff" stroke="#868e96"/><text class="s-t" x="653" y="54" text-anchor="middle">Addr.</text>
+</svg>
+<p style="font-size:9.2pt;color:var(--muted);text-align:center;margin-top:2px">측정이 읽는 대상 = 가운데 두 상자(Scope의 키 목록 · Registry의 refCount). 이게 "살아있는 상태"다.</p>
+
+<!-- ===== 1. 상태는 어디 사나 ===== -->
+<h2><span class="num">1</span>상태는 어디 사나 — 두 자료구조</h2>
+<p class="h2sub">측정할 "상태"는 딱 두 곳에 있다: Registry의 딕셔너리와 Scope의 HashSet.</p>
+
+<p><strong>Registry</strong> = 살아있는 핸들의 단일 진실. 키마다 <code>{ 핸들, refCount }</code>를 쥔다.</p>
+<div class="filetag">Assets/Scripts/Managers/Core/Resource/ResourceRegistry.cs</div>
+<pre>public sealed class Entry {
+    public AsyncOperationHandle handle;   <span class="cm">// Addressables 핸들</span>
+    public int RefCount;                  <span class="hl">// 이 리소스를 소유한 '서로 다른 스코프' 수</span>
+}
+private readonly Dictionary&lt;ResourceKey, Entry&gt; _entries = new();  <span class="cm">// ← 측정이 읽는 상태</span></pre>
+
+<p><strong>Scope</strong> = 수명 티켓(IDisposable). 자기가 소유한 키를 <code>HashSet</code>으로만 쥔다(핸들은 안 쥠).</p>
+<div class="filetag">Assets/Scripts/Managers/Core/Resource/ResourceScope.cs</div>
+<pre>public sealed class ResourceScope : IDisposable {
+    private readonly HashSet&lt;ResourceKey&gt; _acquired = new();  <span class="hl">// 이 스코프가 소유한 키들</span>
+    public int Count =&gt; _acquired.Count;   <span class="cm">// ← [ResourceReport]의 global=N / scene=N 이 값</span>
+}</pre>
+
+<div class="callout c-blue">
+  <span class="lbl">그래서 "Global 버킷 크기" = ?</span>
+  <b>Global 스코프의 <code>_acquired.Count</code></b> 그 자체다. 로그의 <code>global=14</code>는 Global 스코프가 쥔 키가 14개라는 뜻.
+  버킷은 별도 컬렉션이 아니라 <b>"어느 스코프가 그 키를 쥐고 있나"</b>로 정해진다.
+</div>
+
+<!-- ===== 2. 로드하면 refCount ===== -->
+<h2><span class="num">2</span>로드하면 refCount가 어떻게 되나</h2>
+<p class="h2sub">핵심: 같은 스코프가 같은 키를 또 요청해도 refCount는 안 는다 (HashSet.Add).</p>
+
+<div class="filetag">ResourceScope.cs — 스코프가 로드를 받으면</div>
+<pre>public async UniTask&lt;T&gt; LoadAsync&lt;T&gt;(string key, ...) {
+    ResourceKey rk = new ResourceKey(key, typeof(T));
+    <span class="hl">bool isFirstTimeToLoad = _acquired.Add(rk);</span>  <span class="cm">// 이 스코프에 처음이면 true, 이미 있으면 false</span>
+    return await _registry.LoadAsync&lt;T&gt;(rk, isFirstTimeToLoad, tok);  <span class="cm">// 그 bool을 넘긴다</span>
+}</pre>
+
+<div class="filetag">ResourceRegistry.cs — 레지스트리가 실제 로드/카운트</div>
+<pre>public async UniTask&lt;T&gt; LoadAsync&lt;T&gt;(ResourceKey key, bool incrementRef, ...) {
+    if (_entries.TryGetValue(key, out Entry entry)) {   <span class="cm">// 이미 로드돼 있음 (캐시 히트)</span>
+        <span class="hl">if (incrementRef) entry.RefCount++;</span>              <span class="cm">// 새 스코프가 소유하면 +1, 같은 스코프면 그대로</span>
+        return entry.handle.Result as T;                <span class="cm">// Addressables 재로드 안 함 → 핸들만 리턴</span>
+    }
+    <span class="cm">// _entries에 없음 → 여기가 '실제 Addressables 로드'의 유일한 지점</span>
+    AsyncOperationHandle handle = Addressables.LoadAssetAsync&lt;T&gt;(key.Key);
+    entry = new Entry { handle = handle, RefCount = incrementRef ? 1 : 0 };
+    _entries[key] = entry;
+    <span class="g">ResourceMetrics.RecordLoad(key.Key, sw.ElapsedMilliseconds);</span>  <span class="cm">// ← [LoadStats] '실제 로드'만 집계</span>
+    return handle.Result as T;
+}</pre>
+
+<div class="callout c-amber">
+  <span class="lbl">refCount = "로드 횟수"가 아니라 "소유 스코프 수"</span>
+  Scene과 Dungeon 두 스코프가 같은 에셋을 쥐면 → <b>핸들 1개, refCount 2</b>. 하지만 Scene이 같은 에셋을 <b>3번</b> 요청하면
+  <code>HashSet.Add</code>가 2·3번째는 false → <b>refCount는 1</b>. 그래서 <code>[LoadStats]</code>에서 같은 키가 여러 번 찍히면
+  그건 "회수 후 재로드"의 직접 증거가 된다(캐시 히트는 안 세니까).
+</div>
+
+<!-- ===== 3. Dispose ===== -->
+<h2><span class="num">3</span>Dispose하면 — refCount 감소, 0이면 언로드</h2>
+<p class="h2sub">"누가 Release를 부르나" = 수명 경계(씬 회전·팝업 닫힘)가 스코프를 Dispose한다. 수동 호출 없음.</p>
+
+<div class="filetag">ResourceScope.cs — 스코프가 죽으면 쥔 키를 전부 반납</div>
+<pre>public void Dispose() {
+    <span class="hl">foreach (ResourceKey key in _acquired) _registry.Release(key);</span>  <span class="cm">// 쥔 키를 하나씩 반납</span>
+    _acquired.Clear();
+}</pre>
+
+<div class="filetag">ResourceRegistry.cs — refCount가 0이 되면 그때 진짜 언로드</div>
+<pre>public void Release(ResourceKey key) {
+    if (!_entries.TryGetValue(key, out Entry entry)) return;
+    <span class="hl">if (--entry.RefCount &lt;= 0) {</span>                       <span class="cm">// 마지막 소유자가 손 뗌</span>
+        if (entry.handle.IsValid()) <span class="r">Addressables.Release(entry.handle);</span>  <span class="cm">// ← 여기서 메모리 회수</span>
+        _entries.Remove(key);
+        OnReleased?.Invoke(key);                        <span class="cm">// 파생물(아틀라스 캐시)도 같이 버리라 통지</span>
+    }
+}</pre>
+
+<div class="callout c-green">
+  <span class="lbl">이것이 §6 회수의 실체</span>
+  던전으로 씬이 바뀌면 GameScene의 Scene 스코프가 <code>Dispose()</code> → 팝업 키들이 <code>Release</code> → refCount 0 →
+  <code>Addressables.Release</code> → <b>텍스처 168.8 → 142.1MB로 실제 반납.</b> 개발자가 Release를 부른 곳은 없다.
+</div>
+
+<!-- ===== 4. 측정 = 스냅샷 ===== -->
+<h2><span class="num">4</span>"측정" = 이 상태를 스냅샷으로 찍는 것</h2>
+<p class="h2sub">두 종류를 찍는다: 버킷 핸들(무엇이 살아있나) + 메모리 총량(얼마 쓰나).</p>
+
+<p><strong>(A) 버킷 스냅샷</strong> — 레지스트리를 훑어 스코프별 카운트 + 키 목록을 로그로.</p>
+<div class="filetag">ResourceManager.cs — LogAliveReport (→ [ResourceReport])</div>
+<pre>public void LogAliveReport(string tag) {
+    _registry.GetSnapshot(_regSnapshot);                       <span class="cm">// 살아있는 핸들 전부</span>
+    sb.Append($"[ResourceReport] ({tag}) handles={_registry.Count}");
+    foreach (var kv in _scopes)                                <span class="hl">// 스코프별 Count = global=14 scene=17 …</span>
+        sb.Append($" {kv.Value.Name}={kv.Value.Count}");
+    foreach (var e in _regSnapshot)                            <span class="cm">// 각 키를 어느 버킷이 쥐었나 + refCount + 출처</span>
+        sb.AppendLine($"  [{ResolveBucket(e.Key)}] {e.Key.Key}  (ref {e.RefCount})  ←  {source}");
+    GameLog.Log(sb.ToString());                                <span class="cm">// → 태그 필터 → 파일</span>
+}</pre>
+
+<p><strong>(B) 메모리 스냅샷</strong> — 빌드에선 런타임 안전 총량을 찍는다(에디터 ×2 사본 없음).</p>
+<div class="filetag">ResourceMetrics.cs — LogRuntimeMemory (→ [ResourceMemory])</div>
+<pre>public static void LogRuntimeMemory(string label) {
+    GameLog.Log($"[ResourceMemory] ({label}) " +
+        $"총 할당 {ToMB(Profiler.GetTotalAllocatedMemoryLong())} | " +
+        $"그래픽스 {ToMB(Profiler.GetAllocatedMemoryForGraphicsDriver())} | " +
+        <span class="hl">$"텍스처 {ToMB((long)Texture.currentTextureMemory)}");</span>  <span class="cm">// ← 회수 판정의 주 신호</span>
+}</pre>
+
+<!-- ===== 5. 버튼 ===== -->
+<h2><span class="num">5</span>버튼(체크포인트)을 누르면 실행되는 것</h2>
+<p class="h2sub">F5~F9 한 번 = 구분선 + 버킷 스냅샷 + 메모리 스냅샷을 한 순간에 기록.</p>
+<div class="filetag">MetricsHotkeys.cs — 빌드에서 F5~F9</div>
+<pre>private static void Mark(string label) {
+    <span class="hl">ResourceMetrics.Checkpoint(label);</span>          <span class="cm">// [Checkpoint] ━━━ label ━━━  (구분선)</span>
+    Managers.Resource.LogAliveReport(label);      <span class="cm">// [ResourceReport] 버킷 핸들 수 + 목록</span>
+    ResourceMetrics.LogRuntimeMemory(label);      <span class="cm">// [ResourceMemory] 총 할당/텍스처</span>
+}
+<span class="cm">// Update()에서: f5 → Mark("1. 진입 직후"), f6 → Mark("2. 팝업…"), … f9 → LogLoadStats()+Mark("5. 종료")</span></pre>
+
+<div class="callout c-blue">
+  <span class="lbl">핵심</span>
+  버튼은 <b>새 값을 만들지 않는다.</b> 이미 살아있는 상태(§1~3)를 <b>그 순간 스냅샷으로 찍을 뿐.</b>
+  그래서 "① 누른 스냅샷"과 "② 누른 스냅샷"을 빼면 그 사이 조작(팝업 열기)의 효과가 그대로 비교값이 된다.
+</div>
+
+<!-- ===== 6. 워크드 예시 ===== -->
+<h2><span class="num">6</span>워크스루 — "Global/텍스처 변화"를 이렇게 측정했다</h2>
+<p class="h2sub">실제 세션 로그(metrics_20260811_004330.log)로 단계별로. ← 는 그 줄이 무슨 뜻인지.</p>
+
+<div class="step">
+  <div class="st">STEP 1 · F5 → 기준선 스냅샷 (①)</div>
+  <div class="log"><span class="y">[Checkpoint]</span> ━━━ 1. GameScene 진입 직후 ━━━
+<span class="b">[ResourceReport]</span> (1. 진입) handles=32 <span class="t">global=14</span> scene=17 party=6 atlasSprites=36
+  [Global] SceneTable / Fire / Droid_Helmet_AR (ref 3) / … / UI_LootNotification   <span class="d">← Global 14개의 정체</span>
+<span class="b">[ResourceMemory]</span> (1. 진입) 총 할당 332.9MB | 그래픽스 471.2MB | <span class="t">텍스처 140.7MB</span></div>
+  <p style="font-size:9pt;margin:4px 0 0"><strong>기록된 기준값:</strong> Global 핸들 <strong>14개</strong>, 텍스처 <strong>140.7MB</strong>. — 이게 "before"다.</p>
+</div>
+
+<div class="step">
+  <div class="st">STEP 2 · 팝업 5종 열기 (플레이어 조작 — 코드가 자동으로 로드)</div>
+  <p style="font-size:9.2pt;margin:2px 0">팝업을 열면 내부적으로 <code>UIManager.ShowPopupUIAsync</code> → <code>Scope.LoadAsync</code> → <code>Registry</code>가 돌아 §2대로 <strong>Scene 스코프</strong>에 팝업 키들이 쌓인다. (개선 전이라면 <code>isGlobal:true</code>라 Global에 쌓였을 것 — 그 한 줄 차이가 리팩터의 전부.)</p>
+</div>
+
+<div class="step">
+  <div class="st">STEP 3 · F6 → 팝업 세션 스냅샷 (②)</div>
+  <div class="log"><span class="b">[ResourceReport]</span> (2. 팝업 첫 오픈) handles=46 <span class="t">global=15</span> scene=31 party=6 atlasSprites=255
+  [Scene] UI_EquipmentUpgradePanel ← UIManager.ShowPopupUIAsync   <span class="d">← 팝업이 Scene에 쌓임(회수 가능)</span>
+  [Global] EquipmentIconAtlas ← UI_LootNotification.CreateToast…   <span class="d">← Global 14→15 (loot 토스트, 의도된 상주)</span>
+<span class="b">[ResourceMemory]</span> (2. 팝업) 총 할당 337.1MB | <span class="t">텍스처 168.8MB</span></div>
+  <p style="font-size:9pt;margin:4px 0 0"><strong>비교값 = ② − ①:</strong> 텍스처 <span style="color:var(--amber-ink);font-weight:800">168.8 − 140.7 = +28.1MB</span> (팝업 세션 비용). Scene 17→31(팝업들), Global은 +1(loot 아틀라스)뿐.</p>
+</div>
+
+<div class="step">
+  <div class="st">STEP 4 · 던전 왕복 (씬 회전 = Scene 스코프 Dispose → §3 Release)</div>
+  <p style="font-size:9.2pt;margin:2px 0">GameScene → BossDungeon으로 씬이 바뀌면 GameScene의 Scene 스코프가 <code>Dispose()</code> → 팝업 키들 <code>Release</code> → refCount 0 → <code>Addressables.Release</code>. <strong>수동 호출 0줄, 씬 경계가 자동으로.</strong></p>
+</div>
+
+<div class="step">
+  <div class="st">STEP 5 · F8 → 왕복 후 스냅샷 (④)</div>
+  <div class="log"><span class="b">[ResourceReport]</span> (4. 던전 왕복) handles=33 global=15 scene=16 party=6
+<span class="b">[ResourceMemory]</span> (4. 왕복) 총 할당 343.9MB | <span class="t">텍스처 142.1MB</span></div>
+  <p style="font-size:9pt;margin:4px 0 0"><strong>비교값 = ④ − ②:</strong> 텍스처 <span class="g" style="color:var(--green-ink);font-weight:800">168.8 → 142.1 = −26.7MB 회수</span> (진입 140.7 수준 복귀). Scene 버킷도 31→16으로 팝업 반납. <strong>= 누수 없음이 텍스처 회수로 실증.</strong></p>
+</div>
+
+<div class="callout c-green">
+  <span class="lbl">정리 — "비교값으로 측정했다"의 실체</span>
+  ① 스냅샷과 ②·④ 스냅샷은 <b>같은 상태(레지스트리·텍스처 메모리)를 다른 시점에 찍은 것</b>일 뿐이다.
+  그 <b>차이</b>가 곧 "팝업 세션 +28.1MB", "왕복 회수 −26.7MB"라는 비교값. 버튼은 값을 만들지 않고 <b>시점을 고정</b>할 뿐이며,
+  값을 움직인 건 그 사이의 조작(팝업 열기·씬 회전)과 그걸 처리하는 스코프/refCount 구조다.
+</div>
+
+<table>
+  <thead><tr><th>지표</th><th>어디서 나오나</th><th>비교 방법</th></tr></thead>
+  <tbody>
+    <tr><td class="who">Global 버킷 크기</td><td><code>[ResourceReport]</code>의 <code>global=N</code> (= Global 스코프 <code>_acquired.Count</code>)</td><td>체크포인트 간 N 비교 (14 → 15)</td></tr>
+    <tr><td class="who">Global이 무엇으로 찼나</td><td>그 아래 <code>[Global] key ← source</code> 목록</td><td>목록 diff (누가 새로 상주?)</td></tr>
+    <tr><td class="who">메모리 회수 여부</td><td><code>[ResourceMemory]</code>의 <strong>텍스처</strong></td><td>①↔②↔④ 차이 (+28 → −26.7)</td></tr>
+    <tr><td class="who">회수 후 재로드 비용</td><td><code>[LoadStats]</code> 키별 로드 횟수</td><td>2회 이상 = 재로드(대가)</td></tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  Operation Kivotos · ResourceSystem · 측정 워크스루 · 2026-08-11 · 코드: ResourceRegistry.cs · ResourceScope.cs · ResourceManager.cs · ResourceMetrics.cs · MetricsHotkeys.cs · 로그: metrics_20260811_004330.log
+</div>
+
+</body>
+</html>

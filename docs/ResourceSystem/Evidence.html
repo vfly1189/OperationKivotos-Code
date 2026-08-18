@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ResourceSystem — 포트폴리오 증명 자료</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --red:#c92a2a; --red-soft:#fff0f0; --red-ink:#a31414;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:13mm 14mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.55; font-size:10.2pt; }
+  h1{ font-size:20pt; margin:0 0 5px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8.2pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:8px; }
+  h2{ font-size:12.5pt; margin:20px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:9pt; margin:2px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 7px; } strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.5pt; background:var(--shade); padding:1px 5px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.6pt; color:var(--muted); margin:0 0 2px; }
+  .kpi{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin:13px 0; }
+  .kpi .box{ border:1px solid var(--line); border-radius:11px; padding:10px 11px; text-align:center; background:#fff; }
+  .kpi .v{ font-size:16.5pt; font-weight:800; color:var(--green-ink); line-height:1.05; }
+  .kpi .k{ font-size:7.8pt; color:var(--muted); margin-top:3px; }
+  .kpi .b4{ color:var(--faint); text-decoration:line-through; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:10px 12px 4px; margin:11px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.6pt; font-weight:800; margin:0 0 2px; }
+  .figt .tag{ font-size:7.4pt; font-weight:800; color:#fff; background:var(--green); border-radius:20px; padding:1px 8px; vertical-align:middle; margin-left:6px; letter-spacing:.03em; }
+  .figcap{ font-size:8.3pt; color:var(--faint); text-align:center; margin:1px 0 3px; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  table{ width:100%; border-collapse:collapse; margin:9px 0; font-size:9.1pt; break-inside:avoid; }
+  th{ text-align:left; padding:6px 9px; background:var(--ink); color:#fff; font-weight:700; font-size:8.5pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:6px 9px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); } td.hi{ color:var(--green-ink); font-weight:800; }
+  .callout{ border-radius:11px; padding:11px 15px; margin:11px 0; font-size:9.4pt; line-height:1.5; break-inside:avoid; }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .callout .lbl{ font-weight:800; font-size:8.2pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  .footer{ margin-top:16px; padding-top:8px; border-top:1px solid var(--line); font-size:7.8pt; color:var(--faint); }
+  .legend{ font-size:8.4pt; color:var(--muted); text-align:center; margin-top:2px; }
+  .sw{ display:inline-block; width:9px; height:9px; border-radius:2px; vertical-align:middle; margin:0 3px 0 10px; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · ResourceSystem · 증명 자료 (Evidence)</div>
+<h1>수동 Release 0줄로 상주 메모리 회수 — 측정으로 증명</h1>
+<p class="lead">Addressables 위에 수명 스코프를 얹어, "안전한 쪽=Global"로 도피하던 리소스를 회수 가능한 수명으로 재배치했다.</p>
+
+<!-- KPI -->
+<div class="kpi">
+  <div class="box"><div class="v">−60%</div><div class="k">진입 Global 메모리<br><span class="b4">513MB</span> → 205MB</div></div>
+  <div class="box"><div class="v">−41%</div><div class="k">진입 전체 합계<br><span class="b4">617MB</span> → 363MB</div></div>
+  <div class="box"><div class="v">−72%</div><div class="k">세션 단조 증가<br><span class="b4">+56MB</span> → +16MB</div></div>
+  <div class="box"><div class="v">flat</div><div class="k">왕복 후 누수<br>358.6 → 359.1MB</div></div>
+</div>
+
+<!-- ===== Chart A : 텍스처 회수 라인 ===== -->
+<div class="fig">
+  <p class="figt">① 텍스처 메모리 — 씬 왕복에서 자동 회수 <span class="tag">개발 빌드 실측</span></p>
+  <svg width="100%" viewBox="0 0 700 244" role="img" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="tri-o" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#e8590c"/></marker>
+      <marker id="tri-g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#2b8a3e"/></marker>
+    </defs>
+    <!-- gridlines + y labels -->
+    <g stroke="#eef0f4" stroke-width="1">
+      <line x1="70" y1="62.8" x2="640" y2="62.8"/><line x1="70" y1="98.3" x2="640" y2="98.3"/>
+      <line x1="70" y1="133.9" x2="640" y2="133.9"/><line x1="70" y1="169.4" x2="640" y2="169.4"/>
+    </g>
+    <g class="s-s" style="font-size:8.5px" fill="#8a91a0">
+      <text x="62" y="66" text-anchor="end">170</text><text x="62" y="101" text-anchor="end">160</text>
+      <text x="62" y="137" text-anchor="end">150</text><text x="62" y="172" text-anchor="end">140</text>
+      <text x="30" y="120" text-anchor="middle" transform="rotate(-90 30 120)" fill="#5b6270">텍스처 MB</text>
+    </g>
+    <!-- entry reference dashed -->
+    <line x1="70" y1="167" x2="640" y2="167" stroke="#c3c8d2" stroke-width="1" stroke-dasharray="4 3"/>
+    <text x="636" y="180" text-anchor="end" style="font-size:8px" fill="#8a91a0">진입 기준선 140.7</text>
+    <!-- line -->
+    <polyline points="80,167 215,67 350,67 485,162 620,162" fill="none" stroke="#3b5bdb" stroke-width="2.4" stroke-linejoin="round"/>
+    <!-- points -->
+    <g fill="#fff" stroke="#3b5bdb" stroke-width="2.2">
+      <circle cx="80" cy="167" r="5"/><circle cx="215" cy="67" r="5"/><circle cx="350" cy="67" r="5"/>
+      <circle cx="485" cy="162" r="5" stroke="#2b8a3e"/><circle cx="620" cy="162" r="5" stroke="#2b8a3e"/>
+    </g>
+    <!-- value labels -->
+    <g style="font-size:9.5px;font-weight:700" fill="#2b3a8f" text-anchor="middle">
+      <text x="80" y="185">140.7</text><text x="215" y="56">168.8</text><text x="350" y="56">168.8</text>
+      <text x="485" y="181" fill="#1f6b2e">142.1</text><text x="620" y="181" fill="#1f6b2e">142.1</text>
+    </g>
+    <!-- x labels -->
+    <g class="s-s" style="font-size:9px" fill="#5b6270" text-anchor="middle">
+      <text x="80" y="212">① 진입</text><text x="215" y="212">② 팝업</text><text x="350" y="212">③ 재오픈</text>
+      <text x="485" y="212">④ 던전 왕복</text><text x="620" y="212">⑤ 종료</text>
+    </g>
+    <!-- delta annotations -->
+    <line x1="150" y1="152" x2="150" y2="82" stroke="#e8590c" stroke-width="1.4" marker-end="url(#tri-o)"/>
+    <text x="158" y="120" style="font-size:9px;font-weight:700" fill="#8a3708">+28.1MB 팝업 세션</text>
+    <line x1="417" y1="82" x2="417" y2="152" stroke="#2b8a3e" stroke-width="1.4" marker-end="url(#tri-g)"/>
+    <text x="425" y="112" style="font-size:9px;font-weight:700" fill="#1f6b2e">−26.7MB 씬 왕복 회수</text>
+    <text x="530" y="150" style="font-size:8.5px" fill="#1f6b2e" text-anchor="middle">flat</text>
+  </svg>
+  <div class="figcap">팝업이 Scene 스코프에 적재됐다가(②) 씬 전환에서 refCount 자동 정산으로 반납(④, 진입 수준 복귀). 재오픈(③)은 캐시 히트라 무증가. <strong>수동 Release 호출 0줄.</strong></div>
+</div>
+
+<!-- ===== Chart B : Before/After 스택 ===== -->
+<div class="fig">
+  <p class="figt">② 진입 직후 메모리 구조 — Global 독점 → 수명별 분산</p>
+  <svg width="100%" viewBox="0 0 700 234" role="img" xmlns="http://www.w3.org/2000/svg">
+    <!-- baseline -->
+    <line x1="60" y1="210" x2="660" y2="210" stroke="#c3c8d2" stroke-width="1"/>
+    <!-- Before bar (x 200) -->
+    <rect x="200" y="64.5" width="96" height="145.5" fill="#e8590c"/>
+    <rect x="200" y="35" width="96" height="29.5" fill="#3b5bdb"/>
+    <text x="248" y="145" text-anchor="middle" style="font-size:10px;font-weight:700" fill="#fff">Global 513</text>
+    <text x="248" y="53" text-anchor="middle" style="font-size:8px;font-weight:700" fill="#fff">Scene 104</text>
+    <text x="248" y="26" text-anchor="middle" style="font-size:11px;font-weight:800" fill="#1a1c22">합계 617MB</text>
+    <text x="248" y="228" text-anchor="middle" style="font-size:9.5px" fill="#5b6270">Before (2버킷)</text>
+    <!-- After bar (x 404) -->
+    <rect x="404" y="151.9" width="96" height="58.1" fill="#e8590c"/>
+    <rect x="404" y="122.4" width="96" height="29.5" fill="#3b5bdb"/>
+    <rect x="404" y="107.1" width="96" height="15.3" fill="#2b8a3e"/>
+    <text x="452" y="185" text-anchor="middle" style="font-size:9.5px;font-weight:700" fill="#fff">Global 205</text>
+    <text x="452" y="141" text-anchor="middle" style="font-size:8px;font-weight:700" fill="#fff">Scene 104</text>
+    <text x="508" y="118" text-anchor="start" style="font-size:8.5px;font-weight:700" fill="#1f6b2e">◀ Party 54</text>
+    <text x="452" y="96" text-anchor="middle" style="font-size:11px;font-weight:800" fill="#1f6b2e">합계 363MB (−41%)</text>
+    <text x="452" y="228" text-anchor="middle" style="font-size:9.5px" fill="#5b6270">After (수명 스코프)</text>
+    <!-- arrow between -->
+    <path d="M300 120 L400 120" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#dn2)"/>
+    <defs><marker id="dn2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#8a91a0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  </svg>
+  <div class="legend"><span class="sw" style="background:#e8590c;margin-left:0"></span>Global(영구) <span class="sw" style="background:#3b5bdb"></span>Scene(씬) <span class="sw" style="background:#2b8a3e"></span>Party(파티, 신설)</div>
+  <div class="figcap">Global 덩어리(513)가 205로 줄고, 나머지는 회수 가능한 Scene·Party 수명으로 분산. 감축분 대부분은 <strong>비파티 캐릭터 8종이 아예 로드되지 않게 된 것</strong>(라벨 다이어트 42→12개).</div>
+</div>
+
+<!-- ===== 보조 증거 ===== -->
+<h2>추가 증거 (같은 계측)</h2>
+<table>
+  <thead><tr><th style="width:26%">주장</th><th style="width:40%">측정 근거</th><th>수치</th></tr></thead>
+  <tbody>
+    <tr><td class="who">재오픈 = 무비용</td><td>같은 팝업 첫 오픈 vs 재오픈 요청→표시 (<code>[UIMetric]</code>)</td><td class="hi">UI_Info 23.1ms → 2.3ms</td></tr>
+    <tr><td class="who">던전 왕복 영구 증가 해소</td><td>왕복 전후 Global 영구 증가 (Baseline v2 → 완료)</td><td class="hi">+18.7MB → ≈0</td></tr>
+    <tr><td class="who">풀↔에셋 수명 안전</td><td>refCount 티켓 왕복 (Global/Scene/Party 전 버킷)</td><td class="hi">358.6 → 359.1MB (flat)</td></tr>
+    <tr><td class="who">고아·누수 0</td><td><code>[?]</code> 버킷 · <code>[ResourceLeak]</code> · <code>[PoolLeak]</code> 카운트</td><td class="hi">전부 0</td></tr>
+  </tbody>
+</table>
+
+<div class="callout c-amber">
+  <span class="lbl">트레이드오프 (정직하게 동반)</span>
+  진입 <b>−308MB</b> 상시 부담을 <b>팝업 첫 오픈 +14~20ms</b> 일회성 지연으로 바꾼 거래. 재오픈은 회귀 없음(~9ms).
+  던전 스코프·프레임 예산 스트리밍은 <b>측정 근거로 제외</b>(던전 왕복이 이미 +0.9MB) = 필요한 것만 했다는 증거.
+</div>
+
+<div class="callout c-green">
+  <span class="lbl">신뢰도 · 방법론</span>
+  Addressables <b>Use Existing Build(실제 번들)</b> → 증감·비율 신뢰도 "강" · 절대값은 <b>개발 빌드 실측</b>으로 확정(에디터 ×2 사본 없음).
+  측정 도구의 <b>×6.8 계통 오차를 교차 검증으로 자가 발견·보정</b>. 히치는 n=1~3라 15ms 이하 차이는 주장하지 않음.
+</div>
+
+<div class="footer">
+  Operation Kivotos · ResourceSystem · Evidence · 2026-08-11 · 출처: Baseline.md(§8~§13) · Phase3_Result.md · Phase4_Result.md · Journey_Full.md · 빌드 실측 metrics_20260811_004330.log · 계측: ResourceMetrics / ResourceDebugWindow / MetricsHotkeys
+</div>
+
+</body>
+</html>
