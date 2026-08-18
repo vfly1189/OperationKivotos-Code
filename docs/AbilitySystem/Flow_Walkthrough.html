@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>어빌리티 발동 흐름 — 쉽게 자세히</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+  }
+  *{box-sizing:border-box;}
+  @page{ size:A4; margin:0; }
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif;
+    color:var(--ink); margin:0; line-height:1.72; font-size:10.6pt; background:#fff;}
+  .page{ padding:48px 58px; }
+  .page + .page{ page-break-before:always; }
+
+  .kicker{ font-size:9pt; letter-spacing:.3em; color:var(--blue); font-weight:700;
+           text-transform:uppercase; margin-bottom:14px;}
+  h1{ font-size:25pt; line-height:1.2; margin:0 0 12px; letter-spacing:-.02em; font-weight:800;}
+  .sub{ font-size:11.5pt; color:var(--muted); max-width:34em; margin:0;}
+
+  h2{ font-size:15pt; margin:0 0 5px; font-weight:800; display:flex; align-items:baseline; gap:11px;}
+  h2 .n{ font-size:10.5pt; color:var(--blue); font-weight:800;}
+  .h2sub{ color:var(--muted); font-size:9.8pt; margin:0 0 18px; padding-bottom:13px; border-bottom:1px solid var(--line);}
+  h3{ font-size:11.4pt; margin:20px 0 6px; font-weight:700;}
+  p{ margin:0 0 11px;} .lead{ font-size:11.2pt; color:#2f3440;}
+  em{ font-style:normal; background:linear-gradient(transparent 62%,#ffe8a3 62%); font-weight:600;}
+  strong{ font-weight:700;}
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:9pt; background:var(--shade);
+        padding:1px 5px; border-radius:5px; color:#333a48; border:1px solid var(--line2);}
+  .muted{ color:var(--muted);}
+
+  .diagram-wrap{ margin:8px auto 6px; max-width:600px;}
+  .legend{ display:flex; gap:18px; justify-content:center; margin:10px 0 4px; font-size:9.2pt; color:var(--muted); flex-wrap:wrap;}
+  .legend span{ display:inline-flex; align-items:center; gap:6px;}
+  .sw{ width:12px; height:12px; border-radius:3px; display:inline-block; border:1.5px solid;}
+  .sw.b{ background:var(--blue-soft); border-color:var(--blue);}
+  .sw.a{ background:var(--amber-soft); border-color:var(--amber);}
+  .sw.g{ background:var(--green-soft); border-color:var(--green);}
+  .sw.n{ background:var(--shade); border-color:#c7ccd6;}
+
+  .read3{ display:grid; grid-template-columns:1fr; gap:12px; margin:18px 0;}
+  .rcard{ border:1px solid var(--line); border-left-width:4px; border-radius:10px; padding:14px 18px;}
+  .rcard.spine{ border-left-color:var(--blue);}
+  .rcard.def{ border-left-color:#c7ccd6;}
+  .rcard.ctx{ border-left-color:var(--amber);}
+  .rcard .rt{ font-weight:800; font-size:11.4pt; margin-bottom:3px; display:flex; align-items:center; gap:8px;}
+  .rcard .rdir{ font-size:8.6pt; font-weight:700; letter-spacing:.04em; padding:2px 8px; border-radius:20px; text-transform:uppercase;}
+  .spine .rdir{ background:var(--blue-soft); color:var(--blue);}
+  .def .rdir{ background:var(--shade); color:var(--muted);}
+  .ctx .rdir{ background:var(--amber-soft); color:var(--amber);}
+  .rcard .rd{ font-size:10pt; color:#3f4654; line-height:1.6;}
+
+  .steps{ counter-reset:s; margin:10px 0;}
+  .stp{ display:flex; gap:15px; padding:8px 0; border-bottom:1px solid var(--line2); align-items:flex-start;}
+  .stp:last-child{ border-bottom:none;}
+  .stp .b{ counter-increment:s; flex:0 0 30px; height:30px; border-radius:50%; background:var(--blue);
+           color:#fff; font-weight:800; font-size:12pt; display:flex; align-items:center; justify-content:center;}
+  .stp.res .b{ background:var(--green);}
+  .stp .c .t{ font-weight:800; font-size:11pt; margin-bottom:2px;}
+  .stp .c .t::before{ content:counter(s) ". "; display:none;}
+  .stp .c .d{ font-size:10pt; color:var(--muted); line-height:1.58;}
+  .stp .c .ex{ font-size:9.3pt; color:var(--amber-ink); background:var(--amber-soft);
+               border-radius:7px; padding:6px 11px; margin-top:6px; display:inline-block;}
+  .stp .c .ex b{ color:var(--amber);}
+
+  .callout{ border-radius:11px; padding:15px 19px; margin:18px 0; font-size:10.1pt; line-height:1.62;}
+  .callout .lbl{ font-weight:800; font-size:9pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:5px;}
+  .c-key{ background:var(--blue-soft); color:var(--blue-ink);} .c-key .lbl{ color:var(--blue);}
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink);} .c-amber .lbl{ color:var(--amber);}
+  .c-green{ background:var(--green-soft); color:var(--green-ink);} .c-green .lbl{ color:var(--green);}
+
+  .confuse{ width:100%; border-collapse:collapse; margin:14px 0; font-size:9.9pt;}
+  .confuse td{ padding:11px 14px; border-bottom:1px solid var(--line2); vertical-align:top;}
+  .confuse td.q{ width:34%; font-weight:700; color:var(--amber);}
+  .confuse tr:last-child td{ border-bottom:none;}
+
+  .footer{ margin-top:30px; padding-top:13px; border-top:1px solid var(--line);
+           font-size:8.5pt; color:var(--faint); display:flex; justify-content:space-between;}
+
+  /* svg text */
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif;}
+  .s-th{ font-size:14px; font-weight:700; }
+  .s-t{ font-size:14px; font-weight:400; }
+  .s-ts{ font-size:12px; font-weight:400; fill:#5b6270;}
+</style>
+</head>
+<body>
+
+<!-- ===== PAGE 1: 도식 ===== -->
+<section class="page">
+  <div class="kicker">Operation Kivotos · Ability System</div>
+  <h1>한 번의 발동, 이렇게 흐른다</h1>
+  <p class="sub">캐스터 · 컨텍스트 · 러너 · 이펙트가 어떻게 이어지는지, 화살표 하나하나를 쉬운 말로.</p>
+
+  <div class="diagram-wrap">
+  <svg width="100%" viewBox="0 0 680 448" role="img" xmlns="http://www.w3.org/2000/svg">
+    <title>어빌리티 발동 흐름</title>
+    <desc>캐스터가 컨텍스트를 만들어 러너에 넘기고, 러너가 어빌리티의 이펙트 목록을 순서대로 실행하며 컨텍스트가 각 단계로 실려 결과가 적용된다.</desc>
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+    </defs>
+
+    <!-- 1 캐스터 -->
+    <rect x="250" y="44" width="180" height="56" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.2"/>
+    <text class="s-th" x="340" y="72" text-anchor="middle" fill="#2b3a8f">어빌리티 캐스터</text>
+    <text class="s-ts" x="340" y="90" text-anchor="middle">누가 발동하나</text>
+
+    <!-- 2 러너 -->
+    <rect x="250" y="150" width="180" height="56" rx="8" fill="#f7f8fa" stroke="#c7ccd6" stroke-width="1.2"/>
+    <text class="s-th" x="340" y="178" text-anchor="middle" fill="#1a1c22">AbilityRunner</text>
+    <text class="s-ts" x="340" y="196" text-anchor="middle">쿨다운·태그 게이트</text>
+
+    <!-- 3 이펙트 -->
+    <rect x="250" y="256" width="180" height="76" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/>
+    <text class="s-th" x="340" y="280" text-anchor="middle" fill="#1f6b2e">이펙트 (IEffect)</text>
+    <line x1="266" y1="290" x2="414" y2="290" stroke="#bfe3c6" stroke-width="1"/>
+    <text class="s-ts" x="340" y="308" text-anchor="middle">데미지 · 투사체 · 장판</text>
+    <text class="s-ts" x="340" y="324" text-anchor="middle">상태이상 · 소환 · 연출</text>
+
+    <!-- 4 결과 -->
+    <rect x="250" y="366" width="180" height="52" rx="8" fill="#f7f8fa" stroke="#c7ccd6" stroke-width="1.2"/>
+    <text class="s-th" x="340" y="392" text-anchor="middle" fill="#1a1c22">적용</text>
+    <text class="s-ts" x="340" y="408" text-anchor="middle">데미지·상태이상·연출</text>
+
+    <!-- 왼쪽 어빌리티 -->
+    <rect x="40" y="150" width="140" height="56" rx="8" fill="#f7f8fa" stroke="#c7ccd6" stroke-width="1.2"/>
+    <text class="s-th" x="110" y="178" text-anchor="middle" fill="#1a1c22">AbilityData</text>
+    <text class="s-ts" x="110" y="196" text-anchor="middle">이펙트 목록 (SO)</text>
+
+    <!-- 오른쪽 컨텍스트 레일 -->
+    <rect x="486" y="150" width="154" height="182" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/>
+    <text class="s-th" x="563" y="182" text-anchor="middle" fill="#8a3708">컨텍스트</text>
+    <text class="s-ts" x="563" y="200" text-anchor="middle">AbilityContext</text>
+    <text class="s-ts" x="563" y="240" text-anchor="middle">스탯 · 대상</text>
+    <text class="s-ts" x="563" y="258" text-anchor="middle">좌표 · 총구 · 태그</text>
+
+    <!-- 연결선 -->
+    <line x1="340" y1="100" x2="340" y2="148" stroke="#8a91a0" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="s-ts" x="350" y="128" text-anchor="start">발동 요청</text>
+    <line x1="340" y1="206" x2="340" y2="254" stroke="#8a91a0" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="s-ts" x="350" y="234" text-anchor="start">이펙트 전개</text>
+    <line x1="340" y1="332" x2="340" y2="364" stroke="#8a91a0" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="s-ts" x="350" y="352" text-anchor="start">명중 시 적용</text>
+
+    <line x1="180" y1="178" x2="248" y2="178" stroke="#8a91a0" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <path d="M430 72 C 505 72, 563 100, 563 148" fill="none" stroke="#e8590c" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text class="s-ts" x="452" y="108" text-anchor="start" fill="#8a3708">생성</text>
+
+    <line x1="486" y1="178" x2="432" y2="178" stroke="#e8590c" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="486" y1="294" x2="432" y2="294" stroke="#e8590c" stroke-width="1.5" marker-end="url(#arrow)"/>
+  </svg>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw b"></i> 캐스터 — 누가</span>
+    <span><i class="sw n"></i> 러너·어빌리티·적용 — 뼈대</span>
+    <span><i class="sw g"></i> 이펙트 — 무슨 일이</span>
+    <span><i class="sw a"></i> 컨텍스트 — 매 단계 동행</span>
+  </div>
+
+  <div class="callout c-key" style="margin-top:20px;">
+    <span class="lbl">그림을 한 문장으로</span>
+    <b>캐스터가 컨텍스트(이번 상황표)를 만들어 러너에 넘기면, 러너는 어빌리티에 적힌 이펙트들을 그 컨텍스트와 함께 순서대로 실행한다.</b>
+    세로 화살표(파랑 뼈대)는 "발동이 흐르는 길", 오른쪽 주황 화살표는 "컨텍스트가 매 단계로 실려 들어가는 것"이다.
+  </div>
+</section>
+
+<!-- ===== PAGE 2: 세 방향으로 읽기 ===== -->
+<section class="page">
+  <h2><span class="n">01</span>그림은 세 방향으로 읽는다</h2>
+  <p class="h2sub">화살표가 사방으로 뻗어 복잡해 보이지만, 실은 딱 세 갈래다. 이 셋만 구분하면 그림이 저절로 읽힌다.</p>
+
+  <div class="read3">
+    <div class="rcard spine">
+      <div class="rt"><span class="rdir">↓ 세로 · 파란 뼈대</span> 발동이 흐르는 길</div>
+      <div class="rd">위에서 아래로 <em>캐스터 → 러너 → 이펙트 → 적용</em>. 이게 "한 번의 발동"이 실제로 지나가는 몸통이다.
+      누가 발동하든(플레이어·잡몹·보스) 전부 이 한 줄기로 내려온다. 화살표에 붙은 말 — <code>발동 요청</code>,
+      <code>이펙트 전개</code>, <code>명중 시 적용</code> — 이 각 계단에서 무슨 일이 일어나는지다.</div>
+    </div>
+    <div class="rcard def">
+      <div class="rt"><span class="rdir">→ 왼쪽에서 합류</span> 무엇을 발동할지 (정의)</div>
+      <div class="rd"><em>AbilityData</em>는 "이 스킬은 무슨 이펙트를 어떤 순서로 낸다"가 적힌 <b>레시피 종이(SO)</b>다.
+      스스로 흐르지 않고, 러너가 이걸 <b>읽어서</b> 이펙트 목록을 펼친다. 그래서 왼쪽에서 러너로 화살표가 하나 들어온다 —
+      "정의는 옆에서 합류하고, 실행은 뼈대가 한다."</div>
+    </div>
+    <div class="rcard ctx">
+      <div class="rt"><span class="rdir">← 오른쪽 레일</span> 매 단계로 실려 가는 상황표</div>
+      <div class="rd"><em>컨텍스트</em>는 흐름의 한 계단이 아니라, 흐름 <b>전체에 동행하는 상황표</b>다.
+      캐스터가 발동하는 순간 딱 한 번 만들어(주황 <code>생성</code> 화살표), 그 뒤 러너에도, 각 이펙트에도 <b>그대로 실려 들어간다</b>
+      (왼쪽으로 꽂히는 두 주황 화살표). 스탯·대상·좌표·총구가 여기 담겨 있어, 이펙트들이 "어디에·누구에게·얼마의 힘으로"를 안다.</div>
+    </div>
+  </div>
+
+  <div class="callout c-amber">
+    <span class="lbl">왜 컨텍스트를 "레일"로 그렸나</span>
+    이펙트가 3개든 10개든, 전부 <b>똑같은 컨텍스트 하나</b>를 본다. 첫 총알도 마지막 총알도 같은 조준점·같은 스탯을 쓰는 이유다.
+    그래서 계단(박스)이 아니라, 흐름 옆을 따라 흐르는 <em>레일</em>로 그렸다. 코드로는 <code>effect.ExecuteAsync(ctx, token)</code> —
+    매 이펙트에 같은 <code>ctx</code>가 넘어가는 모습 그대로다.
+  </div>
+</section>
+
+<!-- ===== PAGE 3: 단계별 따라가기 (예시) ===== -->
+<section class="page">
+  <h2><span class="n">02</span>실제로 한 번 따라가 보자</h2>
+  <p class="h2sub">추상적이면 안 와닿으니, <b>“아리스가 평타(라이플 3연사)를 쏜다”</b>를 예로 계단을 하나씩 밟아 본다.</p>
+
+  <div class="steps">
+    <div class="stp"><div class="b"></div><div class="c">
+      <div class="t">발동 신호가 온다</div>
+      <div class="d">아리스의 공격 애니메이션이 재생되다가, <b>총을 쏘는 프레임</b>에서 애니메이션 이벤트가 "지금!"을 알린다.
+      발동의 방아쇠는 이렇게 <em>정확한 프레임</em>이 당긴다.</div>
+      <div class="ex"><b>캐스터</b> = 아리스 · <b>신호</b> = 발사 프레임의 애니메이션 이벤트</div>
+    </div></div>
+
+    <div class="stp"><div class="b"></div><div class="c">
+      <div class="t">캐스터가 "상황표(컨텍스트)"를 꾸린다</div>
+      <div class="d">아리스는 지금 이 발동에 필요한 정보를 한 장에 모은다 — 내 <b>공격력·크리티컬 확률(스탯)</b>, 지금 겨눈 <b>대상</b>,
+      총알이 나갈 <b>총구 위치</b>. 이게 그림 오른쪽 주황 <code>생성</code> 화살표다.</div>
+      <div class="ex"><b>컨텍스트</b> = { 스탯: 아리스 공격력·크리 · 대상: 조준한 적 · 총구: 총구 Transform }</div>
+    </div></div>
+
+    <div class="stp"><div class="b"></div><div class="c">
+      <div class="t">러너가 "지금 써도 되나" 검사한다</div>
+      <div class="d">캐스터가 <em>어떤 어빌리티</em>(RifleAttack)와 <em>상황표</em>를 러너에게 넘긴다. 러너는 먼저 게이트를 본다 —
+      쿨다운이 돌았나, "기절" 같은 차단 태그는 없나. 평타는 쿨다운 0이라 바로 통과. 막히면 <b>여기서 조용히 멈춘다</b>.</div>
+      <div class="ex"><b>러너</b> = 아리스의 AbilityRunner · 게이트: 쿨다운 0 ✓, 차단 태그 없음 ✓ → 통과</div>
+    </div></div>
+
+    <div class="stp"><div class="b"></div><div class="c">
+      <div class="t">어빌리티의 이펙트 목록을 펼친다</div>
+      <div class="d">RifleAttack 레시피에는 "3번 반복 { 총알 1발 스폰 + 총구화염 }"이 적혀 있다. 러너가 이걸 읽어
+      <b>실행할 이펙트들로 펼친다</b>. 발수·간격은 코드가 아니라 이 레시피의 <em>값</em>일 뿐 — 5연사로 바꾸려면 값만 3→5.</div>
+      <div class="ex"><b>어빌리티</b> = RifleAttack: Repeat(3) { SpawnProjectiles(1) · SpawnVFX(총구) }</div>
+    </div></div>
+
+    <div class="stp"><div class="b"></div><div class="c">
+      <div class="t">이펙트가 순서대로 실행된다 — 상황표를 들고</div>
+      <div class="d">각 이펙트는 <b>같은 컨텍스트</b>를 받아 자기 일만 한다. 총알 스폰 이펙트는 컨텍스트의 <b>총구 위치</b>에서 총알을 만들고,
+      그 총알에 컨텍스트의 <b>스탯으로 계산한 데미지 값</b>을 실어 보낸다. 총구화염 이펙트도 같은 총구 위치에 연출을 낸다.
+      3번 반복되는 동안 매번 같은 상황표를 본다.</div>
+      <div class="ex"><b>이펙트</b>: 총알 3발 각각 = { 출발: 컨텍스트 총구 · 데미지: 컨텍스트 스탯으로 계산한 스냅샷 }</div>
+    </div></div>
+
+    <div class="stp res"><div class="b"></div><div class="c">
+      <div class="t">결과가 적용된다 — 데미지는 "명중" 순간</div>
+      <div class="d">여기가 초보가 가장 헷갈리는 곳. 데미지는 <em>발동 순간이 아니라</em>, 총알이 날아가 <b>적에게 맞는 순간</b> 확정된다.
+      계산은 이미 아리스 스탯으로 해서 총알에 <b>값 패킷</b>으로 실어 놨으니, 그 사이 아리스가 죽어도(풀에 반환돼도) 데미지는 안전하게 적용된다.</div>
+      <div class="ex"><b>적용</b> = 각 총알이 명중하는 순간 TakeDamage · 계산은 발동자, 배달은 총알</div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ===== PAGE 4: 핵심 & 혼동 ===== -->
+<section class="page">
+  <h2><span class="n">03</span>이 그림이 말하는 핵심 두 가지</h2>
+  <p class="h2sub">복잡한 화살표를 다 걷어내고 남는, 반드시 기억할 두 문장.</p>
+
+  <h3>① 발동은 "한 줄기"로 흐른다</h3>
+  <p>플레이어든 잡몹이든 보스든, 전부 <em>캐스터 → 러너 → 이펙트 → 적용</em>이라는 같은 길을 지난다.
+  이렇게 길을 하나로 모아 놨기 때문에, 쿨다운·태그 게이트·취소 안전 같은 규칙을 <strong>러너 한 곳에만</strong> 만들면 된다.
+  새 캐릭터를 추가해도 이 길에 올라타기만 하면 끝 — 발동 로직을 또 짜지 않는다.</p>
+
+  <h3>② 컨텍스트는 "계단"이 아니라 "동행자"다</h3>
+  <p>캐스터·러너·이펙트는 흐름의 <em>계단</em>이지만, 컨텍스트는 그 흐름 <strong>옆을 끝까지 따라가는 상황표</strong>다.
+  한 번 만들어지면 모든 이펙트가 같은 것을 보므로, "3번째 총알이 갑자기 다른 곳을 조준"하는 일이 없다.
+  이 하나 덕분에 이펙트들은 서로를 몰라도 되고, 각자 <em>자기 일(총알·연출·데미지)</em>만 하면 된다.</p>
+
+  <div class="callout c-green">
+    <span class="lbl">비유로 다시</span>
+    러너는 <b>요리사</b>, 어빌리티는 <b>레시피 종이</b>, 이펙트는 <b>조리 단계</b>, 그리고 컨텍스트는 요리사가 손에 든
+    <b>"이번 주문표"</b>(3번 테이블, 덜 맵게)다. 주문표는 썰 때도 볶을 때도 담을 때도 계속 손에 들려 있다 — 컨텍스트가 매 이펙트에 실려 가는 것과 똑같다.
+  </div>
+
+  <h3 style="margin-top:24px;">자주 헷갈리는 지점</h3>
+  <table class="confuse">
+    <tr><td class="q">"어빌리티가 흐르는 거 아냐?"</td>
+        <td>아니다. 어빌리티(레시피)는 <b>가만히 있고</b>, 러너가 읽는다. 흐르는 건 발동(뼈대)과 컨텍스트다.</td></tr>
+    <tr><td class="q">"컨텍스트는 왜 박스가 아니라 옆의 긴 칸?"</td>
+        <td>한 계단에서 끝나지 않고 <b>모든 이펙트에 동행</b>하기 때문. 그래서 흐름을 따라 흐르는 레일 모양으로 그렸다.</td></tr>
+    <tr><td class="q">"발동하면 바로 데미지 아냐?"</td>
+        <td>아니다. 발동은 <b>총알을 쏘는 데까지</b>. 데미지는 <b>명중 순간</b> 확정. 빗나가면 데미지도 없다.</td></tr>
+    <tr><td class="q">"연사 5발로 바꾸려면 코드?"</td>
+        <td>아니다. 레시피의 반복 <b>값만 3→5</b>. 이펙트도 러너도 안 건드린다.</td></tr>
+  </table>
+
+  <div class="footer">
+    <span>Operation Kivotos · Ability System — 발동 흐름 설명</span>
+    <span>개념 전체: Concept_Overview.pdf · 구현: README.md</span>
+  </div>
+</section>
+
+</body>
+</html>

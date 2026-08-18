@@ -52,12 +52,15 @@
 
 ---
 
-## 검증
+## 검증 (2026-08-19 갱신 — 완료)
 
-- **소스 레벨** — 죽은 심볼 전수 grep 후 잔여 참조 0 확인(`Stat.GetData().QSkillCoolTime`은 CharacterDataSO 값이라 의도적 유지).
-- ⚠️ **에디터 컴파일 + 플레이 실측 필요**. 특히 **Q 이펙트는 Q_Skill 애니 클립에 `AbilityBeat` 이벤트를 꽂아야** 나온다(쿨·궁게이지·글로우는 이벤트 없이 동작). 인스펙터 `_abilities`에 Q_Skill 슬롯 어빌리티 할당 확인.
+- **소스 레벨** — 죽은 심볼 전수 grep 후 잔여 참조 0 확인(`Stat.GetData().QSkillCoolTime`은 CharacterDataSO 값이라 의도적 유지). 프리팹·씬의 `CharacterCombat` 참조도 0.
+- ✅ **에디터 컴파일 + 플레이 실측 완료 (2026-08-19)** — 이 구조가 적용된 상태로 정상 플레이 확인. 브랜치 `ability-phase1-gating`은 `main`에 머지됨(`b4b1295a`).
+- **Q 이펙트는 여전히 미발사** — 어떤 `Exs`(Q) 클립에도 `AbilityBeat` 이벤트가 없고 `Slot:1` 배선은 Hoshino 하나(값은 평타 asset 플레이스홀더). **쿨·궁게이지·글로우는 이벤트 없이 정상 동작**하므로 게이팅 검증에는 영향 없음 → 연출 배선은 가치가 낮다고 판단해 **의도적 보류**.
 
-## 남은 것 (선택)
+## 남은 것 (트리거 조건부 — 순번 소화 대상 아님)
 
-- **E 발동을 AbilityBeat로** — 지금 E는 즉발. 투사체 E가 생기면 `SlotForState`에 `E_Skill→E_Skill` + 비트로 승격(= Phase 2 발동 경로 통일).
-- **CDR(쿨감)** — 러너 `_cd`가 이미 dur를 저장하므로, `ctx.CoolDown = base × CDR`만 곱하면 됨(Phase 4).
+- **E 발동을 AbilityBeat로** — 지금 E는 즉발이고 즉발로 충분. **투사체/지연 발동 E가 실제로 생길 때** `SlotForState`에 `E_Skill→E_Skill` + 비트로 승격(= Phase 2).
+- **CDR(쿨감)** — 쿨감 스탯을 실제로 도입할 때. 러너 `_cd`가 이미 dur를 저장하므로 `ctx.CoolDown = base × CDR` 한 줄.
+
+> 현재 상태 요약은 **[STATUS.md](STATUS.md)** 가 기준.

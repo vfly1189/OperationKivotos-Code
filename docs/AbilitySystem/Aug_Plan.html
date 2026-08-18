@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>AbilitySystem — 8월 계획</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --red:#e03131; --red-soft:#fff0f0; --red-ink:#b02020;
+    --purp:#9c36b5;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:14mm 14mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.6; font-size:10.4pt; }
+  h1{ font-size:22pt; margin:0 0 8px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8.6pt; letter-spacing:.26em; color:var(--green); font-weight:700; text-transform:uppercase; margin-bottom:10px; }
+  .sub{ font-size:10.6pt; color:var(--muted); margin:0; }
+  h2{ font-size:14pt; margin:24px 0 4px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:9.4pt; margin:2px 0 12px; padding-bottom:9px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 9px; } strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.7pt; background:var(--shade); padding:1px 5px; border-radius:5px; border:1px solid var(--line2); }
+  ul{ margin:0 0 8px; padding-left:18px; } li{ margin:3px 0; }
+  .big{ border:1px solid var(--line); border-left:5px solid var(--green); border-radius:11px; padding:13px 17px; margin:14px 0; background:#fbfdfb; font-size:10.6pt; }
+  .big b{ color:var(--green-ink); }
+  table{ width:100%; border-collapse:collapse; margin:11px 0; font-size:9.4pt; break-inside:avoid; }
+  th{ text-align:left; padding:7px 10px; background:var(--ink); color:#fff; font-weight:700; font-size:8.8pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:7px 10px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  .money{ background:#1c2027; color:#d7dbe3; border-radius:11px; padding:14px 18px; margin:12px 0; font-family:"Cascadia Code","Consolas",monospace; font-size:9pt; line-height:1.7; break-inside:avoid; }
+  .money .g{ color:#9ece6a; } .money .r{ color:#f7768e; } .money .b{ color:#7aa2f7; } .money .m{ color:#bb9af7; } .money .c{ color:#7f8a9c; }
+  .week{ border:1px solid var(--line); border-radius:11px; padding:10px 15px; margin:8px 0; break-inside:avoid; }
+  .week .wh{ display:flex; align-items:center; gap:9px; margin-bottom:4px; }
+  .week .wn{ font-size:8.2pt; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; padding:2px 9px; border-radius:20px; }
+  .week.w1 .wn{ background:var(--blue); } .week.w2 .wn{ background:var(--green); } .week.w3 .wn{ background:var(--amber); } .week.w4 .wn{ background:var(--purp); }
+  .week .wt{ font-weight:800; font-size:10.6pt; }
+  .week .wb{ font-size:9.3pt; color:#3f4654; line-height:1.5; }
+  .week .wv{ font-size:8.8pt; color:var(--green-ink); margin-top:4px; }
+  .week .wv b{ color:var(--green); }
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0; }
+  .col{ border-radius:10px; padding:11px 15px; font-size:9.4pt; }
+  .col.do{ background:var(--green-soft); } .col.dont{ background:var(--red-soft); }
+  .col .lbl{ font-weight:800; font-size:8.6pt; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; display:block; }
+  .col.do .lbl{ color:var(--green); } .col.dont .lbl{ color:var(--red); }
+  .callout{ border-radius:11px; padding:12px 16px; margin:13px 0; font-size:9.7pt; line-height:1.55; break-inside:avoid; }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .callout .lbl{ font-weight:800; font-size:8.5pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:4px; }
+  .footer{ margin-top:20px; padding-top:8px; border-top:1px solid var(--line); font-size:8.2pt; color:var(--faint); }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · AbilitySystem · 8월 계획 · 착수 2026-08-07</div>
+
+<div class="callout c-amber" style="margin:10px 0 4px">
+  <span class="lbl">⛔ 상태: 보류 (2026-08-19 판단) — 현재 기준은 STATUS.md</span>
+  <b>Week 1(배선)은 사실상 이미 되어 있었다</b> — 브레이커 방깎은 <code>BulletTrail_Breaker</code> 프리팹 onHit, 버프·가드는 각 Ability asset에 연결됨(2026-07-14).
+  <b>Week 4(GC 측정)는 축이 맞지 않아 철회</b> — 이 시스템의 명제는 "발동 3곳→1곳 · 스킬=조합 · 새 스킬 코드 0줄"로 <b>변경 비용</b>에 관한 것이라
+  캐스트당 힙 할당은 그것을 검증하지 않는다. 더구나 아래 가설은 <b>사실이 아니다</b>: <code>AbilityData.BuildRuntimeEffects()</code>가
+  <b>캐스트마다 <code>new List&lt;IEffect&gt;</code></b>를 판다. 측정하면 실제 병목도 아닌 곳을 포폴 숫자 때문에 최적화하게 된다.
+  <b>Week 2~3(가시화·GIF)</b>은 연출 작업이라 우선순위가 낮다고 판단해 보류 — 되살릴 경우 이 문서를 그대로 쓰면 된다.
+</div>
+<h1>역할 전투 버티컬 슬라이스 + 측정</h1>
+<p class="sub">새로 짓지 않는다. 있는 조각을 "합산이 보이는 데모 + 독립 만료 + 측정"으로 완성.</p>
+
+<div class="big">
+  <b>한 줄</b> — 단일 러너·Effect 조합·<code>ApplyStatModifier</code>·<code>StatusRunner</code>·역할/표식은 이미 있다.
+  8월엔 <em>"버프(+공격력)와 방깎(−방어력)이 한 데미지 숫자로 합산되는 걸 눈에 보이게 + 각자 독립 만료 + GC 측정"</em>으로
+  대표작 #1을 <b>시연 가능한 데모</b>로 만든다.
+</div>
+
+<h2>왜 — 지금 아쉬운 3가지를 메움</h2>
+<table>
+  <thead><tr><th>아쉬움</th><th>이 계획이 메우는 법</th></tr></thead>
+  <tbody>
+    <tr><td>공유 파이프라인으로 <b>뭐가 벌어지는지 안 보임</b></td><td>버프·방깎·(표식)이 한 데미지에 합쳐지는 <b>머니샷 데모</b></td></tr>
+    <tr><td>태그·상태가 <b>아무 일도 안 함</b></td><td>방깎/버프가 실제 스탯에 걸리고 만료 + (선택)Marked 게이팅</td></tr>
+    <tr><td><b>성능 숫자 0</b></td><td>캐스트 GC/alloc Before/After 측정</td></tr>
+  </tbody>
+</table>
+
+<h2>머니샷 — 핵심 데모 장면</h2>
+<p class="h2sub">포인트는 이 공식이 화면/로그에 보이는 것. VFX 반짝임이 아니라 "여러 modifier가 정확히 합산·독립관리".</p>
+<div class="money">
+<span class="c">// 브레이커 → 적에게</span>   [<span class="r">방어력 −</span>]  (+선택 <span class="m">Marked</span>)     <span class="c">← 몹이 Effect를 받음</span><br>
+<span class="c">// 버퍼 → 아군에게</span>   [<span class="g">공격력 +</span>]                       <span class="c">← 플레이어가 Effect를 받음</span><br>
+<span class="c">// 딜러 → 때림</span><br>
+──────────────────────────────────────────<br>
+최종 데미지 = <span class="g">공격력(버프 +30%)</span>  vs  <span class="r">방어력(방깎 −40%)</span>  (+<span class="m">Marked 보너스</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c">└ 한 공식이 여러 modifier를 읽고, 각 modifier는 소스별 독립 만료 ┘</span>
+</div>
+
+<h2>무엇을 / 안 하나</h2>
+<div class="cols">
+  <div class="col do">
+    <span class="lbl">✔ 한다</span>
+    배선(자산 연결) · <b>데미지 공식 가시화</b>(유일한 신규) · Before/After 데모 GIF · GC 측정
+  </div>
+  <div class="col dont">
+    <span class="lbl">✘ 안 한다</span>
+    Effect·캐릭터·스킬 <b>수 늘리기</b>(넓이=함정) · 가챠/로스터 UI · 멀티 동기화 · 트라이포드 레이어(철회)
+  </div>
+</div>
+<p class="muted" style="font-size:9pt;color:var(--muted);">새로 "만드는" 건 사실상 <b>데미지 공식 표시</b> 하나. 나머지는 있는 걸 활성화·시연·측정.</p>
+
+<h2>4주 계획 — 주차별 산출물 · 검증</h2>
+
+<div class="week w1">
+  <div class="wh"><span class="wn">Week 1</span><span class="wt">활성화(배선) — 효과가 실제로 걸리게</span></div>
+  <div class="wb">브레이커=적에 방깎 <code>ApplyStatModifier(Target)</code>(bullet <code>_onHitEffects</code> 또는 E) · 버퍼=파티에 +Atk(Party) E · 각 캐릭 <code>RoleData</code>/E 자산 배선 점검.</div>
+  <div class="wv"><b>검증:</b> 적 Defense 내려갔다 duration 후 복구 / 파티 Attack 올랐다 복구(StatusRunner 만료). <b>산출:</b> 3역할 한 파티 전투 진입, 효과가 스탯 반영.</div>
+</div>
+<div class="week w2">
+  <div class="wh"><span class="wn">Week 2</span><span class="wt">가시화(핵심·유일 신규) — 데미지 공식 표시</span></div>
+  <div class="wb">데미지 계산 시 항 노출: <code>base Atk · 버프 mod · target Def · 방깎 mod · (Marked) → 최종</code>. 히트마다 디버그 오버레이/온스크린 로그.</div>
+  <div class="wv"><b>검증:</b> 최종 데미지=공식대로 · 항이 보임 · <b>버프만 만료돼도 방깎 유지</b>(소스별 독립 제거). <b>산출:</b> "공격력(+30%) vs 방어력(−40%) → XXX" 화면.</div>
+</div>
+<div class="week w3">
+  <div class="wh"><span class="wn">Week 3</span><span class="wt">데모화 — Before/After 슬라이스</span></div>
+  <div class="wb">짧은 전투: ①딜러 단독 ②표식→버프 얹고 타격 → 데미지 점프. (선택 깊이) <b>Marked가 딜러 추가데미지 게이팅</b>(태그 실사용). GIF 2개 캡처.</div>
+  <div class="wv"><b>검증:</b> 콤보 시 데미지 눈에 띄게 점프, GIF 대비. <b>산출:</b> Before/After GIF 2.</div>
+</div>
+<div class="week w4">
+  <div class="wh"><span class="wn">Week 4</span><span class="wt">측정 + 정리</span></div>
+  <div class="wb">캐스트 경로 GC/alloc Before/After(Profiler) — <code>CreateRuntime()=>this</code> 무할당 증명. 포폴 1페이지=머니샷 GIF+정량지표(발동 3→1·새스킬 코드0·합산)+소스추적 서술.</div>
+  <div class="wv"><b>검증:</b> 캐스트 힙 할당 0(또는 급감) 스크린샷 · 1p 초안. <b>산출:</b> 측정 스크린샷 + 포트폴리오 1페이지.</div>
+</div>
+
+<h2>측정 계획 (약점 보강)</h2>
+<div class="callout c-blue">
+  <span class="lbl">GC 측정</span>
+  <b>무엇</b>: 어빌리티 1회 캐스트의 힙 할당(B). <b>도구</b>: Unity Profiler(GC Alloc)/Recorder. <b>가설</b>: <code>CreateRuntime()=>this</code>(stateless)+ctx 재사용이라 캐스트당 ≈0.
+  <b>주의</b>: 에디터 측정은 과대계상 → 상대(Before/After)로 제시, 절대값 단정 금지.
+</div>
+
+<h2>리스크 / 결정 포인트</h2>
+<ul>
+  <li><b>(a) 데미지가 이미 target Defense를 읽는가</b> — 읽으면(<code>max(dmg−def,1)</code>) 방깎 자동 반영, 가시화만 추가. 안 읽으면 W1에 계산식 점검 먼저.</li>
+  <li><b>(b) Marked 게이팅 포함 여부</b> — 코어(버프+방깎)는 태그 없이 성립. 시간 남으면 W3 +1.</li>
+  <li><b>(c) 디버그 표시 방식</b> — 온스크린 텍스트 vs 기존 데미지 토스트 확장. 가장 빨리 되는 것.</li>
+</ul>
+
+<div class="callout c-amber">
+  <span class="lbl">성공 기준 한 줄</span>
+  <b>"버프와 방깎이 한 데미지 숫자로 합산되고 각자 독립 만료되는 걸, 데모 영상과 측정으로 보여준다."</b>
+</div>
+
+<div class="footer">Operation Kivotos · AbilitySystem 8월 계획 · 상세: Phase1_Result.pdf · 개념: Concept_Ownership.pdf · 쉬운판: Portfolio_Value_Easy.pdf</div>
+
+</body>
+</html>

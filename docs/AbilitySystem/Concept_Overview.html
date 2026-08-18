@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>어빌리티 시스템이란 무엇인가</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4;
+    --accent:#3b5bdb; --accent-soft:#eef2ff;
+    --warm:#e8590c; --warm-soft:#fff4ec;
+    --green:#2b8a3e; --green-soft:# ebfbee;
+    --paper:#ffffff; --shade:#f7f8fa;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  body{
+    font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif;
+    color:var(--ink); margin:0; line-height:1.72; font-size:10.6pt;
+    background:var(--paper);
+  }
+  .page{ padding:52px 60px; }
+  .page + .page{ page-break-before:always; }
+
+  /* ---- cover ---- */
+  .cover{ padding-top:120px; }
+  .kicker{ font-size:9.5pt; letter-spacing:.32em; color:var(--accent);
+           font-weight:700; text-transform:uppercase; margin-bottom:22px; }
+  h1{ font-size:31pt; line-height:1.2; margin:0 0 18px; letter-spacing:-.02em; font-weight:800; }
+  .sub{ font-size:12.5pt; color:var(--muted); line-height:1.6; max-width:30em; font-weight:400;}
+  .cover-meta{ margin-top:64px; padding-top:20px; border-top:2px solid var(--ink);
+               display:flex; gap:40px; font-size:9.4pt; color:var(--muted);}
+  .cover-meta b{ display:block; color:var(--ink); font-size:10.2pt; margin-bottom:3px; font-weight:700;}
+  .cover-lead{ margin-top:40px; padding:22px 26px; background:var(--accent-soft);
+               border-radius:12px; font-size:11.5pt; line-height:1.65; color:#2b3a8f;}
+  .cover-lead b{ color:var(--accent); }
+
+  /* ---- headings ---- */
+  h2{ font-size:16pt; margin:0 0 6px; letter-spacing:-.01em; font-weight:800;
+      display:flex; align-items:baseline; gap:12px;}
+  h2 .n{ font-size:11pt; color:var(--accent); font-weight:800; font-variant-numeric:tabular-nums;}
+  .h2sub{ color:var(--muted); font-size:10pt; margin:0 0 22px; padding-bottom:16px;
+          border-bottom:1px solid var(--line); }
+  h3{ font-size:11.6pt; margin:26px 0 8px; font-weight:700; }
+  p{ margin:0 0 12px; }
+  .lead{ font-size:11.4pt; color:#2f3440; }
+  em{ font-style:normal; background:linear-gradient(transparent 62%, #ffe8a3 62%); font-weight:600; }
+  strong{ font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:9.2pt;
+        background:var(--shade); padding:1px 6px; border-radius:5px; color:#333a48;
+        border:1px solid var(--line2);}
+  .muted{ color:var(--muted); }
+
+  /* ---- five questions ---- */
+  .q5{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0 6px;}
+  .qcard{ border:1px solid var(--line); border-radius:12px; padding:16px 18px; background:#fff;
+          position:relative; overflow:hidden;}
+  .qcard::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent);}
+  .qcard .qw{ font-size:9pt; letter-spacing:.18em; color:var(--faint); font-weight:700; text-transform:uppercase;}
+  .qcard .qt{ font-size:12.5pt; font-weight:800; margin:3px 0 5px;}
+  .qcard .qd{ font-size:9.6pt; color:var(--muted); line-height:1.55;}
+  .qcard .qmap{ margin-top:9px; font-size:9pt; color:var(--accent); font-weight:700;}
+  .qcard.wide{ grid-column:1 / -1;}
+  .qcard.wide::before{ background:var(--warm);}
+  .qcard.wide .qmap{ color:var(--warm);}
+
+  /* ---- analogy table ---- */
+  .analogy{ width:100%; border-collapse:collapse; margin:16px 0; font-size:10pt;}
+  .analogy th{ text-align:left; padding:9px 14px; background:var(--ink); color:#fff; font-weight:700;
+               font-size:9.6pt;}
+  .analogy th:first-child{ border-radius:8px 0 0 0;}
+  .analogy th:last-child{ border-radius:0 8px 0 0;}
+  .analogy td{ padding:10px 14px; border-bottom:1px solid var(--line2); vertical-align:top;}
+  .analogy tr:last-child td{ border-bottom:none;}
+  .analogy td.k{ font-weight:700; width:26%; color:var(--warm);}
+  .analogy td.m{ width:30%; color:var(--muted); font-size:9.2pt;}
+  .analogy tbody tr:nth-child(even){ background:var(--shade);}
+
+  /* ---- callout ---- */
+  .callout{ border-radius:12px; padding:16px 20px; margin:18px 0; font-size:10.2pt; line-height:1.62;}
+  .callout .lbl{ font-weight:800; font-size:9.2pt; letter-spacing:.06em; text-transform:uppercase;
+                 display:block; margin-bottom:5px;}
+  .c-key{ background:var(--accent-soft); color:#2b3a8f;} .c-key .lbl{ color:var(--accent);}
+  .c-warn{ background:var(--warm-soft); color:#8a3708;} .c-warn .lbl{ color:var(--warm);}
+  .c-green{ background:#ebfbee; color:#1f6b2e;} .c-green .lbl{ color:var(--green);}
+
+  /* ---- lifecycle flow ---- */
+  .flow{ margin:20px 0; }
+  .step{ display:flex; gap:16px; align-items:flex-start; padding:12px 0; position:relative;}
+  .step:not(:last-child)::after{ content:""; position:absolute; left:15px; top:38px; bottom:-4px;
+        width:2px; background:var(--line); }
+  .step .dot{ flex:0 0 32px; height:32px; border-radius:50%; background:var(--accent-soft);
+        color:var(--accent); font-weight:800; display:flex; align-items:center; justify-content:center;
+        font-size:11pt; z-index:1; border:2px solid #fff; box-shadow:0 0 0 1px var(--accent);}
+  .step .body{ flex:1; padding-top:3px;}
+  .step .st{ font-weight:800; font-size:11pt; margin-bottom:2px;}
+  .step .sd{ font-size:9.7pt; color:var(--muted); line-height:1.55;}
+  .step .gate .dot{ background:var(--warm-soft); color:var(--warm); box-shadow:0 0 0 1px var(--warm);}
+
+  /* ---- vs comparison ---- */
+  .vs{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0;}
+  .vs .col{ border:1px solid var(--line); border-radius:12px; padding:16px 18px;}
+  .vs .col.old{ background:var(--shade);}
+  .vs .col.new{ background:#fff; border-color:var(--accent); border-width:1.5px;}
+  .vs .tag{ font-size:8.6pt; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+            padding:3px 9px; border-radius:20px; display:inline-block; margin-bottom:10px;}
+  .vs .old .tag{ background:#e9ecef; color:#6b7280;}
+  .vs .new .tag{ background:var(--accent); color:#fff;}
+  .vs h4{ margin:0 0 8px; font-size:11pt;}
+  .vs ul{ margin:0; padding-left:16px; font-size:9.6pt; color:var(--muted); line-height:1.6;}
+  .vs li{ margin-bottom:5px;}
+  .vs .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.8pt;
+             background:#fff; border:1px dashed var(--line); border-radius:8px; padding:10px 12px;
+             margin-top:10px; color:#333a48; line-height:1.5;}
+  .vs .new .mono{ background:var(--accent-soft); border-color:#c7d2fe; color:#2b3a8f;}
+
+  /* ---- map table (concept -> impl) ---- */
+  .maptbl{ width:100%; border-collapse:collapse; margin:14px 0; font-size:9.8pt;}
+  .maptbl th{ text-align:left; padding:9px 14px; border-bottom:2px solid var(--ink); font-size:9.4pt;}
+  .maptbl td{ padding:9px 14px; border-bottom:1px solid var(--line2); vertical-align:top;}
+  .maptbl td.c{ font-weight:700; width:22%;}
+  .maptbl code{ font-size:8.8pt;}
+  .maptbl td.role{ width:16%; color:var(--muted); font-size:9pt;}
+
+  /* ---- checklist ---- */
+  .check{ margin:16px 0; }
+  .check .item{ display:flex; gap:14px; padding:13px 16px; border:1px solid var(--line);
+        border-radius:10px; margin-bottom:9px; background:#fff;}
+  .check .num{ flex:0 0 auto; font-weight:800; color:var(--accent); font-size:10.5pt;
+        font-variant-numeric:tabular-nums;}
+  .check .qq{ font-weight:700; font-size:10.4pt; margin-bottom:3px;}
+  .check .aa{ font-size:9.5pt; color:var(--muted); line-height:1.55;}
+  .check .aa b{ color:var(--ink); }
+
+  /* ---- two-time state ---- */
+  .twotime{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0;}
+  .tt{ border-radius:12px; padding:16px 18px; border:1px solid var(--line);}
+  .tt.inst{ background:var(--accent-soft); border-color:#c7d2fe;}
+  .tt.dur{ background:var(--warm-soft); border-color:#ffd8b8;}
+  .tt .tth{ font-weight:800; font-size:11.5pt; margin-bottom:6px; display:flex; align-items:center; gap:8px;}
+  .tt.inst .tth{ color:var(--accent);}
+  .tt.dur .tth{ color:var(--warm);}
+  .tt .ttd{ font-size:9.7pt; color:#3f4654; line-height:1.6;}
+  .tt .ex{ margin-top:9px; font-size:8.8pt; font-family:"Cascadia Code","Consolas",monospace;
+           background:rgba(255,255,255,.6); border-radius:7px; padding:8px 10px;}
+
+  .footer{ margin-top:40px; padding-top:14px; border-top:1px solid var(--line);
+           font-size:8.6pt; color:var(--faint); display:flex; justify-content:space-between;}
+  .pill{ display:inline-block; background:var(--shade); border:1px solid var(--line);
+         border-radius:20px; padding:2px 10px; font-size:8.6pt; color:var(--muted); font-weight:600;
+         margin-right:5px;}
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<section class="page cover">
+  <div class="kicker">Operation Kivotos · Ability System</div>
+  <h1>어빌리티 시스템이란<br>무엇인가</h1>
+  <p class="sub">코드를 짜기 전에 개념부터. 게임 속 모든 "발동되는 행위"를 하나의 문법으로 다루는 틀에 대하여.</p>
+
+  <div class="cover-lead">
+    <b>한 문장 정의 —</b> 어빌리티 시스템은 평타·스킬·보스 패턴·함정처럼 게임 안에서 <b>"무언가가 발동되어 효과를 일으키는 모든 것"</b>을,
+    캐스터마다 따로 짜지 않고 <b>하나의 공통 문법(누가·무엇을·어떻게·언제)으로 기술하고 실행</b>하는 틀이다.
+  </div>
+
+  <div class="cover-meta">
+    <div><b>목적</b>개념 재정립 (설계 이전 단계)</div>
+    <div><b>대상 독자</b>구현 착수 전의 나 자신</div>
+    <div><b>범위</b>플레이어 · 일반몹 · 보스 공통</div>
+  </div>
+</section>
+
+<!-- ============ 1. WHY ============ -->
+<section class="page">
+  <h2><span class="n">01</span>왜 필요한가 — "무대뽀"의 정체</h2>
+  <p class="h2sub">시스템이 없다는 건 코드가 없다는 뜻이 아니라, "발동"에 <b>정해진 형태가 없다</b>는 뜻이다.</p>
+
+  <p class="lead">게임에는 "발동되는 행위"가 수십 가지다. 캐릭터의 평타, Q 스킬, 보스의 소환 패턴, 탱크의 포격, 바닥의 장판.
+  이것들은 겉보기엔 전부 달라 보이지만, 속을 뜯어보면 <em>똑같은 골격</em>을 갖는다 — <b>누군가</b>가, <b>무언가</b>를,
+  <b>어떤 상황</b>에서, 발동해서, <b>효과</b>를 낸다.</p>
+
+  <p>시스템 없이 만들면 이 골격이 코드 곳곳에 <strong>제각각 다시 태어난다.</strong> "총을 쏜다"가 AR몹에 한 번,
+  플레이어에 한 번, 보스에 한 번 — 개념은 하나인데 구현이 세 벌이다. 새 스킬은 새 클래스, 값 하나 바꾸려면 컴파일.
+  이게 "계획 없이 무대뽀로 했다"의 정확한 정체다: <em>같은 개념을 반복해 짜면서, 그 개념에 이름을 붙여주지 않은 상태.</em></p>
+
+  <div class="callout c-key">
+    <span class="lbl">그래서 어빌리티 시스템이 하는 일</span>
+    이 반복되는 골격에 <b>이름과 형태를 부여</b>한다. 한 번 형태를 정하면, 이후 모든 발동은
+    "코드를 새로 짜는 일"이 아니라 "정해진 칸을 채우는 일(데이터)"이 된다. 프로그래머 병목이 사라지고, 디자이너가 스킬을 만든다.
+  </div>
+
+  <p class="muted" style="font-size:9.6pt;">
+  ※ 이 문서는 "무엇을 이미 구현했는가"(이관 기록)가 아니라 <b>"이 시스템이 개념적으로 무엇인가"</b>를 다룬다.
+  구현 세부는 <code>README.md</code> · <code>AbilitySystem_Portfolio.md</code> 참고.</p>
+</section>
+
+<!-- ============ 2. FIVE QUESTIONS ============ -->
+<section class="page">
+  <h2><span class="n">02</span>개념의 뼈대 — 다섯 개의 질문</h2>
+  <p class="h2sub">어떤 발동이든 이 다섯 조각으로 쪼갤 수 있다. 각 조각이 시스템의 한 부품이 된다.</p>
+
+  <div class="q5">
+    <div class="qcard">
+      <div class="qw">WHO · 누가</div>
+      <div class="qt">캐스터 (Caster)</div>
+      <div class="qd">발동하는 주체. 플레이어든 보스든 잡몹이든, "나는 어빌리티를 쓸 수 있는 존재"라는 공통 신분을 가진다.</div>
+      <div class="qmap">→ IAbilityCaster</div>
+    </div>
+    <div class="qcard">
+      <div class="qw">WHAT · 무엇을</div>
+      <div class="qt">어빌리티 (Ability)</div>
+      <div class="qd">발동할 "그 스킬"의 정의. 코스트·쿨다운·캐스트타임과, 무슨 효과들이 어떤 순서로 나가는지의 <b>목록</b>.</div>
+      <div class="qmap">→ AbilityData (SO)</div>
+    </div>
+    <div class="qcard">
+      <div class="qw">HOW · 무슨 일이</div>
+      <div class="qt">이펙트 (Effect)</div>
+      <div class="qd">실제로 일어나는 일 하나하나. 데미지 주기, 투사체 쏘기, 장판 깔기, 연출 재생 — 재사용되는 <b>조립 블록</b>.</div>
+      <div class="qmap">→ IEffect</div>
+    </div>
+    <div class="qcard">
+      <div class="qw">WHOM · 어떤 상황</div>
+      <div class="qt">컨텍스트 (Context)</div>
+      <div class="qd">이번 한 번의 발동에만 해당하는 정보. 시전자의 스탯, 겨냥한 대상, 착탄 좌표, 총구 위치.</div>
+      <div class="qmap">→ AbilityContext</div>
+    </div>
+    <div class="qcard wide">
+      <div class="qw">WHEN · 지금 써도 되나</div>
+      <div class="qt">게이팅 (Gating)</div>
+      <div class="qd">발동을 허락하거나 막는 조건. 쿨다운이 안 돌았나 · 코스트가 있나 · "기절 중이라 발동 불가" 같은 상태 조건.
+      코드의 <code>if</code>가 아니라 데이터로 표현하는 것이 핵심.</div>
+      <div class="qmap">→ AbilityRunner (쿨다운) + GameplayTag (상태 조건)</div>
+    </div>
+  </div>
+
+  <div class="callout c-green" style="margin-top:18px;">
+    <span class="lbl">이 다섯이 전부다</span>
+    새로운 스킬을 상상할 때 "이건 시스템으로 표현 가능한가?"를 묻는 대신,
+    <b>이 다섯 칸을 채울 수 있는가</b>를 물으면 된다. 채워지면 데이터로 만들 수 있고, 안 채워지면 새 <em>블록(Effect)</em>이 하나 필요하다는 신호다.
+  </div>
+</section>
+
+<!-- ============ 3. ANALOGY ============ -->
+<section class="page">
+  <h2><span class="n">03</span>비유로 잡는 직관 — 주방</h2>
+  <p class="h2sub">추상 타입들이 헷갈릴 때, 이 대응표 하나면 관계가 다시 선명해진다.</p>
+
+  <p class="lead">어빌리티 시스템은 <em>주방</em>과 똑같이 생겼다. 가장 헷갈리는 지점 —
+  "정의(데이터)"와 "실행(런타임)"의 차이 — 이 비유가 단번에 정리해 준다.</p>
+
+  <table class="analogy">
+    <thead><tr><th>주방에서는</th><th>시스템에서는</th><th>성질</th></tr></thead>
+    <tbody>
+      <tr><td class="k">레시피 카드</td><td><b>어빌리티 / 이펙트 정의</b> (AbilityData, EffectData)</td><td class="m">종이 한 장. 100번 요리해도 안 변함. 모두가 공유.</td></tr>
+      <tr><td class="k">조리 단계 (썰기·볶기·끓이기)</td><td><b>이펙트 블록</b> (DealDamage, SpawnProjectiles…)</td><td class="m">재사용되는 동작. 여러 레시피가 같은 단계를 씀.</td></tr>
+      <tr><td class="k">요리사</td><td><b>캐스터</b> (IAbilityCaster)</td><td class="m">레시피대로 만드는 주체. 누구든 같은 방식으로.</td></tr>
+      <tr><td class="k">이번 주문표 (3번 테이블, 덜 맵게)</td><td><b>컨텍스트</b> (AbilityContext)</td><td class="m">이 한 번에만 해당. 대상·좌표·스탯.</td></tr>
+      <tr><td class="k">실제로 나온 접시</td><td><b>런타임 이펙트 인스턴스</b> (IEffect)</td><td class="m">매번 새것. 만들어지는 도중 상태가 있음.</td></tr>
+      <tr><td class="k">재료 재고 · 화구 점유</td><td><b>코스트 · 쿨다운 · 상태 태그</b></td><td class="m">지금 만들어도 되는지의 조건.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout c-warn">
+    <span class="lbl">이 비유가 지켜주는 단 하나의 규칙</span>
+    <b>레시피 카드에 낙서하지 마라.</b> 요리가 짜다고 레시피 종이의 소금량을 볼펜으로 고치면,
+    다음 요리사도, 내일의 나도 영영 그 값으로 만든다. → 이게 <em>"SO 필드를 런타임에 바꾸지 마라"</em>의 진짜 이유다.
+    바꾸고 싶으면 접시(런타임 인스턴스) 위에서 바꾸거나, 레시피 카드를 <em>한 장 더</em> 만든다.
+  </div>
+</section>
+
+<!-- ============ 4. COMPOSITION ============ -->
+<section class="page">
+  <h2><span class="n">04</span>핵심 사상 — "상속"이 아니라 "조합"</h2>
+  <p class="h2sub">스킬 하나 = 클래스 하나였던 세계에서, 스킬 하나 = 블록의 목록인 세계로.</p>
+
+  <p class="lead">어빌리티 시스템의 심장은 이 한 번의 관점 전환이다. 스킬을 <em>덩어리</em>로 보지 않고
+  <em>블록의 배치</em>로 본다. 레고와 같다 — 새 모델은 새 부품을 깎는 게 아니라, 있는 부품을 새로 배치하는 것.</p>
+
+  <div class="vs">
+    <div class="col old">
+      <span class="tag">이전 · 상속</span>
+      <h4>스킬 = 클래스 하나</h4>
+      <ul>
+        <li>"불꽃 3연발 + 화상"을 만들려면 <b>새 클래스</b>를 짠다</li>
+        <li>거의 같은 스킬도 값 하나 다르면 클래스가 갈라짐</li>
+        <li>조합 불가 — 데미지·상태이상·연출이 한 덩어리로 굳음</li>
+        <li>새 스킬 = 새 코드 + 재컴파일 (프로그래머만)</li>
+      </ul>
+      <div class="mono">class FireTripleBurnSkill : SkillBase { … 전부 다시 … }</div>
+    </div>
+    <div class="col new">
+      <span class="tag">현재 · 조합</span>
+      <h4>스킬 = 블록의 목록</h4>
+      <ul>
+        <li>있는 블록을 <b>배치</b>만 한다 — 새 코드 0</li>
+        <li>값이 다르면 같은 블록의 asset을 하나 더 (Count 3 vs 1)</li>
+        <li>데미지 + 화상 + 연출을 <b>자유롭게 얹음</b></li>
+        <li>새 스킬 = asset 편집 (<b>디자이너 가능</b>)</li>
+      </ul>
+      <div class="mono">Repeat(3) { SpawnProjectiles(1) }<br>+ ApplyStatus(Burn)<br>+ SpawnVFX(Muzzle)</div>
+    </div>
+  </div>
+
+  <div class="callout c-key">
+    <span class="lbl">언제 새 블록(Effect)이 필요한가 — 값/로직/상태 3축</span>
+    <b>값</b>이 다를 뿐이면(5발 vs 1발) → asset을 하나 더. &nbsp;<b>로직</b>이 근본적으로 다르면(투사체 vs 지연 장판) → 새 Effect 클래스.
+    &nbsp;발동 도중 <b>기억할 상태</b>가 있으면(도트의 경과시간) → 런타임 인스턴스로 분리. 이 세 갈래가 "언제 코드를 쓰고 언제 데이터로 끝내는가"의 판단 기준이다.
+  </div>
+</section>
+
+<!-- ============ 5. LIFECYCLE ============ -->
+<section class="page">
+  <h2><span class="n">05</span>한 번의 발동이 흐르는 길</h2>
+  <p class="h2sub">입력에서 효과까지, 모든 캐스터가 <b>똑같은 한 줄기</b>로 흐른다. 이 단일 경로가 시스템의 존재 이유다.</p>
+
+  <div class="flow">
+    <div class="step">
+      <div class="dot">1</div>
+      <div class="body"><div class="st">발동 신호</div>
+      <div class="sd">애니메이션 이벤트 · 플레이어 입력 · 타임라인 시그널 중 하나가 "지금, 이 어빌리티" 하고 방아쇠를 당긴다. 타이밍의 주인은 발동자마다 다르지만, 도착지는 하나다.</div></div>
+    </div>
+    <div class="step">
+      <div class="dot">2</div>
+      <div class="body"><div class="st">캐스터가 어빌리티를 지목</div>
+      <div class="sd">캐스터가 자기 컨텍스트(스탯·총구·대상)를 꾸려서 러너에게 넘긴다. "이 어빌리티를, 이 상황으로 써 줘."</div></div>
+    </div>
+    <div class="step gate">
+      <div class="dot">3</div>
+      <div class="body"><div class="st">게이트 — 지금 써도 되나?</div>
+      <div class="sd">쿨다운이 돌았나 · 코스트가 되나 · 요구 태그를 갖고 차단 태그가 없나. 하나라도 실패하면 <b>여기서 조용히 멈춘다</b>(쿨다운도 소모 안 함).</div></div>
+    </div>
+    <div class="step">
+      <div class="dot">4</div>
+      <div class="body"><div class="st">(캐스트타임) 시전 대기</div>
+      <div class="sd">채널링이 있으면 그만큼 기다린다. 이 동안 "시전 중" 태그가 붙어 다른 발동을 막을 수 있다. 중간에 취소되면 태그는 반드시 풀린다.</div></div>
+    </div>
+    <div class="step">
+      <div class="dot">5</div>
+      <div class="body"><div class="st">이펙트를 순서대로 실행</div>
+      <div class="sd">어빌리티에 얹힌 블록들이 위에서 아래로 흐른다. 투사체 스폰 → 총구 화염 → 데미지 → 상태이상 부여… 각 블록은 자기 일만 안다.</div></div>
+    </div>
+    <div class="step">
+      <div class="dot">6</div>
+      <div class="body"><div class="st">결과 적용</div>
+      <div class="sd">데미지 파이프라인, 상태이상 등록, 연출 재생. <b>주의</b> — 투사체 데미지는 "발동 시점"이 아니라 "명중 시점"에 확정된다(아래 §07).</div></div>
+    </div>
+  </div>
+
+  <div class="callout c-green">
+    <span class="lbl">왜 굳이 "하나의 길"인가</span>
+    플레이어·잡몹·보스가 각자 다른 길로 발동하면, 쿨다운·태그·취소 안전을 <b>세 번 구현</b>하고 세 번 버그를 고쳐야 한다.
+    길을 하나로 합치면 그 모든 규칙이 <em>한 곳(러너)</em>에만 살고, 새 캐스터는 그 길에 올라타기만 하면 된다.
+  </div>
+</section>
+
+<!-- ============ 6. STATE / TWO TIMES ============ -->
+<section class="page">
+  <h2><span class="n">06</span>가장 어려운 축 — "상태"와 두 개의 시간</h2>
+  <p class="h2sub">발동은 쉽다. 어려운 건 "발동이 끝난 뒤에도 남는 것"이다.</p>
+
+  <p class="lead">데미지 한 방은 발동하고 끝난다. 하지만 화상 5초, 공격력 버프, 기절 —
+  이것들은 발동이 끝나도 <em>붙어서 시간이 흐른다.</em> 어빌리티 시스템이 초심자에게 가장 헷갈리는 지점이 바로 이
+  "두 개의 시간"을 구분하는 것이다.</p>
+
+  <div class="twotime">
+    <div class="tt inst">
+      <div class="tth">⚡ 순간 (Instant)</div>
+      <div class="ttd">발동하는 즉시 일어나고 끝나는 것. 이펙트 블록이 실행되면 그 자리에서 완결된다. 상태를 남기지 않는다.</div>
+      <div class="ex">DealDamage · SpawnProjectiles · SpawnVFX</div>
+    </div>
+    <div class="tt dur">
+      <div class="tth">⏳ 지속 (Duration)</div>
+      <div class="ttd">발동은 "부착"만 하고, 그 뒤로 <b>맞은 쪽에 붙어</b> 스스로 시간이 흐르는 것. 도트 데미지, 버프, 기절 창.</div>
+      <div class="ex">ApplyStatus(Burn 5s) · Defense −30% 6s</div>
+    </div>
+  </div>
+
+  <h3>지속 상태는 누가 소유하는가 — "맞은 쪽"이다</h3>
+  <p>여기서 결정적인 개념 하나. 화상은 <em>때린 사람</em>이 아니라 <em>맞은 사람</em>에게 붙는다. 그래서 지속 상태를 tick(갱신·만료)하는 주인은
+  발동자가 아니라 <strong>대상</strong>이다. 이펙트는 "불을 붙이는 일"만 하고 손을 뗀다. 그 뒤 타들어 가는 건 대상의 몫(StatusSystem).
+  때린 사람이 죽어도 화상은 계속 타야 하니까.</p>
+
+  <h3>또 하나의 상태 — 조건 태그 (발동 가능/불가)</h3>
+  <p>"기절 중엔 아무것도 못 쓴다", "가드 중엔 특정기만" 같은 건 <em>효과</em>가 아니라 <em>조건</em>이다. 이건 태그로 표현한다.
+  중요한 건 이 조건 축이 <strong>FSM(Idle/Move/Attack…)과 직교(병렬)</strong>한다는 것 — 기절은 어느 모드에도 겹칠 수 있어서
+  FSM 상태로 넣으면 조합이 폭발한다. 그래서 FSM은 그대로 두고, 병렬 조건만 태그가 담당한다.</p>
+
+  <div class="callout c-key">
+    <span class="lbl">상태를 세 통에 나눠 담아라</span>
+    <span class="pill">순간 효과 = 이펙트가 즉시 처리</span>
+    <span class="pill">지속 효과 = 대상의 StatusSystem이 tick</span>
+    <span class="pill">발동 조건 = 태그(FSM과 병렬)</span>
+    <br>이 세 통을 섞으면 무대뽀가 되고, 나누면 시스템이 된다.
+  </div>
+</section>
+
+<!-- ============ 7. DESIGN CHECKLIST ============ -->
+<section class="page">
+  <h2><span class="n">07</span>무대뽀 방지 체크리스트</h2>
+  <p class="h2sub">구현에 손대기 전에 이 질문들에 먼저 답이 서 있어야 한다. 계획이란 곧 이 답들이다.</p>
+
+  <div class="check">
+    <div class="item"><div class="num">Q1</div><div><div class="qq">발동 주체의 공통 계약은 무엇인가?</div>
+      <div class="aa">모든 캐스터가 공유하는 최소한의 약속. <b>답:</b> "어빌리티를 발동할 수 있다"는 신분 하나. 발동 진입점(입력/애니/타임라인)은 달라도 된다.</div></div></div>
+
+    <div class="item"><div class="num">Q2</div><div><div class="qq">값이 다른가, 로직이 다른가, 상태가 다른가?</div>
+      <div class="aa">새 요구가 올 때마다 이 3축으로 분류. <b>값</b>→asset 추가 · <b>로직</b>→새 Effect · <b>상태</b>→런타임 인스턴스. 분류를 건너뛰면 클래스가 폭발한다.</div></div></div>
+
+    <div class="item"><div class="num">Q3</div><div><div class="qq">데이터(불변)와 런타임(가변)의 경계는 어디인가?</div>
+      <div class="aa">레시피 카드 / 나온 접시. 공유·불변은 SO, 매번 새것·상태 있음은 인스턴스. <b>SO 필드는 런타임에 절대 안 바꾼다.</b></div></div></div>
+
+    <div class="item"><div class="num">Q4</div><div><div class="qq">발동 타이밍은 누가 소유하는가?</div>
+      <div class="aa">플레이어=애니메이션 이벤트(프레임 정확도), 보스=타임라인 시그널, 잡몹=BT/애니. 타이밍의 주인은 달라도 <b>도착지는 러너 하나</b>.</div></div></div>
+
+    <div class="item"><div class="num">Q5</div><div><div class="qq">데미지는 언제 확정되는가 — 발동 시점? 명중 시점?</div>
+      <div class="aa">투사체는 <b>명중 시점</b>. 계산은 발동자 스탯으로 하되, 값을 스냅샷 패킷으로 <b>투사체가 배달</b>한다. 발동자가 죽어도(풀 반환) 안전.</div></div></div>
+
+    <div class="item"><div class="num">Q6</div><div><div class="qq">지속 상태는 누가 소유하고 누가 tick 하는가?</div>
+      <div class="aa"><b>대상</b>이 소유하고 tick. 이펙트는 부착만. 때린 사람과 상태의 수명을 분리해야 죽음·풀 반환에서 안전하다.</div></div></div>
+
+    <div class="item"><div class="num">Q7</div><div><div class="qq">발동 가능/불가 조건은 코드인가 데이터인가?</div>
+      <div class="aa"><b>데이터(태그).</b> "기절 중 불가"를 <code>if</code>로 흩뿌리면 스킬마다 재구현. Required/Blocked 태그로 러너 한 곳에서 게이팅.</div></div></div>
+  </div>
+</section>
+
+<!-- ============ 8. MAP TO PROJECT ============ -->
+<section class="page">
+  <h2><span class="n">08</span>개념을 우리 코드에 대입</h2>
+  <p class="h2sub">위에서 세운 개념 어휘가, 실제 프로젝트에서 어떤 타입으로 살아 있는지의 대응표.</p>
+
+  <table class="maptbl">
+    <thead><tr><th>개념 (이 문서)</th><th>우리 구현</th><th>역할</th></tr></thead>
+    <tbody>
+      <tr><td class="c">누가 발동하나</td><td><code>IAbilityCaster</code> — BaseCharacter · BaseMonsterController · BossMonsterController</td><td class="role">캐스터 신분</td></tr>
+      <tr><td class="c">무엇을 발동하나</td><td><code>AbilityData</code> (ScriptableObject)</td><td class="role">스킬 정의</td></tr>
+      <tr><td class="c">발동 게이트·타이밍</td><td><code>AbilityRunner</code> — 쿨다운/캐스트타임 소유, <code>TryCast</code></td><td class="role">단일 경로</td></tr>
+      <tr><td class="c">이번 상황</td><td><code>AbilityContext</code> — 스탯·대상·착탄점·총구·태그</td><td class="role">발동 문맥</td></tr>
+      <tr><td class="c">조립 블록 (정의)</td><td><code>EffectData</code> (추상 SO) →<code>CreateRuntime()</code></td><td class="role">레시피 단계</td></tr>
+      <tr><td class="c">조립 블록 (실행)</td><td><code>IEffect</code> — DealDamage · SpawnProjectiles · AreaStrike · RepeatEffect …</td><td class="role">런타임 동작</td></tr>
+      <tr><td class="c">지속 효과</td><td><code>StatusRunner</code> · <code>ApplyStatModifier</code> / <code>ApplyStatusTag</code></td><td class="role">대상이 tick</td></tr>
+      <tr><td class="c">발동 조건 (병렬 상태)</td><td><code>GameplayTagSO</code> · <code>GameplayTagContainer</code> (Required/Blocked/Grants)</td><td class="role">Lite GAS</td></tr>
+    </tbody>
+  </table>
+
+  <h3>개념 지도</h3>
+  <div style="border:1px solid var(--line); border-radius:12px; padding:20px 24px; background:var(--shade); font-size:9.4pt; line-height:1.9; font-family:'Cascadia Code','Consolas',monospace; color:#3a4150;">
+    <b style="color:var(--accent);">캐스터</b> ─ (신호: 입력·애니·타임라인) ─▶ <b style="color:var(--warm);">러너</b><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;└ 들고 있음: 어빌리티 목록 · 컨텍스트<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ 게이트(쿨다운·코스트·태그) ▶ 캐스트타임<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<b>어빌리티</b>(정의·SO) ── 이펙트 목록을 순서대로 ──▶ <b style="color:var(--green);">이펙트 실행</b><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;순간→ 데미지·투사체·연출 &nbsp;&nbsp;|&nbsp;&nbsp; 지속→ 대상 StatusSystem이 tick
+  </div>
+</section>
+
+<!-- ============ 9. BOUNDARIES ============ -->
+<section class="page">
+  <h2><span class="n">09</span>개념적 경계선 — 자주 혼동하는 것들</h2>
+  <p class="h2sub">이 네 개를 헷갈리면 시스템이 다시 무대뽀로 무너진다. 경계를 또렷하게.</p>
+
+  <table class="analogy">
+    <thead><tr><th style="width:30%">혼동</th><th>경계</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="k">"발동 = 데미지"</td>
+        <td>아니다. 발동은 <b>투사체를 쏘는 것</b>까지고, 데미지는 <b>명중 시점</b>에 별도로 확정된다. 이 둘을 붙여 놓으면 빗나간 총알도 데미지를 주거나, 발동자가 죽으면 데미지가 사라진다.</td>
+      </tr>
+      <tr>
+        <td class="k">"태그 = FSM 상태"</td>
+        <td>아니다. FSM은 <b>배타적 모드</b>(한 번에 하나: Idle이거나 Attack이거나). 태그는 <b>병렬 조건</b>(기절이면서 동시에 표식 걸림). 합치면 상태 조합이 폭발한다.</td>
+      </tr>
+      <tr>
+        <td class="k">"SO 값을 바꾸면 되지"</td>
+        <td>안 된다. SO는 공유되는 <b>레시피 카드</b>. 런타임에 고치면 모든 인스턴스가 오염되고, 에디터에선 플레이 종료 후에도 값이 영구히 남는다. 변형은 asset을 하나 더 만들거나 스탯을 곱해 읽는다.</td>
+      </tr>
+      <tr>
+        <td class="k">"반복 안에 반복"</td>
+        <td>조합엔 함정이 있다. Repeat(5) 안의 SpawnProjectiles도 Count 5면 <b>25발</b>이 나간다. 반복의 책임은 <b>한 곳(Repeat)</b>에만 둔다. 조합의 자유엔 "책임의 단일 소재지"라는 규율이 따라온다.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout c-green" style="margin-top:22px;">
+    <span class="lbl">이 문서를 한 문장으로</span>
+    어빌리티 시스템은 <b>"발동되는 모든 것"을 다섯 질문(누가·무엇을·어떻게·어떤 상황·언제)으로 쪼개고,
+    정의(레시피)와 실행(접시)을 분리한 채, 스킬을 상속이 아닌 조합으로 짓는 틀</b>이다.
+    이 개념이 서면, 그다음 구현은 "칸을 채우는 일"이 된다.
+  </div>
+
+  <div class="footer">
+    <span>Operation Kivotos · Ability System — 개념 정립 문서</span>
+    <span>구현 세부: README.md · AbilitySystem_Portfolio.md · TagSystem.md</span>
+  </div>
+</section>
+
+</body>
+</html>

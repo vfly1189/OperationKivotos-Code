@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>AbilitySystem — 무엇을 누가 소유하나 (개념 정리)</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:15mm 15mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.62; font-size:10.6pt; }
+  h1{ font-size:22pt; margin:0 0 8px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8.6pt; letter-spacing:.26em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:10px; }
+  h2{ font-size:14pt; margin:24px 0 4px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:9.5pt; margin:2px 0 13px; padding-bottom:9px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 9px; }
+  strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:9pt; background:var(--shade); padding:1px 5px; border-radius:5px; border:1px solid var(--line2); }
+  ul{ margin:0 0 9px; padding-left:18px; } li{ margin:4px 0; }
+  .big{ border:1px solid var(--line); border-left:5px solid var(--blue); border-radius:11px; padding:14px 18px; margin:15px 0; background:#fbfcfe; font-size:11pt; }
+  .big b{ color:var(--blue-ink); }
+  table{ width:100%; border-collapse:collapse; margin:12px 0; font-size:9.7pt; break-inside:avoid; }
+  th{ text-align:left; padding:8px 11px; background:var(--ink); color:#fff; font-weight:700; font-size:9pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:8px 11px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); }
+  .callout{ border-radius:11px; padding:13px 17px; margin:15px 0; font-size:9.9pt; line-height:1.58; break-inside:avoid; }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .callout .lbl{ font-weight:800; font-size:8.5pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:4px; }
+  .cap{ text-align:center; font-size:9pt; color:var(--faint); margin:4px 0 14px; }
+  .quotes{ border:1px dashed var(--blue); border-radius:11px; padding:8px 18px; margin:14px 0; background:#fbfcff; }
+  .quotes li{ margin:7px 0; font-size:10pt; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .s-b{ font-size:12px; font-weight:700; } .s-t{ font-size:12px; } .s-s{ font-size:10px; fill:#5b6270; }
+  .footer{ margin-top:22px; padding-top:8px; border-top:1px solid var(--line); font-size:8.2pt; color:var(--faint); }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · AbilitySystem · 개념 정리 (서사 재료)</div>
+<h1>무엇을 누가 소유하나</h1>
+
+<div class="big">
+  플레이어·보스·몬스터가 각자 갖고 있던 공격 코드를 <b>AbilityRunner 단일 창구</b>로 모아 <b>쿨타임·비용 판단을 한 곳에서</b> 하게 했다.
+  실제 효과는 자주 쓰는 패턴을 <b>Effect로 정의해두고 조합</b>해서 만든다. <em>효과가 나가는 순간은 애니메이션 이벤트가 담당</em>해 타격감을 살렸다.
+</div>
+
+<!-- 큰 그림 -->
+<h2>큰 그림</h2>
+<p class="h2sub">전에는 공격 코드가 3벌·쿨타임이 여러 곳. 지금은 한 창구로.</p>
+<svg width="100%" viewBox="0 0 700 150" role="img" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="20" y="34" width="96" height="26" rx="7" fill="#eef2ff" stroke="#3b5bdb"/><text class="s-t" x="68" y="52" text-anchor="middle">플레이어</text>
+  <rect x="20" y="66" width="96" height="26" rx="7" fill="#eef2ff" stroke="#3b5bdb"/><text class="s-t" x="68" y="84" text-anchor="middle">몬스터</text>
+  <rect x="20" y="98" width="96" height="26" rx="7" fill="#eef2ff" stroke="#3b5bdb"/><text class="s-t" x="68" y="116" text-anchor="middle">보스</text>
+
+  <rect x="250" y="55" width="170" height="48" rx="11" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/>
+  <text class="s-b" x="335" y="76" text-anchor="middle" fill="#1f6b2e">AbilityRunner</text>
+  <text class="s-s" x="335" y="93" text-anchor="middle">단일 창구 · 쿨·비용·태그 판단</text>
+
+  <rect x="510" y="55" width="170" height="48" rx="11" fill="#f7f8fa" stroke="#c7ccd6"/>
+  <text class="s-b" x="595" y="76" text-anchor="middle">Effect 조합 실행</text>
+  <text class="s-s" x="595" y="93" text-anchor="middle">패턴을 섞어서</text>
+
+  <line x1="116" y1="47" x2="248" y2="70" stroke="#2b8a3e" marker-end="url(#a)"/>
+  <line x1="116" y1="79" x2="248" y2="79" stroke="#2b8a3e" marker-end="url(#a)"/>
+  <line x1="116" y1="111" x2="248" y2="88" stroke="#2b8a3e" marker-end="url(#a)"/>
+  <line x1="420" y1="79" x2="508" y2="79" stroke="#8a91a0" marker-end="url(#a)"/>
+</svg>
+<div class="cap">새 스킬 = 코드가 아니라 데이터(Effect) 조합.</div>
+
+<!-- 핵심: 관심사 분리 -->
+<h2>핵심 — "발동 타이밍"은 두 가지 뜻</h2>
+<p class="h2sub">여기가 설명할 때 헷갈리는 지점. 러너가 다 갖는 게 아니라 둘로 갈린다.</p>
+<table>
+  <thead><tr><th>무엇</th><th>뜻</th><th>소유자</th></tr></thead>
+  <tbody>
+    <tr><td class="who">발동 자격 판단</td><td>"지금 써도 되나?" — 쿨 끝났나 · 비용 되나 · 태그 되나</td><td><b>AbilityRunner</b></td></tr>
+    <tr><td class="who">실제 발사 순간</td><td>"애니메이션 어느 프레임에 총알/효과가 나가나"</td><td><b>애니메이션 이벤트</b></td></tr>
+  </tbody>
+</table>
+<div class="callout c-green">
+  <span class="lbl">자랑 포인트</span>
+  <b>"판단은 시스템(러너)이, 타이밍은 애니메이션이."</b> 이 역할 나눔 덕에 ① 쿨·비용 규칙이 한 곳에서 관리되고 ② 발사가 애니 프레임에 정확히 붙어 타격감이 산다.
+</div>
+
+<!-- 소유권 지도 -->
+<h2>소유권 지도 — 누가 무엇을</h2>
+<p class="h2sub">한 줄 규칙: 판단·규칙 = 시스템 / 무엇을 = 데이터 / 언제·연출 = 애니메이션.</p>
+<table>
+  <thead><tr><th>관심사</th><th>소유자</th><th>메모</th></tr></thead>
+  <tbody>
+    <tr><td>입력 (키·마우스)</td><td class="who">PlayerController · BT(몹)</td><td>언제 시도할지</td></tr>
+    <tr><td>발동 자격 (쿨·비용·태그)</td><td class="who">AbilityRunner</td><td>단일 게이트</td></tr>
+    <tr><td>쿨타임 <b>값</b> (예: 15초)</td><td class="who">데이터(CharacterDataSO)</td><td>디자이너가 조정</td></tr>
+    <tr><td>쿨타임 <b>상태</b> (남은 시간)</td><td class="who">러너 인스턴스(캐스터별)</td><td>같은 스킬 에셋 공유해도 안 섞임</td></tr>
+    <tr><td><b>무엇을</b> 할지 (효과)</td><td class="who">Effect 조합 (데이터)</td><td>데미지·투사체·상태변경·범위·흐름</td></tr>
+    <tr><td><b>언제</b> 발사 (프레임)</td><td class="who">애니메이션 이벤트</td><td>타격감</td></tr>
+    <tr><td>연출 (컷신·카메라)</td><td class="who">애니메이션 / 타임라인</td><td>캐릭터 밖</td></tr>
+  </tbody>
+</table>
+
+<!-- 써먹을 문장 -->
+<h2>그대로 써먹을 문장</h2>
+<div class="quotes">
+<ul>
+  <li>(한 줄) "플레이어·보스·몬스터가 각자 갖던 공격 코드를 단일 창구로 모으고, 효과는 재사용 패턴을 조합해 데이터로 만들었다."</li>
+  <li>(관심사 분리) "발동해도 되는지(쿨·비용)는 시스템이, 실제 발사 순간은 애니메이션이 갖게 나눴다."</li>
+  <li>(효과 조합) "자주 쓰는 동작을 Effect로 정의해두고, 새 스킬은 코드 없이 이들을 조합해 만든다."</li>
+  <li>(결과) "발동 경로 3→1, 새 스킬 = 데이터 조합(코드 0), 쿨타임 관리 코드 뭉치 삭제."</li>
+</ul>
+</div>
+
+<div class="footer">Operation Kivotos · AbilitySystem 개념 정리 (서사 재료) · 상세: Phase1_Result.pdf · 쉬운판: Portfolio_Value_Easy.pdf</div>
+
+</body>
+</html>

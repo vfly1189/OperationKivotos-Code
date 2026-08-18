@@ -63,6 +63,15 @@
   <br><span class="muted" style="font-size:9pt;">계획: Phase1_Plan.pdf · 선행: Phase0_Result.md</span>
 </div>
 
+<div class="lead-box" style="border-left:4px solid #2f9e44">
+  <b>2026-08-19 갱신 — 검증 완료</b> — 이 문서의 "⚠ 에디터 컴파일 + 플레이 실측 필요"는 <b>해소됐다</b>.
+  이 구조가 적용된 상태로 <b>플레이 정상 동작을 확인</b>했고, 브랜치 <code>ability-phase1-gating</code>은
+  <code>main</code>에 머지됐다(<code>b4b1295a</code>). 죽은 심볼 잔여 참조 0 · 프리팹/씬 <code>CharacterCombat</code> 참조 0 · UI 폴링 배선 확인.
+  <br>Q 이펙트는 여전히 미발사(<code>Exs</code> 클립에 <code>AbilityBeat</code> 미배선)이나 <b>쿨·궁게이지·글로우는 정상 동작</b>하므로
+  게이팅 검증에 영향 없음 — <b>의도적 보류</b>다. 남은 항목(Phase 2 · CDR)은 <b>트리거 조건부</b>이며 순번 소화 대상이 아니다.
+  <br><span class="muted" style="font-size:9pt;">현재 상태의 단일 기준: STATUS.md</span>
+</div>
+
 <!-- 1 -->
 <h2><span class="n">01</span>AbilityRunner — admission / fire 분리 + 읽기 API</h2>
 <p class="h2sub"><code>TryCast</code> 한 덩이를 셋으로. 몹/보스 호출부는 <code>TryCast</code>(=Commit+Fire)라 무변경.</p>
