@@ -13,6 +13,7 @@ public abstract class BaseScene : MonoBehaviour
     protected int _prevIndex = -1;
     protected List<GameObject> _infoModels = new List<GameObject>();
 
+
     void Awake()
     {
         Init();
@@ -20,17 +21,13 @@ public abstract class BaseScene : MonoBehaviour
 
     protected virtual void Init()
     {
-        //Managers.Input.OnEscapePressed -= OnEscapeEvent;
-        //Managers.Input.OnEscapePressed += OnEscapeEvent;
+
     }
 
     public virtual void Clear()
     {
-        //Managers.Input.OnEscapePressed -= OnEscapeEvent;
+
     }
-
-    
-
 
     protected virtual void HandleEscape()
     {

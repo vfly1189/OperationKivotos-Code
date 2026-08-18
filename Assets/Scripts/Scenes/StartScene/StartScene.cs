@@ -19,55 +19,70 @@ public class StartScene : BaseScene
 
     float _voiceDelay = 0.5f;
 
-    // [핵심 1] 유니티 생명주기에 맞추기 위해 async UniTaskVoid를 사용
     protected override async void Init()
     {
         base.Init();
         _sceneType = Define.Scene.Start;
 
+        // 이벤트 시스템 추가
+        // 얘 없으면 UI들 작동안함
+        MakeEventSystem();
+
+        _startButton.onClick.AddListener(OnClick);
+
+        DeActiveUI();
+
+        var audioTask = PlayMainTitle();
+        var popupTask = PreloadPopups();
+        var saveTask = LoadingSaveDatas();
+
+        var globalAssetTask = Managers.Resource.LoadAsyncPreload(
+                                    new[] { "Global" },
+                                    true,                       // Global 스코프
+                                    (fileName, progress) => UpdateText(progress)
+                                        );
+
+        // [핵심 3] Task.WhenAll 대신 UniTask.WhenAll을 사용하여 스레드 데드락 방지
+        await UniTask.WhenAll(audioTask, popupTask, globalAssetTask, saveTask);
+
+        ActiveUI();
+
+        // 보이스 재생 (Invoke 대신 딜레이를 직접 주거나 UniTask.Delay 사용 가능)
+        // 여기서는 안전하게 Fire-and-forget 방식(UniTaskVoid)으로 백그라운드 재생
+        PlayTitleVoiceWithDelay(_voiceDelay).Forget();    
+
+        Managers.Input.OnEscapePressed -= HandleEscape;
+        Managers.Input.OnEscapePressed += HandleEscape;
+    }
+
+    public void DeActiveUI()
+    {
+        // 1. 초기 UI 상태 세팅
+        _loadingText.gameObject.SetActive(true);
+        if (_tapToStartGroup != null) _tapToStartGroup.SetActive(false);
+        _startButton.interactable = false;
+        _soundSettingButton.gameObject.SetActive(false);
+    }
+
+    public void ActiveUI()
+    {
+        // 4. 로딩 완료!
+        _startButton.interactable = true;
+        _soundSettingButton.gameObject.SetActive(true);
+
+        // 5. 로딩 완료 처리 (유저 조작 허용)
+        _loadingText.gameObject.SetActive(false);
+        if (_tapToStartGroup != null) _tapToStartGroup.SetActive(true);
+    }
+
+    public void MakeEventSystem()
+    {
         // 씬에 올려둔 EventSystem을 찾아서 파괴되지 않게 설정
         EventSystem eventSystem = FindAnyObjectByType<EventSystem>();
         if (eventSystem != null)
         {
             DontDestroyOnLoad(eventSystem.gameObject);
         }
-
-        _startButton.onClick.AddListener(OnClick);
-
-        // 1. 초기 UI 상태 세팅
-        _loadingText.gameObject.SetActive(true);
-        if (_tapToStartGroup != null) _tapToStartGroup.SetActive(false);
-        _startButton.interactable = false;
-        _soundSettingButton.gameObject.SetActive(false);
-
-        // 2. 비동기 로딩 병렬 실행 (UniTask 기반)
-        var audioTask = PlayMainTitle();
-        var popupTask = PreloadPopups();
-        var saveTask = LoadingSaveDatas();
-
-        var globalAssetTask = Managers.Resource.LoadAsyncPreload(
-    new[] { "Global" },
-    true,                       // Global 스코프
-    (fileName, progress) => UpdateText(progress)
-);
-
-        // [핵심 3] Task.WhenAll 대신 UniTask.WhenAll을 사용하여 스레드 데드락 방지
-        await UniTask.WhenAll(audioTask, popupTask, globalAssetTask, saveTask);
-
-        // 4. 로딩 완료!
-        _startButton.interactable = true;
-        _soundSettingButton.gameObject.SetActive(true);
-        // 보이스 재생 (Invoke 대신 딜레이를 직접 주거나 UniTask.Delay 사용 가능)
-        // 여기서는 안전하게 Fire-and-forget 방식(UniTaskVoid)으로 백그라운드 재생
-        PlayTitleVoiceWithDelay(_voiceDelay).Forget();
-
-        // 5. 로딩 완료 처리 (유저 조작 허용)
-        _loadingText.gameObject.SetActive(false);
-        if (_tapToStartGroup != null) _tapToStartGroup.SetActive(true);
-
-
-        Managers.Input.OnEscapePressed -= HandleEscape;
-        Managers.Input.OnEscapePressed += HandleEscape;
     }
 
     public void UpdateText(float progress)
@@ -75,7 +90,6 @@ public class StartScene : BaseScene
         _loadingText.text = $"Loading ... 진행률 : {progress * 100.0f}%";
     }
 
-    // [핵심 4] Task -> UniTask로 반환형 변경
     private async UniTask PlayMainTitle()
     {
         if (_preloadData.mainTitleBgm != null && _preloadData.mainTitleBgm.RuntimeKeyIsValid())
@@ -118,8 +132,7 @@ public class StartScene : BaseScene
     {
         if (_preloadData.exitPopup != null && _preloadData.exitPopup.RuntimeKeyIsValid())
         {
-            // 팝업 프리팹은 게임 내내 쓰이므로 글로벌 속성(isGlobal = true)으로 로드
-            await Managers.Resource.LoadAsync<GameObject>(_preloadData.exitPopup, true);
+            await Managers.Resource.LoadAsync<GameObject>(_preloadData.exitPopup);
         }
     }
 
@@ -140,9 +153,9 @@ public class StartScene : BaseScene
     }
 
     void OnClick()
-    {
+    {  
+        Managers.Sound.StopAll();
         Managers.SceneEx.LoadScene(Define.Scene.Select);
-        Managers.Sound.StopBgm();
     }
 
     protected override void HandleEscape()

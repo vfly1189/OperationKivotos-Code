@@ -150,9 +150,6 @@ public class UIManager
             T popup = Util.GetOrAddComponent<T>(go);
             _popupStack.Push(popup);
             Managers.Input.PushContext(InputContext.UI);   // 팝업 열림 → 게임플레이 입력 차단
-
-            GameLog.Log($"팝업 스택 : {_popupStack.Count}");
-
             SetCanvas(go, true);
 
             ResourceMetrics.MarkUIShown(addressableKey); // [Phase 0.5 계측] "표시됨" 마킹 (요청→표시 구간 확정)

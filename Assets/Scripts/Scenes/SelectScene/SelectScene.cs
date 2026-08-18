@@ -17,7 +17,6 @@ public class SelectScene : BaseScene
     private int _currentSchoolIdx = -1;
     private GameObject _loadingCoverInstance;
 
-    // [핵심 변경 1] async UniTaskVoid로 선언 (유니티 생명주기에 맞춤)
     protected override async void Init()
     {
         base.Init();
@@ -32,7 +31,6 @@ public class SelectScene : BaseScene
                 _loadingCoverInstance.AddComponent<CanvasGroup>().alpha = 1f;
             _loadingCoverInstance.GetComponent<LoadingSceneController>().SetValue(1f);
         }
-
 
         // 비동기 작업들 대기 (await)
         await CreateModelCamera();
