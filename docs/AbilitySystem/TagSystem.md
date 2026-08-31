@@ -2,7 +2,7 @@
 
 > **한 줄 요약** — 선형 캐스트 파이프라인(`TryCast → 이펙트 실행`)은 그대로 두고, **태그(GameplayTag) 레이어**를 얹어 발동을 게이팅하고 지속 상태를 관리한다. 태그 자체는 힘이 없고, **"쓰는 쪽(write)"과 "읽는 쪽(read)"이 공유 어휘로 이어질 때만** 의미를 갖는다.
 >
-> 관련: [README](README.md) · [RoleSystemDesign](RoleSystemDesign.md) · [PortfolioEnhancement](PortfolioEnhancement.md)
+> 관련: [README](README.md) · [RoleSystemDesign](RoleSystemDesign.md)
 
 ---
 

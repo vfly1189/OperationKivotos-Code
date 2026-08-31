@@ -20,7 +20,7 @@
 | 프리팹·씬의 `CharacterCombat` 참조 | 0 |
 | UI 폴링 배선 | 완료 — `GameSceneCanvas.Update` → `ActiveCharacterHUD.UpdateCooldowns` → 파사드, 벤치는 `PartySlotUI` 자체 폴링 |
 
-> ⚠️ [Narrative_and_Roadmap](Narrative_and_Roadmap.pdf)(2026-08-10)의 "브랜치 미머지·미검증"과
+> ⚠️ 이전 로드맵 문서(2026-08-10)의 "브랜치 미머지·미검증"과
 > [Phase1_Result.md](Phase1_Result.md)의 "⚠ 실측 필요"는 **작성 시점 기준이며 현재는 해소됐다.**
 
 ## 실물 인벤토리
@@ -49,7 +49,7 @@
 ## 문서 읽는 순서
 
 1. **이 문서** — 현재 상태
-2. [Narrative_and_Roadmap.pdf](Narrative_and_Roadmap.pdf) — 서사·판단 근거 (특히 `IAbilityCaster` = 의도된 마커라는 결정 A). *로드맵 항목 0·1은 완료됨*
+2. **서사·판단 근거** (특히 `IAbilityCaster` = 의도된 마커라는 결정 A). *로드맵 항목 0·1은 완료됨*
 3. [Phase1_Result.md](Phase1_Result.md) · [Phase0_Result.md](Phase0_Result.md) — 구현 상세
 4. [README.md](README.md) · [BossMigration.md](BossMigration.md) · [CharacterMigration.md](CharacterMigration.md) — 이관 기록
 5. [Aug_Plan.md](Aug_Plan.md) — **보류**(위 3번 사유)

@@ -2,7 +2,7 @@
 
 > 📌 **현재 상태는 [STATUS.md](STATUS.md) 가 기준** (2026-08-19: Phase 1 머지·플레이 검증 완료, 트랙 종료). 이 문서는 이관 기록이다.
 
-> **한 줄 요약** — 보스·플레이어·일반몹이 **제각각 하드코딩**하던 공격/스킬 로직을, **하나의 러너(AbilityRunner) + 데이터(AbilityData/EffectData) + 실행 부품(IEffect)** 로 통합했다. (`IAbilityCaster`는 규약이 아니라 **시전자 신원 마커**다 — 계획했던 공통 진입점은 `UseAbility`의 2축 구조로, 태그 노출은 `AbilityContext.Tags`로 각각 흡수됐다. 상세: [Narrative_and_Roadmap.pdf](Narrative_and_Roadmap.pdf) Part 2) 새 공격은 이제 코드가 아니라 **데이터(Effect 조합)** 로 만든다.
+> **한 줄 요약** — 보스·플레이어·일반몹이 **제각각 하드코딩**하던 공격/스킬 로직을, **하나의 러너(AbilityRunner) + 데이터(AbilityData/EffectData) + 실행 부품(IEffect)** 로 통합했다. (`IAbilityCaster`는 규약이 아니라 **시전자 신원 마커**다 — 계획했던 공통 진입점은 `UseAbility`의 2축 구조로, 태그 노출은 `AbilityContext.Tags`로 각각 흡수됐다.) 새 공격은 이제 코드가 아니라 **데이터(Effect 조합)** 로 만든다.
 >
 > **📄 Part 1(이 문서)** = 몹 이관(AR/RL/Tank) + 총구화염 VFX. **후속: [BossMigration.md](BossMigration.md)** = 보스 이관(BT+Timeline+Signal 정리, 패턴/분기/소환 Effect, Anchor 공용화). **[CharacterMigration.md](CharacterMigration.md)(Part 3)** = 플레이어 캐릭터 12종 이관(캐릭터=클래스 제거, 크리 경로, SpreadProjectiles/DelayEffect, 발동 경로 3갈래 완전 통합).
 

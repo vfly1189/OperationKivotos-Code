@@ -74,5 +74,4 @@ E 스킬은 **캐릭터가 아니라 역할**이 결정한다. (→ 캐릭터별
 
 ## 관련 문서
 - [CharacterMigration.md](CharacterMigration.md) — 캐릭터 데이터 주도화(Part 3)
-- [PortfolioEnhancement.md](PortfolioEnhancement.md) — 강화 우선순위
 - 구현 계획은 이 문서 채택 후 별도 정리
