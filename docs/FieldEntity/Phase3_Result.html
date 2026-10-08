@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>필드 엔티티 — Phase 3 결과</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:16px 0 3px; font-weight:800; break-after:avoid; }
+  h3{ font-size:10pt; margin:10px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  pre{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.9pt; background:var(--shade); border:1px solid var(--line); border-radius:9px; padding:8px 11px; margin:6px 0; line-height:1.45; break-inside:avoid; white-space:pre; }
+  pre .c{ color:#8a91a0; } pre .k{ color:#3b5bdb; font-weight:700; }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:10px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.8px; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:8.6pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.2pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:4px 7px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.k{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  td.c{ text-align:center; font-size:10pt; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9pt; line-height:1.48; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); } .c-violet .lbl{ color:var(--violet); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; display:block; margin-bottom:3px; }
+  .pb{ break-before:page; }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .pc{ border:1px solid var(--line); border-radius:10px; padding:7px 11px 6px; font-size:8.6pt; line-height:1.45; break-inside:avoid; }
+  .pc .hd{ font-weight:800; font-size:8.6pt; margin-bottom:2px; }
+  .pc.pro .hd{ color:var(--green-ink); } .pc.con .hd{ color:var(--amber-ink); }
+  .pc ul{ margin:0; padding-left:15px; } .pc li{ margin:1px 0; }
+  .card{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:8px 12px 7px; margin:8px 0; break-inside:avoid; font-size:8.7pt; line-height:1.45; }
+  .card.a{ border-left-color:var(--amber); } .card.v{ border-left-color:var(--violet); } .card.g{ border-left-color:var(--green); } .card.k{ border-left-color:var(--ink); }
+  .card .hd{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
+  .card .hd b{ font-size:10pt; } .card .hd span{ font-size:8pt; color:var(--muted); }
+  .card .row{ display:grid; grid-template-columns:250px 1fr; gap:12px; align-items:start; }
+  .card ul{ margin:2px 0 0; padding-left:15px; } .card li{ margin:1px 0; }
+  .card .impl{ background:var(--shade); border-radius:7px; padding:4px 9px; margin:4px 0 3px; font-size:8.2pt; }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--amber-ink); font-weight:800; }
+  .footer{ margin-top:12px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+</style>
+
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a91a0"/></marker>
+    <marker id="arv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7048e8"/></marker>
+    <marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker>
+    <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2b8a3e"/></marker>
+    <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/></marker>
+  </defs>
+</svg>
+
+<!-- ============================ 1쪽 ============================ -->
+<div class="kicker">Operation Kivotos · 필드 엔티티 관리 · Phase 3 결과</div>
+<h1>스포너 재설계 · Sector 연결</h1>
+<p class="lead"><strong>정책은 그대로, 실행 층은 새로.</strong> Sector의 동작(다른 구역에 들어가면 이전 구역을 끄고 산 몹을 즉시 회수)은 그대로 두고,
+그 밑의 스포너를 "포인트마다 돌던 비동기 작업"에서 <strong>슬롯 상태 기계 + 숫자 두 개(ReadyAt · Gen)</strong>로 바꿨다.
+이제 Sector · 거리 · 청크는 모두 <code>Activate(id)</code> / <code>DeActivate(id)</code>만 부르면 되고, 결과 차이는 정책 때문이라고 말할 수 있다.</p>
+
+<table>
+  <thead><tr><th style="width:18%">항목</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td class="k">기간</td><td>2026-10-02 · 계획 <code>02_Plan.md</code> Phase 3 · 구조 원본 <code>Spawner_Structure.pdf</code> · 개념 그림 <code>Spawner_ReadyAt_Gen.pdf</code></td></tr>
+    <tr><td class="k">커밋</td><td><code>03fd714e</code> 1단계 Record · Slot → <code>98740026</code> 2단계 SpawnerManager · Sector 연결 · 로딩 커버 버그 → <code>2cad9d49</code> Phase 3 마무리</td></tr>
+    <tr><td class="k">상태</td><td><strong>플레이 확인 완료</strong> — Sector 3→2→1 반복 왕복 · 처치 → 리스폰 · 예외 0 · <code>[Spawner]</code> 경고 0</td></tr>
+    <tr><td class="k">규모</td><td>BackStreetMap · Sector 5 · 스포너 23 · 슬롯(포인트) 363</td></tr>
+  </tbody>
+</table>
+
+<h2>1. 구조 — 한 클래스의 네 가지 일을 네 층으로</h2>
+<div class="h2sub">왼쪽이 이전, 오른쪽이 지금. 아래층(MonsterFactory · Pool · 몬스터 생애)은 Phase 1 결과 그대로</div>
+
+<div class="fig">
+  <div class="figt">그림 1 · 이전과 지금</div>
+  <svg viewBox="0 0 700 330" width="100%">
+    <text x="175" y="20" class="tb" text-anchor="middle">이전</text>
+    <text x="525" y="20" class="tb" text-anchor="middle">지금</text>
+    <line x1="350" y1="10" x2="350" y2="320" stroke="#e3e6ec"/>
+
+    <!-- 이전 -->
+    <rect x="70" y="32" width="210" height="32" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="175" y="52" class="t" fill="#5028c0" text-anchor="middle">Sector · 트리거 진입</text>
+    <path d="M175,66 L175,96" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="183" y="85" class="xs">SpawnMonsters() / DespawnMonsters()</text>
+
+    <rect x="30" y="100" width="290" height="132" rx="10" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="175" y="120" class="tb" fill="#8a3708" text-anchor="middle">MonsterSpawner × 23 (MonoBehaviour)</text>
+    <g class="s">
+      <text x="46" y="144"><tspan font-weight="700">저작</tspan> · 자식 포인트 · 기즈모</text>
+      <text x="46" y="164"><tspan font-weight="700">데이터 조인</tspan> · 켜질 때마다 GetData, 오류는 조용히 continue</text>
+      <text x="46" y="184"><tspan font-weight="700">상태</tspan> · 배열 2 · 리스트 1 · 딕셔너리 2</text>
+      <text x="46" y="204"><tspan font-weight="700">타이머</tspan> · 포인트마다 UniTask + CTS</text>
+    </g>
+    <text x="46" y="222" class="xs" fill="#8a3708">네 가지 일이 한 클래스에, 상태가 비동기 작업 안에 숨어 있음</text>
+
+    <path d="M175,234 L175,256" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="70" y="260" width="210" height="28" rx="8" fill="#f7f8fa" stroke="#8a91a0"/>
+    <text x="175" y="278" class="t" text-anchor="middle">MonsterFactory → Pool</text>
+    <text x="175" y="312" class="s" fill="#8a3708" text-anchor="middle">끄기·켜기가 엇갈리면 S1 부활 · S2 CTS 폐기 · S3 2마리 · S4 취소 후 생성</text>
+
+    <!-- 지금 -->
+    <rect x="420" y="32" width="210" height="32" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="525" y="52" class="t" fill="#5028c0" text-anchor="middle">Sector · int[] spawnerId만</text>
+    <path d="M525,66 L525,96" stroke="#7048e8" stroke-width="1.3" marker-end="url(#arv)"/>
+    <text x="533" y="85" class="xs" fill="#5028c0">Activate(id) / DeActivate(id)</text>
+
+    <rect x="380" y="100" width="290" height="56" rx="10" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="525" y="120" class="tb" fill="#2b3a8f" text-anchor="middle">SpawnerManager (Managers.Spawner)</text>
+    <text x="525" y="138" class="s" fill="#2b3a8f" text-anchor="middle">틱 · 상태 전이 · Gen 검사 · 사망 연결</text>
+    <text x="525" y="151" class="xs" fill="#2b3a8f" text-anchor="middle">Init(등록) · Run(가동) · Clear(씬 정리)</text>
+
+    <path d="M525,158 L525,176" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="380" y="180" width="290" height="48" rx="10" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="525" y="199" class="tb" fill="#1f6b2e" text-anchor="middle">SpawnerRecord × 23 → SpawnSlot × 363</text>
+    <text x="525" y="217" class="s" fill="#1f6b2e" text-anchor="middle">순수 C# · _state · _readyAt · _gen · _instance</text>
+
+    <rect x="405" y="244" width="240" height="24" rx="7" fill="#fff" stroke="#8a91a0" stroke-dasharray="4 3"/>
+    <text x="525" y="260" class="xs" text-anchor="middle">MonsterSpawner — 씬 로드 시 Build 1회 (저작만)</text>
+    <path d="M525,243 L525,231" stroke="#8a91a0" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ar)"/>
+
+    <rect x="420" y="282" width="210" height="28" rx="8" fill="#f7f8fa" stroke="#8a91a0"/>
+    <text x="525" y="300" class="t" text-anchor="middle">MonsterFactory → Pool</text>
+    <path d="M672,128 L690,128 L690,296 L634,296" fill="none" stroke="#3b5bdb" stroke-width="1.3" marker-end="url(#arb)"/>
+  </svg>
+</div>
+
+<table>
+  <thead><tr><th style="width:11%">층</th><th style="width:22%">누가</th><th>하는 일</th><th style="width:26%">하지 않는 일</th></tr></thead>
+  <tbody>
+    <tr><td class="k">정책</td><td><code>Sector</code></td><td>켤 스포너 id 결정 · Activate / DeActivate 호출</td><td>몬스터 · 풀 · 팩토리를 모름</td></tr>
+    <tr><td class="k">시스템</td><td><code>SpawnerManager</code></td><td>틱 · 슬롯 상태 전이 · 팩토리 요청 · 사망 연결 · 씬 정리</td><td>누가 켜는지 모름</td></tr>
+    <tr><td class="k">데이터</td><td><code>SpawnerRecord</code> · <code>SpawnSlot</code></td><td>스포너 하나 / 포인트 하나의 상태 보관</td><td>스스로 움직이지 않음</td></tr>
+    <tr><td class="k">저작</td><td><code>MonsterSpawner</code></td><td>자식 포인트 좌표 + JSON 표 조인 → Record, 기즈모</td><td>스폰 · 상태 · 타이머</td></tr>
+    <tr><td class="k">생성·회수</td><td><code>MonsterFactory</code> · <code>Resource.Destroy</code></td><td>실제 오브젝트 생성과 회수 (Phase 1 계약)</td><td>언제 만들지 판단</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ 2쪽 ============================ -->
+<h2 class="pb">2. 슬롯 상태 기계</h2>
+<div class="h2sub">포인트 하나 = 슬롯 하나. 런타임 상태는 필드 4개가 전부다</div>
+
+<div class="fig">
+  <div class="figt">그림 2 · 상태 전이와 ReadyAt · Gen이 붙는 자리 (실선 = 평소, 점선 = DeActivate)</div>
+  <svg viewBox="0 0 700 270" width="100%">
+    <rect x="20" y="96" width="120" height="60" rx="30" fill="#f7f8fa" stroke="#1a1c22" stroke-width="1.4"/>
+    <text x="80" y="122" class="tb" text-anchor="middle">Waiting</text>
+    <text x="80" y="138" class="xs" text-anchor="middle">now ≥ ReadyAt 대기</text>
+    <rect x="200" y="96" width="120" height="60" rx="30" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+    <text x="260" y="122" class="tb" fill="#2b3a8f" text-anchor="middle">Spawning</text>
+    <text x="260" y="138" class="xs" fill="#2b3a8f" text-anchor="middle">gen 들고 비동기 중</text>
+    <rect x="380" y="96" width="120" height="60" rx="30" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.4"/>
+    <text x="440" y="122" class="tb" fill="#1f6b2e" text-anchor="middle">Alive</text>
+    <text x="440" y="138" class="xs" fill="#1f6b2e" text-anchor="middle">Instance 보유</text>
+    <rect x="560" y="96" width="120" height="60" rx="30" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+    <text x="620" y="122" class="tb" fill="#8a3708" text-anchor="middle">Dying</text>
+    <text x="620" y="138" class="xs" fill="#8a3708" text-anchor="middle">사망 연출 중</text>
+
+    <path d="M142,114 L198,114" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="170" y="62" class="xs" text-anchor="middle">IsActive</text>
+    <text x="170" y="74" class="xs" text-anchor="middle">now ≥ ReadyAt</text>
+    <text x="170" y="86" class="xs" text-anchor="middle">예산 남음</text>
+    <text x="170" y="108" class="xs" fill="#2b3a8f" text-anchor="middle">Gen +1</text>
+    <path d="M322,114 L378,114" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="350" y="86" class="xs" text-anchor="middle">gen = Gen ✓</text>
+    <text x="350" y="108" class="xs" fill="#1f6b2e" text-anchor="middle">구독 · 등록</text>
+    <path d="M502,114 L558,114" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="530" y="86" class="xs" text-anchor="middle">OnMonsterDead</text>
+
+    <path d="M650,158 L650,232 L40,232 L40,160" fill="none" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="345" y="226" class="s" text-anchor="middle">OnDespawned (연출 끝, 풀 반납) → Detach · ReadyAt = now + respawnTime × (1 ± 0.2)</text>
+
+    <path d="M260,158 L260,192 L110,192 L110,160" fill="none" stroke="#7048e8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arv)"/>
+    <text x="185" y="206" class="xs" fill="#5028c0" text-anchor="middle">DeActivate: Gen +1 · ReadyAt = now</text>
+    <path d="M430,94 C430,30 90,30 84,92" fill="none" stroke="#7048e8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arv)"/>
+    <text x="258" y="26" class="xs" fill="#5028c0" text-anchor="middle">DeActivate: Detach → 즉시 회수 (Resource.Destroy) · ReadyAt = now</text>
+    <path d="M322,140 C350,170 320,176 294,158" fill="none" stroke="#e8590c" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ara)"/>
+    <text x="352" y="176" class="xs" fill="#8a3708">gen ≠ Gen → 결과만 회수, 상태 그대로</text>
+    <text x="352" y="188" class="xs" fill="#8a3708">null(실패) → Waiting · ReadyAt 백오프</text>
+    <text x="600" y="178" class="xs" fill="#5028c0" text-anchor="middle">DeActivate: 그대로</text>
+  </svg>
+  <div class="figcap">Waiting은 DeActivate에도 그대로 — ReadyAt이 알람 시각이라 꺼져 있어도 시간이 흐른다. Alive 즉시 회수는 Before(경계 소실) 재현을 위해 일부러 유지.</div>
+</div>
+
+<table>
+  <thead><tr><th style="width:13%">필드</th><th style="width:30%">뜻</th><th>바뀌는 순간</th></tr></thead>
+  <tbody>
+    <tr><td class="k">_state</td><td>Waiting · Spawning · Alive · Dying</td><td>틱 · 팩토리 반환 · 사망 · 회수 · DeActivate</td></tr>
+    <tr><td class="k">_readyAt</td><td>이 시각부터 스폰 가능 (알람 시각)</td><td>회수 시 <code>now + respawnTime × 지터</code> · DeActivate로 되돌릴 때 <code>now</code> · 스폰 실패 시 백오프</td></tr>
+    <tr><td class="k">_gen</td><td>지금 유효한 주문 번호</td><td>스폰 요청 시 <code>+1</code> · Spawning 중 DeActivate 시 <code>+1</code></td></tr>
+    <tr><td class="k">_instance</td><td>슬롯이 관리하는 몬스터</td><td>gen이 맞는 결과가 도착하면 설정 · Detach 시 비움</td></tr>
+  </tbody>
+</table>
+
+<div class="two">
+  <div class="pc pro"><div class="hd">ReadyAt — 카운트다운이 아니라 시각</div>
+    옛 방식은 포인트마다 <code>UniTask.Delay</code>를 돌려 끄면 취소(놓치면 S1 · S2), 켜면 처음부터 다시 셌다.
+    ReadyAt은 시각 하나만 적고 틱이 <code>now ≥ ReadyAt</code>만 비교한다. <strong>취소할 것이 없고</strong>, 꺼진 동안에도 시간이 흐른다.</div>
+  <div class="pc pro"><div class="hd">Gen — CTS 취소가 아니라 번호 비교</div>
+    팩토리는 비동기라 요청과 도착 사이에 스포너가 꺼졌다 켜질 수 있다. 늦게 온 결과가 슬롯을 덮으면 S3(2마리) · S1(꺼진 곳 부활).
+    결과는 <strong>어차피 올 수 있다</strong>고 인정하고, 도착한 순간 <code>gen != slot._gen</code>이면 회수한다.</div>
+</div>
+
+<!-- ============================ 3쪽 ============================ -->
+<h2 class="pb">3. 바뀐 것</h2>
+<div class="h2sub">신규 · 연결 · 팩토리 시그니처</div>
+
+<table>
+  <thead><tr><th style="width:12%">구분</th><th style="width:28%">파일</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td class="k">신규</td><td><code>SpawnerManager.cs</code></td><td>Init · Run · Activate · DeActivate · OnUpdate(틱) · SpawnAsync · HandleDead · HandleDespawned · Detach · RecoverLost · Clear</td></tr>
+    <tr><td class="k">변경</td><td><code>SpawnSlot.cs</code></td><td><code>_readyAt</code> · <code>_gen</code> 추가 (가변 필드는 readonly 아님)</td></tr>
+    <tr><td class="k">변경</td><td><code>SpawnerRecord.cs</code></td><td><code>_id</code> → <code>_spawnerId</code>, <code>using NUnit.Framework</code> 제거</td></tr>
+    <tr><td class="k">변경</td><td><code>MonsterSpawner.cs</code></td><td>Build 데이터 방어(범위 밖 · 중복 · 미사용 경고), <code>using NPOI</code> 제거</td></tr>
+    <tr><td class="k">변경</td><td><code>Sector.cs</code></td><td><code>List&lt;MonsterSpawner&gt;</code> → <code>int[] _spawnerIds</code>, <code>Managers.Spawner</code>로 위임</td></tr>
+    <tr><td class="k">연결</td><td><code>Managers.cs</code></td><td><code>Managers.Spawner</code> 등록, <code>Update</code>에서 <code>_spawner.OnUpdate()</code></td></tr>
+    <tr><td class="k">연결</td><td><code>GameScene.cs</code></td><td>CreateMainVillage에서 <code>Spawner.Init</code> · CreateCharacters 뒤 <code>Spawner.Run()</code> · Clear에서 <code>Spawner.Clear()</code> · 맵 null 가드</td></tr>
+    <tr><td class="k">연결</td><td><code>BaseMonsterController.cs</code></td><td><code>OnDespawned</code>: <code>Action</code> → <code>Action&lt;BaseMonsterController&gt;</code> (핸들러 하나로 누가 끝났는지 앎)</td></tr>
+    <tr><td class="k">시그니처</td><td><code>MonsterFactory.cs</code> + 호출부 3</td><td><code>Transform</code> → <code>Vector3 + Quaternion</code>. 슬롯은 순수 C#이라 Transform을 들 수 없음. await 뒤 포인트 접근 위험도 제거. SummonMonsters · NormalDungeonScene · BossDungeonScene</td></tr>
+    <tr><td class="k">버그</td><td><code>LoadingSceneController.cs</code></td><td><code>BaseScene</code> → <code>MonoBehaviour</code> (5.2 P2)</td></tr>
+  </tbody>
+</table>
+
+<h2>4. 확정한 결정</h2>
+<table>
+  <thead><tr><th style="width:20%">결정</th><th style="width:36%">내용</th><th>이유</th></tr></thead>
+  <tbody>
+    <tr><td class="k">이름</td><td><code>SpawnerSystem</code>(문서) 대신 <code>SpawnerManager</code></td><td>기존 매니저 관례 (<code>Managers.Spawner</code>)</td></tr>
+    <tr><td class="k">첫 스폰 대기</td><td>첫 활성화는 <strong>즉시</strong> (<code>_readyAt</code> 초기값 0)</td><td>섹터 진입 시 바로 채워짐. 파티 준비 문제는 Run 게이트로 분리</td></tr>
+    <tr><td class="k">JSON delay</td><td>리스폰 간격으로 사용</td><td>옛 스포너도 리스폰 대기에 같은 값 → 리스폰 간격 동일</td></tr>
+    <tr><td class="k">리스폰 기준</td><td>사망 순간이 아니라 <code>OnDespawned</code></td><td>시체가 남은 동안 같은 자리에 새 몹이 겹치지 않게. 실제 간격 = 연출 2초 + respawnTime</td></tr>
+    <tr><td class="k">DeActivate의 Alive</td><td>즉시 회수 유지</td><td>Before 영상(경계 소실)을 찍으려면 지금 Sector 동작이 남아 있어야 함. 전투 유예는 Phase 5</td></tr>
+    <tr><td class="k">위치 전달</td><td>값(Vector3 · Quaternion)</td><td>Record는 씬 오브젝트를 참조하지 않는다</td></tr>
+    <tr><td class="k">지터 시드</td><td>맵 ID로 시드한 System.Random</td><td>같은 경로를 다시 돌면 같은 값 → Phase 4 하네스 재현성</td></tr>
+    <tr><td class="k">Phase 2</td><td>진행하지 않음 (유저 결정)</td><td>풀 30 고정 → 큰 섹터 첫 진입 시 즉석 증설. 측정 때 워밍업으로 감안</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ 4쪽 ============================ -->
+<h2 class="pb">5. 문제와 해결 — 작업 중 만난 것</h2>
+<div class="h2sub">설계 · 코드 리뷰에서 실행 전에 잡은 것과, 플레이에서 드러난 것을 구분한다</div>
+
+<h3>5.1 리뷰에서 잡은 것 (실행 전)</h3>
+<table>
+  <thead><tr><th style="width:5%">#</th><th style="width:25%">문제</th><th style="width:36%">왜 문제인가</th><th>해결</th></tr></thead>
+  <tbody>
+    <tr><td class="k">R1</td><td>Activate에서 슬롯마다 바로 SpawnAsync</td><td>Alive 중복 스폰 · ReadyAt 무시 · 예산 무시 · State 미전이</td><td>Activate는 IsActive만. 스폰 요청은 틱이 한다</td></tr>
+    <tr><td class="k">R2</td><td><code>SpawnAsync(slot, slot._gen++)</code></td><td>후위 증가 → <strong>옛 번호</strong>를 들고 감 → 도착 시 항상 불일치 → 모든 스폰이 회수</td><td><code>_gen++</code> 후 <code>_gen</code>을 넘김</td></tr>
+    <tr><td class="k">R3</td><td>사망 연결 딕셔너리에 Add만 있고 Remove 없음</td><td>풀이 같은 인스턴스를 재사용하는 순간 <strong>중복 키 예외</strong> → 슬롯이 사망 연결 없이 굳음</td><td><code>Detach</code> — 구독 해제 · 제거 · 비움. 회수보다 먼저</td></tr>
+    <tr><td class="k">R4</td><td>Clear가 CTS만 정리, 호출처 없음</td><td>씬을 나가도 레코드가 켜진 채 남아 다른 씬에서 스폰 → NRE</td><td>레코드 · 딕셔너리까지 비우고 null 가드, GameScene.Clear에서 호출</td></tr>
+    <tr><td class="k">R5</td><td>팩토리 null이면 Waiting으로만</td><td>ReadyAt이 이미 지나 <strong>매 프레임 재요청</strong> · 에러 로그 폭주</td><td>실패 시 ReadyAt 백오프</td></tr>
+    <tr><td class="k">R6</td><td>SpawnerManager.cs가 CP949</td><td>git · GitHub에서 한글 주석 깨짐</td><td>UTF-8로 재저장</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 플레이에서 드러난 것 ① — 파티 준비 전에 스폰 (P1)</h3>
+<pre>ArgumentOutOfRangeException ← PartyRegistry.GetCurrent ← PartyManager.GetCurrentCharacter
+  ← NormalMonsterController.OnSpawn ← MonsterFactory ← SpawnerManager.SpawnAsync</pre>
+
+<div class="fig">
+  <div class="figt">그림 3 · GameScene 초기화 순서와 스폰 시점</div>
+  <svg viewBox="0 0 700 214" width="100%">
+    <g class="s" text-anchor="middle">
+      <rect x="20" y="30" width="120" height="30" rx="6" fill="#f7f8fa" stroke="#8a91a0"/><text x="80" y="43">맵 생성</text><text x="80" y="54">Spawner.Init</text>
+      <rect x="150" y="30" width="100" height="30" rx="6" fill="#f7f8fa" stroke="#8a91a0"/><text x="200" y="49">캐릭터 1 로드·생성</text>
+      <rect x="260" y="30" width="100" height="30" rx="6" fill="#f7f8fa" stroke="#8a91a0"/><text x="310" y="49">캐릭터 2</text>
+      <rect x="370" y="30" width="100" height="30" rx="6" fill="#f7f8fa" stroke="#8a91a0"/><text x="420" y="49">캐릭터 3</text>
+      <rect x="480" y="30" width="90" height="30" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="525" y="49" fill="#2b3a8f">Party.Init</text>
+      <rect x="580" y="30" width="100" height="30" rx="6" fill="#f7f8fa" stroke="#8a91a0"/><text x="630" y="49">UI · 카메라 · 페이드</text>
+    </g>
+    <text x="20" y="20" class="xs">GameScene.Init (await 순서)</text>
+    <path d="M200,62 L200,84" stroke="#7048e8" stroke-width="1.3" marker-end="url(#arv)"/>
+    <text x="208" y="80" class="xs" fill="#5028c0">Sector3 트리거 → Activate(1000, 1001)</text>
+
+    <text x="20" y="122" class="tb" fill="#8a3708">전</text>
+    <rect x="210" y="106" width="350" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="385" y="122" class="xs" fill="#8a3708" text-anchor="middle">다음 프레임 틱이 즉시 스폰 → OnSpawn이 빈 파티 목록을 읽음 → 예외 × 6</text>
+
+    <text x="20" y="166" class="tb" fill="#1f6b2e">후</text>
+    <rect x="210" y="150" width="265" height="24" rx="6" fill="#f7f8fa" stroke="#8a91a0"/>
+    <text x="342" y="166" class="xs" text-anchor="middle">IsActive만 켜 둠 — Run 전이라 틱이 스폰 안 함</text>
+    <rect x="480" y="150" width="200" height="24" rx="6" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="580" y="166" class="xs" fill="#1f6b2e" text-anchor="middle">Run() → 틱 → 6마리 스폰 ✓</text>
+
+    <text x="20" y="200" class="s">옛 스포너는 첫 스폰 전 delay 5초를 기다려 이 순서 문제가 가려져 있었다 — 첫 스폰을 즉시로 바꾸며 드러남.</text>
+  </svg>
+</div>
+
+<div class="two">
+  <div class="pc pro"><div class="hd">채택 — 등록과 가동 분리</div>
+    <code>Init</code>은 레코드만 받고, <code>Run()</code>은 GameScene이 <code>CreateCharacters</code> 뒤에 부른다.
+    가동 전에 온 Activate는 IsActive만 켜 두므로 <strong>신호를 잃지 않고</strong>, 가동 순간 시작 섹터가 채워진다.
+    "필드가 준비되기 전엔 스폰하지 않는다"를 스포너가 보장.</div>
+  <div class="pc con"><div class="hd">기각 — GetCurrent()가 null 반환</div>
+    예외는 사라지지만 <code>Party.Init</code>이 <code>OnActiveCharacterChanged</code>를 발생시키지 않아
+    그 사이 나온 몬스터는 <strong>타깃 없이 서 있게</strong> 된다. 증상만 숨김.</div>
+</div>
+
+<!-- ============================ 5쪽 ============================ -->
+<h3 class="pb">5.3 플레이에서 드러난 것 ② — 몬스터가 실행마다 나왔다 안 나왔다 (P2)</h3>
+<p>같은 코드로 어떤 실행은 정상, 어떤 실행은 몬스터가 보이지 않았다. 캐릭터를 바꿔도 안 나왔고 예외는 0. 임시 진단 로그(<code>[SpawnDiag]</code>)로 단계를 나눠 추적했다.</p>
+
+<div class="fig">
+  <div class="figt">그림 4 · 진단 — "만들어지지 않았다"와 "만들어진 뒤 사라졌다"를 가르기</div>
+  <svg viewBox="0 0 700 150" width="100%">
+    <rect x="20" y="20" width="150" height="54" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="95" y="42" class="t" fill="#1f6b2e" text-anchor="middle">① 요청 6</text>
+    <text x="95" y="60" class="xs" fill="#1f6b2e" text-anchor="middle">틱이 스폰 요청 ✓</text>
+    <path d="M172,47 L198,47" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="200" y="20" width="170" height="54" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="285" y="42" class="t" fill="#1f6b2e" text-anchor="middle">② 도착 6</text>
+    <text x="285" y="60" class="xs" fill="#1f6b2e" text-anchor="middle">null 아님 · gen 1/1 ✓</text>
+    <path d="M372,47 L398,47" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="400" y="20" width="280" height="54" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.6"/>
+    <text x="540" y="42" class="t" fill="#8a3708" text-anchor="middle">③ 3초 뒤 생존 0</text>
+    <text x="540" y="60" class="xs" fill="#8a3708" text-anchor="middle">"인스턴스 파괴됨, 슬롯 Alive" × 6</text>
+
+    <rect x="20" y="90" width="660" height="50" rx="8" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="32" y="108" class="s">실패한 실행도 ①②까지는 성공 실행과 로그가 <tspan font-weight="700">완전히 같았다</tspan> → 팩토리는 정상, 문제는 생성 이후.</text>
+    <text x="32" y="126" class="s">③에서 Dead · Despawned · DeActivate 로그가 없음 + Pool.Push는 끄기만 함 → <tspan font-weight="700">누군가 Object.Destroy를 직접 불렀다.</tspan></text>
+  </svg>
+</div>
+
+<div class="fig">
+  <div class="figt">그림 5 · 원인 — CurrentScene이 로딩 커버를 집는다</div>
+  <svg viewBox="0 0 700 250" width="100%">
+    <rect x="20" y="70" width="230" height="74" rx="10" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="135" y="92" class="t" fill="#2b3a8f" text-anchor="middle">Pool.Pop(parent = null)</text>
+    <text x="135" y="110" class="mono" fill="#2b3a8f" text-anchor="middle">→ SceneEx.CurrentScene.transform</text>
+    <text x="135" y="126" class="mono" fill="#2b3a8f" text-anchor="middle">= FindAnyObjectByType&lt;BaseScene&gt;()</text>
+    <text x="135" y="160" class="xs" text-anchor="middle">씬의 BaseScene "아무거나 하나"</text>
+
+    <path d="M252,95 C275,95 275,52 296,52" fill="none" stroke="#2b8a3e" stroke-width="1.3" marker-end="url(#arg)"/>
+    <path d="M252,120 C275,120 275,162 296,162" fill="none" stroke="#e8590c" stroke-width="1.3" marker-end="url(#ara)"/>
+    <text x="276" y="112" class="xs" fill="#5b6270" text-anchor="middle">?</text>
+
+    <rect x="300" y="32" width="185" height="40" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="392" y="50" class="t" fill="#1f6b2e" text-anchor="middle">GameScene</text>
+    <text x="392" y="64" class="xs" fill="#1f6b2e" text-anchor="middle">: BaseScene</text>
+    <path d="M487,52 L508,52" stroke="#2b8a3e" stroke-width="1.3" marker-end="url(#arg)"/>
+    <rect x="510" y="32" width="170" height="40" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="595" y="56" class="t" fill="#1f6b2e" text-anchor="middle">몬스터 생존 ✓</text>
+
+    <rect x="300" y="138" width="185" height="48" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="392" y="156" class="t" fill="#8a3708" text-anchor="middle">로딩 커버</text>
+    <text x="392" y="172" class="xs" fill="#8a3708" text-anchor="middle">LoadingSceneController : BaseScene</text>
+    <path d="M487,162 L508,162" stroke="#e8590c" stroke-width="1.3" marker-end="url(#ara)"/>
+    <rect x="510" y="138" width="170" height="48" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="595" y="156" class="xs" fill="#8a3708" text-anchor="middle">FadeIn 0.5초 → Destroy(커버)</text>
+    <text x="595" y="172" class="t" fill="#8a3708" text-anchor="middle">몬스터도 파괴 ✗</text>
+
+    <rect x="20" y="204" width="660" height="38" rx="8" fill="#ebfbee"/>
+    <text x="32" y="220" class="s" fill="#1f6b2e"><tspan font-weight="700">수정</tspan> · LoadingSceneController : BaseScene → MonoBehaviour. 로딩 UI일 뿐 씬이 아니고, BaseScene 기능을 하나도 안 썼다.</text>
+    <text x="32" y="235" class="s" fill="#1f6b2e">이제 BaseScene은 진짜 씬 하나뿐 → CurrentScene이 항상 GameScene. GUID 유지 · 직렬화 필드 없음 → 프리팹 · Loading.unity 영향 없음.</text>
+  </svg>
+  <div class="figcap">어느 쪽이 집힐지 정해져 있지 않아 비결정적. 옛 스포너는 5초 지연 덕에 커버가 사라진 뒤 스폰해서 드러나지 않았다.</div>
+</div>
+
+<div class="callout c-blue"><span class="lbl">같이 해결된 것</span>
+<code>SceneManagerEx.LoadScene</code>의 <code>CurrentScene?.Clear()</code>가 커버의 Clear를 대신 불러 씬 정리(<code>Spawner.Clear</code> · 입력 구독 해제)가 빠질 수 있던 문제.
+SelectScene · NormalDungeon · BossDungeon도 같은 커버를 쓰므로 같은 위험이 사라졌다.</div>
+
+<div class="callout c-violet"><span class="lbl">교훈</span>
+기존 버그가 <strong>타이밍이 바뀌면서</strong> 드러났다(P1 · P2 둘 다 "첫 스폰 즉시"가 방아쇠). 진단 로그는 <strong>요청 → 도착 → N초 뒤 생존</strong>처럼 단계별로 찍어야
+"만들어지지 않았다"와 "만들어진 뒤 사라졌다"를 가를 수 있다. 진단 로그는 확인 후 전부 제거했다.</div>
+
+<!-- ============================ 6쪽 ============================ -->
+<h3 class="pb">5.4 Phase 3 마무리에서 넣은 방어 (<code>2cad9d49</code>)</h3>
+<table>
+  <thead><tr><th style="width:18%">항목</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td class="k">S5 데이터 방어</td><td>Build에서 <code>pointIndex</code> 범위 밖 · 중복 지정은 경고 후 건너뜀. 예전엔 <code>GetChild</code> 예외로 <strong>GameScene 로딩 전체 중단</strong>. 미사용 자식 포인트 수도 경고</td></tr>
+    <tr><td class="k">S6 리스폰 지터</td><td><code>respawnTime × (1 ± _respawnJitter)</code>, 기본 0.2. 맵 ID 시드 → 같은 경로 재주행 시 같은 값</td></tr>
+    <tr><td class="k">굳은 슬롯 복구</td><td>회수 경로 밖에서 파괴된 인스턴스(Alive/Dying)를 틱에서 탐지 → 연결만 끊고 Waiting으로. 파괴된 몹은 <code>Stat</code> 접근 불가라 구독 해제는 생략(이벤트는 오브젝트와 함께 사라짐). DeActivate(Alive)도 같은 가드</td></tr>
+    <tr><td class="k">맵 null 가드</td><td>CreateMainVillage의 null 검사가 <code>if</code> 밖이던 것 → 에러 로그 후 반환</td></tr>
+  </tbody>
+</table>
+
+<h3>Phase 3 체크리스트 대조</h3>
+<table>
+  <thead><tr><th style="width:8%">#</th><th style="width:42%">항목</th><th style="width:8%">상태</th><th>어떻게</th></tr></thead>
+  <tbody>
+    <tr><td class="k">3-1</td><td>명시적 활성 상태 (S1)</td><td class="c">✅</td><td><code>record.IsActive</code></td></tr>
+    <tr><td class="k">3-2</td><td>CTS 인덱스 정리 (S2)</td><td class="c">✅</td><td>슬롯별 CTS 자체가 사라짐 — 씬 CTS 하나 + Gen</td></tr>
+    <tr><td class="k">3-3</td><td>점유 검사 · 생성 후 재검사 (S3 · S4)</td><td class="c">✅</td><td>상태 기계 + 도착 시 Gen 비교</td></tr>
+    <tr><td class="k">3-4</td><td>포인트별 레코드 · 절대시각 · 디스폰까지 소유</td><td class="c">✅</td><td>SpawnSlot · ReadyAt · Dying 유지</td></tr>
+    <tr><td class="k">3-5</td><td>데이터 방어 (S5)</td><td class="c">✅</td><td>Build 범위 · 중복 · 미사용 경고</td></tr>
+    <tr><td class="k">3-6</td><td>리스폰 지터 (S6)</td><td class="c">✅</td><td>±20%, 맵 ID 시드</td></tr>
+  </tbody>
+</table>
+
+<h2>6. 검증</h2>
+<div class="h2sub">Editor.log 기준. 확인한 것과 아직 확인하지 않은 것을 나눈다</div>
+
+<div class="two">
+  <div class="pc pro"><div class="hd">플레이로 확인한 것</div>
+    <ul>
+      <li><strong>섹터 진입 스폰</strong> — Sector3 → 스포너 1000 · 1001(각 3슬롯) 활성 → Run 시점 레코드 23 중 2 활성 → 6마리 도착</li>
+      <li><strong>섹터 이동 회수</strong> — 3→2→1→2→1→2(→1) 이동마다 이전 섹터 Alive 즉시 회수 → 풀 반납 → 다른 슬롯에서 재사용</li>
+      <li><strong>처치 → 리스폰</strong> — Dead 5 = Despawned 5, 해당 슬롯 gen 2 · 3으로 재스폰 / 마무리 실행에서 처치 6</li>
+      <li><strong>P2 수정 후</strong> — 스폰 3초 뒤 전부 active · 부모 = 게임 씬 · 파괴 0</li>
+      <li><strong>오류</strong> — Exception · PoolLeak · NRE · [Spawner] 경고 0</li>
+    </ul></div>
+  <div class="pc con"><div class="hd">아직 검증하지 않은 것</div>
+    <ul>
+      <li><strong>Gen 불일치 경로</strong> — 로그상 전부 일치. "스폰 중 섹터 끄기"가 재현되지 않아 S3 · S4 방어가 실제로 돈 증거 없음</li>
+      <li><strong>리스폰 지터 실측</strong> — 진단 로그 제거 후라 분산이 로그에 없음</li>
+      <li><strong>방어 경로</strong> — 굳은 슬롯 복구 · 실패 백오프는 정상 상황에서 실행 안 됨</li>
+      <li><strong>불변식 I1~I5</strong> — 개발 빌드 검사 미구현</li>
+      <li><strong>던전 회귀</strong> — 팩토리 시그니처 변경 호출부(일반 · 보스 던전 · 소환) 플레이 미확인</li>
+      <li>Phase 1 미측정분 — 파티 구독자 수 · 통제 시나리오 PoolLeak</li>
+    </ul></div>
+</div>
+
+<!-- ============================ 7쪽 ============================ -->
+<h2 class="pb">7. 남은 위험 · 알려진 한계</h2>
+<table>
+  <thead><tr><th style="width:20%">항목</th><th>내용</th><th style="width:18%">언제</th></tr></thead>
+  <tbody>
+    <tr><td class="k">프레임 예산 무제한</td><td><code>_spawnBudgetPerFrame = int.MaxValue</code> → 섹터 첫 진입 시 슬롯 전부가 한 프레임에 요청됨 (Sector2 ≈ 100+)</td><td>Phase 4 측정 지표와 함께</td></tr>
+    <tr><td class="k">풀 30 고정</td><td>RL이 많은 섹터 첫 진입 시 즉석 증설. <strong>정책 비교 시 스폰 비용에 섞일 수 있음</strong> → 워밍업 구간을 두거나 감안</td><td>Phase 2 생략 — 측정 때</td></tr>
+    <tr><td class="k">V1 _lastDestPosition</td><td>NormalMonsterController가 OnSpawn에서 리셋하지 않음 → 재사용 몹이 이전 생애의 목적지를 기억</td><td>필요 시</td></tr>
+    <tr><td class="k">Radius 없음</td><td>거리 정책이 읽을 <code>SpawnerRecord.Radius</code>가 아직 없음 (Center만)</td><td>Phase 5 직전</td></tr>
+    <tr><td class="k">맵 실패 시 진행 불가</td><td>맵 null 가드는 메시지만 명확해졌을 뿐, 이어지는 CreateCharacters도 맵을 씀</td><td>범위 밖</td></tr>
+    <tr><td class="k">공개 저장소</td><td>OperationKivotos-Code 미동기화</td><td>별도</td></tr>
+  </tbody>
+</table>
+
+<h2>8. 다음</h2>
+<div class="fig">
+  <div class="figt">그림 6 · 여기서부터의 순서</div>
+  <svg viewBox="0 0 700 96" width="100%">
+    <g text-anchor="middle">
+      <rect x="10" y="20" width="120" height="50" rx="10" fill="#ebfbee" stroke="#2b8a3e"/>
+      <text x="70" y="41" class="t" fill="#1f6b2e">Phase 1 · 3 ✅</text><text x="70" y="58" class="xs" fill="#1f6b2e">생명주기 · 스포너</text>
+      <path d="M132,45 L150,45" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+      <rect x="152" y="20" width="100" height="50" rx="10" fill="#fff4ec" stroke="#e8590c"/>
+      <text x="202" y="41" class="t" fill="#8a3708">던전 회귀</text><text x="202" y="58" class="xs" fill="#8a3708">10분 확인</text>
+      <path d="M254,45 L272,45" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+      <rect x="274" y="20" width="150" height="50" rx="10" fill="#eef2ff" stroke="#3b5bdb"/>
+      <text x="349" y="38" class="t" fill="#2b3a8f">Phase 4</text><text x="349" y="52" class="xs" fill="#2b3a8f">IActivationPolicy · 하네스</text><text x="349" y="64" class="xs" fill="#2b3a8f">Sector 기준선 · Before 영상</text>
+      <path d="M426,45 L444,45" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+      <rect x="446" y="20" width="110" height="50" rx="10" fill="#f7f8fa" stroke="#8a91a0"/>
+      <text x="501" y="38" class="t">Phase 5 · 6</text><text x="501" y="52" class="xs">거리(B) 구현</text><text x="501" y="64" class="xs">Sector vs B 측정</text>
+      <path d="M558,45 L576,45" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+      <rect x="578" y="20" width="112" height="50" rx="10" fill="#f7f8fa" stroke="#8a91a0"/>
+      <text x="634" y="38" class="t">Phase 7</text><text x="634" y="52" class="xs">청크(C)</text><text x="634" y="64" class="xs">스케일 테스트</text>
+    </g>
+    <text x="10" y="90" class="xs">정책만 갈아 끼우면 되는 상태 — Phase 4의 IActivationPolicy가 Sector(트리거)와 거리 · 청크(매 틱 "켜질 id 집합" 계산)를 같은 틀로 묶는다.</text>
+  </svg>
+</div>
+
+<div class="footer">Operation Kivotos · docs/FieldEntity · Phase3_Result (텍스트판: Phase3_Result.md) · 2026-10-02</div>
+
+</body>
+</html>

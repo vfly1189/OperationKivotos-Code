@@ -94,7 +94,7 @@ public class StartScene : BaseScene
     {
         if (_preloadData.mainTitleBgm != null && _preloadData.mainTitleBgm.RuntimeKeyIsValid())
         {
-            AudioClip bgm = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.mainTitleBgm, false);
+            AudioClip bgm = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.mainTitleBgm);
 
             if (bgm != null)
             {
@@ -121,7 +121,7 @@ public class StartScene : BaseScene
         {
             int voiceNum = Random.Range(0, length);
 
-            AudioClip voice = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.titleVoices[voiceNum], false);
+            AudioClip voice = await Managers.Resource.LoadAsync<AudioClip>(_preloadData.titleVoices[voiceNum]);
 
             if (voice != null)
                 Managers.Sound.Play(voice, Define.Sound.Voice);
@@ -140,7 +140,7 @@ public class StartScene : BaseScene
     private async UniTaskVoid ShowExitPopup()
     {
         //var handle = Addressables.LoadAssetAsync<GameObject>(_preloadData.exitPopup);
-        GameObject popupPrefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.exitPopup, true);
+        GameObject popupPrefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.exitPopup, ResourceScopeType.Global);
 
         if (popupPrefab != null)
         {

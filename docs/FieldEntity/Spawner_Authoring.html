@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>필드 엔티티 — 스포너 저작 방식</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:16px 0 3px; font-weight:800; break-after:avoid; }
+  h3{ font-size:10pt; margin:10px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  pre{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.9pt; background:var(--shade); border:1px solid var(--line); border-radius:9px; padding:8px 11px; margin:6px 0; line-height:1.45; break-inside:avoid; white-space:pre; }
+  pre .c{ color:#8a91a0; } pre .k{ color:#3b5bdb; font-weight:700; }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:10px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.8px; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:8.6pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.2pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:4px 7px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.k{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  td.c{ text-align:center; font-size:10pt; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9pt; line-height:1.48; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); } .c-violet .lbl{ color:var(--violet); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; display:block; margin-bottom:3px; }
+  .pb{ break-before:page; }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .pc{ border:1px solid var(--line); border-radius:10px; padding:7px 11px 6px; font-size:8.6pt; line-height:1.45; break-inside:avoid; }
+  .pc .hd{ font-weight:800; font-size:8.6pt; margin-bottom:2px; }
+  .pc.pro .hd{ color:var(--green-ink); } .pc.con .hd{ color:var(--amber-ink); }
+  .pc ul{ margin:0; padding-left:15px; } .pc li{ margin:1px 0; }
+  .card{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:8px 12px 7px; margin:8px 0; break-inside:avoid; font-size:8.7pt; line-height:1.45; }
+  .card.a{ border-left-color:var(--amber); } .card.v{ border-left-color:var(--violet); } .card.g{ border-left-color:var(--green); } .card.k{ border-left-color:var(--ink); }
+  .card .hd{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
+  .card .hd b{ font-size:10pt; } .card .hd span{ font-size:8pt; color:var(--muted); }
+  .card .row{ display:grid; grid-template-columns:250px 1fr; gap:12px; align-items:start; }
+  .card ul{ margin:2px 0 0; padding-left:15px; } .card li{ margin:1px 0; }
+  .card .impl{ background:var(--shade); border-radius:7px; padding:4px 9px; margin:4px 0 3px; font-size:8.2pt; }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--amber-ink); font-weight:800; }
+  .footer{ margin-top:12px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+</style>
+</head>
+<body>
+
+<!-- ============================ 1쪽 ============================ -->
+<div class="kicker">Operation Kivotos · 필드 엔티티 관리 · 스포너 저작 방식</div>
+<h1>스포너는 세 질문의 답이다 — 어디에, 어떤 자리에, 무엇을</h1>
+<p class="lead">지금 스포너는 폐기하고 새로 만든다. 비교 주제는 <strong>Sector 방식 vs 거리 방식</strong>(+청크).
+두 방식 모두 스포너를 쓰므로, 스포너를 <strong>어떻게 배치·정의하느냐</strong>를 먼저 정한다.
+이 문서는 제안된 두 방법의 장단점과 실제로 쓰이는 다른 방식 네 가지를 비교한다.</p>
+
+<div class="callout c-green"><span class="lbl">결정 (2026-09-29) — 방법 1 채택, 나머지는 기록으로 보존</span>
+비교 결과는 저작 방식과 무관하고(정책은 위치·반경만 봄), 669개 포인트는 이미 배치돼 있어 1번의 단점(노가다)이 추가로 들지 않는다.
+③ 베이크는 에디터 도구 2~3일이 드는데 비교 결과에 영향이 없다. → <strong>데이터 형식(손 배치 + ID 표)은 유지, 런타임 스포너만 새로 짠다.</strong>
+1번으로 가도 챙길 것: ① 정책은 MonoBehaviour가 아니라 위치·반경 배열을 받는다(청크 스케일 테스트용 합성 좌표) ② 복제본 자식(17개 × 19) 정리 ③ 로드 시 검증 경고.
+이 문서의 2~8절은 나중에 맵을 새로 만들거나 배치 방식을 바꿀 때의 참고로 남긴다.</div>
+
+<h2>1. 지금 스포너가 보여 주는 문제</h2>
+<div class="h2sub">BackStreetMap 프리팹과 SpawnerData.json을 직접 세어 본 값 (2026-09-29)</div>
+
+<table>
+  <thead><tr><th style="width:30%">항목</th><th style="width:22%">값</th><th>읽을 점</th></tr></thead>
+  <tbody>
+    <tr><td class="k">스포너 / 자식 포인트</td><td>23개 / 669개</td><td>포인트 669개를 전부 손으로 배치 — <strong>노가다의 실체</strong></td></tr>
+    <tr><td class="k">같은 위치에 겹친 자식</td><td>19개 스포너 × 17개</td><td>자식이 34개인데 17개는 복제본. 데이터는 0~16번만 씀 → <strong>씬과 데이터가 이미 어긋나 있음</strong></td></tr>
+    <tr><td class="k">씬 ↔ 데이터 연결</td><td>spawnerId + pointIndex</td><td>자식 순서를 바꾸면 데이터가 다른 자리를 가리킴. 인덱스가 범위 밖이면 경고 없이 <code>continue</code></td></tr>
+    <tr><td class="k">스폰 딜레이</td><td>363개 전부 5.0초</td><td>한 스포너의 17마리가 같은 프레임에 나옴</td></tr>
+    <tr><td class="k">섹터 소속</td><td>계층 (Sector의 자식)</td><td><code>GetComponentsInChildren</code> — 정책 데이터가 계층 구조에 박혀 있음</td></tr>
+    <tr><td class="k">포인트 분포 반경</td><td>스포너 중심 ± 5.5m</td><td>거리 판정 반경(≈35m)보다 충분히 작음 → 스포너 중심 하나로 판정해도 됨</td></tr>
+  </tbody>
+</table>
+
+<h2>2. 먼저 나눠 둘 것 — 저작과 런타임</h2>
+<div class="h2sub">저작 방식은 여러 가지여도, 런타임에 정책이 보는 형태는 하나여야 한다</div>
+
+<div class="fig">
+  <div class="figt">그림 1 · 스포너의 네 질문 — 앞의 셋은 스포너, 마지막은 정책의 몫</div>
+  <svg viewBox="0 0 700 250" width="100%">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a91a0"/></marker>
+      <marker id="arv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7048e8"/></marker>
+    </defs>
+    <text x="10" y="16" class="t" fill="#3b5bdb">저작 (에디터 · 데이터)</text>
+    <rect x="10" y="26" width="200" height="54" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="22" y="46" class="tb" fill="#2b3a8f">① 어디에 — 앵커 위치</text>
+    <text x="22" y="64" class="s">씬에 놓는 스포너 오브젝트 1개</text>
+    <rect x="10" y="90" width="200" height="54" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="22" y="110" class="tb" fill="#2b3a8f">② 어떤 자리에 — 포인트들</text>
+    <text x="22" y="128" class="s">손 배치 / 패턴 / 영역 샘플링</text>
+    <rect x="10" y="154" width="200" height="54" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="22" y="174" class="tb" fill="#2b3a8f">③ 무엇을 — 구성</text>
+    <text x="22" y="192" class="s">몬스터 종류 · 수 · 리스폰 시간</text>
+
+    <path d="M212,53 C250,53 250,117 282,117" fill="none" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <path d="M212,117 L282,117" fill="none" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <path d="M212,181 C250,181 250,117 282,117" fill="none" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+
+    <text x="286" y="16" class="t">런타임 (정책이 보는 유일한 형태)</text>
+    <rect x="286" y="40" width="200" height="150" rx="10" fill="#fff" stroke="#1a1c22" stroke-width="1.4"/>
+    <text x="298" y="60" class="tb">SpawnerRecord</text>
+    <text x="298" y="80" class="mono" fill="#1a1c22">Id</text>
+    <text x="298" y="96" class="mono" fill="#1a1c22">Center, Radius</text>
+    <text x="298" y="112" class="mono" fill="#1a1c22">Points[]  (고정 좌표)</text>
+    <text x="298" y="128" class="mono" fill="#1a1c22">Composition</text>
+    <text x="298" y="144" class="mono" fill="#1a1c22">PointState[]  (살아있음/대기)</text>
+    <text x="298" y="160" class="mono" fill="#1a1c22">Activate() / Deactivate()</text>
+    <text x="298" y="180" class="xs">저작 방식과 무관하게 모양이 같다</text>
+
+    <path d="M590,117 L490,117" fill="none" stroke="#7048e8" stroke-width="1.5" marker-end="url(#arv)"/>
+    <text x="512" y="108" class="xs" fill="#7048e8">켜기 / 끄기</text>
+    <text x="596" y="16" class="t" fill="#7048e8">④ 언제 켜나 — 정책</text>
+    <rect x="596" y="40" width="96" height="42" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="644" y="65" class="t" fill="#5028c0" text-anchor="middle">Sector</text>
+    <rect x="596" y="96" width="96" height="42" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="644" y="121" class="t" fill="#5028c0" text-anchor="middle">거리</text>
+    <rect x="596" y="152" width="96" height="42" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="644" y="177" class="t" fill="#5028c0" text-anchor="middle">거리 + 청크</text>
+    <text x="596" y="212" class="xs">Center·Radius만 읽는다</text>
+
+    <rect x="10" y="222" width="682" height="24" rx="7" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="22" y="238" class="s">① ② ③을 어떻게 저작하든 가운데 박스 모양이 같으면 → Sector / 거리 / 청크 비교에는 영향이 없다. 저작 방식은 "배치 비용"과 "재현성"의 문제다.</text>
+  </svg>
+</div>
+
+<div class="callout c-blue"><span class="lbl">이 문서의 관점</span>
+제안된 방법 1과 2는 사실 <strong>② "어떤 자리에"를 누가 정하느냐</strong>의 차이다. 사람이 하나씩 찍느냐(1), 규칙이 생성하느냐(2).
+③ 구성을 표로 둘지, ① 앵커를 어떻게 놓을지는 두 방법 모두에서 따로 고를 수 있다.</div>
+
+<!-- ============================ 2쪽 ============================ -->
+<h2 class="pb">3. 제안된 두 방법</h2>
+<div class="h2sub">방법 1 = 지금 구조를 정리한 것 · 방법 2 = 포인트를 규칙으로 생성</div>
+
+<div class="fig">
+  <div class="figt">그림 2 · 방법 1 (손 배치 + ID 표) 과 방법 2 (앵커 + 패턴)</div>
+  <svg viewBox="0 0 700 250" width="100%">
+    <!-- 방법 1 -->
+    <text x="10" y="16" class="tb" fill="#2b3a8f">방법 1 · 손 배치 + ID 표</text>
+    <rect x="10" y="26" width="200" height="170" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="18" y="40" class="xs">씬 (Unity 에디터)</text>
+    <path d="M30,150 L90,120 L140,160 L190,110" fill="none" stroke="#d0d4dc" stroke-width="10" stroke-linecap="round"/>
+    <rect x="96" y="96" width="12" height="12" fill="#3b5bdb"/>
+    <text x="102" y="90" class="xs" text-anchor="middle" fill="#2b3a8f">id 1002</text>
+    <g fill="#fff4ec" stroke="#e8590c">
+      <circle cx="60" cy="70" r="6"/><circle cx="84" cy="136" r="6"/><circle cx="132" cy="64" r="6"/>
+      <circle cx="160" cy="132" r="6"/><circle cx="46" cy="118" r="6"/><circle cx="178" cy="80" r="6"/>
+    </g>
+    <g class="xs" fill="#8a3708" text-anchor="middle">
+      <text x="60" y="60">0</text><text x="84" y="126">1</text><text x="132" y="54">2</text>
+      <text x="160" y="122">3</text><text x="46" y="108">4</text><text x="178" y="70">5</text>
+    </g>
+    <g stroke="#e8590c" stroke-width="0.7" stroke-dasharray="2 2">
+      <line x1="102" y1="102" x2="60" y2="70"/><line x1="102" y1="102" x2="84" y2="136"/><line x1="102" y1="102" x2="132" y2="64"/>
+      <line x1="102" y1="102" x2="160" y2="132"/><line x1="102" y1="102" x2="46" y2="118"/><line x1="102" y1="102" x2="178" y2="80"/>
+    </g>
+    <text x="18" y="186" class="xs">자리 하나하나를 사람이 찍는다</text>
+
+    <path d="M214,111 L240,111" fill="none" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="244" y="54" width="106" height="114" rx="8" fill="#fff" stroke="#1a1c22"/>
+    <text x="252" y="70" class="t">SpawnerData 표</text>
+    <line x1="252" y1="76" x2="342" y2="76" stroke="#e3e6ec"/>
+    <text x="252" y="90" class="mono" fill="#5b6270">id   pt  mob</text>
+    <text x="252" y="104" class="mono" fill="#1a1c22">1002  0  RL</text>
+    <text x="252" y="118" class="mono" fill="#1a1c22">1002  1  RL</text>
+    <text x="252" y="132" class="mono" fill="#1a1c22">1002  2  AR</text>
+    <text x="252" y="146" class="mono" fill="#1a1c22">...</text>
+    <text x="252" y="160" class="xs">DataManager가 읽음</text>
+    <text x="244" y="186" class="xs" fill="#8a3708">id·인덱스로 두 곳을 이어 붙임</text>
+
+    <line x1="362" y1="20" x2="362" y2="236" stroke="#e3e6ec"/>
+
+    <!-- 방법 2 -->
+    <text x="374" y="16" class="tb" fill="#2b3a8f">방법 2 · 앵커 + 패턴</text>
+    <rect x="374" y="26" width="316" height="170" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="382" y="40" class="xs">씬에는 앵커만, 자리는 규칙이 생성</text>
+    <circle cx="440" cy="110" r="44" fill="none" stroke="#b8c2e8" stroke-dasharray="3 3"/>
+    <rect x="434" y="104" width="12" height="12" fill="#3b5bdb"/>
+    <g fill="#fff4ec" stroke="#e8590c">
+      <circle cx="484" cy="110" r="5"/><circle cx="471" cy="141" r="5"/><circle cx="440" cy="154" r="5"/><circle cx="409" cy="141" r="5"/>
+      <circle cx="396" cy="110" r="5"/><circle cx="409" cy="79" r="5"/><circle cx="440" cy="66" r="5"/><circle cx="471" cy="79" r="5"/>
+    </g>
+    <text x="440" y="180" class="s" text-anchor="middle">Circle · 8개 · r=5</text>
+
+    <rect x="530" y="78" width="72" height="64" fill="none" stroke="#b8c2e8" stroke-dasharray="3 3"/>
+    <rect x="560" y="104" width="12" height="12" fill="#3b5bdb"/>
+    <g fill="#fff4ec" stroke="#e8590c">
+      <circle cx="542" cy="90" r="5"/><circle cx="566" cy="90" r="5"/><circle cx="590" cy="90" r="5"/>
+      <circle cx="542" cy="130" r="5"/><circle cx="566" cy="130" r="5"/><circle cx="590" cy="130" r="5"/>
+    </g>
+    <text x="566" y="180" class="s" text-anchor="middle">Grid · 3×2 · 간격 2</text>
+
+    <rect x="616" y="54" width="68" height="104" rx="7" fill="#fff" stroke="#1a1c22"/>
+    <text x="622" y="70" class="t">패턴 값</text>
+    <text x="622" y="86" class="mono" fill="#1a1c22">type</text>
+    <text x="622" y="100" class="mono" fill="#1a1c22">count</text>
+    <text x="622" y="114" class="mono" fill="#1a1c22">radius</text>
+    <text x="622" y="128" class="mono" fill="#1a1c22">spacing</text>
+    <text x="622" y="142" class="mono" fill="#1a1c22">jitter,seed</text>
+
+    <rect x="10" y="206" width="680" height="30" rx="7" fill="#fff4ec"/>
+    <text x="22" y="225" class="s" fill="#8a3708">둘의 차이는 ② "어떤 자리에"를 사람이 정하느냐, 규칙이 정하느냐. ③ 구성(무엇이 나오나)은 둘 다 표로 둘 수 있다.</text>
+  </svg>
+</div>
+
+<h3>방법 1 · 손 배치 + ID 표 (지금 구조를 정리한 형태)</h3>
+<p style="font-size:8.8pt">씬에 스포너와 자식 포인트를 배치하고 <code>spawnerId</code>를 붙인다. 어떤 몬스터가 어느 포인트에 나오는지는 표(Excel → JSON)에 적고 <code>DataManager</code>가 읽는다.</p>
+<div class="two">
+  <div class="pc pro"><div class="hd">장점</div><ul>
+    <li><strong>위치를 완전히 통제</strong> — 엄폐물 뒤, 길목처럼 지형 맥락을 살린 배치</li>
+    <li><strong>재현성이 가장 좋다</strong> — 좌표가 고정이라 매번 같은 자리. 측정 비교에 유리</li>
+    <li>구성은 표만 고치면 됨 — 밸런스 조정 때 씬을 열 필요 없음</li>
+    <li>디버깅이 쉬움 — "1002번 3번 포인트"처럼 바로 짚을 수 있음</li>
+    <li>기존 Excel → JSON → DataManager 파이프라인을 그대로 씀</li>
+  </ul></div>
+  <div class="pc con"><div class="hd">단점</div><ul>
+    <li><strong>배치 노가다</strong> — 지금 669개. 복제본 17개 × 19개가 그 부작용</li>
+    <li><strong>정보가 두 곳에 나뉨</strong> — id 오타, 자식 순서 변경, 인덱스 범위 초과가 조용히 틀어짐</li>
+    <li>씬만 봐서는 무엇이 나오는지 모름 (표를 같이 봐야 함)</li>
+    <li>포인트가 NavMesh 위인지 사람이 확인해야 함</li>
+    <li>합성 스포너 N=10,000 같은 <strong>스케일 테스트용 데이터를 만들 수 없음</strong></li>
+  </ul></div>
+</div>
+
+<h3>방법 2 · 앵커 + 패턴</h3>
+<p style="font-size:8.8pt">씬에는 앵커만 놓고, 패턴(원형·사각형·격자 등)과 수치만 정한다. 포인트 좌표는 규칙으로 계산하고, 지형 위에 올리려면 <code>NavMesh.SamplePosition</code>으로 투영한다.</p>
+<div class="two">
+  <div class="pc pro"><div class="hd">장점</div><ul>
+    <li><strong>배치 비용이 스포너당 1번</strong> — 669개가 23개로</li>
+    <li>밀도·수를 숫자 하나로 조정 (count 17 → 12)</li>
+    <li>데이터가 작고 사람이 읽기 쉬움</li>
+    <li><strong>합성 스포너를 코드로 찍어 낼 수 있음</strong> → Phase 7 스케일 테스트와 잘 맞음</li>
+  </ul></div>
+  <div class="pc con"><div class="hd">단점</div><ul>
+    <li><strong>지형을 모름</strong> — 벽 속·절벽·NavMesh 밖 포인트. 투영하면 포인트끼리 겹칠 수 있음</li>
+    <li>규칙적인 모양이 인공적 (정확한 원형 진형) → 지터를 넣고 싶어짐</li>
+    <li>지터·투영을 <strong>스폰할 때마다</strong> 하면 스폰 비용에 계산이 섞이고, 랜덤이면 재현성이 깨짐</li>
+    <li>개별 포인트 예외("이 하나만 옮기고 싶다")를 표현 못 함</li>
+    <li>복도·L자·다각형까지 가면 패턴 종류가 늘어 결국 에디터 도구가 됨</li>
+  </ul></div>
+</div>
+
+<!-- ============================ 3쪽 ============================ -->
+<h2 class="pb">4. 실제로 쓰이는 다른 방식</h2>
+<div class="h2sub">③~⑤는 ② "어떤 자리에"의 다른 답, ⑥은 ③ "무엇을"의 답이라 어디에나 겹쳐 쓴다</div>
+
+<div class="card g">
+  <div class="hd"><b>③ 패턴 베이크 (방법 1 + 2 하이브리드)</b><span>자리 생성은 규칙, 저장은 고정 좌표</span></div>
+  <div class="row">
+    <svg viewBox="0 0 250 120" width="250">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a91a0"/></marker></defs>
+      <text x="40" y="12" class="xs" text-anchor="middle">패턴 생성</text>
+      <circle cx="40" cy="58" r="26" fill="none" stroke="#b8c2e8" stroke-dasharray="3 3"/>
+      <g fill="#fff4ec" stroke="#e8590c"><circle cx="66" cy="58" r="4"/><circle cx="40" cy="84" r="4"/><circle cx="14" cy="58" r="4"/><circle cx="40" cy="32" r="4"/></g>
+      <rect x="36" y="54" width="8" height="8" fill="#3b5bdb"/>
+      <path d="M76,58 L94,58" stroke="#8a91a0" marker-end="url(#ar2)"/>
+      <text x="125" y="12" class="xs" text-anchor="middle">NavMesh 스냅</text>
+      <rect x="98" y="30" width="54" height="56" fill="#ebfbee" stroke="#8fd19e"/>
+      <rect x="134" y="30" width="18" height="24" fill="#d0d4dc"/>
+      <g fill="#fff4ec" stroke="#e8590c"><circle cx="138" cy="66" r="4"/><circle cx="125" cy="80" r="4"/><circle cx="104" cy="58" r="4"/></g>
+      <circle cx="143" cy="42" r="4" fill="none" stroke="#e8590c" stroke-dasharray="2 1.5"/>
+      <path d="M143,46 L140,60" stroke="#e8590c" stroke-width="0.8" marker-end="url(#ar2)"/>
+      <path d="M160,58 L178,58" stroke="#8a91a0" marker-end="url(#ar2)"/>
+      <text x="214" y="12" class="xs" text-anchor="middle">좌표 저장</text>
+      <rect x="182" y="26" width="64" height="66" rx="5" fill="#fff" stroke="#1a1c22"/>
+      <text x="188" y="42" class="mono" fill="#1a1c22">p0 (4,0,1)</text>
+      <text x="188" y="56" class="mono" fill="#1a1c22">p1 (2,0,3)</text>
+      <text x="188" y="70" class="mono" fill="#2b8a3e">p2* 수정</text>
+      <text x="188" y="84" class="mono" fill="#1a1c22">...</text>
+      <text x="125" y="110" class="xs" text-anchor="middle">벽에 걸린 점은 가까운 NavMesh로 옮기고, 사람이 손본 점은 표시해 둔다</text>
+    </svg>
+    <div>
+      <div class="impl"><strong>구현</strong> — 스포너 인스펙터의 "Bake" 버튼(에디터 스크립트)이 패턴으로 점을 만들고 <code>NavMesh.SamplePosition</code>으로 스냅한 뒤 <code>Vector3[]</code>로 직렬화. 기즈모로 미리보기. 손으로 옮긴 점은 override 표시 → 다시 베이크해도 보존</div>
+      <ul>
+        <li><span class="ok">장점</span> 저작 비용은 방법 2, 런타임은 방법 1 — <strong>좌표 고정이라 재현성·스폰 비용 순수성 둘 다</strong></li>
+        <li><span class="ok">장점</span> 지형 검증을 베이크 시점에 1번. 예외 포인트도 표현 가능</li>
+        <li><span class="ng">단점</span> 에디터 도구를 만들어야 함. 지형을 고친 뒤 재베이크를 잊으면 옛 좌표가 남음 → 검증기 필요</li>
+        <li><span class="ng">변형</span> 에디터 베이크 대신 <strong>씬 로드 시 1회 해석</strong>도 가능 (패턴을 표에 두고 로드 때 계산·스냅). 스폰 때 계산만 안 하면 됨</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="card a">
+  <div class="hd"><b>④ 영역 + 수량 (런타임 샘플링)</b><span>"이 구역에 RL 17마리 유지"</span></div>
+  <div class="row">
+    <svg viewBox="0 0 250 120" width="250">
+      <path d="M20,30 L120,18 L170,50 L150,100 L40,104 Z" fill="#fff4ec" stroke="#e8590c" stroke-dasharray="4 3"/>
+      <g fill="#fff" stroke="#e8590c"><circle cx="50" cy="50" r="4"/><circle cx="88" cy="40" r="4"/><circle cx="120" cy="60" r="4"/><circle cx="70" cy="80" r="4"/><circle cx="140" cy="82" r="4"/><circle cx="104" cy="90" r="4"/></g>
+      <g fill="none" stroke="#8a91a0" stroke-dasharray="2 1.5"><circle cx="62" cy="62" r="4"/><circle cx="130" cy="44" r="4"/></g>
+      <text x="190" y="46" class="t" fill="#8a3708">유지 17</text>
+      <text x="190" y="62" class="xs">빈 만큼 다시</text>
+      <text x="190" y="74" class="xs">무작위 위치에</text>
+      <text x="95" y="116" class="xs" text-anchor="middle">점선 = 다음 리스폰 위치 (매번 다름)</text>
+    </svg>
+    <div>
+      <div class="impl"><strong>구현</strong> — 볼륨(박스·폴리곤) + 목표 수. 부족하면 영역 안에서 무작위 점을 뽑아 <code>SamplePosition</code>, 서로 최소 거리를 두는 Poisson disk 샘플링을 흔히 씀. MMO 필드에서 자주 보는 형태</div>
+      <ul>
+        <li><span class="ok">장점</span> 배치가 가장 적다 (영역 하나). 리스폰 위치가 매번 달라 반복감이 적음</li>
+        <li><span class="ng">단점</span> <strong>재현성이 가장 나쁘다.</strong> 시드를 고정해도 난수 하나를 여러 스포너가 공유하면, 정책마다 스폰 순서가 달라서 받는 난수도 달라진다 (6절 그림 3)</li>
+        <li><span class="ng">단점</span> 스폰할 때마다 샘플링·투영 비용 → "스폰 1회 비용" 지표에 섞임</li>
+        <li><span class="ng">비교 트랙 판정</span> 측정용으로는 부적합. 쓰더라도 결과가 어느 방식에서든 같도록 고정 좌표로 풀어야 함</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="card v">
+  <div class="hd"><b>⑤ 팩(편대) 템플릿</b><span>구성 + 상대 배치를 한 묶음으로 재사용</span></div>
+  <div class="row">
+    <svg viewBox="0 0 250 120" width="250">
+      <rect x="6" y="20" width="76" height="76" rx="7" fill="#f3f0ff" stroke="#7048e8"/>
+      <text x="44" y="14" class="xs" text-anchor="middle" fill="#5028c0">템플릿 Pack_A</text>
+      <circle cx="44" cy="40" r="6" fill="#fff" stroke="#1a1c22"/><text x="44" y="43" class="xs" text-anchor="middle" fill="#1a1c22">T</text>
+      <circle cx="26" cy="72" r="6" fill="#fff4ec" stroke="#e8590c"/><text x="26" y="75" class="xs" text-anchor="middle" fill="#8a3708">R</text>
+      <circle cx="62" cy="72" r="6" fill="#fff4ec" stroke="#e8590c"/><text x="62" y="75" class="xs" text-anchor="middle" fill="#8a3708">R</text>
+      <text x="44" y="108" class="xs" text-anchor="middle">(오프셋, 몬스터) 목록</text>
+      <path d="M88,58 L108,58" stroke="#8a91a0" marker-end="url(#ar2)"/>
+      <g transform="translate(132,50)"><rect x="-4" y="-4" width="8" height="8" fill="#3b5bdb"/><circle cx="0" cy="-16" r="4" fill="#fff" stroke="#1a1c22"/><circle cx="-12" cy="10" r="4" fill="#fff4ec" stroke="#e8590c"/><circle cx="12" cy="10" r="4" fill="#fff4ec" stroke="#e8590c"/></g>
+      <g transform="translate(186,46) rotate(90)"><rect x="-4" y="-4" width="8" height="8" fill="#3b5bdb"/><circle cx="0" cy="-16" r="4" fill="#fff" stroke="#1a1c22"/><circle cx="-12" cy="10" r="4" fill="#fff4ec" stroke="#e8590c"/><circle cx="12" cy="10" r="4" fill="#fff4ec" stroke="#e8590c"/></g>
+      <g transform="translate(232,58) rotate(200)"><rect x="-4" y="-4" width="8" height="8" fill="#3b5bdb"/><circle cx="0" cy="-16" r="4" fill="#fff" stroke="#1a1c22"/><circle cx="-12" cy="10" r="4" fill="#fff4ec" stroke="#e8590c"/><circle cx="12" cy="10" r="4" fill="#fff4ec" stroke="#e8590c"/></g>
+      <text x="182" y="100" class="xs" text-anchor="middle">앵커(■)마다 템플릿 + 회전만</text>
+    </svg>
+    <div>
+      <div class="impl"><strong>구현</strong> — <code>PackTemplateSO { slots: (offset, monsterId)[] }</code>. 스포너는 템플릿 참조와 회전만 가짐. 액션 RPG의 "몬스터 팩" 개념과 같은 계열</div>
+      <ul>
+        <li><span class="ok">장점</span> "탱커 1 + 원거리 2" 같은 편대를 맵 전체에서 재사용 — 구성과 배치를 한 번에 수정</li>
+        <li><span class="ok">장점</span> 좌표가 템플릿에 고정이라 재현성 좋음</li>
+        <li><span class="ng">단점</span> 오프셋이 지형을 모름 (방법 2와 같은 문제) → 베이크나 스냅과 같이 써야 함</li>
+        <li><span class="ng">판단</span> 지금 필드는 RL 360 + AR 3으로 사실상 단일 종이라 템플릿의 이점이 작음. 몬스터 종류가 늘면 가치가 커짐</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="card k">
+  <div class="hd"><b>⑥ 슬롯 + 가중치 표 (구성 레이어)</b><span>포인트는 역할만, 실제 몬스터는 표에서 뽑음</span></div>
+  <div class="row">
+    <svg viewBox="0 0 250 100" width="250">
+      <g fill="#fff" stroke="#1a1c22"><circle cx="24" cy="30" r="9"/><circle cx="54" cy="56" r="9"/><circle cx="24" cy="80" r="9"/></g>
+      <text x="24" y="33" class="xs" text-anchor="middle" fill="#1a1c22">근</text><text x="54" y="59" class="xs" text-anchor="middle" fill="#1a1c22">원</text><text x="24" y="83" class="xs" text-anchor="middle" fill="#1a1c22">원</text>
+      <path d="M72,56 L94,56" stroke="#8a91a0" marker-end="url(#ar2)"/>
+      <rect x="98" y="14" width="146" height="78" rx="6" fill="#fff" stroke="#1a1c22"/>
+      <text x="106" y="30" class="t">맵 1006 · 원거리 슬롯</text>
+      <text x="106" y="48" class="mono" fill="#1a1c22">RL   70%</text>
+      <text x="106" y="62" class="mono" fill="#1a1c22">AR   25%</text>
+      <text x="106" y="76" class="mono" fill="#1a1c22">엘리트 5%</text>
+    </svg>
+    <div>
+      <ul>
+        <li><span class="ok">장점</span> 같은 배치로 맵·레벨·지역 변주. 배치와 구성이 완전히 분리됨</li>
+        <li><span class="ng">단점</span> 가중치 = 랜덤 → 측정할 때는 고정해야 함</li>
+        <li><span class="ng">판단</span> ①~⑤ 어디에나 겹쳐 쓸 수 있는 층. 이번 비교에는 불필요, 나중에 확장 여지로만</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<p style="font-size:8.4pt;color:var(--muted)">⑦ 밀도 페인팅(지형에 밀도맵을 칠해 샘플링)은 오픈월드용이다. 범위를 일반 필드로 정했으므로 제외한다.</p>
+
+<!-- ============================ 4쪽 ============================ -->
+<h2 class="pb">5. 한눈에 비교</h2>
+<div class="h2sub">● 좋음 · ◐ 조건부 · ○ 나쁨 — "비교 트랙에 쓸 수 있나"를 기준으로 채점</div>
+
+<table>
+  <thead><tr><th style="width:21%">방식</th><th>배치 비용</th><th>위치 통제</th><th>재현성</th><th>지형 안전</th><th>스케일 테스트</th><th>두 곳 동기화</th><th>구현 비용</th></tr></thead>
+  <tbody>
+    <tr><td class="k">① 손 배치 + ID 표</td><td class="c">○</td><td class="c">●</td><td class="c">●</td><td class="c">◐</td><td class="c">○</td><td class="c">○</td><td class="c">●</td></tr>
+    <tr><td class="k">② 앵커 + 패턴 (런타임)</td><td class="c">●</td><td class="c">○</td><td class="c">◐</td><td class="c">○</td><td class="c">●</td><td class="c">◐</td><td class="c">●</td></tr>
+    <tr><td class="k">③ 패턴 베이크</td><td class="c">●</td><td class="c">●</td><td class="c">●</td><td class="c">●</td><td class="c">●</td><td class="c">◐</td><td class="c">◐</td></tr>
+    <tr><td class="k">④ 영역 + 수량</td><td class="c">●</td><td class="c">○</td><td class="c">○</td><td class="c">◐</td><td class="c">●</td><td class="c">●</td><td class="c">◐</td></tr>
+    <tr><td class="k">⑤ 팩 템플릿</td><td class="c">◐</td><td class="c">◐</td><td class="c">●</td><td class="c">○</td><td class="c">●</td><td class="c">◐</td><td class="c">◐</td></tr>
+  </tbody>
+</table>
+<p style="font-size:8.2pt;color:var(--muted)">재현성 = 같은 입력이면 같은 자리에 같은 몬스터 · 지형 안전 = NavMesh 밖·벽 속 포인트가 안 생김 · 스케일 테스트 = 합성 스포너 N개를 코드로 만들 수 있음 · 두 곳 동기화 = 씬과 표가 어긋날 위험(●가 위험 낮음). ⑥은 구성 층이라 표에서 뺐다.</p>
+
+<h3>③ "무엇을"은 어디에 둘까 — 구성 데이터의 위치</h3>
+<table>
+  <thead><tr><th style="width:24%">위치</th><th style="width:38%">장점</th><th>단점</th></tr></thead>
+  <tbody>
+    <tr><td class="k">외부 표 (Excel → JSON)</td><td>지금 파이프라인 그대로. 기획 값 일괄 수정·밸런싱이 쉬움</td><td>id로 씬과 조인 → 어긋나면 런타임에야 발견. <strong>에디터 검증기가 필수</strong></td></tr>
+    <tr><td class="k">ScriptableObject 참조</td><td>id가 없어 조인 오류가 원천 차단. 인스펙터에서 바로 보임</td><td>수백 개 값을 한 번에 고치기 불편. Excel 파이프라인과 따로 놂</td></tr>
+    <tr><td class="k">스포너 컴포넌트에 직접</td><td>가장 단순. 한 곳에서 다 보임</td><td>재사용 불가. 같은 구성을 바꾸려면 스포너를 전부 열어야 함</td></tr>
+  </tbody>
+</table>
+
+<h2>6. 비교 트랙이 스포너에 요구하는 것</h2>
+<div class="h2sub">어떤 저작 방식을 고르든 지켜야 Sector / 거리 / 청크 비교가 공정해진다</div>
+
+<div class="fig">
+  <div class="figt">그림 3 · 난수를 공유하면 정책이 달라질 때 몬스터 자리도 달라진다</div>
+  <svg viewBox="0 0 700 170" width="100%">
+    <text x="10" y="18" class="t">공유 난수 (Random 하나)</text>
+    <text x="10" y="44" class="s">Sector 정책</text>
+    <rect x="90" y="30" width="110" height="22" rx="5" fill="#eef2ff" stroke="#3b5bdb"/><text x="145" y="45" class="s" text-anchor="middle" fill="#2b3a8f">A 켜짐 → r1, r2</text>
+    <rect x="206" y="30" width="110" height="22" rx="5" fill="#eef2ff" stroke="#3b5bdb"/><text x="261" y="45" class="s" text-anchor="middle" fill="#2b3a8f">B 켜짐 → r3, r4</text>
+    <text x="10" y="80" class="s">거리 정책</text>
+    <rect x="90" y="66" width="110" height="22" rx="5" fill="#fff4ec" stroke="#e8590c"/><text x="145" y="81" class="s" text-anchor="middle" fill="#8a3708">B 켜짐 → r1, r2</text>
+    <rect x="206" y="66" width="110" height="22" rx="5" fill="#fff4ec" stroke="#e8590c"/><text x="261" y="81" class="s" text-anchor="middle" fill="#8a3708">A 켜짐 → r3, r4</text>
+    <text x="10" y="112" class="s" fill="#8a3708">→ 시드가 같아도 A의 자리가 정책마다 달라진다</text>
+
+    <line x1="364" y1="10" x2="364" y2="160" stroke="#e3e6ec"/>
+    <text x="378" y="18" class="t">스포너별 난수 (시드 = id, 포인트, 생애 번호)</text>
+    <text x="378" y="44" class="s">Sector 정책</text>
+    <rect x="458" y="30" width="110" height="22" rx="5" fill="#ebfbee" stroke="#2b8a3e"/><text x="513" y="45" class="s" text-anchor="middle" fill="#1f6b2e">A → a1, a2</text>
+    <rect x="574" y="30" width="110" height="22" rx="5" fill="#ebfbee" stroke="#2b8a3e"/><text x="629" y="45" class="s" text-anchor="middle" fill="#1f6b2e">B → b1, b2</text>
+    <text x="378" y="80" class="s">거리 정책</text>
+    <rect x="458" y="66" width="110" height="22" rx="5" fill="#ebfbee" stroke="#2b8a3e"/><text x="513" y="81" class="s" text-anchor="middle" fill="#1f6b2e">B → b1, b2</text>
+    <rect x="574" y="66" width="110" height="22" rx="5" fill="#ebfbee" stroke="#2b8a3e"/><text x="629" y="81" class="s" text-anchor="middle" fill="#1f6b2e">A → a1, a2</text>
+    <text x="378" y="112" class="s" fill="#1f6b2e">→ 켜지는 순서와 무관하게 A는 항상 같은 자리</text>
+
+    <rect x="10" y="130" width="680" height="30" rx="7" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="22" y="149" class="s">가장 확실한 해법은 랜덤 자체를 런타임에서 없애는 것 (③ 베이크). 지터·가중치를 꼭 쓰려면 스포너별 시드로 결정적으로 만든다.</text>
+  </svg>
+</div>
+
+<table>
+  <thead><tr><th style="width:8%">#</th><th style="width:30%">요구</th><th>이유</th></tr></thead>
+  <tbody>
+    <tr><td class="k">R1</td><td>스폰 시점에는 좌표 계산 없음</td><td>패턴 해석·NavMesh 투영이 스폰마다 돌면 "스폰 1회 비용" 지표가 저작 방식에 오염됨. 베이크 또는 로드 시 1회</td></tr>
+    <tr><td class="k">R2</td><td>랜덤은 스포너별 시드로 결정적</td><td>그림 3. 공유 난수는 정책마다 뽑는 순서가 달라짐</td></tr>
+    <tr><td class="k">R3</td><td>섹터 소속은 계층이 아니라 위치로 계산</td><td>스포너를 평평하게 두고 "어느 섹터 볼륨에 중심이 들어가나"로 로드 시 계산 → 세 정책이 <strong>같은 스포너 집합</strong>을 공유. 섹터 경계를 옮겨도 재배치 불필요</td></tr>
+    <tr><td class="k">R4</td><td>스포너 반경에 상한 (예: ≤ 8m)</td><td>정책은 Center·Radius만 봄. 스포너가 너무 크면 "반만 반경 안" 상태가 생김. <code>CullingGroup</code>은 <code>BoundingSphere(center, radius)</code>를 받으므로 Radius를 레코드에 저장</td></tr>
+    <tr><td class="k">R5</td><td>코드로 합성 스포너를 만들 수 있음</td><td>Phase 7 스케일 테스트 (N = 23 ~ 10,000). 손 배치만 되는 구조면 불가능</td></tr>
+    <tr><td class="k">R6</td><td>에디터 검증기</td><td>id 존재 · 구성 수 ≤ 포인트 수 · 포인트가 NavMesh 위 · 중복 좌표 없음(지금의 복제본 17개를 잡아냄) · 반경 상한</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================ 5쪽 ============================ -->
+<h2>7. 제안 — 1과 2는 경쟁이 아니라 "포인트 생성기"의 두 종류</h2>
+<div class="h2sub">패턴 종류에 Manual(손 배치)을 넣으면 방법 1이 방법 2의 특수한 경우가 된다</div>
+
+<div class="fig">
+  <div class="figt">그림 4 · 제안 구조 — 저작은 자유, 런타임은 하나</div>
+  <svg viewBox="0 0 700 230" width="100%">
+    <text x="10" y="16" class="t" fill="#3b5bdb">저작 (씬)</text>
+    <rect x="10" y="26" width="190" height="150" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="22" y="46" class="tb" fill="#2b3a8f">SpawnerAuthoring</text>
+    <text x="22" y="64" class="mono" fill="#2b3a8f">spawnerId</text>
+    <text x="22" y="80" class="mono" fill="#2b3a8f">pattern: Manual | Circle</text>
+    <text x="22" y="94" class="mono" fill="#2b3a8f">       | Rect | Grid</text>
+    <text x="22" y="110" class="mono" fill="#2b3a8f">count, radius, size, seed</text>
+    <text x="22" y="126" class="mono" fill="#2b3a8f">bakedPoints[] (+override)</text>
+    <rect x="22" y="138" width="166" height="28" rx="6" fill="#fff" stroke="#3b5bdb"/>
+    <text x="105" y="156" class="s" text-anchor="middle" fill="#2b3a8f">[Bake] 버튼 · 기즈모 미리보기</text>
+
+    <text x="10" y="196" class="t" fill="#3b5bdb">구성 (표 · DataManager)</text>
+    <rect x="10" y="202" width="190" height="24" rx="6" fill="#fff" stroke="#1a1c22"/>
+    <text x="18" y="218" class="mono" fill="#1a1c22">id | mob×수 | respawn | jitter</text>
+
+    <path d="M204,100 L262,100" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <path d="M204,214 C240,214 240,130 262,120" fill="none" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="210" y="92" class="xs">씬 로드 시</text>
+    <text x="214" y="228" class="xs">id 조인</text>
+
+    <rect x="266" y="40" width="170" height="130" rx="10" fill="#fff" stroke="#1a1c22" stroke-width="1.4"/>
+    <text x="278" y="60" class="tb">SpawnerRecord</text>
+    <text x="278" y="78" class="xs">순수 C# · 스포너 수만큼</text>
+    <text x="278" y="96" class="mono" fill="#1a1c22">Center, Radius (R4)</text>
+    <text x="278" y="112" class="mono" fill="#1a1c22">Points[] 고정 (R1)</text>
+    <text x="278" y="128" class="mono" fill="#1a1c22">PointState[]</text>
+    <text x="278" y="144" class="mono" fill="#1a1c22">SectorId (위치 계산, R3)</text>
+    <text x="278" y="160" class="mono" fill="#1a1c22">Activate / Deactivate</text>
+
+    <rect x="266" y="184" width="170" height="36" rx="8" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="351" y="200" class="s" text-anchor="middle">합성 레코드 N개도 같은 형태</text>
+    <text x="351" y="213" class="xs" text-anchor="middle">(Phase 7 스케일 테스트, R5)</text>
+
+    <path d="M440,105 L498,105" stroke="#7048e8" stroke-width="1.5" marker-end="url(#arv)"/>
+    <rect x="502" y="40" width="190" height="130" rx="10" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="514" y="60" class="tb" fill="#5028c0">IActivationPolicy</text>
+    <text x="514" y="82" class="s" fill="#5028c0">Sector — SectorId로 묶어 켬</text>
+    <text x="514" y="100" class="s" fill="#5028c0">거리 — Center와 플레이어 거리</text>
+    <text x="514" y="118" class="s" fill="#5028c0">청크 — 셀로 후보 추린 뒤 거리</text>
+    <line x1="514" y1="130" x2="680" y2="130" stroke="#cfc4f7"/>
+    <text x="514" y="148" class="xs" fill="#5028c0">출력은 "켜질 레코드 집합" 하나뿐</text>
+    <text x="514" y="160" class="xs" fill="#5028c0">몬스터·풀·팩토리는 모름</text>
+  </svg>
+</div>
+
+<div class="callout c-green"><span class="lbl">추천 — ③ 패턴 베이크 + 구성은 표</span>
+<strong>Manual / Circle / Rect / Grid</strong> 네 가지 패턴만 두고, 결과 좌표를 베이크해서 저장한다.
+엄폐물 뒤처럼 자리를 꼭 지정해야 하는 곳은 Manual(= 방법 1), 넓은 공터는 Circle/Grid(= 방법 2).
+구성(몬스터 × 수 · 리스폰)은 지금처럼 Excel → JSON 표에 두되, <strong>포인트 인덱스 대신 "몬스터 × 수"</strong>로 적어
+포인트 순서가 바뀌어도 데이터가 깨지지 않게 한다. 조인 오류는 R6 검증기가 에디터에서 잡는다.</div>
+
+<div class="two">
+  <div class="callout c-blue" style="margin:0"><span class="lbl">이 추천이 푸는 것</span>
+  노가다 (669 → 23 + 필요한 곳만 Manual) · 재현성 (좌표 고정) · 스폰 비용 순수성 (계산 없음) ·
+  지형 안전 (베이크 시 스냅) · 스케일 테스트 (레코드를 코드로 생성) · 섹터 계층 의존 제거</div>
+  <div class="callout c-amber" style="margin:0"><span class="lbl">대가</span>
+  에디터 도구(베이크 버튼 · 기즈모 · 검증기)를 만드는 비용. 지형을 고친 뒤 재베이크를 잊는 위험 → 검증기가 "NavMesh 밖 포인트"로 잡음.
+  에디터 도구가 부담이면 변형안(로드 시 1회 해석)으로 시작해도 R1은 지켜진다.</div>
+</div>
+
+<h3>구현 스케치</h3>
+<pre><span class="c">// 저작 — 씬에 놓는 컴포넌트. 런타임에는 레코드로 변환되고 끝.</span>
+<span class="k">public class</span> SpawnerAuthoring : MonoBehaviour
+{
+    <span class="k">public int</span> spawnerId;                 <span class="c">// 구성 표와 조인</span>
+    <span class="k">public</span> SpawnPattern pattern;          <span class="c">// Manual | Circle | Rect | Grid</span>
+    <span class="k">public int</span> count; <span class="k">public float</span> radius; <span class="k">public</span> Vector2 size; <span class="k">public int</span> seed;
+    [SerializeField] Vector3[] _bakedPoints; <span class="c">// [Bake] 결과 (Manual이면 자식에서 수집)</span>
+    [SerializeField] <span class="k">bool</span>[] _overridden;    <span class="c">// 손으로 옮긴 점 — 재베이크해도 보존</span>
+}
+
+<span class="c">// 런타임 — 정책이 보는 유일한 형태. MonoBehaviour 아님 → 합성 N개를 코드로 생성 가능</span>
+<span class="k">public sealed class</span> SpawnerRecord
+{
+    <span class="k">public readonly int</span> Id, SectorId;     <span class="c">// SectorId는 로드 시 위치로 계산</span>
+    <span class="k">public readonly</span> Vector3 Center; <span class="k">public readonly float</span> Radius;
+    <span class="k">public readonly</span> Vector3[] Points;      <span class="c">// 고정 좌표</span>
+    PointState[] _state;                      <span class="c">// 살아있음(인스턴스) / 재등장 예정(절대 시각) / 비어있음</span>
+    <span class="k">public bool</span> IsActive { <span class="k">get</span>; <span class="k">private set</span>; }
+    <span class="k">public void</span> Activate();  <span class="k">public void</span> Deactivate();
+}</pre>
+
+<h2>8. 정할 것</h2>
+<table>
+  <thead><tr><th style="width:5%">#</th><th style="width:30%">질문</th><th style="width:35%">후보</th><th>이 문서의 제안</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1</td><td>포인트 좌표를 누가 확정하나</td><td>손 배치 / 런타임 패턴 / 에디터 베이크 / 로드 시 해석</td><td>에디터 베이크 (부담되면 로드 시 해석)</td></tr>
+    <tr><td class="k">2</td><td>구성 데이터 위치</td><td>Excel 표 / ScriptableObject / 컴포넌트</td><td>Excel 표 + 에디터 검증기</td></tr>
+    <tr><td class="k">3</td><td>구성을 적는 단위</td><td>포인트별 지정 / (몬스터, 수) 목록</td><td>(몬스터, 수) — 포인트 순서와 분리</td></tr>
+    <tr><td class="k">4</td><td>패턴 최소 집합</td><td>Manual · Circle · Rect · Grid (+ 지터)</td><td>넷으로 시작, 지터는 스포너별 시드로</td></tr>
+    <tr><td class="k">5</td><td>섹터 소속</td><td>계층 / 위치 계산 / 표에 명시</td><td>위치 계산 (중심점 기준)</td></tr>
+    <tr><td class="k">6</td><td>스포너 반경 상한</td><td>없음 / 8m / 10m</td><td>지금 분포(5.5m) 근처로 상한</td></tr>
+  </tbody>
+</table>
+
+<div class="footer">Operation Kivotos · docs/FieldEntity · 2026-09-29 · 수치 출처: BackStreetMap.prefab, SpawnerData.json 직접 집계 · 관련: 01_Approaches.md, 02_Plan.md (Phase 3·4·7)</div>
+
+</body>
+</html>

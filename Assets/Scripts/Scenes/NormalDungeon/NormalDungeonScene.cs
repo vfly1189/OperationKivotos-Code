@@ -177,7 +177,8 @@ public class NormalDungeonScene : BaseScene
                 var task = MonsterFactory.CreateMonsterByMonsterIDAsync(
                     monsterId,
                     Managers.Context.CurrentDungeonID,
-                    point
+                    point.position,
+                    point.rotation
                 );
 
                 spawnTasks.Add(task);
@@ -297,9 +298,17 @@ public class NormalDungeonScene : BaseScene
 
     async UniTask CreatePool()
     {
-        if (_preloadData.bullet == null) return;
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
-        if (prefab != null) Managers.Pool.CreatePool(prefab, _preloadData.bullet.RuntimeKey.ToString(), 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
+        if (_preloadData.bullet != null)
+        {
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
+            if (prefab != null) Managers.Pool.CreatePool(prefab, _preloadData.bullet.RuntimeKey.ToString(), 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
+        }
+
+        //HPBar 풀링 — NormalMonsterController.OnSpawn이 GetLoaded로 동기 조회하므로 스폰 전에 반드시 로드
+        {
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("MonsterHPBar");
+            if (prefab != null) Managers.Pool.CreatePool(prefab, "MonsterHPBar", 30);
+        }
     }
 
     async UniTask CreateEffectStage()

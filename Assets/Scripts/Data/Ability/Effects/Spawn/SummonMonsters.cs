@@ -32,7 +32,7 @@ public class SummonMonsters : EffectData, IEffect
             if (points[i] == null) continue;
 
             GameObject monster = await MonsterFactory.CreateMonsterByAddressableKeyAsync(
-                _monsterKey, Managers.Context.CurrentDungeonID, points[i], token);
+                _monsterKey, Managers.Context.CurrentDungeonID, points[i].position, points[i].rotation, token);
 
             if (monster != null) registry?.RegisterSummoned(monster);
 

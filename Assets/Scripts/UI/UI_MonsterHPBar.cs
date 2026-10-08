@@ -11,7 +11,7 @@ public class UI_MonsterHPBar : UI_Base
     private RectTransform _rectTransform;
     private Slider _slider;
 
-    public override void Init()
+    private void Awake()
     {
         // 1. 컴포넌트 캐싱
         _rectTransform = GetComponent<RectTransform>();
@@ -21,6 +21,20 @@ public class UI_MonsterHPBar : UI_Base
             GameLog.LogError("UI_MonsterHPBar: Slider 컴포넌트를 찾을 수 없습니다! 프리팹을 확인하세요.");
 
         _mainCamera = Camera.main;
+    }
+
+    public override void Init()
+    {
+        //// 1. 컴포넌트 캐싱
+        //_rectTransform = GetComponent<RectTransform>();
+        //_slider = GetComponent<Slider>();
+
+        //if (_slider == null)
+        //    GameLog.LogError("UI_MonsterHPBar: Slider 컴포넌트를 찾을 수 없습니다! 프리팹을 확인하세요.");
+
+        //_mainCamera = Camera.main;
+
+
     }
 
     // 몬스터 쪽에서 생성 직후 호출해줘야 함
@@ -35,11 +49,9 @@ public class UI_MonsterHPBar : UI_Base
 
     private void LateUpdate()
     {
-        if (_targetTr == null)
-        {
-            Managers.Resource.Destroy(gameObject);
-            return;
-        }
+        // 수명은 몬스터가 소유한다(OnSpawn 연결 / OnDespawn 해제) — 여기서는 스스로 파괴하지 않는다.
+        //  타겟이 없으면(씬 언로드로 몬스터가 먼저 파괴된 뒤 Pool.Clear까지의 틈 등) 그리지 않고 넘긴다.
+        if (_targetTr == null) return;
 
         // 카메라가 없으면 찾기 시도
         if (_mainCamera == null) _mainCamera = Camera.main;

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>필드 엔티티 — 실행 계획서</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:16px 0 3px; font-weight:800; break-after:avoid; }
+  h3{ font-size:10pt; margin:10px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:10px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figt .tag{ font-size:7.2pt; font-weight:800; color:#fff; background:var(--amber); border-radius:20px; padding:1px 7px; vertical-align:middle; margin-left:6px; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.8px; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:8.6pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.2pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:4px 7px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.k{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  td.w{ font-weight:800; color:var(--amber-ink); white-space:nowrap; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9pt; line-height:1.48; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; display:block; margin-bottom:3px; }
+  .pb{ break-before:page; }
+  .ph{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:8px 12px 7px; margin:8px 0; break-inside:avoid; font-size:8.8pt; line-height:1.45; }
+  .ph.a{ border-left-color:var(--amber); } .ph.v{ border-left-color:var(--violet); } .ph.g{ border-left-color:var(--green); } .ph.k{ border-left-color:var(--ink); }
+  .ph .hd{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
+  .ph .hd b{ font-size:10pt; } .ph .hd span{ font-size:8pt; color:var(--muted); }
+  .ph ul{ margin:2px 0 0; padding-left:16px; } .ph li{ margin:1px 0; }
+  .ph .done{ margin-top:5px; background:var(--shade); border-radius:7px; padding:4px 9px; font-size:8.2pt; }
+  .ph .done b{ color:var(--green-ink); }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .footer{ margin-top:12px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+</style>
+</head>
+<body>
+
+<!-- ============================ 1쪽 ============================ -->
+<div class="kicker">Operation Kivotos · 필드 엔티티 관리 · 02 실행 계획서</div>
+<h1>몬스터를 먼저 잡고, 그 위에서 비교한다</h1>
+<p class="lead">범위는 <strong>일반 필드(로아 필드형)</strong> 하나. 메인은 <strong>Sector vs 거리(B)</strong>,
+확장은 <strong>B vs 청크+거리(C)</strong>. 그 전에 몬스터·풀·스포너가 성해야 측정이 방식의 차이를 잰다.</p>
+
+<div class="fig">
+<p class="figt">① 트랙의 구조 — 무엇을 무엇 위에 쌓는가</p>
+<svg width="100%" viewBox="0 0 700 204" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="8" width="330" height="136" rx="10" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+  <text x="24" y="28" class="tb" fill="#2b3a8f">메인 비교 · 정책 — Sector vs B</text>
+  <text x="24" y="42" class="xs">Phase 6 · "어떤 판정 기준이 맞나"</text>
+  <text x="24" y="64" class="s">• 경계 소실 횟수 — 싸우던 몹이 사라지는가</text>
+  <text x="24" y="80" class="s">• 활성 몬스터 중 화면 밖 비율</text>
+  <text x="24" y="96" class="s">• 한 프레임 최대 스폰 · 프레임 시간 p99</text>
+  <text x="24" y="112" class="s">• 사람이 직접 입력하는 데이터 수</text>
+  <text x="24" y="134" class="xs" fill="#2b3a8f">헤드라인은 평균 FPS가 아니라 이 지표들</text>
+
+  <rect x="360" y="8" width="330" height="60" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.2"/>
+  <text x="374" y="28" class="tb" fill="#5028c0">안정화 — B가 만드는 문제를 막는다</text>
+  <text x="374" y="42" class="xs">Phase 5</text>
+  <text x="374" y="58" class="s">히스테리시스 · 움직이는 몬스터 규칙 · 스폰 분산</text>
+
+  <rect x="360" y="78" width="330" height="66" rx="10" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/>
+  <text x="374" y="98" class="tb" fill="#1f6b2e">확장 · 구현 — B vs C</text>
+  <text x="374" y="112" class="xs">Phase 7 · "그 정책을 어떻게 싸게 돌리나"</text>
+  <text x="374" y="128" class="s">결과는 같고 비용만 다르다 → 스포너 수 N에 따른</text>
+  <text x="374" y="140" class="s">판정 비용 곡선, 교차점 = C로 바꿀 조건</text>
+
+  <rect x="10" y="154" width="680" height="44" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+  <text x="24" y="173" class="tb" fill="#8a3708">토대 — 몬스터 생명주기 · 풀 용량 · 스포너 정리 (Phase 1~3)</text>
+  <text x="24" y="189" class="s">여기가 깨져 있으면 측정이 방식의 차이가 아니라 결함(NRE · 풀 부족 · 유령 몬스터)을 잰다</text>
+</svg>
+</div>
+
+<div class="fig">
+<p class="figt">② 로드맵 — 약 6주 (1인 · 순차 기준)</p>
+<svg width="100%" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+  <!-- 주 격자 -->
+  <g stroke="#eef0f4"><line x1="150" y1="22" x2="150" y2="226"/><line x1="240" y1="22" x2="240" y2="226"/><line x1="330" y1="22" x2="330" y2="226"/><line x1="420" y1="22" x2="420" y2="226"/><line x1="510" y1="22" x2="510" y2="226"/><line x1="600" y1="22" x2="600" y2="226"/><line x1="690" y1="22" x2="690" y2="226"/></g>
+  <text x="195" y="16" class="xs" text-anchor="middle">1주</text><text x="285" y="16" class="xs" text-anchor="middle">2주</text><text x="375" y="16" class="xs" text-anchor="middle">3주</text>
+  <text x="465" y="16" class="xs" text-anchor="middle">4주</text><text x="555" y="16" class="xs" text-anchor="middle">5주</text><text x="645" y="16" class="xs" text-anchor="middle">6주</text>
+
+  <!-- 몬스터 구간 브래킷 -->
+  <rect x="159" y="26" width="144" height="70" rx="6" fill="#fff4ec" opacity="0.6"/>
+
+  <text x="10" y="38" class="t">0 박제</text><text x="62" y="38" class="xs">예측</text>
+  <rect x="150" y="30" width="9" height="12" rx="2" fill="#1a1c22"/>
+  <text x="164" y="40" class="xs" fill="#1a1c22">지금</text>
+
+  <text x="10" y="60" class="t">1 생명주기</text><text x="72" y="60" class="xs">3~4일</text>
+  <rect x="159" y="52" width="72" height="12" rx="2" fill="#e8590c"/>
+
+  <text x="10" y="82" class="t">2 풀 · 관측</text><text x="72" y="82" class="xs">1일</text>
+  <rect x="231" y="74" width="18" height="12" rx="2" fill="#e8590c"/>
+  <text x="10" y="104" class="t">3 스포너</text><text x="72" y="104" class="xs">2~3일</text>
+  <rect x="249" y="96" width="54" height="12" rx="2" fill="#e8590c"/>
+  <text x="306" y="94" class="xs" fill="#8a3708">← 몬스터를 확실히 잡는 구간</text>
+
+  <text x="10" y="126" class="t">4 하네스</text><text x="72" y="126" class="xs">1주</text>
+  <rect x="303" y="118" width="90" height="12" rx="2" fill="#7048e8"/>
+  <text x="10" y="148" class="t">5 B + 안정화</text><text x="80" y="148" class="xs">1주</text>
+  <rect x="393" y="140" width="90" height="12" rx="2" fill="#3b5bdb"/>
+  <text x="10" y="170" class="t">6 측정 S vs B</text><text x="82" y="170" class="xs">2~3일</text>
+  <rect x="483" y="162" width="54" height="12" rx="2" fill="#3b5bdb"/>
+  <text x="10" y="192" class="t">7 C + 스케일</text><text x="82" y="192" class="xs">3~4일</text>
+  <rect x="537" y="184" width="72" height="12" rx="2" fill="#2b8a3e"/>
+  <text x="10" y="214" class="t">8 결론 · 슬라이드</text><text x="102" y="214" class="xs">3~4일</text>
+  <rect x="609" y="206" width="72" height="12" rx="2" fill="#1a1c22"/>
+
+  <!-- 마일스톤 -->
+  <g fill="#1a1c22"><path d="M303 232 l4 6 l-4 6 l-4 -6z"/><path d="M393 232 l4 6 l-4 6 l-4 -6z"/><path d="M537 232 l4 6 l-4 6 l-4 -6z"/></g>
+  <text x="310" y="242" class="xs">몬스터 완료 조건 충족</text>
+  <text x="400" y="242" class="xs">기준선 · Before 영상</text>
+  <text x="544" y="242" class="xs">메인 결과 · After 영상</text>
+</svg>
+<p class="figcap">주황 = 토대(몬스터) · 보라 = 측정 인프라 · 파랑 = 메인(B) · 초록 = 확장(C). 각 막대는 추정 최대치 기준. 6·7은 둘 다 5 이후라 순서를 바꿔도 된다.</p>
+</div>
+
+<!-- ============================ 2쪽 ============================ -->
+<h2 class="pb">1. 몬스터 코드 현재 상태 — 2026-09-28 점검</h2>
+<p class="h2sub">생명주기 계약을 코드에 옮기던 미커밋 작업이 <strong>절반</strong> 들어가 있다. 정의는 있고 호출이 없다. (정적 읽기 기준 · 플레이 미확인)</p>
+
+<div class="fig">
+<p class="figt">③ 스폰 · 회수 흐름 — 지금 vs 목표 <span class="tag">지금은 끊겨 있음</span></p>
+<svg width="100%" viewBox="0 0 700 252" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="#8a91a0"/></marker>
+  </defs>
+  <text x="10" y="14" class="t" fill="#8a3708">지금 (미커밋 워킹트리)</text>
+  <text x="10" y="32" class="xs">스폰</text>
+  <rect x="40" y="22" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="86" y="43" class="s" text-anchor="middle">Pool.Pop</text>
+  <rect x="146" y="22" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="192" y="37" class="s" text-anchor="middle">위치 (agent.Warp)</text><text x="192" y="49" class="xs" text-anchor="middle">agent 꺼진 채</text>
+  <rect x="252" y="22" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="298" y="43" class="s" text-anchor="middle">SetActive(true)</text>
+  <rect x="358" y="22" width="104" height="34" rx="6" fill="#fff4ec" stroke="#e8590c"/><text x="410" y="37" class="s" text-anchor="middle" fill="#8a3708">OnEnable</text><text x="410" y="49" class="xs" text-anchor="middle" fill="#8a3708">CTS 없음 → NRE (W1)</text>
+  <rect x="476" y="22" width="84" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="518" y="43" class="s" text-anchor="middle">SetStat</text>
+  <rect x="574" y="22" width="116" height="34" rx="6" fill="#fff" stroke="#e8590c" stroke-dasharray="4 3"/><text x="632" y="37" class="s" text-anchor="middle" fill="#8a3708">OnSpawn</text><text x="632" y="49" class="xs" text-anchor="middle" fill="#8a3708">부르는 곳 0 (L2)</text>
+  <g stroke="#8a91a0" marker-end="url(#a)"><line x1="132" y1="39" x2="144" y2="39"/><line x1="238" y1="39" x2="250" y2="39"/><line x1="344" y1="39" x2="356" y2="39"/><line x1="462" y1="39" x2="474" y2="39"/></g>
+  <line x1="560" y1="39" x2="572" y2="39" stroke="#e8590c" stroke-dasharray="2 2"/>
+
+  <text x="10" y="80" class="xs">회수</text>
+  <rect x="40" y="70" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="86" y="85" class="s" text-anchor="middle">사망 (BT)</text><text x="86" y="97" class="xs" text-anchor="middle">HandleDeadState</text>
+  <rect x="146" y="70" width="150" height="34" rx="6" fill="#fff4ec" stroke="#e8590c"/><text x="221" y="85" class="s" text-anchor="middle" fill="#8a3708">DespawnAsync(_monsterCts)</text><text x="221" y="97" class="xs" text-anchor="middle" fill="#8a3708">NRE → 회수 안 됨 (W2)</text>
+  <rect x="310" y="70" width="92" height="34" rx="6" fill="#fff" stroke="#e3e6ec"/><text x="356" y="91" class="xs" text-anchor="middle">Pool.Push — 도달 못 함</text>
+  <rect x="416" y="70" width="116" height="34" rx="6" fill="#fff" stroke="#e8590c" stroke-dasharray="4 3"/><text x="474" y="85" class="s" text-anchor="middle" fill="#8a3708">OnDespawn</text><text x="474" y="97" class="xs" text-anchor="middle" fill="#8a3708">부르는 곳 0</text>
+  <g stroke="#8a91a0" marker-end="url(#a)"><line x1="132" y1="87" x2="144" y2="87"/></g>
+  <g stroke="#e8590c" stroke-dasharray="2 2"><line x1="296" y1="87" x2="308" y2="87"/><line x1="402" y1="87" x2="414" y2="87"/></g>
+  <text x="546" y="84" class="xs" fill="#8a3708">+ 공격 NRE (W3)</text>
+  <text x="546" y="96" class="xs" fill="#8a3708">+ 타겟 없음 → 전부 Idle (W4)</text>
+
+  <line x1="10" y1="122" x2="690" y2="122" stroke="#e3e6ec"/>
+
+  <text x="10" y="140" class="t" fill="#2b3a8f">목표 (계약 · Phase 1)</text>
+  <text x="10" y="160" class="xs">스폰</text>
+  <rect x="40" y="150" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="86" y="165" class="s" text-anchor="middle">Pool.Pop</text><text x="86" y="177" class="xs" text-anchor="middle">비활성으로</text>
+  <rect x="146" y="150" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="192" y="165" class="s" text-anchor="middle">transform 위치</text><text x="192" y="177" class="xs" text-anchor="middle">Warp 불필요</text>
+  <rect x="252" y="150" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="298" y="171" class="s" text-anchor="middle">SetStat</text>
+  <rect x="358" y="150" width="120" height="34" rx="6" fill="#3b5bdb"/><text x="418" y="165" class="s" text-anchor="middle" fill="#fff">OnSpawn(ctx)</text><text x="418" y="177" class="xs" text-anchor="middle" fill="#dbe4ff">CTS·상태·구독·BT·HP바</text>
+  <rect x="492" y="150" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="538" y="171" class="s" text-anchor="middle">SetActive(true)</text>
+  <rect x="598" y="150" width="92" height="34" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="644" y="165" class="s" text-anchor="middle" fill="#2b3a8f">OnEnable</text><text x="644" y="177" class="xs" text-anchor="middle">콜라이더·애니·agent</text>
+  <g stroke="#8a91a0" marker-end="url(#a)"><line x1="132" y1="167" x2="144" y2="167"/><line x1="238" y1="167" x2="250" y2="167"/><line x1="344" y1="167" x2="356" y2="167"/><line x1="478" y1="167" x2="490" y2="167"/><line x1="584" y1="167" x2="596" y2="167"/></g>
+
+  <text x="10" y="208" class="xs">회수</text>
+  <rect x="40" y="198" width="198" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="139" y="213" class="s" text-anchor="middle">Resource.Destroy → Pool.Push</text><text x="139" y="225" class="xs" text-anchor="middle">사망 · 구역 이탈 · 씬 정리가 전부 여기</text>
+  <rect x="252" y="198" width="120" height="34" rx="6" fill="#3b5bdb"/><text x="312" y="213" class="s" text-anchor="middle" fill="#fff">OnDespawn()</text><text x="312" y="225" class="xs" text-anchor="middle" fill="#dbe4ff">켜진 채로 정리</text>
+  <rect x="386" y="198" width="92" height="34" rx="6" fill="#f7f8fa" stroke="#cfd4de"/><text x="432" y="219" class="s" text-anchor="middle">SetActive(false)</text>
+  <g stroke="#8a91a0" marker-end="url(#a)"><line x1="238" y1="215" x2="250" y2="215"/><line x1="372" y1="215" x2="384" y2="215"/></g>
+  <text x="492" y="212" class="xs" fill="#2b3a8f">핵심: 상태를 먼저, 활성화 반응은 나중.</text>
+  <text x="492" y="224" class="xs" fill="#2b3a8f">회수는 한 지점(Pool.Push)으로 합류.</text>
+</svg>
+<p class="figcap">현재 코드는 훅 본문을 목표 위치로 옮겼지만 <strong>배선(호출)이 없어서</strong> CTS가 영영 만들어지지 않는다. Phase 1은 배선이 핵심이다.</p>
+</div>
+
+<table>
+<colgroup><col style="width:6%"><col style="width:58%"><col style="width:36%"></colgroup>
+<thead><tr><th>#</th><th>증상 (추정)</th><th>위치</th></tr></thead>
+<tbody>
+<tr><td class="w">W1</td><td>원거리 몹 활성화 시 NRE (프리웜 <code>Create()</code> 경로 포함)</td><td><code>Ranged.OnEnable</code></td></tr>
+<tr><td class="w">W2</td><td>사망 처리 NRE → <strong>죽은 몹이 풀로 회수되지 않음</strong></td><td><code>Base.HandleDeadState</code></td></tr>
+<tr><td class="w">W3</td><td>공격 시 NRE — <code>TryCast(..., _monsterCts.Token)</code></td><td>AR · RL · Tank</td></tr>
+<tr><td class="w">W4</td><td>타겟을 못 얻어 <strong>전부 Idle</strong> — 파티 구독이 <code>OnSpawn</code>에만</td><td><code>NormalMonsterController</code></td></tr>
+<tr><td class="w">W5</td><td><strong>HP바 중복 생성</strong> — <code>OnEnable</code>마다 생성, 반납은 사망 경로에만. 구역 이탈로 회수된 몹을 다시 꺼내면 하나 더</td><td><code>Normal.OnEnable</code></td></tr>
+<tr><td class="w">W6</td><td><code>WaitNode.Reset()</code>이 <code>_duration</code>까지 0으로 — 구조와 상태를 섞음 (보스 전용 · 현재 무증상)</td><td><code>BTNode.cs</code></td></tr>
+</tbody>
+</table>
+
+<div class="callout c-amber">
+  <span class="lbl">Before 영상은 생명주기를 고친 뒤에 찍는다</span>
+  경계 소실은 몬스터 코드가 아니라 <strong>Sector 정책</strong>(<code>DespawnMonsters</code>가 산 몹을 즉시 회수)에서 나온다. Phase 1~4는 그 정책을 건드리지 않으므로
+  현상은 남아 있다 → <strong>Phase 4 하네스 경로로 녹화, 마감은 Phase 5 전.</strong> After와 같은 경로라 나란히 비교할 수 있다.
+  미커밋 리팩터는 방향이 계약과 일치하므로 버리지 않고 Phase 1의 출발점으로 쓴다.
+</div>
+
+<!-- ============================ 3쪽 ============================ -->
+<h2 class="pb">2. 토대 — Phase 0 ~ 3</h2>
+<p class="h2sub">기존 점검(Lifecycle L0~L7 · Issues S1~S6 · M1~M7 · 풀 30 vs 119)을 여기서 전부 소화한다. 각 Phase에 <strong>수치로 된 완료 조건</strong>을 둔다.</p>
+
+<div class="ph k">
+  <div class="hd"><b>Phase 0 — 박제</b><span>반나절 · 지금</span></div>
+  <ul>
+    <li><strong>예측 박제</strong> → <code>03_Predictions.md</code> — 메인·확장 지표 각각의 방향과 대략의 크기. 구현 후에 쓰면 예측이 아니다</li>
+  </ul>
+</div>
+
+<div class="ph a">
+  <div class="hd"><b>Phase 1 — 몬스터 생명주기 완성</b><span>3~4일 · L0~L7 · W1~W6 · M1 · M3 · M7</span></div>
+  <ul>
+    <li>1-1 <code>IPooledMonster</code> 계약 — <code>OnSpawn(SpawnContext)</code> / <code>OnDespawn()</code></li>
+    <li>1-2 <code>SpawnContext</code> 실체화 — 스탯 데이터 · 스폰 위치 · 소유 스포너 (읽기 전용)</li>
+    <li>1-3 <strong>스폰 배선</strong> — <code>ResourceManager</code>에 <code>activate: false</code> 이음새 → <code>MonsterFactory</code>가 <code>SetStat → OnSpawn → SetActive(true)</code>. 필드·일반던전·보스던전이 전부 팩토리를 지나므로 한 곳</li>
+    <li>1-4 <strong>회수 배선</strong> — <code>Pool.Push</code> 안에서 <code>OnDespawn()</code>. 사망·구역 이탈·씬 정리가 한 경로 (<code>Release()</code>는 만들지 않음)</li>
+    <li>1-5 훅 정리 — HP바 생성은 <code>OnSpawn</code>(base 뒤 · 토큰 가드)·반납은 <code>OnDespawn</code> / agent 켜기를 <code>Normal.OnEnable</code>로 올리고 1프레임 대기 제거 / 탄약은 <code>OnSpawn</code>만 / <code>Start</code>·<code>_initialized</code> 삭제</li>
+    <li>1-6 BT <code>Reset()</code> — 구조는 유지, 상태만 (<code>WaitNode._duration</code> 보존)</li>
+    <li>1-7 확인 — 프리팹 루트 active(프리웜 성립) · 스폰 포인트 NavMesh 위 · HP바 생성 경로</li>
+  </ul>
+  <div class="done"><b>완료 조건</b> — 같은 인스턴스 3회 재사용해도 1회차와 동작 동일 · 구역 10회 왕복 후 HP바 수 = 파티 구독자 수 = 활성 몬스터 수 · NRE 0 · <code>[PoolLeak]</code> 0 · 던전 두 곳 회귀 없음</div>
+</div>
+
+<div class="ph a">
+  <div class="hd"><b>Phase 2 — 풀 용량 · 관측</b><span>1일 · Prerequisites 1.2</span></div>
+  <ul>
+    <li>2-1 <code>CreatePool</code> 수량을 하드코딩 30 대신 <strong>스포너 데이터 집계값</strong>으로 (RL 최대 119)</li>
+    <li>2-2 <code>Pop</code>이 즉석 <code>Create()</code>하면 개발 빌드 경고 <code>[PoolGrow]</code></li>
+    <li>2-3 HP바 프리팹에 <code>Poolable</code> — 생성·파괴가 풀 경로로</li>
+  </ul>
+  <div class="done"><b>완료 조건</b> — 전 구역 순회 중 <code>[PoolGrow]</code> 0. 이 조건을 만족한 측정만 채택</div>
+</div>
+
+<div class="ph a">
+  <div class="hd"><b>Phase 3 — 스포너 정리 · 포인트 레코드</b><span>2~3일 · S1~S6 · 방식 F</span></div>
+  <ul>
+    <li>3-1 명시적 활성 상태 (<code>activeInHierarchy</code> 대용 제거) · 3-2 CTS를 인스턴스 동일성으로 · 3-3 점유 검사 + 생성 직후 토큰 재검사</li>
+    <li>3-4 <strong>포인트별 상태 레코드</strong> — 살아있음 / 재등장 예정(<strong>절대 시각</strong>) / 비어있음. 몬스터 인스턴스와 독립, 소유 범위는 디스폰 완료까지</li>
+    <li>3-5 데이터 방어 · 조용한 <code>continue</code>에 경고 · 3-6 리스폰 지터</li>
+  </ul>
+  <div class="done"><b>완료 조건</b> — 스포너가 <code>Activate()</code> / <code>Deactivate()</code>만으로 켜고 꺼짐 · 꺼진 스포너에서 부활 0 · 한 포인트 2마리 0 · 꺼졌다 켜져도 리스폰 타이머 유지.
+  <strong>Sector와 B가 똑같이 이 API를 부르므로, 여기가 비교의 이음새다.</strong><br>
+  ⚠ <code>Deactivate()</code>는 산 몹을 즉시 회수하는 현재 동작 유지 — 전투 유예는 Phase 5. 미리 넣으면 Before 영상을 못 찍는다.</div>
+</div>
+
+<!-- ============================ 4쪽 ============================ -->
+<h2 class="pb">3. 비교 — Phase 4 ~ 8</h2>
+<p class="h2sub">토대가 끝나면 판정 정책만 갈아끼우며 잰다.</p>
+
+<div class="ph v">
+  <div class="hd"><b>Phase 4 — 판정 정책 추상화 · 측정 하네스 · 기준선</b><span>1주</span></div>
+  <ul>
+    <li><code>IActivationPolicy</code> — <code>Sector</code> / <code>Distance</code>(B) / <code>ChunkDistance</code>(C), 런타임 전환</li>
+    <li><strong>고정 경로 자동 주행</strong> — 웨이포인트 + 고정 속도. 몹을 끌고 경계를 넘는 구간 포함 (경계 소실을 재현해야 하므로)</li>
+    <li>수집: 활성 수 타임라인 · 화면 밖 비율 · 스폰/디스폰 횟수 · <strong>스폰 1회 평균 비용</strong> · 프레임당 최대 스폰 · p50/p99 · 경계 소실 이벤트 · <code>[PoolGrow]</code></li>
+    <li>기존 계측(<code>MetricsHotkeys</code> · 개발 빌드 로그) 재사용</li>
+  </ul>
+  <div class="done"><b>완료 조건</b> — 현재 Sector로 같은 경로 3회, 지표 편차가 방식 간 예상 차이보다 충분히 작음 (하네스 자체 검증) ·
+  <b>Before 영상</b> 녹화 (몹 끌고 경계 통과 구간 · Phase 5 전 마감)</div>
+</div>
+
+<div class="two">
+<div class="ph">
+  <div class="hd"><b>Phase 5 — B + 안정화</b><span>1주</span></div>
+  <ul>
+    <li><code>CullingGroup</code>에 스포너 구체 등록 · 진입/이탈 반경 · <code>onStateChanged</code>로 켜기/끄기 <span style="color:var(--faint)">(갱신 조건 API 확인 필요)</span></li>
+    <li>히스테리시스 · 프레임당 스폰 예산</li>
+    <li>움직이는 몬스터: 전투 중 유지 → 리쉬 복귀 → 스포너 상태 따름 → 유예 상한</li>
+  </ul>
+</div>
+<div class="ph">
+  <div class="hd"><b>Phase 6 — 메인 측정 S vs B</b><span>2~3일</span></div>
+  <ul>
+    <li>같은 경로·같은 빌드, 정책만 전환</li>
+    <li>그림 ④ + 지표 표 + <strong>예측 대조</strong> (틀린 곳은 틀렸다고)</li>
+    <li>After 영상</li>
+  </ul>
+</div>
+<div class="ph g">
+  <div class="hd"><b>Phase 7 — C + 스케일 테스트</b><span>3~4일</span></div>
+  <ul>
+    <li>격자 + 외접 사각형 셀 조회 → 후보만 거리 판정</li>
+    <li><strong>동등성 검증 먼저</strong> — 매 프레임 B·C 활성 집합 일치</li>
+    <li>합성 N = 23 / 100 / 1k / 10k — <strong>목표 규모가 아니라 교차점 탐색용</strong></li>
+    <li>곡선 3개로 네이티브 vs 알고리즘 분리 (그림 ⑤)</li>
+  </ul>
+</div>
+<div class="ph k">
+  <div class="hd"><b>Phase 8 — 결론 · 문서 · 슬라이드</b><span>3~4일</span></div>
+  <ul>
+    <li>실제 맵을 B로 전환, C 전환 조건 N 기록</li>
+    <li>Sector 볼륨: 삭제 / 게임플레이 구역</li>
+    <li><code>04_Result.md</code> · 슬라이드 4~5장</li>
+  </ul>
+</div>
+</div>
+
+<div class="two">
+<div class="fig">
+<p class="figt">④ 메인 — 예상 모양 <span class="tag">측정 전</span></p>
+<svg width="100%" viewBox="0 0 340 176" xmlns="http://www.w3.org/2000/svg">
+  <line x1="34" y1="146" x2="330" y2="146" stroke="#8a91a0"/><line x1="34" y1="146" x2="34" y2="10" stroke="#8a91a0"/>
+  <text x="330" y="160" class="xs" text-anchor="end">경로 진행 (시간) →</text>
+  <text x="30" y="16" class="xs" text-anchor="end">활성</text>
+  <text x="30" y="40" class="xs" text-anchor="end">119</text>
+  <text x="30" y="74" class="xs" text-anchor="end">68</text>
+  <path d="M34 146 L60 146 L60 70 L140 70 L140 36 L230 36 L230 70 L310 70 L310 146 L330 146" fill="none" stroke="#e8590c" stroke-width="2"/>
+  <path d="M34 146 C50 120 60 118 80 116 S110 108 130 112 S160 104 180 110 S210 118 230 108 S270 112 290 116 S320 126 330 130" fill="none" stroke="#3b5bdb" stroke-width="2"/>
+  <g stroke="#e8590c" stroke-dasharray="2 2"><line x1="140" y1="30" x2="140" y2="146"/><line x1="230" y1="30" x2="230" y2="146"/></g>
+  <text x="143" y="28" class="xs" fill="#8a3708">구역 전환 = 한 번에 스폰</text>
+  <rect x="64" y="45" width="10" height="3" fill="#e8590c"/><text x="78" y="49" class="xs">Sector 계단</text>
+  <rect x="64" y="56" width="10" height="3" fill="#3b5bdb"/><text x="78" y="60" class="xs">B 완만</text>
+</svg>
+<p class="figcap">두 곡선 사이 면적 = 화면 밖에서 켜 둔 낭비. 계단의 높이 = 진입 스파이크.</p>
+</div>
+<div class="fig">
+<p class="figt">⑤ 확장 — 예상 모양 <span class="tag">측정 전</span></p>
+<svg width="100%" viewBox="0 0 340 176" xmlns="http://www.w3.org/2000/svg">
+  <line x1="34" y1="146" x2="330" y2="146" stroke="#8a91a0"/><line x1="34" y1="146" x2="34" y2="10" stroke="#8a91a0"/>
+  <text x="330" y="170" class="xs" text-anchor="end">스포너 수 N (로그) →</text>
+  <text x="30" y="16" class="xs" text-anchor="end">비용</text>
+  <g class="xs"><text x="44" y="156" class="xs" text-anchor="middle">23</text><text x="120" y="156" class="xs" text-anchor="middle">100</text><text x="200" y="156" class="xs" text-anchor="middle">1k</text><text x="280" y="156" class="xs" text-anchor="middle">10k</text></g>
+  <line x1="44" y1="132" x2="310" y2="20" stroke="#e8590c" stroke-width="2"/>
+  <line x1="44" y1="140" x2="310" y2="62" stroke="#3b5bdb" stroke-width="2"/>
+  <path d="M44 110 C120 108 200 102 310 92" fill="none" stroke="#2b8a3e" stroke-width="2"/>
+  <circle cx="137" cy="107" r="4" fill="none" stroke="#1a1c22"/>
+  <circle cx="232" cy="97" r="4" fill="none" stroke="#1a1c22"/>
+  <text x="96" y="92" class="xs" fill="#1a1c22">교차점 ①</text>
+  <text x="236" y="112" class="xs" fill="#1a1c22">교차점 ②</text>
+  <rect x="46" y="14" width="10" height="3" fill="#e8590c"/><text x="60" y="18" class="xs">B — C# 루프</text>
+  <rect x="46" y="24" width="10" height="3" fill="#3b5bdb"/><text x="60" y="28" class="xs">B — CullingGroup (네이티브)</text>
+  <rect x="46" y="34" width="10" height="3" fill="#2b8a3e"/><text x="60" y="38" class="xs">C — 격자 + 거리 (C#)</text>
+</svg>
+<p class="figcap">작은 N에선 격자 관리비로 C가 불리. 교차점 ② 이전이면 "현실 규모에선 B"가 결론이 된다.</p>
+</div>
+</div>
+
+<!-- ============================ 5쪽 ============================ -->
+<h2 class="pb">4. 경계 — 하지 않는 것 · 리스크 · 열린 결정</h2>
+<p class="h2sub">범위를 좁힌 대가와, 결과가 기대와 달라도 버티는 장치.</p>
+
+<table>
+<colgroup><col style="width:34%"><col style="width:66%"></colgroup>
+<thead><tr><th>하지 않는 것</th><th>이유</th></tr></thead>
+<tbody>
+<tr><td class="k">E 틱 등급 · G 스트리밍 · H 웨이브</td><td>범위 밖 (일반 필드만). 방식 지도에 "검토 후 제외"로 남아 있음</td></tr>
+<tr><td class="k">보스 풀링 (M6)</td><td>보스는 <code>Object.Destroy</code> 대상. 필드 보스를 만들 때 다시</td></tr>
+<tr><td class="k">스포너 배치 리팩터</td><td>실험 중 배치가 바뀌면 이전 측정이 무효. Phase 8 이후</td></tr>
+<tr><td class="k">M4 (사망 통보/처리 1프레임 차)</td><td>측정 결과에 영향 없음. 별건</td></tr>
+<tr><td class="k">서버 AOI</td><td>완전 싱글 — 기존 결정</td></tr>
+</tbody>
+</table>
+
+<table>
+<colgroup><col style="width:34%"><col style="width:66%"></colgroup>
+<thead><tr><th>리스크</th><th>대응</th></tr></thead>
+<tbody>
+<tr><td class="w">결과가 밋밋함 (FPS 차이 작음)</td><td>헤드라인을 문제 지표로. 예측을 먼저 박제해 두면 "예측대로"도 결과가 된다</td></tr>
+<tr><td class="w">B는 스폰이 잦아 스폰 비용에 불리</td><td>스폰 1회 비용을 따로 기록 — "거리 방식의 본질"과 "내 스폰 구현"을 분리</td></tr>
+<tr><td class="w">하네스 전투 재현성</td><td>경로·속도 고정, 3회 편차를 먼저 확인 (Phase 4 완료 조건)</td></tr>
+<tr><td class="w">Phase 1이 길어짐</td><td>완료 조건을 수치로 고정. 충족 즉시 다음으로</td></tr>
+<tr><td class="w">리쉬 복귀가 NavMesh·BT와 얽혀 커짐</td><td>최소 구현(집 좌표로 이동 + 도착 판정)만. 연출은 나중</td></tr>
+</tbody>
+</table>
+
+<table>
+<colgroup><col style="width:34%"><col style="width:40%"><col style="width:26%"></colgroup>
+<thead><tr><th>열린 결정</th><th>후보</th><th>정하는 시점</th></tr></thead>
+<tbody>
+<tr><td class="k">진입 / 이탈 반경</td><td>35m / 50m (화면 ≈ 25m 기준)</td><td>Phase 5</td></tr>
+<tr><td class="k">유예 상한</td><td>15~20초</td><td>Phase 5</td></tr>
+<tr><td class="k">셀 크기 S</td><td>≈ 25m</td><td>Phase 7</td></tr>
+<tr><td class="k">스케일 테스트 N 범위</td><td>23 ~ 10,000</td><td>Phase 7</td></tr>
+<tr><td class="k">Sector 볼륨의 운명</td><td>삭제 / 게임플레이 구역(지역명·BGM·필드 보스)</td><td>Phase 8</td></tr>
+</tbody>
+</table>
+
+<div class="callout c-green">
+  <span class="lbl">다음 한 걸음</span>
+  ① <code>03_Predictions.md</code>에 <strong>예측 박제</strong>
+  ② 미커밋 리팩터 위에서 <strong>Phase 1-1 ~ 1-4 배선</strong>부터 — 배선만 들어가도 W1~W4가 한꺼번에 풀린다.
+  ③ Before 영상은 Phase 4에서 하네스로 (Phase 5 전 마감).
+</div>
+
+<div class="footer">
+  Operation Kivotos · docs/FieldEntity/Plan.html · 2026-09-28 · 텍스트판 <code>02_Plan.md</code>가 기준 문서.
+  코드 상태(W1~W6)는 정적 읽기 기준이며 플레이로 확인하지 않았다. 그림 ④⑤는 측정 전 예상 모양이다.
+</div>
+
+</body>
+</html>

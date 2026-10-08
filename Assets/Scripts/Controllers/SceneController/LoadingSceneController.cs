@@ -5,7 +5,10 @@ using UnityEngine.UI;
 using Cysharp.Threading.Tasks; // [추가]
 using System.Threading; // [추가]
 
-public class LoadingSceneController : BaseScene
+// 로딩 UI(진행 바 · 랜덤 이미지)일 뿐 씬이 아니다 — BaseScene을 상속하면 안 된다.
+//  GameScene 등이 초기화 중 이 UI를 커버로 띄우는데, BaseScene이면 SceneEx.CurrentScene(FindAnyObjectByType)이
+//  커버를 집을 수 있다 → 부모 없이 Pop된 오브젝트(몬스터 등)가 커버 밑에 붙었다가 커버와 함께 파괴됐다.
+public class LoadingSceneController : MonoBehaviour
 {
     [Header("Random Images")]
     [SerializeField] private Sprite[] _randomSprites;
@@ -112,7 +115,7 @@ public class LoadingSceneController : BaseScene
         _startValue = value;
     }
 
-    public override void Clear()
+    public void Clear()
     {
         // 씬 전환 시 남아있는 토큰이 있다면 확실하게 파괴
         if (_dotAnimCts != null)

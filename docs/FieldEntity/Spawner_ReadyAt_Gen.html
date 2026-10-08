@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>필드 엔티티 — ReadyAt과 Gen</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:16px 0 3px; font-weight:800; break-after:avoid; }
+  h3{ font-size:10pt; margin:10px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  pre{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.9pt; background:var(--shade); border:1px solid var(--line); border-radius:9px; padding:8px 11px; margin:6px 0; line-height:1.45; break-inside:avoid; white-space:pre; }
+  pre .c{ color:#8a91a0; } pre .k{ color:#3b5bdb; font-weight:700; }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:10px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.8px; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:8.6pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.2pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:4px 7px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.k{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  td.c{ text-align:center; font-size:10pt; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9pt; line-height:1.48; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); } .c-violet .lbl{ color:var(--violet); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; display:block; margin-bottom:3px; }
+  .pb{ break-before:page; }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .pc{ border:1px solid var(--line); border-radius:10px; padding:7px 11px 6px; font-size:8.6pt; line-height:1.45; break-inside:avoid; }
+  .pc .hd{ font-weight:800; font-size:8.6pt; margin-bottom:2px; }
+  .pc.pro .hd{ color:var(--green-ink); } .pc.con .hd{ color:var(--amber-ink); }
+  .pc ul{ margin:0; padding-left:15px; } .pc li{ margin:1px 0; }
+  .card{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:8px 12px 7px; margin:8px 0; break-inside:avoid; font-size:8.7pt; line-height:1.45; }
+  .card.a{ border-left-color:var(--amber); } .card.v{ border-left-color:var(--violet); } .card.g{ border-left-color:var(--green); } .card.k{ border-left-color:var(--ink); }
+  .card .hd{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
+  .card .hd b{ font-size:10pt; } .card .hd span{ font-size:8pt; color:var(--muted); }
+  .card .row{ display:grid; grid-template-columns:250px 1fr; gap:12px; align-items:start; }
+  .card ul{ margin:2px 0 0; padding-left:15px; } .card li{ margin:1px 0; }
+  .card .impl{ background:var(--shade); border-radius:7px; padding:4px 9px; margin:4px 0 3px; font-size:8.2pt; }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--amber-ink); font-weight:800; }
+  .footer{ margin-top:12px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+</style>
+
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a91a0"/></marker>
+    <marker id="arv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7048e8"/></marker>
+    <marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker>
+    <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2b8a3e"/></marker>
+    <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/></marker>
+  </defs>
+</svg>
+
+<!-- ============================ 1쪽 · ReadyAt ============================ -->
+<div class="kicker">Operation Kivotos · 필드 엔티티 관리 · 스포너 슬롯</div>
+<h1>ReadyAt과 Gen — 그림으로 보기</h1>
+<p class="lead">둘 다 <strong>시간이 엇갈릴 때</strong> 생기는 사고를 막는 숫자 하나씩이다.
+<strong>ReadyAt</strong>은 리스폰 타이머를, <strong>Gen</strong>은 비동기 스폰 결과를 맡는다.
+슬롯마다 돌던 비동기 작업과 CTS를 이 두 숫자로 바꾸면 S1~S3이 생길 자리가 없어진다.</p>
+
+<h2>1. ReadyAt — "몇 초부터 다시 스폰해도 되는가"</h2>
+<div class="h2sub">남은 시간(카운트다운)이 아니라 <strong>알람 시각</strong>을 적어 둔다. 상황: 리스폰 10초, 100초에 회수, 105초에 끔, 112초에 다시 켬</div>
+
+<div class="fig">
+  <div class="figt">그림 1 · 같은 상황, 옛 방식과 새 방식</div>
+  <svg viewBox="0 0 700 290" width="100%">
+    <!-- 꺼진 구간 -->
+    <rect x="267" y="30" width="144" height="222" fill="#f3f0ff"/>
+    <text x="339" y="46" class="tb" fill="#5028c0" text-anchor="middle">스포너 꺼짐</text>
+
+    <!-- 옛 방식 -->
+    <text x="20" y="66" class="t">옛 방식 — 슬롯마다 UniTask.Delay(10초)</text>
+    <rect x="163" y="78" width="104" height="24" rx="5" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="215" y="94" class="xs" fill="#2b3a8f" text-anchor="middle">10초 카운트다운</text>
+    <line x1="260" y1="83" x2="274" y2="97" stroke="#e8590c" stroke-width="2.2"/>
+    <line x1="274" y1="83" x2="260" y2="97" stroke="#e8590c" stroke-width="2.2"/>
+    <text x="267" y="116" class="xs" fill="#8a3708" text-anchor="middle">CTS 취소</text>
+    <rect x="411" y="78" width="207" height="24" rx="5" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="514" y="94" class="xs" fill="#8a3708" text-anchor="middle">다시 처음부터 10초</text>
+    <circle cx="618" cy="90" r="6" fill="#2b8a3e"/>
+    <text x="618" y="72" class="t" fill="#1f6b2e" text-anchor="middle">122초 스폰</text>
+    <!-- 엇갈림 -->
+    <line x1="274" y1="132" x2="363" y2="132" stroke="#e8590c" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <circle cx="370" cy="132" r="6" fill="none" stroke="#e8590c" stroke-width="1.4" stroke-dasharray="3 2"/>
+    <text x="382" y="135" class="xs" fill="#8a3708">취소가 엇갈리면 → 꺼진 채로 110초에 스폰 (S1)</text>
+    <text x="20" y="160" class="s">꺼져 있던 7초는 버려지고, 슬롯마다 비동기 작업 + CTS를 따로 들고 있어야 한다.</text>
+
+    <!-- 새 방식 -->
+    <text x="20" y="186" class="t">새 방식 — 숫자 하나만 적어 둔다</text>
+    <line x1="163" y1="222" x2="680" y2="222" stroke="#e3e6ec" stroke-width="2"/>
+    <line x1="370" y1="192" x2="370" y2="250" stroke="#2b8a3e" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="376" y="202" class="t" fill="#1f6b2e">ReadyAt = 110</text>
+    <circle cx="163" cy="222" r="5" fill="#1a1c22"/>
+    <text x="157" y="212" class="xs" text-anchor="end">100초 회수</text>
+    <text x="157" y="238" class="xs" fill="#1f6b2e" text-anchor="end">ReadyAt = 100+10</text>
+    <line x1="215" y1="217" x2="215" y2="227" stroke="#8a91a0"/>
+    <text x="215" y="212" class="xs" text-anchor="middle">틱: 103 ≥ 110? ✗</text>
+    <text x="320" y="240" class="xs" fill="#5028c0" text-anchor="middle">틱이 이 슬롯을 안 봄</text>
+    <circle cx="411" cy="222" r="6" fill="#2b8a3e"/>
+    <text x="420" y="226" class="t" fill="#1f6b2e">112초 켜짐 → 틱: 112 ≥ 110 ✓ 바로 스폰</text>
+    <text x="420" y="242" class="xs">카운트다운이 꺼진 동안에도 이어진 것과 같은 결과</text>
+
+    <!-- 축 -->
+    <line x1="60" y1="262" x2="680" y2="262" stroke="#1a1c22" stroke-width="1"/>
+    <g class="xs" text-anchor="middle">
+      <line x1="60" y1="258" x2="60" y2="266" stroke="#1a1c22"/><text x="60" y="278">95초</text>
+      <line x1="163" y1="258" x2="163" y2="266" stroke="#1a1c22"/><text x="163" y="278">100</text>
+      <line x1="267" y1="258" x2="267" y2="266" stroke="#1a1c22"/><text x="267" y="278">105</text>
+      <line x1="370" y1="258" x2="370" y2="266" stroke="#1a1c22"/><text x="370" y="278">110</text>
+      <line x1="411" y1="258" x2="411" y2="266" stroke="#7048e8"/><text x="411" y="278" fill="#5028c0">112</text>
+      <line x1="473" y1="258" x2="473" y2="266" stroke="#1a1c22"/><text x="473" y="278">115</text>
+      <line x1="577" y1="258" x2="577" y2="266" stroke="#1a1c22"/><text x="577" y="278">120</text>
+      <line x1="680" y1="258" x2="680" y2="266" stroke="#1a1c22"/><text x="680" y="278">125</text>
+    </g>
+  </svg>
+  <div class="figcap">보라 구간 = Sector가 스포너를 끈 동안. 옛 방식은 타이머가 "돌고 있는 작업"이라 끌 때 취소해야 하고, 새 방식은 취소할 것이 없다.</div>
+</div>
+
+<div class="callout c-green"><span class="lbl">한 줄로</span>
+ReadyAt은 <strong>알람 시각</strong>이다. 스포너를 꺼도 알람은 지워지지 않고, 다시 켰을 때 이미 지난 시각이면 그 자리에서 울린다.</div>
+
+<h3>틱이 하는 일 — 시계를 보고 비교만 한다</h3>
+<div class="fig">
+  <div class="figt">그림 2 · now = 108초인 프레임에서, 켜진 스포너의 슬롯 4개</div>
+  <svg viewBox="0 0 700 212" width="100%">
+    <text x="20" y="24" class="xs">슬롯</text>
+    <text x="560" y="24" class="xs">이번 틱 결과</text>
+
+    <rect x="12" y="38" width="676" height="30" rx="6" fill="#f7f8fa"/>
+    <rect x="12" y="106" width="676" height="30" rx="6" fill="#f7f8fa"/>
+
+    <!-- 슬롯 0 -->
+    <text x="20" y="57" class="t">슬롯 0 · Waiting</text>
+    <line x1="220" y1="53" x2="520" y2="53" stroke="#e3e6ec" stroke-width="2"/>
+    <circle cx="300" cy="53" r="6" fill="#2b8a3e"/>
+    <text x="300" y="44" class="xs" fill="#1f6b2e" text-anchor="middle">ReadyAt 104</text>
+    <text x="560" y="57" class="t" fill="#1f6b2e">✓ 스폰 요청</text>
+    <!-- 슬롯 1 -->
+    <text x="20" y="91" class="t">슬롯 1 · Waiting</text>
+    <line x1="220" y1="87" x2="520" y2="87" stroke="#e3e6ec" stroke-width="2"/>
+    <circle cx="340" cy="87" r="6" fill="#2b8a3e"/>
+    <text x="320" y="78" class="xs" fill="#1f6b2e" text-anchor="middle">ReadyAt 107</text>
+    <text x="560" y="91" class="t" fill="#1f6b2e">✓ 스폰 요청</text>
+    <!-- 슬롯 2 -->
+    <text x="20" y="125" class="t">슬롯 2 · Waiting</text>
+    <line x1="220" y1="121" x2="520" y2="121" stroke="#e3e6ec" stroke-width="2"/>
+    <circle cx="480" cy="121" r="6" fill="#fff" stroke="#8a91a0" stroke-width="1.6"/>
+    <text x="480" y="112" class="xs" text-anchor="middle">ReadyAt 113</text>
+    <text x="560" y="125" class="t" fill="#5b6270">✗ 5초 남음</text>
+    <!-- 슬롯 3 -->
+    <text x="20" y="159" class="t">슬롯 3 · Alive</text>
+    <rect x="220" y="146" width="300" height="22" rx="5" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="300" y="161" class="xs" fill="#1f6b2e" text-anchor="middle">살아 있음 — ReadyAt을 보지 않음</text>
+    <text x="560" y="159" class="t" fill="#5b6270">— 건너뜀</text>
+
+    <!-- now -->
+    <line x1="380" y1="32" x2="380" y2="176" stroke="#3b5bdb" stroke-width="2"/>
+    <rect x="348" y="14" width="64" height="18" rx="9" fill="#3b5bdb"/>
+    <text x="380" y="27" class="t" fill="#fff" text-anchor="middle">now 108</text>
+
+    <!-- 축 -->
+    <line x1="220" y1="186" x2="520" y2="186" stroke="#1a1c22"/>
+    <g class="xs" text-anchor="middle">
+      <line x1="220" y1="182" x2="220" y2="190" stroke="#1a1c22"/><text x="220" y="202">100초</text>
+      <line x1="320" y1="182" x2="320" y2="190" stroke="#1a1c22"/><text x="320" y="202">105</text>
+      <line x1="420" y1="182" x2="420" y2="190" stroke="#1a1c22"/><text x="420" y="202">110</text>
+      <line x1="520" y1="182" x2="520" y2="190" stroke="#1a1c22"/><text x="520" y="202">115</text>
+    </g>
+  </svg>
+  <div class="figcap">규칙은 하나: <code>State == Waiting</code> 이고 <code>now ≥ ReadyAt</code> 이면 스폰. 파란 선(now)보다 왼쪽에 있는 알람만 울린다.
+  예산이 프레임당 1마리라면 슬롯 0은 이번 프레임에, 슬롯 1은 다음 프레임에 나온다. 알람이 이미 지났으니 한 프레임 늦어도 잃는 것이 없다.</div>
+</div>
+
+<!-- ============================ 2쪽 · Gen ============================ -->
+<h2 class="pb">2. Gen — "이 스폰 결과가 아직 유효한가"</h2>
+<div class="h2sub"><code>MonsterFactory.CreateMonsterByMonsterIDAsync</code>는 <strong>비동기</strong>다. 요청하고 몬스터가 나오기까지 몇 프레임이 걸리고, 그 사이에 스포너가 꺼졌다 켜질 수 있다</div>
+
+<div class="callout c-blue"><span class="lbl">비유 — 카페 번호표</span>
+슬롯은 주문할 때마다 번호를 하나 올리고(<code>Gen++</code>), 그 번호를 요청에 붙여 보낸다. 주문을 취소할 때도 번호를 올린다.
+음료(몬스터)가 나왔을 때 <strong>붙어 온 번호가 지금 번호와 다르면</strong> 취소된 주문이므로 바로 버린다. 확인은 정수 비교 한 번이다.</div>
+
+<div class="fig">
+  <div class="figt">그림 3 · Gen이 없으면 — 끄고 바로 다시 켰을 때</div>
+  <svg viewBox="0 0 700 214" width="100%">
+    <g stroke="#e3e6ec" stroke-dasharray="3 3">
+      <line x1="170" y1="30" x2="170" y2="196"/><line x1="280" y1="30" x2="280" y2="196"/>
+      <line x1="390" y1="30" x2="390" y2="196"/><line x1="500" y1="30" x2="500" y2="196"/>
+      <line x1="610" y1="30" x2="610" y2="196"/>
+    </g>
+    <g class="xs" text-anchor="middle">
+      <text x="170" y="22">t1 · 틱</text><text x="280" y="22">t2 · 끔</text><text x="390" y="22">t3 · 켬 + 틱</text>
+      <text x="500" y="22">t4 · A 도착</text><text x="610" y="22">t5 · B 도착</text>
+    </g>
+
+    <text x="20" y="54" class="t">Sector</text>
+    <rect x="240" y="42" width="80" height="20" rx="10" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="280" y="56" class="xs" fill="#5028c0" text-anchor="middle">Deactivate</text>
+    <rect x="350" y="42" width="80" height="20" rx="10" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="390" y="56" class="xs" fill="#5028c0" text-anchor="middle">Activate</text>
+
+    <text x="20" y="98" class="t">슬롯</text>
+    <rect x="120" y="82" width="50" height="24" fill="#f7f8fa" stroke="#8a91a0"/>
+    <rect x="170" y="82" width="110" height="24" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="225" y="98" class="xs" fill="#2b3a8f" text-anchor="middle">Spawning</text>
+    <rect x="280" y="82" width="110" height="24" fill="#f7f8fa" stroke="#8a91a0"/>
+    <text x="335" y="98" class="xs" text-anchor="middle">Waiting</text>
+    <rect x="390" y="82" width="110" height="24" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="445" y="98" class="xs" fill="#2b3a8f" text-anchor="middle">Spawning</text>
+    <rect x="500" y="82" width="110" height="24" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="555" y="98" class="xs" fill="#1f6b2e" text-anchor="middle">Alive · A</text>
+    <rect x="610" y="82" width="78" height="24" fill="#ebfbee" stroke="#e8590c" stroke-width="1.6"/>
+    <text x="649" y="98" class="xs" fill="#1f6b2e" text-anchor="middle">Alive · B</text>
+
+    <text x="20" y="140" class="t">요청 A</text>
+    <line x1="170" y1="136" x2="496" y2="136" stroke="#3b5bdb" stroke-width="1.6" marker-end="url(#arb)"/>
+    <text x="335" y="130" class="xs" fill="#2b3a8f" text-anchor="middle">비동기 로딩 중…</text>
+    <circle cx="500" cy="136" r="5" fill="#2b8a3e"/>
+    <text x="508" y="140" class="xs" fill="#1f6b2e">A 생성 → 슬롯이 받음</text>
+
+    <text x="20" y="172" class="t">요청 B</text>
+    <line x1="390" y1="168" x2="606" y2="168" stroke="#3b5bdb" stroke-width="1.6" marker-end="url(#arb)"/>
+    <circle cx="610" cy="168" r="5" fill="#2b8a3e"/>
+    <text x="604" y="184" class="xs" fill="#1f6b2e" text-anchor="end">B 생성 → 슬롯이 A를 덮어씀</text>
+
+    <rect x="12" y="194" width="676" height="18" rx="5" fill="#fff4ec"/>
+    <text x="20" y="207" class="s" fill="#8a3708">결과: 몬스터 2마리. 슬롯은 B만 알고, A는 아무도 관리하지 않는 몬스터로 필드에 남는다 (S3).</text>
+  </svg>
+</div>
+
+<div class="fig">
+  <div class="figt">그림 4 · Gen이 있으면 — 같은 상황</div>
+  <svg viewBox="0 0 700 262" width="100%">
+    <g stroke="#e3e6ec" stroke-dasharray="3 3">
+      <line x1="170" y1="30" x2="170" y2="236"/><line x1="280" y1="30" x2="280" y2="236"/>
+      <line x1="390" y1="30" x2="390" y2="236"/><line x1="500" y1="30" x2="500" y2="236"/>
+      <line x1="610" y1="30" x2="610" y2="236"/>
+    </g>
+    <g class="xs" text-anchor="middle">
+      <text x="170" y="22">t1 · 틱</text><text x="280" y="22">t2 · 끔</text><text x="390" y="22">t3 · 켬 + 틱</text>
+      <text x="500" y="22">t4 · A 도착</text><text x="610" y="22">t5 · B 도착</text>
+    </g>
+
+    <text x="20" y="54" class="t">Sector</text>
+    <rect x="240" y="42" width="80" height="20" rx="10" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="280" y="56" class="xs" fill="#5028c0" text-anchor="middle">Deactivate</text>
+    <rect x="350" y="42" width="80" height="20" rx="10" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="390" y="56" class="xs" fill="#5028c0" text-anchor="middle">Activate</text>
+
+    <text x="20" y="98" class="t">슬롯</text>
+    <rect x="120" y="82" width="50" height="24" fill="#f7f8fa" stroke="#8a91a0"/>
+    <rect x="170" y="82" width="110" height="24" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="225" y="98" class="xs" fill="#2b3a8f" text-anchor="middle">Spawning</text>
+    <rect x="280" y="82" width="110" height="24" fill="#f7f8fa" stroke="#8a91a0"/>
+    <text x="335" y="98" class="xs" text-anchor="middle">Waiting</text>
+    <rect x="390" y="82" width="220" height="24" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="500" y="98" class="xs" fill="#2b3a8f" text-anchor="middle">Spawning (A는 무시하고 계속 B를 기다림)</text>
+    <rect x="610" y="82" width="78" height="24" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="649" y="98" class="xs" fill="#1f6b2e" text-anchor="middle">Alive · B</text>
+
+    <text x="20" y="128" class="t" fill="#2b3a8f">슬롯 Gen</text>
+    <g class="tb" fill="#2b3a8f" text-anchor="middle">
+      <text x="145" y="128">0</text><text x="225" y="128">1</text><text x="335" y="128">2</text>
+      <text x="500" y="128">3</text><text x="649" y="128">3</text>
+    </g>
+    <g class="xs" fill="#3b5bdb" text-anchor="middle">
+      <text x="170" y="142">+1 (요청)</text><text x="280" y="142">+1 (끔)</text><text x="390" y="142">+1 (요청)</text>
+    </g>
+
+    <text x="20" y="176" class="t">요청 A</text>
+    <rect x="174" y="161" width="52" height="16" rx="8" fill="#3b5bdb"/>
+    <text x="200" y="173" class="xs" fill="#fff" text-anchor="middle">gen = 1</text>
+    <line x1="228" y1="169" x2="494" y2="169" stroke="#3b5bdb" stroke-width="1.6" marker-end="url(#arb)"/>
+    <circle cx="500" cy="169" r="7" fill="#fff4ec" stroke="#e8590c" stroke-width="1.6"/>
+    <line x1="496" y1="165" x2="504" y2="173" stroke="#e8590c" stroke-width="1.8"/>
+    <line x1="504" y1="165" x2="496" y2="173" stroke="#e8590c" stroke-width="1.8"/>
+    <text x="512" y="166" class="t" fill="#8a3708">1 ≠ 3 → 늦게 온 결과</text>
+    <text x="512" y="180" class="xs" fill="#8a3708">슬롯에 넣지 않고 즉시 Resource.Destroy</text>
+
+    <text x="20" y="214" class="t">요청 B</text>
+    <rect x="394" y="199" width="52" height="16" rx="8" fill="#3b5bdb"/>
+    <text x="420" y="211" class="xs" fill="#fff" text-anchor="middle">gen = 3</text>
+    <line x1="448" y1="207" x2="603" y2="207" stroke="#3b5bdb" stroke-width="1.6" marker-end="url(#arb)"/>
+    <circle cx="610" cy="207" r="7" fill="#2b8a3e"/>
+    <text x="618" y="211" class="t" fill="#1f6b2e">3 = 3 ✓</text>
+    <text x="604" y="226" class="xs" fill="#1f6b2e" text-anchor="end">채택 → Instance = B, Alive</text>
+
+    <rect x="12" y="240" width="676" height="18" rx="5" fill="#ebfbee"/>
+    <text x="20" y="253" class="s" fill="#1f6b2e">결과: 몬스터 1마리. 슬롯이 관리하는 B만 남고, 취소된 주문인 A는 도착하자마자 회수된다.</text>
+  </svg>
+  <div class="figcap">t3이 없는 경우(끈 채로 끝남)도 같다. 슬롯 Gen은 2, A는 gen = 1을 들고 오니 회수된다 → 꺼진 스포너에 몬스터가 생기지 않는다 (S1 방지).</div>
+</div>
+
+<div class="two">
+  <div class="pc con"><div class="hd">CTS로 취소하면 안 되나?</div>
+    <ul>
+      <li>Addressable 로드 · Instantiate가 이미 진행된 뒤에는 취소가 깔끔하게 먹지 않을 수 있다</li>
+      <li>결국 "결과가 와 버리면 어떡하지"를 또 처리해야 한다</li>
+      <li>스폰마다 CTS를 만들고 Dispose하는 관리가 다시 생긴다 (옛 S2의 자리)</li>
+    </ul></div>
+  <div class="pc pro"><div class="hd">번호 비교로 하면</div>
+    <ul>
+      <li>결과는 <strong>어차피 올 수 있다</strong>고 인정하고, 도착한 순간 한 곳에서만 판정한다</li>
+      <li>확인은 <code>gen != slot.Gen</code> 정수 비교 한 번</li>
+      <li>슬롯에 int 하나만 늘어난다. 할당 없음</li>
+    </ul></div>
+</div>
+
+<!-- ============================ 3쪽 · 정리 ============================ -->
+<h2 class="pb">3. 정리 — 슬롯의 필드 4개와 누가 언제 바꾸는가</h2>
+<div class="h2sub">상태는 이 네 개가 전부다. 비동기 작업 안에 숨은 상태가 없으니 언제 들여다봐도 슬롯이 무엇을 하는 중인지 보인다</div>
+
+<table>
+  <thead><tr><th style="width:14%">필드</th><th style="width:30%">뜻</th><th>바뀌는 순간</th></tr></thead>
+  <tbody>
+    <tr><td class="k">State</td><td>Waiting · Spawning · Alive · Dying</td><td>틱(Waiting→Spawning) · 팩토리 반환(→Alive) · 사망(→Dying) · 회수(→Waiting) · Deactivate</td></tr>
+    <tr><td class="k">ReadyAt</td><td>이 시각부터 스폰 가능 (알람 시각)</td><td>회수(OnDespawned) 시 <code>now + respawnTime</code> · Deactivate로 되돌릴 때 <code>now</code> · 첫 활성화 (첫 스폰 대기 결정)</td></tr>
+    <tr><td class="k">Gen</td><td>지금 유효한 주문 번호</td><td>스폰 요청할 때 <code>+1</code> · Spawning 중 Deactivate로 취소할 때 <code>+1</code></td></tr>
+    <tr><td class="k">Instance</td><td>슬롯이 관리하는 몬스터</td><td>Gen이 맞는 결과가 도착하면 설정 · 회수되면 비움</td></tr>
+  </tbody>
+</table>
+
+<div class="fig">
+  <div class="figt">그림 5 · 상태 기계 위에 ReadyAt과 Gen이 붙는 자리 (실선 = 평소, 점선 = Deactivate)</div>
+  <svg viewBox="0 0 700 270" width="100%">
+    <rect x="20" y="96" width="120" height="60" rx="30" fill="#f7f8fa" stroke="#1a1c22" stroke-width="1.4"/>
+    <text x="80" y="122" class="tb" text-anchor="middle">Waiting</text>
+    <text x="80" y="138" class="xs" text-anchor="middle">now ≥ ReadyAt 대기</text>
+
+    <rect x="200" y="96" width="120" height="60" rx="30" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+    <text x="260" y="122" class="tb" fill="#2b3a8f" text-anchor="middle">Spawning</text>
+    <text x="260" y="138" class="xs" fill="#2b3a8f" text-anchor="middle">gen 들고 비동기 중</text>
+
+    <rect x="380" y="96" width="120" height="60" rx="30" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.4"/>
+    <text x="440" y="122" class="tb" fill="#1f6b2e" text-anchor="middle">Alive</text>
+    <text x="440" y="138" class="xs" fill="#1f6b2e" text-anchor="middle">Instance 보유</text>
+
+    <rect x="560" y="96" width="120" height="60" rx="30" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+    <text x="620" y="122" class="tb" fill="#8a3708" text-anchor="middle">Dying</text>
+    <text x="620" y="138" class="xs" fill="#8a3708" text-anchor="middle">사망 연출 중</text>
+
+    <path d="M142,114 L198,114" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="170" y="74" class="xs" text-anchor="middle">now ≥ ReadyAt</text>
+    <text x="170" y="86" class="xs" text-anchor="middle">예산 남음</text>
+    <text x="170" y="108" class="xs" fill="#2b3a8f" text-anchor="middle">Gen +1</text>
+
+    <path d="M322,114 L378,114" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="350" y="86" class="xs" text-anchor="middle">gen = Gen ✓</text>
+    <text x="350" y="108" class="xs" fill="#1f6b2e" text-anchor="middle">채택</text>
+
+    <path d="M502,114 L558,114" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="530" y="86" class="xs" text-anchor="middle">HP 0</text>
+
+    <path d="M650,158 L650,232 L40,232 L40,160" fill="none" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <text x="345" y="226" class="s" text-anchor="middle">OnDespawned (연출 끝, 풀 반납) → ReadyAt = now + respawnTime</text>
+
+    <path d="M260,158 L260,192 L110,192 L110,160" fill="none" stroke="#7048e8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arv)"/>
+    <text x="185" y="206" class="xs" fill="#5028c0" text-anchor="middle">Deactivate: Gen +1 · ReadyAt = now</text>
+    <path d="M430,94 C430,30 90,30 84,92" fill="none" stroke="#7048e8" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arv)"/>
+    <text x="258" y="28" class="xs" fill="#5028c0" text-anchor="middle">Deactivate: 즉시 회수 (Resource.Destroy) · ReadyAt = now</text>
+
+    <path d="M322,140 C350,170 320,176 294,158" fill="none" stroke="#e8590c" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ara)"/>
+    <text x="352" y="176" class="xs" fill="#8a3708">gen ≠ Gen → 결과만 버림, 상태 그대로</text>
+  </svg>
+  <div class="figcap">Waiting에서 Deactivate는 아무것도 안 바꾼다 — ReadyAt이 알람 시각이라 꺼져 있어도 시간은 흐른다.</div>
+</div>
+
+<h3>코드로 보면 (SpawnerManager)</h3>
+<pre><span class="k">void</span> OnUpdate()                                   <span class="c">// 매 프레임 · 켜진 Record만</span>
+{
+    <span class="k">foreach</span> (slot <span class="k">in</span> 켜진 Record의 슬롯)
+        <span class="k">if</span> (slot.State == Waiting &amp;&amp; now &gt;= slot.ReadyAt &amp;&amp; budget-- &gt; 0)
+        {
+            slot.Gen++;                                 <span class="c">// 새 주문 번호</span>
+            slot.State = Spawning;
+            SpawnAsync(slot, slot.Gen).Forget();        <span class="c">// 번호를 들고 출발</span>
+        }
+}
+
+<span class="k">async</span> UniTaskVoid SpawnAsync(SpawnSlot slot, <span class="k">int</span> gen)
+{
+    <span class="k">var</span> go = <span class="k">await</span> MonsterFactory.CreateMonsterByMonsterIDAsync(...);
+    <span class="k">if</span> (gen != slot.Gen) { Managers.Resource.Destroy(go); <span class="k">return</span>; }   <span class="c">// 취소된 주문</span>
+    slot.Instance = ...; slot.State = Alive;
+}
+
+<span class="k">void</span> HandleDespawned(BaseMonsterController m)      <span class="c">// Dying → Waiting</span>
+{
+    slot.Instance = <span class="k">null</span>; slot.State = Waiting;
+    slot.ReadyAt = now + slot.RespawnTime;          <span class="c">// 알람 맞추기</span>
+}</pre>
+
+<div class="footer">Operation Kivotos · docs/FieldEntity · Spawner_Structure.pdf 3절(상태 기계)의 보충 그림 · 2026-10-02</div>
+
+</body>
+</html>

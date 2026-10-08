@@ -157,7 +157,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
         
         //_healingAuraPrefab = Addressables.LoadAssetAsync<GameObject>("HealingAura").WaitForCompletion();
-        _healingAuraPrefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura", isGlobal: true);
+        _healingAuraPrefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura", ResourceScopeType.Global);
         if (_healingAuraPrefab == null) GameLog.LogError("HealingAura 로드 실패!");
         
     }
@@ -482,7 +482,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     {
         if (_healingAuraInstance == null)
         {
-            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura", isGlobal: true);
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("Healing_Aura", ResourceScopeType.Global);
             if (prefab == null) return;
 
             _healingAuraInstance = Managers.Resource.Instantiate(prefab, transform);

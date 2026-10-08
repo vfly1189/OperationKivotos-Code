@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 using Cysharp.Threading.Tasks;
@@ -176,43 +177,21 @@ public class ResourceManager
 
 
     // =========================================================================
-    // 1. AssetReference를 인자로 받는 LoadAsync (씬에서 주로 사용)
+    // 1. 로드 — 수명 스코프를 받는 한 가지 형태 (기본 Scene).
+    //  AssetReference 버전은 런타임 키를 string으로 바꿔 넘기기만 한다.
+    //  해당 스코프가 아직 없으면(생성 훅 누락) 로드하지 않고 에러 — 조용히 Global로
+    //  새는 것보다 즉시 드러나는 편이 낫다(2버킷 도피의 재발 방지).
+    //  (구 bool isGlobal 오버로드는 2버킷 시절의 잔재라 제거 — Party/Popup 같은 수명을 표현 못 함)
     // =========================================================================
-    //public async UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false, CancellationToken token = default) where T : UnityEngine.Object
-    //{
-    //    if (assetRef == null || !assetRef.RuntimeKeyIsValid())
-    //        return null;
-
-    //    // AssetReference의 런타임 키를 string으로 변환해서 내부 처리 함수로 넘김
-    //    return await LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
-    //}
-
-    public UniTask<T> LoadAsync<T>(AssetReference assetRef, bool isGlobal = false, CancellationToken token = default)
-        where T : UnityEngine.Object
-        => (assetRef == null || !assetRef.RuntimeKeyIsValid())
-            ? UniTask.FromResult<T>(null)
-            : LoadAsync<T>(assetRef.RuntimeKey.ToString(), isGlobal, token);
-
-    // [Phase 3] AssetReference + 명시 스코프 (SO가 프리팹을 AssetReference로 들고 있는 경로용)
-    public UniTask<T> LoadAsync<T>(AssetReference assetRef, ResourceScopeType scopeType, CancellationToken token = default)
+    public UniTask<T> LoadAsync<T>(AssetReference assetRef,
+        ResourceScopeType scopeType = ResourceScopeType.Scene, CancellationToken token = default)
         where T : UnityEngine.Object
         => (assetRef == null || !assetRef.RuntimeKeyIsValid())
             ? UniTask.FromResult<T>(null)
             : LoadAsync<T>(assetRef.RuntimeKey.ToString(), scopeType, token);
 
-    public UniTask<T> LoadAsync<T>(string key, bool isGlobal = false, CancellationToken token = default)
-        where T : UnityEngine.Object
-    {
-        RecordLoadSource(key); // [Phase 2 계측] 최초 로드 요청자 기록 (에디터/개발 빌드 전용, 동작 무변경)
-        ResourceScope scope = isGlobal ? _scopes[ResourceScopeType.Global] : _scopes[ResourceScopeType.Scene];
-        return scope.LoadAsync<T>(key, token);
-    }
-
-    // [Phase 3] 수명 스코프를 명시하는 로드. bool isGlobal은 2버킷 시절의 잔재라
-    //  Party/Popup/Dungeon 같은 새 수명을 표현할 수 없다 — 신규 호출부는 이쪽을 쓴다.
-    //  해당 스코프가 아직 없으면(생성 훅 누락) 로드하지 않고 에러 — 조용히 Global로
-    //  새는 것보다 즉시 드러나는 편이 낫다(2버킷 도피의 재발 방지).
-    public UniTask<T> LoadAsync<T>(string key, ResourceScopeType scopeType, CancellationToken token = default)
+    public UniTask<T> LoadAsync<T>(string key,
+        ResourceScopeType scopeType = ResourceScopeType.Scene, CancellationToken token = default)
         where T : UnityEngine.Object
     {
         ResourceScope scope = GetScope(scopeType);
@@ -222,8 +201,19 @@ public class ResourceManager
             return UniTask.FromResult<T>(null);
         }
 
-        RecordLoadSource(key);
+        RecordLoadSource(key); // [Phase 2 계측] 최초 로드 요청자 기록 (에디터/개발 빌드 전용, 동작 무변경)
         return scope.LoadAsync<T>(key, token);
+    }
+
+    // 이미 로드된 에셋을 동기로 조회 (씬 프리로드 라벨로 올라온 것 등). 없으면 에러 + null.
+    public T GetLoaded<T>(string key) where T : UnityEngine.Object
+    {
+        if (_registry.TryGetAsset<T>(key, out var asset))
+            return asset;
+
+        GameLog.LogError($"[ResourceManager] 에셋이 로드되지 않았거나 찾을 수 없습니다. Key: {key}\n" +
+                         $"미리 LoadAsync로 로딩해두었는지 확인하세요.");
+        return null;
     }
 
     // =========================================================================
@@ -341,101 +331,82 @@ public class ResourceManager
 
 
     // =========================================================================
-    // [실무 패턴] 로드-필요시-생성 통합 API
-    // 동기 Instantiate(프리로드 필수)와 async Load를 손으로 잇던 걸 한 호출로 통합.
-    // 취소 토큰을 로드까지 전파하여 씬 이탈/디스폰 중 use-after-teardown 방지.
+    // 2. 생성 — 로드와 분리된 동기 단일 경로. 프리팹은 LoadAsync/GetLoaded로 이미 받은 것.
+    //  풀 판단은 내부에서 한다(Poolable이 붙은 프리팹이면 풀, 아니면 새로 복제).
+    //  어느 경로든 "비활성으로 확보 → 부모·배치 → activate면 켬" 순서가 같다.
+    //  activate: false면 꺼진 채로 돌려준다 — 호출부가 데이터 주입 등을 끝낸 뒤 직접 켠다.
+    //   이때 Awake는 반드시 끝나 있다(풀·복제 경로 공통) → 호출부가 켜기 전에 컴포넌트를 써도 안전.
     // =========================================================================
-    public async UniTask<GameObject> InstantiateAsync(
-        string key, Vector3 position, Quaternion rotation,
-        Transform parent = null, bool isGlobal = false, CancellationToken token = default)
+    public GameObject Instantiate(GameObject prefab, Transform parent = null, bool activate = true)
     {
-        GameObject prefab;
-        try
-        {
-            prefab = await LoadAsync<GameObject>(key, isGlobal, token);
-        }
-        catch (OperationCanceledException)
-        {
-            // 씬 이탈/디스폰으로 취소되면 예외 대신 null로 흡수 (호출부의 == null 방어와 일관)
-            return null;
-        }
-
-        if (prefab == null || token.IsCancellationRequested) return null;
-
-        return Instantiate(prefab, position, rotation, parent);
+        GameObject go = AcquireInactive(prefab, parent, activate);
+        if (go != null && activate) go.SetActive(true);
+        return go;
     }
 
-
-    public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent = null)
+    public GameObject Instantiate(GameObject prefab, Vector3 position, Quaternion rotation,
+        Transform parent = null, bool activate = true)
     {
-        // 1. 원본 프리팹의 활성화 상태를 잠시 끄고 복사
-        // (이렇게 하면 생성될 때 Awake는 돌지만 OnEnable과 물리 처리는 돌지 않음)
-        bool wasActive = original.activeSelf;
-        if (wasActive) original.SetActive(false);
-        // 1. 생성 (풀링 혹은 인스턴스화)
-        GameObject go = Instantiate(original, parent); // 기존 Instantiate(GameObject) 활용
+        GameObject go = AcquireInactive(prefab, parent, activate);
+        if (go == null) return null;
 
+        // 꺼진 상태에서 배치하므로 NavMeshAgent가 있어도 Warp 없이 이 위치에서 시작한다.
+        go.transform.SetPositionAndRotation(position, rotation);
+        if (activate) go.SetActive(true);
+        return go;
+    }
 
-        // 원상 복구
-        if (wasActive) original.SetActive(true);
+    // 꺼진 인스턴스를 확보한다. "꺼진 채 반환"은 모든 경로가 같다.
+    //  풀 경로          — Awake는 풀의 Create 시점에 이미 끝남 (Pop은 항상 꺼진 인스턴스)
+    //  복제 + 곧 켤 것  — 꺼진 스테이징 밑에서 복제해 Awake/OnEnable을 배치 뒤 활성화 시점까지 미룸
+    //                    (OnEnable이 한 번만, 제 위치에서 돈다)
+    //  복제 + 꺼진 채   — 풀 Create와 같게 켜진 채 복제해 Awake를 끝내고 바로 끈다.
+    //                    호출부가 켜기 전에 초기화(OnSpawn 등)를 하므로 Awake가 먼저 끝나 있어야 한다.
+    //                    (Poolable 없는 보스가 이 경로 — 미루면 OnSpawn이 조립 전 BT를 만진다)
+    //  (구 방식은 공유 원본 프리팹을 SetActive(false)로 껐다 켰다 — 에셋 자체를 건드려 제거)
+    GameObject AcquireInactive(GameObject prefab, Transform parent, bool activateSoon)
+    {
+        if (prefab == null) return null;
 
+        if (prefab.GetComponent<Poolable>() != null)
+            return Managers.Pool.Pop(prefab, parent).gameObject;
 
-        // go가 제대로 생성되었을 때만 처리 (안전망)
-        if (go != null)
+        if (!activateSoon)
         {
-            // 2. 위치/회전 설정
-            var agent = go.GetComponent<UnityEngine.AI.NavMeshAgent>();
-
-            if (agent != null)
-            {
-                // [Agent가 있는 경우] 
-                // 위치는 무조건 Warp로 이동시켜야 씹히지 않음
-                agent.Warp(position);
-                // 단, Warp는 회전을 처리해주지 않으므로 회전은 따로 적용
-                go.transform.rotation = rotation;
-            }
-            else
-            {
-                // [Agent가 없는 경우 (플레이어 등)] 
-                // 일반적인 Transform 방식으로 위치와 회전 모두 적용
-                go.transform.position = position;
-                go.transform.rotation = rotation;
-            }
-
-            // 3. 모든 세팅이 완벽히 끝난 후 오브젝트 활성화
-            go.SetActive(true);
+            GameObject awoken = Object.Instantiate(prefab, parent);
+            awoken.name = prefab.name;   // (Clone) 떼기
+            awoken.SetActive(false);
+            return awoken;
         }
+
+        GameObject go = Object.Instantiate(prefab, StagingRoot, false);
+        go.name = prefab.name;   // (Clone) 떼기
+        go.SetActive(false);     // 스테이징을 벗어나도 꺼진 채로 남도록 activeSelf를 먼저 끈다
+        go.transform.SetParent(parent, false);
+
+        // 부모 없이 떼면 스테이징이 속한 씬에 남으므로, 구 Object.Instantiate와 같게 활성 씬으로 보낸다.
+        if (parent == null)
+            SceneManager.MoveGameObjectToScene(go, SceneManager.GetActiveScene());
 
         return go;
     }
 
-
-    public GameObject Instantiate(string key, Vector3 position, Quaternion rotation, Transform parent = null)
+    // 복제 경로 전용 대기소. 꺼져 있으므로 밑에서 생성된 인스턴스는 Awake가 돌지 않는다.
+    //  씬 오브젝트라 씬 전환 때 함께 파괴되고, 다음 사용 시 새로 만든다 (DDOL 금지 — 자식을 떼면 DDOL 씬에 남음).
+    Transform _staging;
+    Transform StagingRoot
     {
-        if (_registry.TryGetAsset<GameObject>(key, out var original))
-            return Instantiate(original, position, rotation, parent);
-
-        GameLog.LogError($"[ResourceManager] 에셋이 로드되지 않았거나 찾을 수 없습니다. Key: {key}\n" +
-                         $"미리 LoadAsync로 로딩해두었는지 확인하세요.");
-        return null;
-    }
-
-
-    public GameObject Instantiate(GameObject original, Transform parent = null)
-    {
-        // 1. Poolable이 붙어있으면 풀 매니저에게 위임
-        if (original.GetComponent<Poolable>() != null)
+        get
         {
-            return Managers.Pool.Pop(original, parent).gameObject;
+            if (_staging == null)
+            {
+                GameObject go = new GameObject { name = "@Resource_Staging" };
+                go.SetActive(false);
+                _staging = go.transform;
+            }
+            return _staging;
         }
-
-        // 2. 아니면 그냥 생성
-        GameObject go = Object.Instantiate(original, parent);
-        go.name = original.name; // (Clone) 떼기
-        return go;
     }
-
-
 
     public void Destroy(GameObject go)
     {
@@ -446,9 +417,13 @@ public class ResourceManager
         Poolable poolable = go.GetComponent<Poolable>();
         if (poolable != null)
         {
-            Managers.Pool.Push(poolable);
+            Managers.Pool.Push(poolable);   // 생애 종료 훅(OnDespawn)은 Push 안에서 — 사용 중이던 것만 한 번
             return;
         }
+
+        // 비풀링 몬스터(보스 등)의 출구. 풀링 경로와 같은 계약을 지키도록 켜진 채로 먼저 생애를 닫는다.
+        if (go.TryGetComponent(out IMonsterLifecycle lifecycle))
+            lifecycle.OnDespawn();
 
         Object.Destroy(go);
     }

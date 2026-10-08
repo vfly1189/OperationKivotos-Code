@@ -11,6 +11,14 @@ public class GameScene : BaseScene
     [SerializeField] private GameScenePreloadSO _preloadData;
     [SerializeField] private GameObject _loadingCover;
 
+    [Header("존재 판정 (씬 로드 전에 고른다 — 런타임 전환 없음)")]
+    [SerializeField] private ActivationPolicyType _activationPolicy = ActivationPolicyType.CullingGroup;
+    [Tooltip("나머지 6개를 그림자(계산 · 로그만)로 같이 돌린다. 동등성 · 집합 지표용. 비용 측정 때는 끈다.")]
+    [SerializeField] private bool _activationShadows = true;
+
+    // 초기화가 끝났는가 — 측정 하네스(-harness)가 이 뒤에 자동 시작한다.
+    public bool IsReady { get; private set; }
+
     private GameObject _loadingCoverInstance;
     private GameObject _map;
     private AudioClip _mainBGM;
@@ -40,6 +48,7 @@ public class GameScene : BaseScene
         await UniTask.WhenAll(poolTask, mapTask, bgmTask);
 
         await CreateCharacters();
+        Managers.Spawner.Run();   // 파티 준비 완료 → 스폰 가동 (몬스터 OnSpawn이 파티를 읽는다)
         // Party.Init() 이후에 하는게 나음.
         // 현재 CreateCharacters에서 하고 있음.
         ApplySaveOrTestData(); 
@@ -61,6 +70,7 @@ public class GameScene : BaseScene
         Managers.Input.OnEscapePressed -= HandleEscape;
         Managers.Input.OnEscapePressed += HandleEscape;
 
+        IsReady = true;
     }
 
     private async UniTask<GameObject> LoadAndSpawnAsync(AssetReferenceGameObject refObj, Transform parent = null)
@@ -110,39 +120,64 @@ public class GameScene : BaseScene
         if (_preloadData.bullet != null)
         {
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bullet);
-            if (prefab != null) Managers.Pool.CreatePool(prefab, _preloadData.bullet.RuntimeKey.ToString(), 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
+            if (prefab != null) Managers.Pool.CreatePool(prefab, _preloadData.bullet.RuntimeKey.ToString(), 200);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
         }
 
         if (_preloadData.monsterAR != null)
         {
             string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2000).AddressableKey;
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
-            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
+            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 200);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
         }
 
         if (_preloadData.monsterRL != null)
         {
             string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2001).AddressableKey;
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
-            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
+            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 200);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
         }
 
         if (_preloadData.monsterTank != null)
         {
             string addressableKey = Managers.Data.GetData<int, MonsterBaseData>(2002).AddressableKey;
             GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(addressableKey);
-            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 30);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
+            if (prefab != null) Managers.Pool.CreatePool(prefab, addressableKey, 200);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득
+        }
+
+        //HPBar 풀링
+        {
+            GameObject prefab = await Managers.Resource.LoadAsync<GameObject>("MonsterHPBar");
+            if (prefab != null) Managers.Pool.CreatePool(prefab, "MonsterHPBar", 200);
         }
     }
 
     private async UniTask CreateMainVillage()
     {
         _map = await LoadAndSpawnAsync(_preloadData.mainVillage);
-        if (_map != null)
+        if (_map == null)
         {
-            _map.name = "@Map";
-            _map.transform.position = Vector3.zero;
+            GameLog.LogError("[GameScene] 맵 생성 실패 — 스포너 등록을 건너뜀");
+            return;
         }
+
+        _map.name = "@Map";
+        _map.transform.position = Vector3.zero;
+
+        BaseMap map = _map.GetComponent<BaseMap>();
+        List<SpawnerRecord> records = new List<SpawnerRecord>();
+         
+        foreach(MonsterSpawner spawner in map.GetSpawners())
+        {
+            SpawnerData data = Managers.Data.GetData<int, SpawnerData>(spawner.SpawnerID);
+            SpawnerRecord record = spawner.Build(data);
+            if(record != null) records.Add(record);
+        }
+
+        //record 들을 매니저한테 넘겨줘야됨
+        Managers.Spawner.Init(map.MapID, records);
+        // 실행 인자(-policy · -shadows)가 있으면 인스펙터 값 대신 — 빌드 하나로 정책을 바꿔 측정 (HarnessArgs)
+        Managers.Activation.Init(new ActivationLayout { _sectors = map.GetSectors(), _records = records.ToArray() },
+                                 HarnessArgs.Policy ?? _activationPolicy, HarnessArgs.Shadows ?? _activationShadows);
     }
 
     private async UniTask CreateCharacters()
@@ -227,12 +262,14 @@ public class GameScene : BaseScene
 
     public override void Clear()
     {
+        IsReady = false;
         base.Clear();
         Managers.Sound.StopAll();
         Managers.Input.OnEscapePressed -= HandleEscape;
 
         Managers.Field.Clear();
-        Managers.Sector.Clear();
+        Managers.Activation.Clear();
+        Managers.Spawner.Clear();
     }
 
 

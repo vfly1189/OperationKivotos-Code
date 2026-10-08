@@ -167,6 +167,12 @@ public class BossDungeonScene : BaseScene
             GameObject p = await Managers.Resource.LoadAsync<GameObject>(_preloadData.monsterRL);
             if (p != null) Managers.Pool.CreatePool(p, _preloadData.monsterRL.RuntimeKey.ToString(), 16);   // [Phase 4] key 전달 → 풀이 refCount 티켓 획득 (LoadAsync(AssetReference)와 동일 키잉)
         }
+
+        //HPBar 풀링 — NormalMonsterController.OnSpawn이 GetLoaded로 동기 조회하므로 스폰 전에 반드시 로드
+        {
+            GameObject p = await Managers.Resource.LoadAsync<GameObject>("MonsterHPBar");
+            if (p != null) Managers.Pool.CreatePool(p, "MonsterHPBar", 16);
+        }
     }
 
     async UniTask CreateEffectStage()
@@ -194,7 +200,8 @@ public class BossDungeonScene : BaseScene
         GameObject boss = await MonsterFactory.CreateMonsterByAddressableKeyAsync(
             addressableKey,
             Managers.Context.CurrentDungeonID,
-            _bossSpawnPoint
+            _bossSpawnPoint.position,
+            _bossSpawnPoint.rotation
         );
 
         if (boss != null)

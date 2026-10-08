@@ -17,7 +17,6 @@ public class Managers : MonoBehaviour
     UIManager _ui = new UIManager();
     DataManager _data = new DataManager();
     WalletManager _wallet = new WalletManager();
-    SectorManager _sector = new SectorManager();
     InventoryManager _inventory = new InventoryManager();
     EquipmentManager _equipment = new EquipmentManager();
     SaveManager _save = new SaveManager();
@@ -25,6 +24,8 @@ public class Managers : MonoBehaviour
     DungeonManager _dungeon = new DungeonManager();
     GameSessionContext _context = new GameSessionContext();
     FieldManager _field = new FieldManager();
+    SpawnerManager _spawner = new SpawnerManager();
+    ActivationManager _activationManager = new ActivationManager();
 
     public static InputManager Input { get { return Instance._input; } }
     public static PartyManager Party { get { return Instance._party; } }
@@ -35,7 +36,6 @@ public class Managers : MonoBehaviour
     public static UIManager UI { get { return Instance._ui; } }
     public static DataManager Data { get { return Instance._data; } }
     public static WalletManager Wallet { get { return Instance._wallet; } }
-    public static SectorManager Sector { get { return Instance._sector; } }
     public static InventoryManager Inventory { get { return Instance._inventory; } }
     public static EquipmentManager Equipment { get { return Instance._equipment; } }
     public static SaveManager Save { get { return Instance._save; } }
@@ -43,6 +43,10 @@ public class Managers : MonoBehaviour
     public static DungeonManager Dungeon {  get { return Instance._dungeon; } }
     public static GameSessionContext Context { get { return Instance._context; } }
     public static FieldManager Field { get { return Instance._field; } }
+
+    public static SpawnerManager Spawner { get { return Instance._spawner; } }
+
+    public static ActivationManager Activation { get { return Instance._activationManager; } }
     #endregion
 
     // [핵심 1] 코루틴 Start 대신 일반 Start에서 Fire-and-forget 비동기 실행
@@ -66,7 +70,10 @@ public class Managers : MonoBehaviour
     void Update()
     {
         _input.OnUpdate();
-
+        _spawner.SampleMetrics();        // 계측: 직전 프레임 한 줄 (에디터 · 개발 빌드만)
+        _activationManager.OnUpdate();   // 정책이 먼저 켜고/끄고 → 같은 프레임에 스포너 틱이 반영
+        _spawner.OnUpdate();
+        
         if (_party != null)
         {
             // 스킬 쿨타임은 AbilityRunner가 절대시각으로 소유 → 스왑아웃 멤버도 자동 경과(별도 tick 불필요).
@@ -74,6 +81,14 @@ public class Managers : MonoBehaviour
                 _party.PlayerController.OnUpdate();
         }
     }
+
+#if UNITY_EDITOR
+    // 씬 뷰: 현재 활성화 정책의 범위 + 스포너 켜짐/꺼짐
+    void OnDrawGizmos()
+    {
+        _activationManager?.DrawGizmos();
+    }
+#endif
 
     static void Init()
     {

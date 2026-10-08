@@ -220,8 +220,10 @@ public class UIManager
 
         GameLog.Log($"SelectScene : {addressableKey}");
         // [수정] Root가 아니라 CanvasScene 아래에 배치해야 함
-        GameObject go = Managers.Resource.Instantiate(addressableKey, Vector3.zero, Quaternion.identity, CanvasScene.transform);
-        if (go == null) return null;
+        GameObject prefab = Managers.Resource.GetLoaded<GameObject>(addressableKey);
+        if (prefab == null) return null;
+
+        GameObject go = Managers.Resource.Instantiate(prefab, Vector3.zero, Quaternion.identity, CanvasScene.transform);
 
         RectTransform rect = go.GetComponent<RectTransform>();
 

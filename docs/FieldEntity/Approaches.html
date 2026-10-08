@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>필드 엔티티 관리 — 방식 지도</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:18px 0 3px; font-weight:800; break-after:avoid; }
+  h3{ font-size:10.4pt; margin:0 0 3px; font-weight:800; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.4pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:10px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figt .tag{ font-size:7.2pt; font-weight:800; color:#fff; background:var(--blue); border-radius:20px; padding:1px 7px; vertical-align:middle; margin-left:6px; letter-spacing:.03em; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.8px; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:8.6pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.2pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:5px 7px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  table.cmp{ table-layout:fixed; font-size:8.1pt; } table.cmp td, table.cmp th{ padding:5px 5px; word-break:keep-all; }
+  table.cmp td:nth-child(2){ white-space:nowrap; }
+  .good{ color:var(--green-ink); font-weight:700; } .bad{ color:var(--amber-ink); font-weight:700; }
+  .callout{ border-radius:11px; padding:10px 14px; margin:10px 0; font-size:9.2pt; line-height:1.48; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  .footer{ margin-top:14px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+  .pb{ break-before:page; }
+  .pc{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0; break-inside:avoid; }
+  .pc > div{ border-radius:10px; padding:8px 11px; font-size:8.8pt; line-height:1.45; }
+  .pc .pro{ background:var(--green-soft); color:var(--green-ink); }
+  .pc .con{ background:var(--amber-soft); color:var(--amber-ink); }
+  .pc b{ display:block; font-size:8pt; letter-spacing:.05em; margin-bottom:2px; }
+  .pc ul{ margin:0; padding-left:15px; } .pc li{ margin:1px 0; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
+  .card{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 8px; break-inside:avoid; font-size:8.7pt; line-height:1.45; }
+  .card .ttl{ font-size:10pt; font-weight:800; margin:0 0 1px; }
+  .card .ttl .k{ display:inline-block; min-width:18px; text-align:center; background:var(--ink); color:#fff; border-radius:6px; font-size:8pt; padding:0 5px; margin-right:6px; }
+  .card .sub{ font-size:8pt; color:var(--muted); margin:0 0 5px; }
+  .card ul{ margin:4px 0 0; padding-left:15px; } .card li{ margin:1px 0; }
+  .card .when{ margin-top:5px; font-size:8pt; color:var(--blue-ink); background:var(--blue-soft); border-radius:7px; padding:3px 8px; }
+  .side{ display:grid; grid-template-columns:1.05fr 1fr; gap:12px; align-items:start; }
+  .steps{ font-size:8.9pt; line-height:1.5; }
+  .steps .st{ border-left:3px solid var(--blue); padding:3px 0 3px 9px; margin:0 0 7px; }
+  .steps .st.v{ border-color:var(--violet); }
+  .steps .st.g{ border-color:var(--green); }
+  .steps .st.a{ border-color:var(--amber); }
+  .steps .st b{ display:block; font-size:9.2pt; }
+  ol.dec{ margin:4px 0; padding-left:18px; font-size:9pt; } ol.dec li{ margin:3px 0; }
+</style>
+</head>
+<body>
+
+<!-- ============================ 1쪽 ============================ -->
+<div class="kicker">Operation Kivotos · 필드 엔티티 관리 · 00 방식 지도</div>
+<h1>넓은 필드에서 누구를 살려두고, 얼마나 자주 돌릴 것인가</h1>
+<p class="lead">현재 Sector 방식을 출발점으로, 필드 엔티티(몬스터·NPC)를 관리하는 방식들을 <strong>그림으로 나란히</strong> 놓는다.
+결론을 먼저 정하지 않고, 각 방식이 <strong>무엇을 풀고 무엇을 남기는지</strong>를 본다.</p>
+
+<h2>0. 질문부터 쪼갠다 — 세 장면은 서로 다른 문제다</h2>
+<p class="h2sub">"필드 몬스터 관리"라고 한 단어로 부르지만, 장면마다 비용을 만드는 변수가 다르다.</p>
+
+<div class="fig">
+<p class="figt">① 이 트랙이 다루는 세 장면</p>
+<svg width="100%" viewBox="0 0 700 196" xmlns="http://www.w3.org/2000/svg">
+  <rect x="6" y="6" width="222" height="184" rx="10" fill="#fff" stroke="#e3e6ec"/>
+  <rect x="239" y="6" width="222" height="184" rx="10" fill="#fff" stroke="#e3e6ec"/>
+  <rect x="472" y="6" width="222" height="184" rx="10" fill="#fff" stroke="#e3e6ec"/>
+  <text x="117" y="24" class="t" text-anchor="middle">① 연속된 일반 필드 (로아 필드형)</text>
+  <text x="350" y="24" class="t" text-anchor="middle">② 좁은 아레나 대량 (카오스 던전형)</text>
+  <text x="583" y="24" class="t" text-anchor="middle">③ 오픈월드 · 반오픈월드</text>
+
+  <rect x="20" y="34" width="194" height="94" rx="6" fill="#f7f8fa" stroke="#e3e6ec"/>
+  <g fill="#8a91a0">
+    <circle cx="42" cy="52" r="2.2"/><circle cx="48" cy="56" r="2.2"/><circle cx="41" cy="59" r="2.2"/><circle cx="47" cy="49" r="2.2"/>
+    <circle cx="88" cy="110" r="2.2"/><circle cx="94" cy="106" r="2.2"/><circle cx="95" cy="114" r="2.2"/><circle cx="88" cy="118" r="2.2"/>
+    <circle cx="150" cy="48" r="2.2"/><circle cx="156" cy="52" r="2.2"/><circle cx="148" cy="55" r="2.2"/>
+    <circle cx="190" cy="100" r="2.2"/><circle cx="196" cy="95" r="2.2"/><circle cx="197" cy="104" r="2.2"/><circle cx="191" cy="108" r="2.2"/>
+    <circle cx="36" cy="112" r="2.2"/><circle cx="42" cy="116" r="2.2"/>
+    <circle cx="186" cy="58" r="2.2"/><circle cx="192" cy="62" r="2.2"/>
+  </g>
+  <g fill="#3b5bdb"><circle cx="102" cy="72" r="2.2"/><circle cx="128" cy="86" r="2.2"/><circle cx="124" cy="68" r="2.2"/></g>
+  <rect x="88" y="62" width="50" height="32" rx="3" fill="none" stroke="#3b5bdb" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <circle cx="113" cy="78" r="4" fill="#3b5bdb"/>
+  <text x="117" y="146" class="s" text-anchor="middle">넓다 · 수백 마리가 무리로 흩어져 있다</text>
+  <text x="117" y="159" class="s" text-anchor="middle">화면(점선)에 보이는 건 그중 일부뿐</text>
+  <text x="117" y="179" class="t" text-anchor="middle" fill="#2b3a8f">핵심 변수 = 넓이 (공간)</text>
+
+  <circle cx="350" cy="81" r="46" fill="#f7f8fa" stroke="#e3e6ec"/>
+  <rect x="316" y="58" width="68" height="46" rx="3" fill="none" stroke="#3b5bdb" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <g fill="#e8590c">
+    <circle cx="364" cy="81" r="2.2"/><circle cx="364" cy="81" r="2.2" transform="rotate(45 350 81)"/><circle cx="364" cy="81" r="2.2" transform="rotate(90 350 81)"/><circle cx="364" cy="81" r="2.2" transform="rotate(135 350 81)"/>
+    <circle cx="364" cy="81" r="2.2" transform="rotate(180 350 81)"/><circle cx="364" cy="81" r="2.2" transform="rotate(225 350 81)"/><circle cx="364" cy="81" r="2.2" transform="rotate(270 350 81)"/><circle cx="364" cy="81" r="2.2" transform="rotate(315 350 81)"/>
+    <circle cx="375" cy="81" r="2.2" transform="rotate(15 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(45 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(75 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(105 350 81)"/>
+    <circle cx="375" cy="81" r="2.2" transform="rotate(135 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(165 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(195 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(225 350 81)"/>
+    <circle cx="375" cy="81" r="2.2" transform="rotate(255 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(285 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(315 350 81)"/><circle cx="375" cy="81" r="2.2" transform="rotate(345 350 81)"/>
+    <circle cx="386" cy="81" r="2.2"/><circle cx="386" cy="81" r="2.2" transform="rotate(22.5 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(45 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(67.5 350 81)"/>
+    <circle cx="386" cy="81" r="2.2" transform="rotate(90 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(112.5 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(135 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(157.5 350 81)"/>
+    <circle cx="386" cy="81" r="2.2" transform="rotate(180 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(202.5 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(225 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(247.5 350 81)"/>
+    <circle cx="386" cy="81" r="2.2" transform="rotate(270 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(292.5 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(315 350 81)"/><circle cx="386" cy="81" r="2.2" transform="rotate(337.5 350 81)"/>
+  </g>
+  <circle cx="350" cy="81" r="4" fill="#3b5bdb"/>
+  <text x="350" y="146" class="s" text-anchor="middle">좁다 · 한 화면에 수십~수백이 몰려든다</text>
+  <text x="350" y="159" class="s" text-anchor="middle">거의 전부 화면 안 — 공간으로 거를 게 없다</text>
+  <text x="350" y="179" class="t" text-anchor="middle" fill="#8a3708">핵심 변수 = 밀도</text>
+
+  <rect x="486" y="34" width="84" height="46" fill="#f7f8fa" stroke="#cfd4de"/>
+  <rect x="570" y="34" width="110" height="56" fill="#f7f8fa" stroke="#cfd4de"/>
+  <rect x="486" y="80" width="114" height="48" fill="#eef2ff" stroke="#3b5bdb"/>
+  <rect x="600" y="90" width="80" height="38" fill="#ebfbee" stroke="#2b8a3e" stroke-dasharray="3 2"/>
+  <text x="492" y="47" class="xs">미로드</text>
+  <text x="576" y="47" class="xs">미로드</text>
+  <text x="492" y="92" class="xs" fill="#2b3a8f">로드됨</text>
+  <text x="606" y="102" class="xs" fill="#1f6b2e">미리 로드 중</text>
+  <circle cx="570" cy="108" r="4" fill="#3b5bdb"/>
+  <text x="583" y="146" class="s" text-anchor="middle">매우 넓다 · 지역 단위로 로드/언로드</text>
+  <text x="583" y="159" class="s" text-anchor="middle">멀리 있는 세계는 '데이터'로만 존재</text>
+  <text x="583" y="179" class="t" text-anchor="middle" fill="#1f6b2e">핵심 변수 = 스트리밍 (로드)</text>
+</svg>
+<p class="figcap">①은 "어디를 켤까", ②는 "켜진 것을 얼마나 싸게 돌릴까", ③은 "무엇을 메모리에 둘까"가 문제다. 한 방식으로 셋을 다 풀 수 없다.</p>
+</div>
+
+<div class="fig">
+<p class="figt">② 층으로 보면 — 층마다 '반경'이 다르다 <span class="tag">이 문서의 좌표계</span></p>
+<svg width="100%" viewBox="0 0 700 176" xmlns="http://www.w3.org/2000/svg">
+  <text x="10" y="30" class="t">① 틱 (품질)</text><text x="10" y="41" class="xs">얼마나 자주 생각하나</text>
+  <text x="10" y="64" class="t">② 존재 (GameObject)</text><text x="10" y="75" class="xs">씬에 오브젝트가 있나</text>
+  <text x="10" y="98" class="t">③ 로드 (에셋·지형)</text><text x="10" y="109" class="xs">메모리에 올라와 있나</text>
+  <text x="10" y="132" class="t">④ 레코드 (데이터)</text><text x="10" y="143" class="xs">상태·타이머가 기록돼 있나</text>
+
+  <rect x="150" y="22" width="50" height="20" rx="4" fill="#3b5bdb"/>
+  <text x="175" y="35" class="xs" text-anchor="middle" fill="#fff">매 프레임</text>
+  <rect x="200" y="22" width="56" height="20" rx="4" fill="#bac8ff"/>
+  <text x="228" y="35" class="xs" text-anchor="middle" fill="#2b3a8f">가끔</text>
+
+  <rect x="150" y="56" width="106" height="20" rx="4" fill="#7048e8"/>
+  <text x="203" y="69" class="xs" text-anchor="middle" fill="#fff">켜져 있음</text>
+
+  <rect x="150" y="90" width="300" height="20" rx="4" fill="#2b8a3e"/>
+  <text x="300" y="103" class="xs" text-anchor="middle" fill="#fff">에셋 로드됨 (오브젝트는 없을 수 있음)</text>
+
+  <rect x="150" y="124" width="530" height="20" rx="4" fill="#ebfbee" stroke="#2b8a3e" stroke-dasharray="4 3"/>
+  <text x="415" y="137" class="xs" text-anchor="middle" fill="#1f6b2e">맵 전체 — 항상 (스포너 상태 · 리스폰 시각 · 처치 기록)</text>
+
+  <line x1="150" y1="156" x2="680" y2="156" stroke="#8a91a0"/>
+  <g stroke="#8a91a0"><line x1="150" y1="153" x2="150" y2="159"/><line x1="200" y1="153" x2="200" y2="159"/><line x1="256" y1="153" x2="256" y2="159"/><line x1="450" y1="153" x2="450" y2="159"/><line x1="680" y1="153" x2="680" y2="159"/></g>
+  <text x="150" y="169" class="xs" text-anchor="middle">플레이어</text>
+  <text x="200" y="169" class="xs" text-anchor="middle">≈화면</text>
+  <text x="256" y="169" class="xs" text-anchor="middle">≈화면×2</text>
+  <text x="450" y="169" class="xs" text-anchor="middle">훨씬 멀리</text>
+  <text x="680" y="169" class="xs" text-anchor="end">맵 끝</text>
+  <line x1="150" y1="14" x2="150" y2="150" stroke="#3b5bdb" stroke-dasharray="2 2"/>
+</svg>
+<p class="figcap">위로 갈수록 비싸고 반경이 좁다. <strong>이 문서의 A~D는 결국 "②존재 층의 반경을 무엇으로 정하느냐"</strong>의 차이이고,
+①·③·④는 그와 별개로 겹쳐 쓰는 층이다. (거리 수치는 개념도)</p>
+</div>
+
+<div class="callout c-blue">
+  <span class="lbl">NPC도 같은 틀에 들어간다</span>
+  NPC는 대개 움직이지 않고 전투도 안 하므로 ②존재 층만 관리하면 되고 ①틱 비용은 거의 0이다. 이 문서는 몬스터로 설명하지만,
+  "정적인 것은 공간으로 판정한다"는 규칙은 NPC·채집물·상호작용 오브젝트에 그대로 적용된다.
+</div>
+
+<!-- ============================ 2쪽 ============================ -->
+<h2 class="pb">1. 출발점 — 현재 Sector 방식과 경계 문제</h2>
+<p class="h2sub">트리거 볼륨(Sector)에 들어가면 그 구역 스포너를 전부 켜고, 이전 구역은 통째로 끈다. <code>SectorManager.OnPlayerEnterSector</code></p>
+
+<div class="fig">
+<p class="figt">③ 플레이어가 A→B로 넘어간 직후 (현재 규모: Sector 5 · 스포너 23 · 몬스터 363)</p>
+<svg width="100%" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#3b5bdb"/></marker></defs>
+  <rect x="20" y="20" width="180" height="140" fill="#f7f8fa" stroke="#8a91a0"/>
+  <rect x="200" y="20" width="210" height="205" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/>
+  <rect x="20" y="160" width="180" height="65" fill="#f7f8fa" stroke="#8a91a0"/>
+  <text x="28" y="36" class="t" fill="#5b6270">Sector A — 방금 꺼짐</text>
+  <text x="300" y="36" class="t" fill="#2b3a8f">Sector B — 켜짐</text>
+  <text x="28" y="176" class="t" fill="#5b6270">Sector C — 꺼짐</text>
+
+  <rect x="160" y="62" width="104" height="66" rx="3" fill="none" stroke="#3b5bdb" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="212" y="56" class="xs" text-anchor="middle" fill="#2b3a8f">화면 ≈ 25m</text>
+  <line x1="150" y1="98" x2="214" y2="98" stroke="#3b5bdb" stroke-width="1.4" marker-end="url(#ar)"/>
+  <circle cx="222" cy="98" r="5" fill="#3b5bdb"/>
+  <g stroke="#e8590c" stroke-width="1.8">
+    <line x1="172" y1="80" x2="180" y2="88"/><line x1="180" y1="80" x2="172" y2="88"/>
+    <line x1="166" y1="106" x2="174" y2="114"/><line x1="174" y1="106" x2="166" y2="114"/>
+    <line x1="182" y1="112" x2="190" y2="120"/><line x1="190" y1="112" x2="182" y2="120"/>
+  </g>
+  <text x="28" y="146" class="s" fill="#8a3708">쫓아오던 몬스터 — 경계를 넘는 순간 소실</text>
+  <g fill="#3b5bdb">
+    <circle cx="300" cy="150" r="2.6"/><circle cx="306" cy="155" r="2.6"/><circle cx="298" cy="158" r="2.6"/>
+    <circle cx="380" cy="60" r="2.6"/><circle cx="386" cy="66" r="2.6"/><circle cx="378" cy="68" r="2.6"/>
+    <circle cx="370" cy="190" r="2.6"/><circle cx="376" cy="196" r="2.6"/><circle cx="366" cy="198" r="2.6"/><circle cx="378" cy="186" r="2.6"/>
+    <circle cx="240" cy="176" r="2.6"/><circle cx="246" cy="182" r="2.6"/>
+    <circle cx="390" cy="130" r="2.6"/><circle cx="385" cy="138" r="2.6"/>
+  </g>
+  <text x="208" y="216" class="s" fill="#2b3a8f">화면 밖인데 B 전체가 켜져 있다 = 낭비</text>
+  <g fill="#cfd4de"><circle cx="60" cy="200" r="2.6"/><circle cx="66" cy="205" r="2.6"/><circle cx="120" cy="208" r="2.6"/><circle cx="60" cy="60" r="2.6"/><circle cx="66" cy="66" r="2.6"/></g>
+
+  <rect x="432" y="14" width="258" height="52" rx="8" fill="#fff4ec"/>
+  <text x="444" y="31" class="t" fill="#8a3708">1 · 경계 소실</text>
+  <text x="444" y="45" class="s">구역을 넘는 순간 이전 구역이 통째로 꺼진다</text>
+  <text x="444" y="57" class="s">싸우던 몬스터가 눈앞에서 사라진다</text>
+
+  <rect x="432" y="72" width="258" height="52" rx="8" fill="#fff4ec"/>
+  <text x="444" y="89" class="t" fill="#8a3708">2 · 판정 단위 &gt; 화면</text>
+  <text x="444" y="103" class="s">Sector ≈ 100m vs 화면 ≈ 25m</text>
+  <text x="444" y="115" class="s">안 보이는 곳을 대량으로 켜 둔다</text>
+
+  <rect x="432" y="130" width="258" height="52" rx="8" fill="#fff4ec"/>
+  <text x="444" y="147" class="t" fill="#8a3708">3 · 저작 노가다</text>
+  <text x="444" y="161" class="s">구역을 사람이 그리고 ID를 매긴다</text>
+  <text x="444" y="173" class="s">맵이 바뀌면 구역도 다시 손봐야 한다</text>
+
+  <rect x="432" y="188" width="258" height="52" rx="8" fill="#fff4ec"/>
+  <text x="444" y="205" class="t" fill="#8a3708">4 · 진입 스파이크</text>
+  <text x="444" y="219" class="s">진입 프레임에 구역 전체 스폰이 몰린다</text>
+  <text x="444" y="231" class="s">(가장 큰 구역 = 한 번에 119마리)</text>
+</svg>
+<p class="figcap">1번이 눈에 보이는 버그지만, 2·3번이 구조의 한계다. 1번만 고치면 2·3·4번은 그대로 남는다.</p>
+</div>
+
+<div class="fig">
+<p class="figt">④ 떠오르는 두 가지 패치 — 둘 다 '증상'만 막는다</p>
+<svg width="100%" viewBox="0 0 700 150" xmlns="http://www.w3.org/2000/svg">
+  <rect x="6" y="6" width="340" height="138" rx="10" fill="#fff" stroke="#e3e6ec"/>
+  <rect x="354" y="6" width="340" height="138" rx="10" fill="#fff" stroke="#e3e6ec"/>
+  <text x="18" y="24" class="t">패치 ① 인접 Sector도 같이 켜기</text>
+  <text x="366" y="24" class="t">패치 ② 전투 중인 몬스터는 끄지 않기</text>
+
+  <g stroke="#3b5bdb"><rect x="18" y="34" width="50" height="40" fill="#eef2ff"/><rect x="68" y="34" width="60" height="40" fill="#eef2ff"/><rect x="128" y="34" width="40" height="40" fill="#f7f8fa" stroke="#cfd4de"/>
+  <rect x="18" y="74" width="50" height="46" fill="#eef2ff"/><rect x="68" y="74" width="60" height="46" fill="#eef2ff"/><rect x="128" y="74" width="40" height="46" fill="#eef2ff"/></g>
+  <rect x="82" y="80" width="30" height="20" fill="none" stroke="#3b5bdb" stroke-dasharray="2 2"/>
+  <circle cx="97" cy="90" r="3" fill="#3b5bdb"/>
+  <text x="180" y="46" class="s" fill="#1f6b2e">✓ 경계 소실이 거의 사라짐</text>
+  <text x="180" y="62" class="s" fill="#8a3708">✗ 켜는 면적 ×2~3 (낭비 증가)</text>
+  <text x="180" y="78" class="s" fill="#8a3708">✗ '누가 이웃인가'를 또 손으로 관리</text>
+  <text x="180" y="94" class="s" fill="#8a3708">✗ 이웃 목록이 조용히 틀려도 모름</text>
+  <text x="18" y="136" class="xs">화면(점선)은 그대로인데 켜진 영역만 커진다</text>
+
+  <rect x="366" y="34" width="70" height="86" fill="#f7f8fa" stroke="#8a91a0"/>
+  <rect x="436" y="34" width="70" height="86" fill="#eef2ff" stroke="#3b5bdb"/>
+  <circle cx="448" cy="78" r="3" fill="#3b5bdb"/>
+  <g fill="#e8590c"><circle cx="424" cy="72" r="2.6"/><circle cx="428" cy="82" r="2.6"/><circle cx="420" cy="86" r="2.6"/></g>
+  <rect x="412" y="64" width="22" height="30" rx="4" fill="none" stroke="#e8590c" stroke-dasharray="2 2"/>
+  <text x="372" y="112" class="xs">잠금 유지</text>
+  <text x="518" y="46" class="s" fill="#1f6b2e">✓ 경계 소실 해결</text>
+  <text x="518" y="62" class="s" fill="#8a3708">✗ 낭비·스파이크·노가다 그대로</text>
+  <text x="518" y="78" class="s" fill="#8a3708">✗ 경계에서 계속 싸우면</text>
+  <text x="528" y="90" class="s" fill="#8a3708">두 구역이 계속 켜져 있음</text>
+  <text x="518" y="106" class="s" fill="#8a3708">✗ 잠금 해제 누락 = 조용한 누수</text>
+  <text x="366" y="136" class="xs">리쉬(집으로 복귀)는 어떤 방식을 골라도 필요 — 이 작업은 버려지지 않는다</text>
+</svg>
+</div>
+
+<div class="callout c-amber">
+  <span class="lbl">원인은 하나</span>
+  판정 단위가 <strong>사람이 그린 구역</strong>이라는 것. 구역이 화면보다 크고, 경계가 임의의 위치에 있고, 손으로 유지해야 한다.
+  그래서 다음 방식들은 모두 <strong>판정이 기하학(격자·거리)에서 자동으로 나오게</strong> 만드는 방향이다.
+</div>
+
+<!-- ============================ 3쪽 ============================ -->
+<h2 class="pb">2. 방식 A — 맵 전체를 균일한 청크(격자)로 나눈다</h2>
+<p class="h2sub">좌표를 셀 크기 S로 나누면 셀 번호가 나온다. 구역을 그릴 필요가 없다. 플레이어 셀 + 주변 셀만 켠다.</p>
+
+<div class="fig">
+<p class="figt">⑤ 플레이어 주변 3×3 활성, 5×5까지는 유지 (히스테리시스)</p>
+<svg width="100%" viewBox="0 0 700 262" xmlns="http://www.w3.org/2000/svg">
+  <rect x="80" y="50" width="150" height="150" fill="#f3f0ff" stroke="#7048e8" stroke-dasharray="4 3" stroke-width="1.2"/>
+  <rect x="110" y="80" width="90" height="90" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+  <g stroke="#cfd4de" stroke-width="0.8">
+    <line x1="20" y1="20" x2="20" y2="230"/><line x1="50" y1="20" x2="50" y2="230"/><line x1="80" y1="20" x2="80" y2="230"/><line x1="110" y1="20" x2="110" y2="230"/><line x1="140" y1="20" x2="140" y2="230"/>
+    <line x1="170" y1="20" x2="170" y2="230"/><line x1="200" y1="20" x2="200" y2="230"/><line x1="230" y1="20" x2="230" y2="230"/><line x1="260" y1="20" x2="260" y2="230"/><line x1="290" y1="20" x2="290" y2="230"/>
+    <line x1="20" y1="20" x2="290" y2="20"/><line x1="20" y1="50" x2="290" y2="50"/><line x1="20" y1="80" x2="290" y2="80"/><line x1="20" y1="110" x2="290" y2="110"/>
+    <line x1="20" y1="140" x2="290" y2="140"/><line x1="20" y1="170" x2="290" y2="170"/><line x1="20" y1="200" x2="290" y2="200"/><line x1="20" y1="230" x2="290" y2="230"/>
+  </g>
+  <g fill="#3b5bdb"><rect x="126" y="91" width="7" height="7" rx="1.5"/><rect x="181" y="146" width="7" height="7" rx="1.5"/><rect x="117" y="156" width="7" height="7" rx="1.5"/></g>
+  <g fill="#7048e8"><rect x="91" y="66" width="7" height="7" rx="1.5"/><rect x="211" y="181" width="7" height="7" rx="1.5"/></g>
+  <g fill="#cfd4de"><rect x="56" y="116" width="7" height="7" rx="1.5"/><rect x="256" y="56" width="7" height="7" rx="1.5"/><rect x="266" y="196" width="7" height="7" rx="1.5"/><rect x="36" y="206" width="7" height="7" rx="1.5"/><rect x="241" y="126" width="7" height="7" rx="1.5"/></g>
+  <circle cx="155" cy="125" r="5" fill="#3b5bdb"/>
+  <rect x="20" y="242" width="10" height="10" fill="#eef2ff" stroke="#3b5bdb"/><text x="34" y="251" class="xs">활성 3×3 — 여기 들어오면 켬</text>
+  <rect x="148" y="242" width="10" height="10" fill="#f3f0ff" stroke="#7048e8" stroke-dasharray="2 2"/><text x="162" y="251" class="xs">유지 5×5 — 켜진 건 여기까진 안 끔</text>
+  <rect x="20" y="4" width="7" height="7" rx="1.5" fill="#8a91a0"/><text x="31" y="11" class="xs">= 스포너 (정적)</text>
+
+  <text x="330" y="30" class="tb">셀 번호 = ( ⌊x / S⌋ , ⌊z / S⌋ )</text>
+  <text x="330" y="46" class="s">위치만 알면 O(1)로 셀을 안다. 셀 → 스포너 목록은 해시맵 한 번.</text>
+  <text x="330" y="58" class="s">맵을 바꿔도 다시 그릴 게 없다 — 로드 시 스포너 위치로 자동 등록.</text>
+
+  <text x="330" y="84" class="t">셀 크기 S의 딜레마</text>
+  <rect x="330" y="92" width="120" height="80" fill="#f7f8fa" stroke="#cfd4de"/>
+  <g stroke="#cfd4de" stroke-width="0.6">
+    <line x1="345" y1="92" x2="345" y2="172"/><line x1="360" y1="92" x2="360" y2="172"/><line x1="375" y1="92" x2="375" y2="172"/><line x1="390" y1="92" x2="390" y2="172"/><line x1="405" y1="92" x2="405" y2="172"/><line x1="420" y1="92" x2="420" y2="172"/><line x1="435" y1="92" x2="435" y2="172"/>
+    <line x1="330" y1="107" x2="450" y2="107"/><line x1="330" y1="122" x2="450" y2="122"/><line x1="330" y1="137" x2="450" y2="137"/><line x1="330" y1="152" x2="450" y2="152"/><line x1="330" y1="167" x2="450" y2="167"/>
+  </g>
+  <path d="M338 160 Q370 100 400 130 T445 100" fill="none" stroke="#3b5bdb" stroke-width="1.4"/>
+  <g fill="#e8590c"><circle cx="345" cy="146" r="1.8"/><circle cx="360" cy="124" r="1.8"/><circle cx="375" cy="114" r="1.8"/><circle cx="390" cy="121" r="1.8"/><circle cx="405" cy="133" r="1.8"/><circle cx="420" cy="122" r="1.8"/><circle cx="435" cy="106" r="1.8"/></g>
+  <text x="390" y="186" class="s" text-anchor="middle" fill="#8a3708">S가 작으면: 경계를 자주 넘는다</text>
+  <text x="390" y="198" class="xs" text-anchor="middle">켜고 끄기가 잦다 (churn)</text>
+
+  <rect x="500" y="92" width="120" height="80" fill="#eef2ff" stroke="#3b5bdb"/>
+  <line x1="560" y1="92" x2="560" y2="172" stroke="#cfd4de"/>
+  <rect x="512" y="116" width="30" height="20" fill="none" stroke="#3b5bdb" stroke-dasharray="2 2"/>
+  <circle cx="527" cy="126" r="3" fill="#3b5bdb"/>
+  <text x="560" y="186" class="s" text-anchor="middle" fill="#8a3708">S가 크면: 셀 하나가 화면보다 크다</text>
+  <text x="560" y="198" class="xs" text-anchor="middle">= Sector와 같은 낭비로 돌아감</text>
+
+  <rect x="330" y="214" width="40" height="40" fill="#eef2ff" stroke="#3b5bdb"/>
+  <circle cx="350" cy="234" r="20" fill="none" stroke="#8a91a0" stroke-dasharray="2 2"/>
+  <line x1="350" y1="234" x2="370" y2="214" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="382" y="228" class="t">정사각형 효과</text>
+  <text x="382" y="242" class="s">활성 영역이 네모라서 대각선 방향은 1.41배 멀리까지 켜진다.</text>
+  <text x="382" y="254" class="xs">화면 자체가 네모인 쿼터뷰에선 오히려 잘 맞을 수도 있다</text>
+</svg>
+<p class="figcap">경계 문제는 "주변 셀도 켠다(3×3)"로 사라지고, 경계선 왕복 깜빡임은 "켜는 범위 &lt; 끄는 범위"(3×3 / 5×5)로 막는다.</p>
+</div>
+
+<div class="pc">
+  <div class="pro"><b>풀어주는 것</b><ul>
+    <li><strong>저작 비용 0</strong> — 구역을 그리지 않는다</li>
+    <li>셀 조회 O(1). 맵이 커져도 판정 비용이 그대로</li>
+    <li>셀은 <strong>에셋 로드 단위·저장 단위</strong>로도 쓸 수 있다 (리소스 시스템과 연결점)</li>
+    <li>같은 격자를 몬스터 이웃 탐색·광역기 판정에 재사용 가능</li>
+  </ul></div>
+  <div class="con"><b>남기는 것</b><ul>
+    <li><strong>셀 크기 S</strong>를 골라야 한다 — 너무 작으면 churn, 크면 낭비</li>
+    <li>활성 영역이 네모 → 방향마다 켜지는 거리가 다르다</li>
+    <li>셀 경계를 넘을 때 3~5개 셀이 한꺼번에 바뀐다 (작은 스파이크)</li>
+    <li>밀도가 고르지 않은 맵에선 셀마다 비용 편차가 크다</li>
+  </ul></div>
+</div>
+
+<!-- ============================ 4쪽 ============================ -->
+<h2 class="pb">3. 방식 B — 플레이어와의 거리로만 판단한다</h2>
+<p class="h2sub">스포너마다 플레이어와의 거리를 재서 가까우면 켜고 멀면 끈다. 구역도 격자도 없다.</p>
+
+<div class="fig">
+<p class="figt">⑥ 거리 밴드와 히스테리시스</p>
+<svg width="100%" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#5b6270"/></marker></defs>
+  <circle cx="150" cy="125" r="100" fill="#fff4ec" stroke="#e8590c" stroke-dasharray="4 3"/>
+  <circle cx="150" cy="125" r="70" fill="#eef2ff" stroke="#3b5bdb" stroke-dasharray="4 3"/>
+  <circle cx="150" cy="125" r="45" fill="#dbe4ff" stroke="#3b5bdb"/>
+  <line x1="150" y1="125" x2="250" y2="125" stroke="#8a91a0" stroke-width="0.8"/>
+  <text x="192" y="121" class="xs" text-anchor="end" fill="#2b3a8f">화면</text>
+  <text x="208" y="121" class="xs" text-anchor="middle" fill="#2b3a8f">진입</text>
+  <text x="246" y="121" class="xs" text-anchor="end" fill="#8a3708">이탈</text>
+  <circle cx="150" cy="125" r="5" fill="#3b5bdb"/>
+  <g fill="#3b5bdb"><rect x="172" y="96" width="7" height="7" rx="1.5"/><rect x="112" y="160" width="7" height="7" rx="1.5"/><rect x="100" y="84" width="7" height="7" rx="1.5"/></g>
+  <rect x="204" y="62" width="7" height="7" rx="1.5" fill="#fff" stroke="#3b5bdb" stroke-width="1.6"/>
+  <line x1="212" y1="62" x2="232" y2="46" stroke="#8a91a0" stroke-width="0.7"/>
+  <text x="234" y="45" class="xs" fill="#2b3a8f">켜져 있던 것 → 유지</text>
+  <rect x="68" y="150" width="7" height="7" rx="1.5" fill="#cfd4de" stroke="#8a91a0"/>
+  <line x1="69" y1="158" x2="46" y2="208" stroke="#8a91a0" stroke-width="0.7"/>
+  <text x="4" y="217" class="xs">꺼져 있던 것 → 계속 꺼짐</text>
+  <g fill="#cfd4de"><rect x="262" y="190" width="7" height="7" rx="1.5"/><rect x="40" y="36" width="7" height="7" rx="1.5"/><rect x="232" y="14" width="7" height="7" rx="1.5"/></g>
+
+  <text x="330" y="22" class="t">왜 반경이 두 개인가 — 히스테리시스</text>
+  <line x1="350" y1="140" x2="680" y2="140" stroke="#8a91a0" marker-end="url(#ar2)"/>
+  <text x="680" y="154" class="xs" text-anchor="end">플레이어와의 거리 →</text>
+  <text x="344" y="54" class="xs" text-anchor="end">켜짐</text>
+  <text x="344" y="124" class="xs" text-anchor="end">꺼짐</text>
+  <line x1="470" y1="36" x2="470" y2="140" stroke="#cfd4de" stroke-dasharray="2 2"/>
+  <line x1="580" y1="36" x2="580" y2="140" stroke="#cfd4de" stroke-dasharray="2 2"/>
+  <text x="470" y="154" class="xs" text-anchor="middle" fill="#2b3a8f">진입 반경</text>
+  <text x="580" y="154" class="xs" text-anchor="middle" fill="#8a3708">이탈 반경</text>
+  <rect x="470" y="56" width="110" height="60" fill="#f3f0ff"/>
+  <text x="525" y="84" class="xs" text-anchor="middle" fill="#5028c0">이 구간에선</text>
+  <text x="525" y="94" class="xs" text-anchor="middle" fill="#5028c0">이전 상태 유지</text>
+  <line x1="350" y1="50" x2="578" y2="50" stroke="#3b5bdb" stroke-width="2"/>
+  <line x1="580" y1="50" x2="580" y2="116" stroke="#3b5bdb" stroke-width="2" marker-end="url(#ar2)"/>
+  <line x1="680" y1="120" x2="472" y2="120" stroke="#e8590c" stroke-width="2"/>
+  <line x1="470" y1="120" x2="470" y2="54" stroke="#e8590c" stroke-width="2" marker-end="url(#ar2)"/>
+  <text x="360" y="42" class="s" fill="#2b3a8f">멀어질 때 → 이탈 반경에서 끔</text>
+  <text x="596" y="108" class="s" fill="#8a3708">가까워질 때 →</text>
+  <text x="596" y="133" class="s" fill="#8a3708">진입 반경에서 켬</text>
+
+  <rect x="330" y="170" width="360" height="76" rx="8" fill="#f7f8fa" stroke="#e3e6ec"/>
+  <text x="342" y="186" class="t">Unity 기본 제공 — CullingGroup</text>
+  <text x="342" y="201" class="mono" fill="#1a1c22">SetBoundingSpheres(스포너 위치들)    // 로드 시 1회</text>
+  <text x="342" y="214" class="mono" fill="#1a1c22">SetBoundingDistances(진입, 이탈)</text>
+  <text x="342" y="227" class="mono" fill="#1a1c22">SetDistanceReferencePoint(플레이어)  // 카메라 X</text>
+  <text x="342" y="240" class="mono" fill="#1a1c22">onStateChanged += 밴드가 바뀐 스포너만 통보</text>
+</svg>
+<p class="figcap">반경이 하나면 경계선 위에서 왔다 갔다 할 때 매 프레임 켜졌다 꺼진다. 켜는 선과 끄는 선을 떨어뜨리면 그 사이에선 이전 상태가 유지된다.</p>
+</div>
+
+<div class="pc">
+  <div class="pro"><b>풀어주는 것</b><ul>
+    <li><strong>경계가 존재하지 않는다</strong> — 고친 게 아니라 없앤 것</li>
+    <li>고정 각도 쿼터뷰에선 "플레이어 중심 반경 = 화면"이라 <strong>화면에 딱 맞게</strong> 켤 수 있다</li>
+    <li>저작 비용 0, 격자 크기 고민도 없다</li>
+    <li>한 번에 켜지는 건 반경에 막 들어온 몇 개뿐 → 진입 스파이크가 자연히 분산</li>
+  </ul></div>
+  <div class="con"><b>남기는 것</b><ul>
+    <li><strong>전수 검사</strong> — 매번 모든 스포너와 거리를 잰다 (N이 커지면 비례)</li>
+    <li>팝인 — 반경에 들어오는 순간 없던 게 생긴다 (반경을 화면보다 넉넉히)</li>
+    <li>자유 카메라 3D에선 "거리 = 시야"가 깨진다 (멀리 보이는 산 위 몬스터)</li>
+    <li>밀집엔 무력 — 다 가까이 있으면 거를 게 없다</li>
+  </ul></div>
+</div>
+
+<div class="callout c-blue">
+  <span class="lbl">등록 대상은 몬스터가 아니라 스포너</span>
+  스포너는 움직이지 않으니 위치를 한 번만 등록하면 된다. 몬스터를 등록하면 매 프레임 위치를 다시 써야 하고, 개수도 10~20배다.
+  몬스터 무리를 "스포너 하나"로 대표시키는 것 자체가 이 장르에 맞는 선택이다. (움직이는 몬스터 문제는 5절 ⑧)
+</div>
+
+<!-- ============================ 5쪽 ============================ -->
+<h2 class="pb">4. 방식 C — 청크로 후보를 좁히고, 거리로 판정한다 (A + B)</h2>
+<p class="h2sub">충돌 판정의 Broad phase / Narrow phase와 같은 구조. 청크 = "누구를 검사할지", 거리 = "켤지 말지".</p>
+
+<div class="fig">
+<p class="figt">⑦ 두 단계 판정</p>
+<div class="side">
+<svg width="100%" viewBox="0 0 300 250" xmlns="http://www.w3.org/2000/svg">
+  <rect x="72" y="41" width="156" height="156" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.1"/>
+  <g stroke="#cfd4de" stroke-width="0.7">
+    <line x1="20" y1="15" x2="20" y2="223"/><line x1="46" y1="15" x2="46" y2="223"/><line x1="72" y1="15" x2="72" y2="223"/><line x1="98" y1="15" x2="98" y2="223"/><line x1="124" y1="15" x2="124" y2="223"/><line x1="150" y1="15" x2="150" y2="223"/>
+    <line x1="176" y1="15" x2="176" y2="223"/><line x1="202" y1="15" x2="202" y2="223"/><line x1="228" y1="15" x2="228" y2="223"/><line x1="254" y1="15" x2="254" y2="223"/><line x1="280" y1="15" x2="280" y2="223"/>
+    <line x1="20" y1="15" x2="280" y2="15"/><line x1="20" y1="41" x2="280" y2="41"/><line x1="20" y1="67" x2="280" y2="67"/><line x1="20" y1="93" x2="280" y2="93"/><line x1="20" y1="119" x2="280" y2="119"/>
+    <line x1="20" y1="145" x2="280" y2="145"/><line x1="20" y1="171" x2="280" y2="171"/><line x1="20" y1="197" x2="280" y2="197"/><line x1="20" y1="223" x2="280" y2="223"/>
+  </g>
+  <circle cx="158" cy="124" r="62" fill="#dbe4ff" fill-opacity="0.7" stroke="#3b5bdb" stroke-width="1.3"/>
+  <circle cx="158" cy="124" r="5" fill="#3b5bdb"/>
+  <g fill="#3b5bdb"><rect x="137" y="96" width="7" height="7" rx="1.5"/><rect x="182" y="146" width="7" height="7" rx="1.5"/><rect x="116" y="146" width="7" height="7" rx="1.5"/></g>
+  <g fill="#fff" stroke="#7048e8" stroke-width="1.5"><rect x="82" y="52" width="7" height="7" rx="1.5"/><rect x="212" y="181" width="7" height="7" rx="1.5"/></g>
+  <g fill="#e3e6ec"><rect x="37" y="27" width="7" height="7" rx="1.5"/><rect x="257" y="57" width="7" height="7" rx="1.5"/><rect x="247" y="207" width="7" height="7" rx="1.5"/><rect x="42" y="197" width="7" height="7" rx="1.5"/><rect x="265" y="127" width="7" height="7" rx="1.5"/></g>
+  <rect x="20" y="234" width="7" height="7" rx="1.5" fill="#3b5bdb"/><text x="30" y="241" class="xs">켬</text>
+  <rect x="52" y="234" width="7" height="7" rx="1.5" fill="#fff" stroke="#7048e8" stroke-width="1.5"/><text x="62" y="241" class="xs">검사 후 탈락</text>
+  <rect x="122" y="234" width="7" height="7" rx="1.5" fill="#e3e6ec"/><text x="132" y="241" class="xs">아예 안 봄 (후보 셀 밖)</text>
+</svg>
+<div class="steps">
+  <div class="st v"><b>1단계 Broad — 청크</b>반경의 외접 사각형이 걸치는 셀만 꺼낸다 (보라 영역). 이 셀들에 등록된 스포너 k개만 후보.</div>
+  <div class="st"><b>2단계 Narrow — 거리</b>후보 k개만 실제 거리 + 히스테리시스로 판정. 판정 비용이 전체 N이 아니라 <strong>k</strong>에 비례.</div>
+  <div class="st g"><b>덤 — 반경을 층마다 따로</b>청크는 <strong>로드(에셋)</strong>에, 거리는 <strong>존재(오브젝트)</strong>에 쓴다. 0절 ②의 층 구조가 이 조합에서 자연스럽게 나온다.</div>
+  <div class="st a"><b>솔직한 단서</b>지금 맵은 스포너 23개라 전수 거리 검사도 사실상 공짜다. 이 조합의 값어치는 CPU보다 <strong>맵이 커져도 구조가 안 바뀐다</strong>는 것과 <strong>격자를 로드·AI·판정에 재사용</strong>한다는 데 있다.</div>
+</div>
+</div>
+<p class="figcap">널리 알려진 예: 마인크래프트는 청크를 로드하는 거리(렌더 거리)와 개체를 실제로 돌리는 거리(시뮬레이션 거리)를 따로 둔다.
+언리얼 World Partition은 월드를 격자 셀로 나누고, 플레이어 같은 '스트리밍 소스' 주변 반경의 셀만 로드한다.</p>
+</div>
+
+<h2>5. 어느 방식을 골라도 남는 문제 — 움직이는 엔티티</h2>
+<p class="h2sub">스포너는 가만히 있지만 몬스터는 플레이어를 쫓아 움직인다. Sector·청크·거리 전부 똑같이 부딪힌다.</p>
+
+<div class="fig">
+<p class="figt">⑧ 스포너는 범위 밖, 몬스터는 플레이어 바로 옆</p>
+<div class="side">
+<svg width="100%" viewBox="0 0 330 165" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#2b8a3e"/></marker></defs>
+  <circle cx="250" cy="80" r="62" fill="#eef2ff" stroke="#3b5bdb" stroke-dasharray="4 3"/>
+  <text x="250" y="158" class="xs" text-anchor="middle" fill="#2b3a8f">플레이어 활성 반경</text>
+  <circle cx="60" cy="80" r="34" fill="#ebfbee" stroke="#2b8a3e" stroke-dasharray="3 2"/>
+  <rect x="56" y="76" width="8" height="8" rx="1.5" fill="#cfd4de" stroke="#8a91a0"/>
+  <text x="60" y="126" class="xs" text-anchor="middle" fill="#1f6b2e">스포너 + 리쉬 반경</text>
+  <path d="M68 80 C120 58 170 106 220 86" fill="none" stroke="#8a91a0" stroke-dasharray="2 3"/>
+  <circle cx="226" cy="86" r="4.5" fill="#e8590c"/>
+  <circle cx="254" cy="80" r="5" fill="#3b5bdb"/>
+  <text x="200" y="102" class="xs" fill="#8a3708">몬스터</text>
+  <text x="262" y="72" class="xs" fill="#2b3a8f">플레이어</text>
+  <text x="60" y="34" class="s" text-anchor="middle">스포너: 범위 밖 → 끌까?</text>
+  <path d="M210 110 C175 140 125 146 88 116" fill="none" stroke="#2b8a3e" stroke-width="1.3" marker-end="url(#ar3)"/>
+  <text x="150" y="148" class="xs" text-anchor="middle" fill="#1f6b2e">전투 이탈 → 집으로 복귀 (리쉬)</text>
+</svg>
+<div class="steps">
+  <div class="st"><b>정적인 것(스포너·NPC) = 공간으로 판정</b>청크/거리/무엇이든.</div>
+  <div class="st a"><b>움직이는 것(몬스터) = 자기 상태로 판정</b>
+    전투 중이면 스포너가 꺼져도 살아 있다 → 전투가 끝나면 리쉬로 집 복귀 → 도착 후 스포너 상태를 따른다.
+    <strong>유예 상한(N초)</strong>을 둬서 영원히 안 꺼지는 경우를 막는다.</div>
+  <div class="st g"><b>결론</b>이건 방식 선택이 아니라 <strong>소유권 규칙</strong>으로 푼다. 1절 패치②(전투 중 유지)와 리쉬가 여기서 다시 쓰인다.</div>
+</div>
+</div>
+</div>
+
+<!-- ============================ 6쪽 ============================ -->
+<h2 class="pb">6. 그 밖의 방식들</h2>
+<p class="h2sub">D는 A의 변형, E·F·G·H는 <strong>다른 층</strong>을 다루는 방식이다 — A·B·C와 경쟁하지 않고 겹쳐 쓴다.</p>
+
+<div class="grid2">
+
+<div class="card">
+<p class="ttl"><span class="k">D</span>계층 공간 분할 (쿼드트리)</p>
+<p class="sub">존재 층 · A의 변형</p>
+<svg width="100%" viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg">
+  <rect x="110" y="5" width="120" height="120" fill="#f7f8fa" stroke="#8a91a0"/>
+  <line x1="170" y1="5" x2="170" y2="125" stroke="#8a91a0"/><line x1="110" y1="65" x2="230" y2="65" stroke="#8a91a0"/>
+  <line x1="140" y1="5" x2="140" y2="65" stroke="#8a91a0"/><line x1="110" y1="35" x2="170" y2="35" stroke="#8a91a0"/>
+  <line x1="125" y1="5" x2="125" y2="35" stroke="#8a91a0"/><line x1="110" y1="20" x2="140" y2="20" stroke="#8a91a0"/>
+  <g fill="#e8590c"><circle cx="116" cy="11" r="2"/><circle cx="120" cy="15" r="2"/><circle cx="131" cy="10" r="2"/><circle cx="135" cy="15" r="2"/><circle cx="115" cy="27" r="2"/><circle cx="121" cy="30" r="2"/><circle cx="132" cy="26" r="2"/><circle cx="129" cy="31" r="2"/>
+  <circle cx="150" cy="20" r="2"/><circle cx="160" cy="28" r="2"/><circle cx="120" cy="50" r="2"/><circle cx="155" cy="52" r="2"/></g>
+  <g fill="#8a91a0"><circle cx="205" cy="30" r="2"/><circle cx="140" cy="100" r="2"/><circle cx="200" cy="95" r="2"/></g>
+</svg>
+<p>빽빽한 곳만 더 잘게 쪼갠다. 격자의 "셀 크기 하나로는 못 맞춘다" 문제에 대한 답.</p>
+<ul><li>밀도가 극단적으로 불균일한 맵에 강함</li><li>움직이는 개체는 매번 트리 재배치 비용</li><li>고도차 없는 평면 맵이라 옥트리까지는 불필요</li></ul>
+<div class="when">언제: 한쪽에 몬스터 수백, 나머지는 텅 빈 맵. 우리 맵(무리 단위·고른 배치)엔 균일 격자로 충분할 가능성이 높다.</div>
+</div>
+
+<div class="card">
+<p class="ttl"><span class="k">E</span>중요도 · LOD 틱 등급</p>
+<p class="sub">틱(품질) 층 · 끄지 않고 느리게</p>
+<svg width="100%" viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="62" cy="65" r="58" fill="#f7f8fa" stroke="#cfd4de"/>
+  <circle cx="62" cy="65" r="38" fill="#dbe4ff" stroke="#bac8ff"/>
+  <circle cx="62" cy="65" r="18" fill="#3b5bdb"/>
+  <text x="62" y="68" class="xs" text-anchor="middle" fill="#fff">60Hz</text>
+  <text x="62" y="41" class="xs" text-anchor="middle" fill="#2b3a8f">10Hz</text>
+  <text x="62" y="18" class="xs" text-anchor="middle">2Hz</text>
+  <text x="145" y="14" class="xs">프레임 →</text>
+  <text x="136" y="40" class="xs" text-anchor="end">60</text>
+  <text x="136" y="72" class="xs" text-anchor="end">10</text>
+  <text x="136" y="104" class="xs" text-anchor="end">2</text>
+  <g stroke="#3b5bdb" stroke-width="2"><line x1="145" y1="30" x2="145" y2="42"/><line x1="152" y1="30" x2="152" y2="42"/><line x1="159" y1="30" x2="159" y2="42"/><line x1="166" y1="30" x2="166" y2="42"/><line x1="173" y1="30" x2="173" y2="42"/><line x1="180" y1="30" x2="180" y2="42"/><line x1="187" y1="30" x2="187" y2="42"/><line x1="194" y1="30" x2="194" y2="42"/><line x1="201" y1="30" x2="201" y2="42"/><line x1="208" y1="30" x2="208" y2="42"/><line x1="215" y1="30" x2="215" y2="42"/><line x1="222" y1="30" x2="222" y2="42"/><line x1="229" y1="30" x2="229" y2="42"/><line x1="236" y1="30" x2="236" y2="42"/><line x1="243" y1="30" x2="243" y2="42"/><line x1="250" y1="30" x2="250" y2="42"/><line x1="257" y1="30" x2="257" y2="42"/><line x1="264" y1="30" x2="264" y2="42"/></g>
+  <g stroke="#3b5bdb" stroke-width="2"><line x1="145" y1="62" x2="145" y2="74"/><line x1="187" y1="62" x2="187" y2="74"/><line x1="229" y1="62" x2="229" y2="74"/></g>
+  <g stroke="#7048e8" stroke-width="2"><line x1="166" y1="62" x2="166" y2="74"/><line x1="208" y1="62" x2="208" y2="74"/><line x1="250" y1="62" x2="250" y2="74"/></g>
+  <g stroke="#8a91a0" stroke-width="2"><line x1="173" y1="94" x2="173" y2="106"/></g>
+  <line x1="142" y1="116" x2="268" y2="116" stroke="#cfd4de"/>
+  <text x="276" y="66" class="xs" fill="#5028c0">위상을</text>
+  <text x="276" y="77" class="xs" fill="#5028c0">어긋내 분산</text>
+</svg>
+<p>아무도 사라지지 않는다. 먼 것은 <strong>생각(BT 평가)</strong>만 드물게, 이동·회전 보간은 매 프레임.</p>
+<ul><li><strong>밀집에서 효과가 있는 유일한 방식</strong> — 다 가까이 있어도 등급을 나눈다</li><li>팝인이 원천적으로 없다</li><li>메모리는 1바이트도 안 준다 / 총량 N에 여전히 비례</li><li>전제: 몬스터마다 도는 <code>Update()</code>를 매니저 하나로 모아야 함</li></ul>
+<div class="when">언제: A·B·C 위에 겹쳐서. 카오스 던전형(밀도 문제)에서는 주력.</div>
+</div>
+
+<div class="card">
+<p class="ttl"><span class="k">F</span>엔티티 가상화 — 레코드와 오브젝트 분리</p>
+<p class="sub">레코드 층 · 화면 밖 세계를 멈추지 않는 법</p>
+<svg width="100%" viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#5b6270"/></marker></defs>
+  <rect x="6" y="8" width="150" height="114" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="16" y="24" class="t" fill="#1f6b2e">레코드 — 항상 있음</text>
+  <text x="16" y="40" class="mono" fill="#1a1c22">point[0] 살아있음</text>
+  <text x="16" y="54" class="mono" fill="#1a1c22">point[1] 죽음</text>
+  <text x="28" y="66" class="mono" fill="#5b6270">재등장 = 12:04:31</text>
+  <text x="16" y="80" class="mono" fill="#1a1c22">point[2] 비어 있음</text>
+  <text x="16" y="96" class="xs">절대 시각으로 기록 → 꺼져 있는</text>
+  <text x="16" y="106" class="xs">동안에도 시간은 흐른 것으로 친다</text>
+  <text x="16" y="116" class="xs">(어빌리티 쿨다운과 같은 방식)</text>
+  <rect x="200" y="8" width="134" height="114" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="210" y="24" class="t" fill="#2b3a8f">오브젝트 — 근처만</text>
+  <text x="210" y="42" class="s">GameObject · NavMesh</text>
+  <text x="210" y="56" class="s">BT · 애니메이터 · HP바</text>
+  <text x="210" y="100" class="xs">풀에서 꺼낼 때 레코드를 읽고</text>
+  <text x="210" y="112" class="xs">풀에 넣을 때 레코드에 쓴다</text>
+  <line x1="158" y1="46" x2="196" y2="46" stroke="#5b6270" marker-end="url(#ar4)"/>
+  <text x="177" y="40" class="xs" text-anchor="middle">구체화</text>
+  <line x1="198" y1="78" x2="160" y2="78" stroke="#5b6270" marker-end="url(#ar4)"/>
+  <text x="178" y="72" class="xs" text-anchor="middle">환원</text>
+</svg>
+<p>"몬스터가 존재한다"와 "몬스터 오브젝트가 있다"를 분리한다. 오브젝트는 레코드의 <strong>보이는 얼굴</strong>일 뿐.</p>
+<ul><li>꺼졌다 켜져도 리스폰 타이머·처치 상태가 이어진다</li><li>오브젝트를 풀까지 반납해도 세계는 유지 → <strong>메모리를 실제로 줄일 수 있는 전제</strong></li><li>지금은 이 레코드를 스포너가 <code>BaseMonsterController[]</code>로 쥐고 있어 오브젝트와 한 몸이다</li></ul>
+<div class="when">언제: A·B·C 어떤 걸 쓰든 같이 필요. 반오픈월드의 "한 번 잡은 적은 그대로" 같은 영속 상태의 기반.</div>
+</div>
+
+<div class="card">
+<p class="ttl"><span class="k">G</span>지역 스트리밍</p>
+<p class="sub">로드 층 · 오픈월드 / 반오픈월드</p>
+<svg width="100%" viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg">
+  <text x="80" y="12" class="xs" text-anchor="middle">반오픈월드 — 맵 단위 분리</text>
+  <rect x="10" y="22" width="56" height="40" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="38" y="46" class="xs" text-anchor="middle" fill="#2b3a8f">맵 A</text>
+  <rect x="96" y="22" width="56" height="40" rx="6" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="124" y="46" class="xs" text-anchor="middle">맵 B</text>
+  <rect x="52" y="80" width="56" height="40" rx="6" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="80" y="104" class="xs" text-anchor="middle">맵 C</text>
+  <g stroke="#8a91a0" stroke-dasharray="3 2"><line x1="66" y1="42" x2="96" y2="42"/><line x1="44" y1="62" x2="68" y2="80"/><line x1="118" y1="62" x2="94" y2="80"/></g>
+  <text x="81" y="37" class="xs" text-anchor="middle" fill="#8a3708">로딩</text>
+  <line x1="170" y1="10" x2="170" y2="124" stroke="#e3e6ec"/>
+  <text x="258" y="12" class="xs" text-anchor="middle">오픈월드 — 끊김 없는 격자 스트리밍</text>
+  <g stroke="#cfd4de" stroke-width="0.7">
+    <line x1="190" y1="20" x2="190" y2="124"/><line x1="216" y1="20" x2="216" y2="124"/><line x1="242" y1="20" x2="242" y2="124"/><line x1="268" y1="20" x2="268" y2="124"/><line x1="294" y1="20" x2="294" y2="124"/><line x1="320" y1="20" x2="320" y2="124"/>
+    <line x1="190" y1="20" x2="320" y2="20"/><line x1="190" y1="46" x2="320" y2="46"/><line x1="190" y1="72" x2="320" y2="72"/><line x1="190" y1="98" x2="320" y2="98"/><line x1="190" y1="124" x2="320" y2="124"/>
+  </g>
+  <rect x="216" y="46" width="78" height="52" fill="#ebfbee" fill-opacity="0.8" stroke="#2b8a3e"/>
+  <circle cx="255" cy="72" r="32" fill="none" stroke="#2b8a3e" stroke-dasharray="3 2"/>
+  <circle cx="255" cy="72" r="4" fill="#3b5bdb"/>
+</svg>
+<p>존재 판정보다 한 단계 바깥 — <strong>에셋·지형을 메모리에 올릴지</strong>를 정한다.</p>
+<ul><li>반오픈월드: 맵을 몇 개로 끊고 전환 시 로딩(텔레포트·문). 맵 하나 안에서는 다시 A~C</li><li>오픈월드: 격자 셀을 반경 기준으로 끊김 없이 로드 — C를 로드 층에 쓴 것</li><li>이 프로젝트의 Addressable 리소스 스코프가 바로 이 층의 부품</li></ul>
+<div class="when">언제: 맵 하나를 통째로 올리면 메모리가 모자랄 때. 현재 BackStreetMap 규모엔 불필요.</div>
+</div>
+
+<div class="card">
+<p class="ttl"><span class="k">H</span>인카운터 · 웨이브 예산</p>
+<p class="sub">존재 층 · 카오스 던전형 (공간이 아니라 시간으로)</p>
+<svg width="100%" viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg">
+  <line x1="30" y1="112" x2="330" y2="112" stroke="#8a91a0"/>
+  <line x1="30" y1="112" x2="30" y2="8" stroke="#8a91a0"/>
+  <text x="330" y="124" class="xs" text-anchor="end">시간 →</text>
+  <text x="26" y="14" class="xs" text-anchor="end">생존</text>
+  <line x1="30" y1="30" x2="330" y2="30" stroke="#e8590c" stroke-dasharray="4 3"/>
+  <text x="326" y="24" class="xs" text-anchor="end" fill="#8a3708">동시 생존 상한</text>
+  <path d="M30 112 L50 112 L50 70 L64 70 L64 56 L78 56 L78 44 L90 44 L100 62 L112 80 L122 92 L130 92 L130 60 L142 60 L142 42 L154 42 L154 30 L190 30 L200 50 L214 72 L226 94 L236 100 L236 70 L248 70 L248 50 L260 50 L260 30 L300 30 L312 60 L322 90" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+  <text x="86" y="108" class="xs" text-anchor="middle">1웨이브</text>
+  <text x="190" y="108" class="xs" text-anchor="middle">2웨이브</text>
+  <text x="282" y="108" class="xs" text-anchor="middle">3웨이브</text>
+</svg>
+<p>아레나가 좁아 전부 화면 안 → A~C는 <strong>거를 게 없다.</strong> 대신 수와 속도를 제어한다.</p>
+<ul><li>동시 생존 상한 + 프레임당 스폰 수 제한(스파이크 분산)</li><li>풀 선(先)워밍 — 웨이브 최대치만큼 미리</li><li>개체당 비용 줄이기: 개별 경로탐색 대신 공유 경로(플로우 필드), 매니저 일괄 업데이트, 인스턴싱/ECS</li></ul>
+<div class="when">언제: 밀도가 문제일 때. E와 한 세트. 이 프로젝트에 이 장면을 넣을지는 별도 결정.</div>
+</div>
+
+<div class="card">
+<p class="ttl"><span class="k">—</span>참고: 서버의 관심 영역 (AOI)</p>
+<p class="sub">이 프로젝트는 완전 싱글 — 범위 밖, 정리만 해 둔다</p>
+<p>MMO의 필드 몬스터는 서버가 시뮬레이션하고, 서버가 "이 클라에게 무엇을 보낼지"를 격자·거리로 정한다(Interest Management).
+그 경우 <strong>존재 층은 서버로 올라가고</strong>, 클라에는 받은 것을 얼마나 싸게 보여줄지(틱·연출 품질)만 남는다.</p>
+<ul><li>그래서 A~C를 클라에서 직접 만들어 보는 것 = 서버 AOI를 로컬에서 재현해 보는 것과 같은 공부</li><li>반대로 E(품질 층)는 서버가 있어도 클라 몫으로 남는다</li></ul>
+</div>
+
+</div>
+
+<!-- ============================ 8쪽 ============================ -->
+<h2 class="pb">7. 한 장 비교</h2>
+<p class="h2sub">"좋다/나쁘다"가 아니라 "무엇을 풀고 무엇을 남기나". 층이 다른 방식끼리는 우열 비교가 아니라 조합 대상이다.</p>
+
+<table class="cmp">
+<colgroup><col style="width:14%"><col style="width:9%"><col style="width:11%"><col style="width:14%"><col style="width:16%"><col style="width:11%"><col style="width:12%"><col style="width:13%"></colgroup>
+<thead><tr><th>방식</th><th>층</th><th>저작 비용</th><th>경계 문제</th><th>판정 비용</th><th>맵이 커지면</th><th>밀집</th><th>메모리</th></tr></thead>
+<tbody>
+<tr><td class="who">현재 Sector</td><td>존재</td><td class="bad">높음 (수동)</td><td class="bad">있음</td><td>트리거 이벤트 (≈0)</td><td class="bad">구역도 커짐</td><td class="bad">무력</td><td class="bad">안 줆 (풀 유지)</td></tr>
+<tr><td class="who">A 청크</td><td>존재·로드</td><td class="good">0 (자동)</td><td>이웃 셀 + 유지 범위로 해소</td><td class="good">O(1) 셀 계산</td><td class="good">비용 고정</td><td class="bad">무력</td><td>셀 = 로드 단위 가능</td></tr>
+<tr><td class="who">B 거리</td><td>존재</td><td class="good">0</td><td class="good">없음 (히스테리시스)</td><td>O(N) 전수 — CullingGroup으로 저렴</td><td>N에 비례</td><td class="bad">무력</td><td>켤 것만</td></tr>
+<tr><td class="who">C 청크+거리</td><td>존재·로드</td><td class="good">0</td><td class="good">없음</td><td class="good">O(k) 후보만</td><td class="good">비용 고정</td><td class="bad">무력</td><td class="good">로드/존재 반경 분리</td></tr>
+<tr><td class="who">D 쿼드트리</td><td>존재</td><td class="good">0</td><td class="good">없음</td><td>O(log N) · 재배치 비용</td><td class="good">좋음</td><td>밀도 편차엔 강함</td><td>—</td></tr>
+<tr><td class="who">E 중요도/LOD</td><td>틱</td><td class="good">0</td><td>해당 없음 (끄지 않음)</td><td>버킷 관리</td><td class="bad">N에 비례</td><td class="good">유일하게 효과</td><td class="bad">안 줆</td></tr>
+<tr><td class="who">F 가상화</td><td>레코드</td><td>레코드 설계</td><td>—</td><td>—</td><td>필수에 가까움</td><td>—</td><td class="good">줄일 수 있는 전제</td></tr>
+<tr><td class="who">G 지역 스트리밍</td><td>로드</td><td>중간 (레벨 분할)</td><td>로딩 경계</td><td>—</td><td class="good">이게 답</td><td>—</td><td class="good">실제로 줆</td></tr>
+<tr><td class="who">H 웨이브 예산</td><td>존재</td><td>웨이브 데이터</td><td>없음 (아레나)</td><td>—</td><td>해당 없음</td><td class="good">상한·예산으로 제어</td><td>선워밍 필요</td></tr>
+</tbody>
+</table>
+
+<div class="callout c-blue">
+  <span class="lbl">표를 읽는 법</span>
+  A·B·C·D는 <strong>같은 칸(존재 층)</strong>을 두고 경쟁한다 — 여기서 하나를 고른다.
+  E·F·G·H는 <strong>다른 칸</strong>이다 — 고른 것 위에 필요한 만큼 얹는다. "청크 vs 거리 vs 둘 다"라는 원래 질문의 답은 <strong>C</strong>에 가깝고,
+  진짜 질문은 "그 위에 무엇을 얹을까"다.
+</div>
+
+<h2>8. 장면별 조합</h2>
+<p class="h2sub">0절의 세 장면에 층별로 무엇을 끼우는가.</p>
+
+<div class="fig">
+<p class="figt">⑨ 장면 × 층</p>
+<svg width="100%" viewBox="0 0 700 214" xmlns="http://www.w3.org/2000/svg">
+  <text x="10" y="54" class="t">① 틱</text>
+  <text x="10" y="100" class="t">② 존재</text>
+  <text x="10" y="146" class="t">③ 로드</text>
+  <text x="10" y="192" class="t">④ 레코드</text>
+
+  <text x="180" y="18" class="t" text-anchor="middle" fill="#2b3a8f">연속 필드 (← 우리 맵)</text>
+  <text x="400" y="18" class="t" text-anchor="middle" fill="#8a3708">좁은 아레나 대량</text>
+  <text x="610" y="18" class="t" text-anchor="middle" fill="#1f6b2e">오픈·반오픈월드</text>
+
+  <rect x="80" y="32" width="200" height="38" rx="7" fill="#f7f8fa" stroke="#cfd4de" stroke-dasharray="3 2"/>
+  <text x="180" y="49" class="t" text-anchor="middle">E 중요도/LOD</text><text x="180" y="62" class="xs" text-anchor="middle">실측 보고 필요할 때만</text>
+  <rect x="80" y="78" width="200" height="38" rx="7" fill="#3b5bdb"/>
+  <text x="180" y="95" class="t" text-anchor="middle" fill="#fff">C 청크 + 거리</text><text x="180" y="108" class="xs" text-anchor="middle" fill="#dbe4ff">+ 움직이는 몬스터 소유권 규칙</text>
+  <rect x="80" y="124" width="200" height="38" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="180" y="141" class="t" text-anchor="middle">맵 통째 로드</text><text x="180" y="154" class="xs" text-anchor="middle">현재 규모에선 스트리밍 불필요</text>
+  <rect x="80" y="170" width="200" height="38" rx="7" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="180" y="187" class="t" text-anchor="middle" fill="#1f6b2e">F 스포너 소유 레코드</text><text x="180" y="200" class="xs" text-anchor="middle">리스폰 시각 = 절대 시각</text>
+
+  <rect x="300" y="32" width="200" height="38" rx="7" fill="#3b5bdb"/>
+  <text x="400" y="49" class="t" text-anchor="middle" fill="#fff">E 중요도/LOD + 일괄 업데이트</text><text x="400" y="62" class="xs" text-anchor="middle" fill="#dbe4ff">여기가 주 전장</text>
+  <rect x="300" y="78" width="200" height="38" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="400" y="95" class="t" text-anchor="middle" fill="#8a3708">H 웨이브 · 동시 상한</text><text x="400" y="108" class="xs" text-anchor="middle">공간 분할은 무의미</text>
+  <rect x="300" y="124" width="200" height="38" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="400" y="141" class="t" text-anchor="middle">던전 통째 로드 + 풀 선워밍</text><text x="400" y="154" class="xs" text-anchor="middle">입장 로딩에 비용을 몰아둔다</text>
+  <rect x="300" y="170" width="200" height="38" rx="7" fill="#f7f8fa" stroke="#cfd4de" stroke-dasharray="3 2"/>
+  <text x="400" y="187" class="t" text-anchor="middle">거의 불필요</text><text x="400" y="200" class="xs" text-anchor="middle">일회성 인스턴스</text>
+
+  <rect x="520" y="32" width="176" height="38" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="608" y="49" class="t" text-anchor="middle">E 중요도/LOD</text><text x="608" y="62" class="xs" text-anchor="middle">먼 개체 · 군중</text>
+  <rect x="520" y="78" width="176" height="38" rx="7" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="608" y="95" class="t" text-anchor="middle" fill="#2b3a8f">C 청크 + 거리</text><text x="608" y="108" class="xs" text-anchor="middle">로드된 지역 안에서</text>
+  <rect x="520" y="124" width="176" height="38" rx="7" fill="#2b8a3e"/>
+  <text x="608" y="141" class="t" text-anchor="middle" fill="#fff">G 지역 스트리밍</text><text x="608" y="154" class="xs" text-anchor="middle" fill="#ebfbee">여기가 주 전장</text>
+  <rect x="520" y="170" width="176" height="38" rx="7" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="608" y="187" class="t" text-anchor="middle" fill="#1f6b2e">F 영속 레코드</text><text x="608" y="200" class="xs" text-anchor="middle">처치·채집 상태 저장</text>
+</svg>
+<p class="figcap">진한 칸 = 그 장면의 주 전장. 장면마다 주 전장이 다른 층에 있다 — 0절에서 "세 문제는 다른 문제"라고 한 이유다.</p>
+</div>
+
+<!-- ============================ 9쪽 ============================ -->
+<h2 class="pb">9. 이 프로젝트에 대한 제안</h2>
+<p class="h2sub">출발점(Sector) → 다음 한 걸음. 결정은 아직 아니고, 다음 대화에서 정할 것들을 모아 둔다.</p>
+
+<div class="callout c-green">
+  <span class="lbl">제안 — 존재 층을 C(청크 + 거리)로</span>
+  ① Sector의 네 문제(경계·단위·노가다·스파이크)를 <strong>한 번에</strong> 없앤다 — 패치가 아니라 판정 기준 교체.<br>
+  ② 청크 격자가 <strong>로드 층(리소스 시스템)</strong>과 <strong>판정 쿼리(어빌리티 광역기)</strong>에 재사용될 자리를 만든다 — 세 대주제를 잇는 고리.<br>
+  ③ 맵을 키우거나 두 번째 필드를 붙여도 구조가 그대로다.<br>
+  단, 우리 규모(스포너 23개)에선 B(거리만)로도 충분히 돌아간다. <strong>B로 먼저 만들고, 청크는 "후보 추리기"로 나중에 끼우는 순서</strong>도 가능하다.
+</div>
+
+<h3 style="margin-top:14px">다음에 정해야 할 것</h3>
+<ol class="dec">
+  <li><strong>범위</strong> — 세 장면 중 무엇을 이 프로젝트에서 실제로 만들까? (연속 필드는 확정. 좁은 아레나 대량(H+E)을 추가할지 / 오픈월드(G)는 설명만 할지)</li>
+  <li><strong>반경</strong> — 화면 ≈ 25m 기준으로 진입·이탈 반경 (후보: 35m / 50m). 셀 크기 S (후보: 화면 한 변 정도 = 25m 전후)</li>
+  <li><strong>등록 단위</strong> — 스포너로 확정해도 되는지 (NPC·채집물도 같은 등록기에 넣을지)</li>
+  <li><strong>움직이는 몬스터 규칙</strong> — 전투 중 유예, 리쉬 복귀, 유예 상한 N초</li>
+  <li><strong>레코드 분리(F)</strong> — 스포너가 쥔 <code>BaseMonsterController[]</code>를 포인트별 상태 레코드로 바꿀지, 리스폰 타이머를 절대 시각으로 옮길지</li>
+  <li><strong>Sector의 운명</strong> — 삭제 / 게임플레이 구역(지역 이름·BGM·필드 보스) 용도로 역할 변경</li>
+  <li><strong>측정</strong> — 무엇으로 "나아졌다"를 말할지. 기존 MonsterSimulation 트랙의 계측(활성 수·히칭·팝인)을 그대로 가져올지</li>
+</ol>
+
+<div class="callout c-amber">
+  <span class="lbl">선행 조건 (기존 점검에서 이미 나온 것)</span>
+  몬스터 생명주기 계약(OnSpawn/OnDespawn 미배선)과 풀 프리워밍 부족(풀 30 vs 섹터 최대 119)은 <strong>어떤 방식을 고르든</strong> 먼저 성해야 한다.
+  방식을 바꾸면 스폰/디스폰 횟수가 늘어나는 쪽이라, 이 둘이 깨져 있으면 방식의 차이가 아니라 풀·생명주기 결함을 재게 된다.
+  (근거: <code>docs/MonsterSimulation/Audit/Lifecycle.md</code>, <code>Comparison/07_Prerequisites.md</code> — 현재 미커밋 작업에서 진행 중일 수 있음)
+</div>
+
+<div class="footer">
+  Operation Kivotos · docs/FieldEntity/Approaches.html · 2026-09-28 · 필드 엔티티 관리 트랙 첫 문서.
+  외부 게임 사례는 공개적으로 관찰 가능한 동작과 공개 엔진 기능(Unity CullingGroup, UE World Partition, 마인크래프트 시뮬레이션 거리) 기준이며, 특정 게임의 내부 구현을 단정하지 않는다.
+</div>
+
+</body>
+</html>

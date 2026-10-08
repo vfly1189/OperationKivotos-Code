@@ -10,12 +10,16 @@ public abstract class RangedMonsterController : NormalMonsterController
     protected int _currentAmmo;
 
 
-    protected override void OnEnable()
+    public override void OnSpawn(SpawnContext ctx)
     {
-        base.OnEnable();
-        _currentAmmo = _maxAmmo;
+        base.OnSpawn(ctx);
 
-        EnableAgentDelayAsync(_monsterCts.Token).Forget();
+        ResetAmmo();
+    }
+
+    public override void OnDespawn()
+    {
+        base.OnDespawn();
     }
 
     // 부모(Normal)가 비워둔 전투 노드를 장전 시스템으로 조립해서 반환
@@ -28,20 +32,6 @@ public abstract class RangedMonsterController : NormalMonsterController
         });
     }
 
-
-    private async UniTaskVoid EnableAgentDelayAsync(CancellationToken token)
-    {
-        // 1프레임 대기 (파괴/비활성화 시 즉시 취소되도록 토큰 연동)
-        bool isCanceled = await UniTask.Yield(PlayerLoopTiming.Update, token).SuppressCancellationThrow();
-        if (isCanceled) return;
-
-        if (_state != MonsterState.Dead && _agent != null)
-        {
-            _agent.enabled = true;
-        }
-
-        _state = MonsterState.Idle;
-    }
 
     private NodeState CheckAttackRange()
     {
@@ -87,6 +77,11 @@ public abstract class RangedMonsterController : NormalMonsterController
         if (_agent != null && _agent.enabled) _agent.isStopped = true;
         _anim.CrossFade("Reload", 0.1f);
     }
+
+
+    private void ResetAmmo() => _currentAmmo = _maxAmmo;
+
+    protected override void OnReturnedHome() => ResetAmmo();   // 리쉬 복귀 = 위치·체력과 함께 탄약도 원복
 
     // 애니메이션 종료 이벤트들
     public void OnAttackFinished() { if (_state != MonsterState.Dead) _state = MonsterState.Idle; }

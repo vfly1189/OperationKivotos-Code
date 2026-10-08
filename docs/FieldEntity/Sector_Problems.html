@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>필드 엔티티 — Sector 방식의 문제 정의</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:14px 0 3px; font-weight:800; break-after:avoid; }
+  h3{ font-size:10pt; margin:10px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:9px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:8.6pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.2pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:4px 7px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.k{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  td.c{ text-align:center; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9pt; line-height:1.5; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); } .c-violet .lbl{ color:var(--violet); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; display:block; margin-bottom:3px; }
+  .callout ul{ margin:2px 0 0; padding-left:16px; } .callout li{ margin:2px 0; }
+  .pb{ break-before:page; }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .card{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:7px 11px 6px; margin:7px 0; break-inside:avoid; font-size:8.7pt; line-height:1.45; }
+  .card.a{ border-left-color:var(--amber); } .card.v{ border-left-color:var(--violet); } .card.g{ border-left-color:var(--green); } .card.k{ border-left-color:var(--ink); }
+  .card .hd{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; gap:8px; }
+  .card .hd b{ font-size:9.6pt; } .card .hd span{ font-size:7.8pt; color:var(--muted); white-space:nowrap; }
+  .card p{ margin:0 0 3px; }
+  .num{ font-weight:800; color:var(--amber-ink); }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--amber-ink); font-weight:800; } .mid{ color:var(--violet-ink); font-weight:800; }
+  .footer{ margin-top:12px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a91a0"/></marker>
+    <marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker>
+    <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/></marker>
+  </defs>
+</svg>
+
+<!-- ============================ 1쪽 ============================ -->
+<div class="kicker">Operation Kivotos · 필드 엔티티 관리 · Sector 진단</div>
+<h1>Sector 방식의 문제 정의</h1>
+<p class="lead">측정 전에 "Sector가 정확히 무엇이 문제인가"를 정리한 기록이다. 측정 전 검증 → 인접 섹터 검토 → 리쉬 전제 → 최종 정의 → 비교 이유 순서로 고민했다.
+수치는 실제 맵(<code>BackStreetMap.prefab</code>)과 카메라(<code>Game.unity</code>) 값으로 계산한 <strong>기하값</strong>이며, 플레이 측정값이 아니다.</p>
+
+<div class="callout c-blue">
+  <span class="lbl">결론 — 리쉬(추적 상한 → 넘으면 위치·체력 원복)를 항상 적용한다는 전제에서</span>
+  <table style="margin:4px 0 6px; background:#fff; border-radius:8px; overflow:hidden">
+    <thead><tr><th style="width:4%">#</th><th style="width:52%">Sector 방식의 문제</th><th>근거 (계산값)</th></tr></thead>
+    <tbody>
+      <tr><td class="k">1</td><td>경계에서 팝인/팝아웃 → 인접 섹터 필요 → <strong>인접 표 작성·검수</strong></td><td>S2→S1 진입 시 경계 6m 안 자리 20개가 눈앞에서 등장</td></tr>
+      <tr><td class="k">2</td><td>새 맵마다 <strong>섹터 분할 + 스포너 소속 배치 + 인접 표</strong></td><td>소속 = 섹터의 자식 (<code>GetComponentsInChildren</code>)</td></tr>
+      <tr><td class="k">3</td><td>안 보이는 곳도 섹터 모양·크기만큼 활성화 — <strong>유지 비용</strong></td><td>켜진 몹의 87%가 화면 밖 (인접 시 94%)</td></tr>
+      <tr><td class="k">4</td><td>섹터가 켜지고 꺼질 때 크기만큼 한꺼번에 — <strong>순간 비용</strong></td><td>S4 진입 = 119마리를 한 프레임에 요청</td></tr>
+      <tr><td class="k">5</td><td><strong>리쉬 거리가 섹터 폭보다 길 수 없음</strong></td><td>인접 기준 스폰 → 꺼지는 곳 최소 27~31m</td></tr>
+    </tbody>
+  </table>
+  <strong>1·3·4·5가 전부 섹터 크기 하나에 묶여 있다.</strong> 작게 나누면 3·4가 좋아지지만 1·5가 나빠지고, 크게 하면 반대가 된다.
+  크기 튜닝으로는 안 되고 <strong>판정 방식 자체를 바꿔야 한다</strong> → 거리 방식 비교의 근거.
+</div>
+
+<div class="fig">
+  <div class="figt">그림 1 · 실제 맵 — 위에서 본 모습 (축척 그대로)</div>
+  <svg viewBox="0 0 700 445" width="100%">
+    <rect x="235.6" y="16.1" width="260.1" height="89.2" fill="#f7f8fa" fill-opacity="0.85" stroke="#b8bfcc" stroke-width="1"/>
+<rect x="48.9" y="101.1" width="263.1" height="84.7" fill="#f7f8fa" fill-opacity="0.85" stroke="#b8bfcc" stroke-width="1"/>
+<rect x="226.0" y="179.7" width="260.1" height="84.3" fill="#f7f8fa" fill-opacity="0.85" stroke="#b8bfcc" stroke-width="1"/>
+<rect x="17.8" y="259.1" width="260.2" height="85.6" fill="#f7f8fa" fill-opacity="0.85" stroke="#b8bfcc" stroke-width="1"/>
+<rect x="199.6" y="338.1" width="260.1" height="91.6" fill="#f7f8fa" fill-opacity="0.85" stroke="#b8bfcc" stroke-width="1"/>
+<rect x="235.6" y="101.1" width="76.4" height="4.1" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="226.0" y="179.7" width="86.0" height="6.1" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="226.0" y="259.1" width="52.0" height="4.9" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="199.6" y="338.1" width="78.4" height="6.7" fill="#7048e8" fill-opacity="0.55"/>
+<circle cx="303.9" cy="25.7" r="1.5" fill="#e8590c"/>
+<circle cx="307.7" cy="25.7" r="1.5" fill="#e8590c"/>
+<circle cx="311.3" cy="25.7" r="1.5" fill="#e8590c"/>
+<circle cx="314.8" cy="25.7" r="1.5" fill="#e8590c"/>
+<circle cx="318.4" cy="25.7" r="1.5" fill="#e8590c"/>
+<circle cx="321.6" cy="25.7" r="1.5" fill="#e8590c"/>
+<circle cx="325.0" cy="25.7" r="1.5" fill="#e8590c"/>
+<circle cx="303.9" cy="29.4" r="1.5" fill="#e8590c"/>
+<circle cx="303.9" cy="33.0" r="1.5" fill="#e8590c"/>
+<circle cx="303.9" cy="36.9" r="1.5" fill="#e8590c"/>
+<circle cx="303.9" cy="40.9" r="1.5" fill="#e8590c"/>
+<circle cx="306.9" cy="40.8" r="1.5" fill="#e8590c"/>
+<circle cx="310.7" cy="40.9" r="1.5" fill="#e8590c"/>
+<circle cx="314.6" cy="40.9" r="1.5" fill="#e8590c"/>
+<circle cx="318.2" cy="40.9" r="1.5" fill="#e8590c"/>
+<circle cx="321.8" cy="40.9" r="1.5" fill="#e8590c"/>
+<circle cx="325.5" cy="40.9" r="1.5" fill="#e8590c"/>
+<circle cx="452.6" cy="34.6" r="1.5" fill="#e8590c"/>
+<circle cx="456.5" cy="34.6" r="1.5" fill="#e8590c"/>
+<circle cx="460.1" cy="34.6" r="1.5" fill="#e8590c"/>
+<circle cx="463.6" cy="34.6" r="1.5" fill="#e8590c"/>
+<circle cx="467.1" cy="34.6" r="1.5" fill="#e8590c"/>
+<circle cx="470.4" cy="34.6" r="1.5" fill="#e8590c"/>
+<circle cx="473.7" cy="34.6" r="1.5" fill="#e8590c"/>
+<circle cx="452.6" cy="38.3" r="1.5" fill="#e8590c"/>
+<circle cx="452.6" cy="41.9" r="1.5" fill="#e8590c"/>
+<circle cx="452.6" cy="45.8" r="1.5" fill="#e8590c"/>
+<circle cx="452.6" cy="49.8" r="1.5" fill="#e8590c"/>
+<circle cx="455.7" cy="49.7" r="1.5" fill="#e8590c"/>
+<circle cx="459.5" cy="49.8" r="1.5" fill="#e8590c"/>
+<circle cx="463.4" cy="49.7" r="1.5" fill="#e8590c"/>
+<circle cx="467.0" cy="49.7" r="1.5" fill="#e8590c"/>
+<circle cx="470.6" cy="49.7" r="1.5" fill="#e8590c"/>
+<circle cx="474.2" cy="49.7" r="1.5" fill="#e8590c"/>
+<circle cx="243.6" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="247.4" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="251.0" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="254.5" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="258.1" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="261.3" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="264.7" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="243.6" cy="87.4" r="1.5" fill="#e8590c"/>
+<circle cx="243.6" cy="91.0" r="1.5" fill="#e8590c"/>
+<circle cx="243.6" cy="94.9" r="1.5" fill="#e8590c"/>
+<circle cx="243.6" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="246.6" cy="98.8" r="1.5" fill="#e8590c"/>
+<circle cx="250.4" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="254.3" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="257.9" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="261.5" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="265.2" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="294.1" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="298.0" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="301.6" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="305.1" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="308.6" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="311.9" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="315.2" cy="83.7" r="1.5" fill="#e8590c"/>
+<circle cx="294.1" cy="87.4" r="1.5" fill="#e8590c"/>
+<circle cx="294.1" cy="91.0" r="1.5" fill="#e8590c"/>
+<circle cx="294.1" cy="94.9" r="1.5" fill="#e8590c"/>
+<circle cx="294.1" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="297.2" cy="98.8" r="1.5" fill="#e8590c"/>
+<circle cx="300.9" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="304.9" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="308.4" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="312.1" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="315.7" cy="98.9" r="1.5" fill="#e8590c"/>
+<circle cx="395.5" cy="41.3" r="1.5" fill="#e8590c"/>
+<circle cx="399.4" cy="41.3" r="1.5" fill="#e8590c"/>
+<circle cx="403.0" cy="41.3" r="1.5" fill="#e8590c"/>
+<circle cx="406.5" cy="41.3" r="1.5" fill="#e8590c"/>
+<circle cx="410.0" cy="41.3" r="1.5" fill="#e8590c"/>
+<circle cx="413.3" cy="41.3" r="1.5" fill="#e8590c"/>
+<circle cx="416.6" cy="41.3" r="1.5" fill="#e8590c"/>
+<circle cx="395.5" cy="45.0" r="1.5" fill="#e8590c"/>
+<circle cx="395.5" cy="48.7" r="1.5" fill="#e8590c"/>
+<circle cx="395.5" cy="52.5" r="1.5" fill="#e8590c"/>
+<circle cx="395.5" cy="56.5" r="1.5" fill="#e8590c"/>
+<circle cx="398.6" cy="56.4" r="1.5" fill="#e8590c"/>
+<circle cx="402.3" cy="56.5" r="1.5" fill="#e8590c"/>
+<circle cx="406.3" cy="56.5" r="1.5" fill="#e8590c"/>
+<circle cx="409.8" cy="56.5" r="1.5" fill="#e8590c"/>
+<circle cx="413.5" cy="56.5" r="1.5" fill="#e8590c"/>
+<circle cx="417.1" cy="56.5" r="1.5" fill="#e8590c"/>
+<circle cx="370.8" cy="20.8" r="1.5" fill="#e8590c"/>
+<circle cx="374.7" cy="20.8" r="1.5" fill="#e8590c"/>
+<circle cx="378.3" cy="20.8" r="1.5" fill="#e8590c"/>
+<circle cx="381.8" cy="20.8" r="1.5" fill="#e8590c"/>
+<circle cx="385.3" cy="20.8" r="1.5" fill="#e8590c"/>
+<circle cx="388.6" cy="20.8" r="1.5" fill="#e8590c"/>
+<circle cx="391.9" cy="20.8" r="1.5" fill="#e8590c"/>
+<circle cx="370.8" cy="24.5" r="1.5" fill="#e8590c"/>
+<circle cx="370.8" cy="28.1" r="1.5" fill="#e8590c"/>
+<circle cx="370.8" cy="32.0" r="1.5" fill="#e8590c"/>
+<circle cx="370.8" cy="36.0" r="1.5" fill="#e8590c"/>
+<circle cx="373.9" cy="35.9" r="1.5" fill="#e8590c"/>
+<circle cx="377.7" cy="36.0" r="1.5" fill="#e8590c"/>
+<circle cx="381.6" cy="36.0" r="1.5" fill="#e8590c"/>
+<circle cx="385.2" cy="36.0" r="1.5" fill="#e8590c"/>
+<circle cx="388.8" cy="36.0" r="1.5" fill="#e8590c"/>
+<circle cx="392.4" cy="36.0" r="1.5" fill="#e8590c"/>
+<circle cx="108.7" cy="119.9" r="1.5" fill="#e8590c"/>
+<circle cx="112.5" cy="119.9" r="1.5" fill="#e8590c"/>
+<circle cx="116.1" cy="119.9" r="1.5" fill="#e8590c"/>
+<circle cx="119.7" cy="119.9" r="1.5" fill="#e8590c"/>
+<circle cx="123.2" cy="119.9" r="1.5" fill="#e8590c"/>
+<circle cx="126.4" cy="119.9" r="1.5" fill="#e8590c"/>
+<circle cx="129.8" cy="119.9" r="1.5" fill="#e8590c"/>
+<circle cx="108.7" cy="123.6" r="1.5" fill="#e8590c"/>
+<circle cx="108.7" cy="127.3" r="1.5" fill="#e8590c"/>
+<circle cx="108.7" cy="131.1" r="1.5" fill="#e8590c"/>
+<circle cx="108.7" cy="135.1" r="1.5" fill="#e8590c"/>
+<circle cx="111.7" cy="135.0" r="1.5" fill="#e8590c"/>
+<circle cx="115.5" cy="135.1" r="1.5" fill="#e8590c"/>
+<circle cx="119.4" cy="135.1" r="1.5" fill="#e8590c"/>
+<circle cx="123.0" cy="135.1" r="1.5" fill="#e8590c"/>
+<circle cx="126.6" cy="135.1" r="1.5" fill="#e8590c"/>
+<circle cx="130.3" cy="135.1" r="1.5" fill="#e8590c"/>
+<circle cx="176.9" cy="166.0" r="1.5" fill="#e8590c"/>
+<circle cx="180.7" cy="166.0" r="1.5" fill="#e8590c"/>
+<circle cx="184.3" cy="166.0" r="1.5" fill="#e8590c"/>
+<circle cx="187.9" cy="166.0" r="1.5" fill="#e8590c"/>
+<circle cx="191.4" cy="166.0" r="1.5" fill="#e8590c"/>
+<circle cx="194.6" cy="166.0" r="1.5" fill="#e8590c"/>
+<circle cx="198.0" cy="166.0" r="1.5" fill="#e8590c"/>
+<circle cx="176.9" cy="169.7" r="1.5" fill="#e8590c"/>
+<circle cx="176.9" cy="173.4" r="1.5" fill="#e8590c"/>
+<circle cx="176.9" cy="177.3" r="1.5" fill="#e8590c"/>
+<circle cx="176.9" cy="181.2" r="1.5" fill="#e8590c"/>
+<circle cx="179.9" cy="181.2" r="1.5" fill="#e8590c"/>
+<circle cx="183.7" cy="181.2" r="1.5" fill="#e8590c"/>
+<circle cx="187.6" cy="181.2" r="1.5" fill="#e8590c"/>
+<circle cx="191.2" cy="181.2" r="1.5" fill="#e8590c"/>
+<circle cx="194.8" cy="181.2" r="1.5" fill="#e8590c"/>
+<circle cx="198.5" cy="181.2" r="1.5" fill="#e8590c"/>
+<circle cx="59.1" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="63.0" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="66.6" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="70.1" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="73.7" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="76.9" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="80.3" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="59.1" cy="169.0" r="1.5" fill="#e8590c"/>
+<circle cx="59.1" cy="172.6" r="1.5" fill="#e8590c"/>
+<circle cx="59.1" cy="176.5" r="1.5" fill="#e8590c"/>
+<circle cx="59.1" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="62.2" cy="180.4" r="1.5" fill="#e8590c"/>
+<circle cx="66.0" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="69.9" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="73.5" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="77.1" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="80.8" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="131.8" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="135.6" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="139.2" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="142.7" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="146.3" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="149.5" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="152.9" cy="165.3" r="1.5" fill="#e8590c"/>
+<circle cx="131.8" cy="169.0" r="1.5" fill="#e8590c"/>
+<circle cx="131.8" cy="172.6" r="1.5" fill="#e8590c"/>
+<circle cx="131.8" cy="176.5" r="1.5" fill="#e8590c"/>
+<circle cx="131.8" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="134.8" cy="180.4" r="1.5" fill="#e8590c"/>
+<circle cx="138.6" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="142.5" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="146.1" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="149.7" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="153.4" cy="180.5" r="1.5" fill="#e8590c"/>
+<circle cx="455.3" cy="245.9" r="1.5" fill="#e8590c"/>
+<circle cx="455.3" cy="252.2" r="1.5" fill="#e8590c"/>
+<circle cx="455.3" cy="256.9" r="1.5" fill="#e8590c"/>
+<circle cx="344.9" cy="247.2" r="1.5" fill="#e8590c"/>
+<circle cx="344.9" cy="241.1" r="1.5" fill="#e8590c"/>
+<circle cx="344.9" cy="235.7" r="1.5" fill="#e8590c"/>
+<circle cx="134.9" cy="273.3" r="1.5" fill="#e8590c"/>
+<circle cx="138.8" cy="273.3" r="1.5" fill="#e8590c"/>
+<circle cx="142.4" cy="273.3" r="1.5" fill="#e8590c"/>
+<circle cx="145.9" cy="273.3" r="1.5" fill="#e8590c"/>
+<circle cx="149.4" cy="273.3" r="1.5" fill="#e8590c"/>
+<circle cx="152.7" cy="273.3" r="1.5" fill="#e8590c"/>
+<circle cx="156.0" cy="273.3" r="1.5" fill="#e8590c"/>
+<circle cx="134.9" cy="277.0" r="1.5" fill="#e8590c"/>
+<circle cx="134.9" cy="280.6" r="1.5" fill="#e8590c"/>
+<circle cx="134.9" cy="284.5" r="1.5" fill="#e8590c"/>
+<circle cx="134.9" cy="288.5" r="1.5" fill="#e8590c"/>
+<circle cx="138.0" cy="288.4" r="1.5" fill="#e8590c"/>
+<circle cx="141.8" cy="288.5" r="1.5" fill="#e8590c"/>
+<circle cx="145.7" cy="288.5" r="1.5" fill="#e8590c"/>
+<circle cx="149.3" cy="288.5" r="1.5" fill="#e8590c"/>
+<circle cx="152.9" cy="288.5" r="1.5" fill="#e8590c"/>
+<circle cx="156.5" cy="288.5" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="33.6" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="37.2" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="40.7" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="44.2" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="47.5" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="50.9" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="327.9" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="331.6" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="335.5" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="32.8" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="36.6" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="40.5" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="44.1" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="47.7" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="51.3" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="196.6" cy="292.6" r="1.5" fill="#e8590c"/>
+<circle cx="200.4" cy="292.6" r="1.5" fill="#e8590c"/>
+<circle cx="204.0" cy="292.6" r="1.5" fill="#e8590c"/>
+<circle cx="207.5" cy="292.6" r="1.5" fill="#e8590c"/>
+<circle cx="211.1" cy="292.6" r="1.5" fill="#e8590c"/>
+<circle cx="214.3" cy="292.6" r="1.5" fill="#e8590c"/>
+<circle cx="217.7" cy="292.6" r="1.5" fill="#e8590c"/>
+<circle cx="196.6" cy="296.3" r="1.5" fill="#e8590c"/>
+<circle cx="196.6" cy="299.9" r="1.5" fill="#e8590c"/>
+<circle cx="196.6" cy="303.8" r="1.5" fill="#e8590c"/>
+<circle cx="196.6" cy="307.8" r="1.5" fill="#e8590c"/>
+<circle cx="199.6" cy="307.7" r="1.5" fill="#e8590c"/>
+<circle cx="203.4" cy="307.8" r="1.5" fill="#e8590c"/>
+<circle cx="207.3" cy="307.8" r="1.5" fill="#e8590c"/>
+<circle cx="210.9" cy="307.8" r="1.5" fill="#e8590c"/>
+<circle cx="214.5" cy="307.8" r="1.5" fill="#e8590c"/>
+<circle cx="218.2" cy="307.8" r="1.5" fill="#e8590c"/>
+<circle cx="88.2" cy="283.4" r="1.5" fill="#e8590c"/>
+<circle cx="92.0" cy="283.4" r="1.5" fill="#e8590c"/>
+<circle cx="95.7" cy="283.4" r="1.5" fill="#e8590c"/>
+<circle cx="99.2" cy="283.4" r="1.5" fill="#e8590c"/>
+<circle cx="102.7" cy="283.4" r="1.5" fill="#e8590c"/>
+<circle cx="105.9" cy="283.4" r="1.5" fill="#e8590c"/>
+<circle cx="109.3" cy="283.4" r="1.5" fill="#e8590c"/>
+<circle cx="88.2" cy="287.1" r="1.5" fill="#e8590c"/>
+<circle cx="88.2" cy="290.7" r="1.5" fill="#e8590c"/>
+<circle cx="88.2" cy="294.6" r="1.5" fill="#e8590c"/>
+<circle cx="88.2" cy="298.6" r="1.5" fill="#e8590c"/>
+<circle cx="91.2" cy="298.5" r="1.5" fill="#e8590c"/>
+<circle cx="95.0" cy="298.6" r="1.5" fill="#e8590c"/>
+<circle cx="98.9" cy="298.6" r="1.5" fill="#e8590c"/>
+<circle cx="102.5" cy="298.6" r="1.5" fill="#e8590c"/>
+<circle cx="106.1" cy="298.6" r="1.5" fill="#e8590c"/>
+<circle cx="109.8" cy="298.6" r="1.5" fill="#e8590c"/>
+<circle cx="91.2" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="95.0" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="98.6" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="102.2" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="105.7" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="108.9" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="112.3" cy="324.2" r="1.5" fill="#e8590c"/>
+<circle cx="91.2" cy="327.9" r="1.5" fill="#e8590c"/>
+<circle cx="91.2" cy="331.6" r="1.5" fill="#e8590c"/>
+<circle cx="91.2" cy="335.5" r="1.5" fill="#e8590c"/>
+<circle cx="91.2" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="94.2" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="98.0" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="101.9" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="105.5" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="109.1" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="112.8" cy="339.4" r="1.5" fill="#e8590c"/>
+<circle cx="142.1" cy="324.4" r="1.5" fill="#e8590c"/>
+<circle cx="146.0" cy="324.4" r="1.5" fill="#e8590c"/>
+<circle cx="149.6" cy="324.4" r="1.5" fill="#e8590c"/>
+<circle cx="153.1" cy="324.4" r="1.5" fill="#e8590c"/>
+<circle cx="156.6" cy="324.4" r="1.5" fill="#e8590c"/>
+<circle cx="159.9" cy="324.4" r="1.5" fill="#e8590c"/>
+<circle cx="163.2" cy="324.4" r="1.5" fill="#e8590c"/>
+<circle cx="142.1" cy="328.1" r="1.5" fill="#e8590c"/>
+<circle cx="142.1" cy="331.8" r="1.5" fill="#e8590c"/>
+<circle cx="142.1" cy="335.7" r="1.5" fill="#e8590c"/>
+<circle cx="142.1" cy="339.6" r="1.5" fill="#e8590c"/>
+<circle cx="145.2" cy="339.6" r="1.5" fill="#e8590c"/>
+<circle cx="149.0" cy="339.6" r="1.5" fill="#e8590c"/>
+<circle cx="152.9" cy="339.6" r="1.5" fill="#e8590c"/>
+<circle cx="156.4" cy="339.6" r="1.5" fill="#e8590c"/>
+<circle cx="160.1" cy="339.6" r="1.5" fill="#e8590c"/>
+<circle cx="163.7" cy="339.6" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="293.7" r="1.5" fill="#e8590c"/>
+<circle cx="33.6" cy="293.7" r="1.5" fill="#e8590c"/>
+<circle cx="37.2" cy="293.7" r="1.5" fill="#e8590c"/>
+<circle cx="40.7" cy="293.7" r="1.5" fill="#e8590c"/>
+<circle cx="44.2" cy="293.7" r="1.5" fill="#e8590c"/>
+<circle cx="47.5" cy="293.7" r="1.5" fill="#e8590c"/>
+<circle cx="50.9" cy="293.7" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="297.4" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="301.0" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="304.9" r="1.5" fill="#e8590c"/>
+<circle cx="29.7" cy="308.9" r="1.5" fill="#e8590c"/>
+<circle cx="32.8" cy="308.8" r="1.5" fill="#e8590c"/>
+<circle cx="36.6" cy="308.9" r="1.5" fill="#e8590c"/>
+<circle cx="40.5" cy="308.9" r="1.5" fill="#e8590c"/>
+<circle cx="44.1" cy="308.9" r="1.5" fill="#e8590c"/>
+<circle cx="47.7" cy="308.9" r="1.5" fill="#e8590c"/>
+<circle cx="51.3" cy="308.9" r="1.5" fill="#e8590c"/>
+<circle cx="333.7" cy="349.1" r="1.5" fill="#e8590c"/>
+<circle cx="337.6" cy="349.1" r="1.5" fill="#e8590c"/>
+<circle cx="341.2" cy="349.1" r="1.5" fill="#e8590c"/>
+<circle cx="344.7" cy="349.1" r="1.5" fill="#e8590c"/>
+<circle cx="348.3" cy="349.1" r="1.5" fill="#e8590c"/>
+<circle cx="351.5" cy="349.1" r="1.5" fill="#e8590c"/>
+<circle cx="354.9" cy="349.1" r="1.5" fill="#e8590c"/>
+<circle cx="333.7" cy="352.8" r="1.5" fill="#e8590c"/>
+<circle cx="333.7" cy="356.5" r="1.5" fill="#e8590c"/>
+<circle cx="333.7" cy="360.4" r="1.5" fill="#e8590c"/>
+<circle cx="333.7" cy="364.4" r="1.5" fill="#e8590c"/>
+<circle cx="336.8" cy="364.3" r="1.5" fill="#e8590c"/>
+<circle cx="340.6" cy="364.4" r="1.5" fill="#e8590c"/>
+<circle cx="344.5" cy="364.3" r="1.5" fill="#e8590c"/>
+<circle cx="348.1" cy="364.3" r="1.5" fill="#e8590c"/>
+<circle cx="351.7" cy="364.3" r="1.5" fill="#e8590c"/>
+<circle cx="355.4" cy="364.3" r="1.5" fill="#e8590c"/>
+<circle cx="211.5" cy="408.1" r="1.5" fill="#e8590c"/>
+<circle cx="215.3" cy="408.1" r="1.5" fill="#e8590c"/>
+<circle cx="219.0" cy="408.1" r="1.5" fill="#e8590c"/>
+<circle cx="222.5" cy="408.1" r="1.5" fill="#e8590c"/>
+<circle cx="226.0" cy="408.1" r="1.5" fill="#e8590c"/>
+<circle cx="229.2" cy="408.1" r="1.5" fill="#e8590c"/>
+<circle cx="232.6" cy="408.1" r="1.5" fill="#e8590c"/>
+<circle cx="211.5" cy="411.8" r="1.5" fill="#e8590c"/>
+<circle cx="211.5" cy="415.5" r="1.5" fill="#e8590c"/>
+<circle cx="211.5" cy="419.4" r="1.5" fill="#e8590c"/>
+<circle cx="211.5" cy="423.4" r="1.5" fill="#e8590c"/>
+<circle cx="214.5" cy="423.3" r="1.5" fill="#e8590c"/>
+<circle cx="218.3" cy="423.4" r="1.5" fill="#e8590c"/>
+<circle cx="222.2" cy="423.3" r="1.5" fill="#e8590c"/>
+<circle cx="225.8" cy="423.3" r="1.5" fill="#e8590c"/>
+<circle cx="229.4" cy="423.3" r="1.5" fill="#e8590c"/>
+<circle cx="233.1" cy="423.3" r="1.5" fill="#e8590c"/>
+<circle cx="404.4" cy="360.5" r="1.5" fill="#e8590c"/>
+<circle cx="408.3" cy="360.5" r="1.5" fill="#e8590c"/>
+<circle cx="411.9" cy="360.5" r="1.5" fill="#e8590c"/>
+<circle cx="415.4" cy="360.5" r="1.5" fill="#e8590c"/>
+<circle cx="418.9" cy="360.5" r="1.5" fill="#e8590c"/>
+<circle cx="422.2" cy="360.5" r="1.5" fill="#e8590c"/>
+<circle cx="425.5" cy="360.5" r="1.5" fill="#e8590c"/>
+<circle cx="404.4" cy="364.2" r="1.5" fill="#e8590c"/>
+<circle cx="404.4" cy="367.9" r="1.5" fill="#e8590c"/>
+<circle cx="404.4" cy="371.8" r="1.5" fill="#e8590c"/>
+<circle cx="404.4" cy="375.8" r="1.5" fill="#e8590c"/>
+<circle cx="407.5" cy="375.7" r="1.5" fill="#e8590c"/>
+<circle cx="411.3" cy="375.8" r="1.5" fill="#e8590c"/>
+<circle cx="415.2" cy="375.7" r="1.5" fill="#e8590c"/>
+<circle cx="418.8" cy="375.7" r="1.5" fill="#e8590c"/>
+<circle cx="422.4" cy="375.7" r="1.5" fill="#e8590c"/>
+<circle cx="426.0" cy="375.7" r="1.5" fill="#e8590c"/>
+<circle cx="274.8" cy="364.5" r="1.5" fill="#e8590c"/>
+<circle cx="278.6" cy="364.5" r="1.5" fill="#e8590c"/>
+<circle cx="282.2" cy="364.5" r="1.5" fill="#e8590c"/>
+<circle cx="285.7" cy="364.5" r="1.5" fill="#e8590c"/>
+<circle cx="289.3" cy="364.5" r="1.5" fill="#e8590c"/>
+<circle cx="292.5" cy="364.5" r="1.5" fill="#e8590c"/>
+<circle cx="295.9" cy="364.5" r="1.5" fill="#e8590c"/>
+<circle cx="274.8" cy="368.2" r="1.5" fill="#e8590c"/>
+<circle cx="274.8" cy="371.9" r="1.5" fill="#e8590c"/>
+<circle cx="274.8" cy="375.8" r="1.5" fill="#e8590c"/>
+<circle cx="274.8" cy="379.7" r="1.5" fill="#e8590c"/>
+<circle cx="277.8" cy="379.7" r="1.5" fill="#e8590c"/>
+<circle cx="281.6" cy="379.7" r="1.5" fill="#e8590c"/>
+<circle cx="285.5" cy="379.7" r="1.5" fill="#e8590c"/>
+<circle cx="289.1" cy="379.7" r="1.5" fill="#e8590c"/>
+<circle cx="292.7" cy="379.7" r="1.5" fill="#e8590c"/>
+<circle cx="296.4" cy="379.7" r="1.5" fill="#e8590c"/>
+<circle cx="254.2" cy="299.9" r="42.8" fill="none" stroke="#2b8a3e" stroke-width="1" stroke-dasharray="3 2"/>
+<polygon points="241.7,308.1 266.8,308.1 280.2,282.8 228.3,282.8" fill="#3b5bdb" fill-opacity="0.28" stroke="#3b5bdb" stroke-width="1"/>
+<circle cx="254.2" cy="299.9" r="3" fill="#1a1c22" stroke="#fff" stroke-width="1"/>
+<text x="490.0" y="87.2" class="tb" fill="#1a1c22" text-anchor="end">S1</text>
+<text x="490.0" y="99.2" class="s" fill="#1a1c22" text-anchor="end">102마리</text>
+<text x="54.6" y="114.4" class="tb" fill="#1a1c22" text-anchor="start">S2</text>
+<text x="54.6" y="126.4" class="s" fill="#1a1c22" text-anchor="start">68마리</text>
+<text x="480.4" y="192.9" class="tb" fill="#1a1c22" text-anchor="end">S3</text>
+<text x="480.4" y="204.9" class="s" fill="#1a1c22" text-anchor="end">6마리</text>
+<text x="23.5" y="272.5" class="tb" fill="#1a1c22" text-anchor="start">S4</text>
+<text x="23.5" y="284.5" class="s" fill="#1a1c22" text-anchor="start">119마리</text>
+<text x="454.0" y="411.2" class="tb" fill="#1a1c22" text-anchor="end">S5</text>
+<text x="454.0" y="423.2" class="s" fill="#1a1c22" text-anchor="end">68마리</text>
+<line x1="20.6" y1="422.4" x2="77.5" y2="422.4" stroke="#1a1c22" stroke-width="1.6"/>
+<text x="49.0" y="418.4" class="xs" text-anchor="middle">20m</text>
+    <g transform="translate(515,22)">
+      <text x="0" y="0" class="tb">범례</text>
+      <rect x="0" y="12" width="16" height="11" fill="#f7f8fa" stroke="#b8bfcc"/><text x="23" y="21" class="s">섹터 박스 (30m × 91m 띠)</text>
+      <circle cx="8" cy="38" r="2.4" fill="#e8590c"/><text x="23" y="41" class="s">몬스터 자리 (슬롯) 363개</text>
+      <rect x="0" y="52" width="16" height="5" fill="#7048e8" fill-opacity="0.6"/><text x="23" y="59" class="s">이웃 섹터와 겹치는 곳 (1.4~2.3m)</text>
+      <circle cx="8" cy="75" r="3" fill="#1a1c22"/><text x="23" y="78" class="s">플레이어</text>
+      <rect x="0" y="88" width="16" height="10" fill="#3b5bdb" fill-opacity="0.3" stroke="#3b5bdb"/><text x="23" y="97" class="s">화면에 보이는 땅</text>
+      <circle cx="8" cy="114" r="6" fill="none" stroke="#2b8a3e" stroke-dasharray="3 2"/><text x="23" y="117" class="s">RL 감지 거리 15m</text>
+      <text x="0" y="150" class="tb">읽는 법</text>
+      <text x="0" y="168" class="s">· 가운데 세로 <tspan font-weight="700" fill="#5028c0">통로</tspan>로만 섹터가 이어진다</text>
+      <text x="0" y="184" class="s">· 몬스터는 대부분 양옆 <tspan font-weight="700" fill="#8a3708">팔</tspan>에 있다</text>
+      <text x="0" y="200" class="s">· 통로를 지나기만 해도 그 섹터의</text>
+      <text x="8" y="214" class="s">팔 끝(최대 90m)까지 전부 켜진다</text>
+      <text x="0" y="230" class="s">· 화면은 앞 6m · 뒤 3m · 좌우 최대 9m</text>
+      <text x="0" y="264" class="tb">섹터별 몬스터</text>
+      <text x="0" y="282" class="s">S1 102 · S2 68 · <tspan font-weight="700">S3 6</tspan> · <tspan font-weight="700">S4 119</tspan> · S5 68</text>
+      <text x="0" y="298" class="s">RL 360마리 + AR 3마리(S3)</text>
+      <text x="0" y="314" class="s">감지 거리 안에 이웃이 있는 자리: 81 / 363</text>
+    </g>
+  </svg>
+  <div class="figcap">좌표: 맵 프리팹의 섹터 BoxCollider와 스폰 포인트 363개. 화면 범위: <code>_delta (0, 5, -3)</code> · 시야각 60° · 16:9 (건물 가림 무시). 북쪽(위)이 카메라가 바라보는 방향.
+  계획서의 "화면 ≈ 25m" 가정은 틀렸다.</div>
+</div>
+
+<!-- ============================ 2쪽 ============================ -->
+<h2 class="pb">0. 측정 전 검증 — 지금 구조로 재도 되나</h2>
+<div class="h2sub">정책 → 스포너 id 켜기/끄기 경계는 측정 가능한 상태. 아래 4개가 숫자를 오염시킬 수 있었다 (2026-10-02)</div>
+
+<table>
+  <thead><tr><th style="width:4%">#</th><th style="width:40%">항목</th><th style="width:22%">성격</th><th>처리</th></tr></thead>
+  <tbody>
+    <tr><td class="k">①</td><td>계측 없음 — 경계 소실 · 화면 밖 비율 · 프레임당 스폰이 코드에 없음</td><td>측정 준비</td><td>Phase 4에서 구현</td></tr>
+    <tr><td class="k">②</td><td>풀 30 vs S4 119 → 첫 진입 프레임에 즉석 생성 89회가 섞임</td><td>정책 비용 아님</td><td><strong>첫 바퀴 기록은 버림</strong> (200마리 수준도 성능 문제 없음)</td></tr>
+    <tr><td class="k">③</td><td>재현성 — 수동 조작 · 피격 전멸 텔레포트 · 몹 몸통 차단</td><td>측정 방법</td><td>Phase 4 하네스 + 무적</td></tr>
+    <tr><td class="k">④</td><td><strong>트리거 이탈 무시 + 겹침 → 서 있는 섹터는 꺼지고 다른 섹터가 켜진 채 굳음</strong></td><td class="ng">Sector 구현 버그</td><td><span class="ok">수정 · 플레이 확인 · <code>1872a610</code></span></td></tr>
+  </tbody>
+</table>
+
+<div class="two">
+  <div class="card k">
+    <div class="hd"><b>④ 버그가 생기던 순서</b><span>수정 전</span></div>
+    <p>① S4에서 겹침 구간에 발을 들임 → "S3 진입" → S4 끄고 S3 켬<br>
+       ② 다시 S4 쪽으로 물러남 → S3 이탈은 무시, S4는 나간 적이 없으니 진입 신호도 없음<br>
+       → <strong>S4에 서 있는데 몹 0마리.</strong> 고치지 않고 비교하면 "망가진 Sector를 이겼다"는 반박을 받는다.</p>
+  </div>
+  <div class="card g">
+    <div class="hd"><b>④ 수정 — 서 있는 섹터는 켜고 아니면 끔</b><span>1872a610</span></div>
+    <p>"켜진 섹터는 하나"를 버림. 겹침에서는 둘 다 켜진다. 판정은 트리거 대신 <code>SectorManager.OnUpdate</code>가 매 프레임 현재 캐릭터 위치로 한다.
+    로딩 중 빈 파티 · 캐릭터 교체 · 텔레포트에서 이벤트 순서에 기대지 않으려고. 덤으로 거리 방식과 입력이 같아졌다.</p>
+  </div>
+</div>
+<p class="figcap">기각한 대안 — 겹침 없애기: 플레이어 캡슐(지름 약 0.4m)이 경계에 걸쳐 같은 버그가 남는다. <code>OnTriggerExit</code> 주석만 풀기: 매니저가 "켜진 섹터"를 잘못 기억한 채 아무것도 안 켜진다.
+비차단: 프레임 예산 <code>int.MaxValue</code>(Sector의 실제 동작) · Gen 불일치 경로 미검증(B에서 중요). ②는 이후 풀 크기 30 → 200으로 해소(유저 수정).</p>
+
+<h2>1. 첫 질문 — 경계 소실은 인접 섹터로 해결되나 (리쉬 없음)</h2>
+<div class="h2sub">몹을 달고 소속 섹터를 완전히 벗어나는 순간, 그 섹터 출신 산 몹이 전부 즉시 회수된다</div>
+
+<div class="fig">
+  <div class="figt">그림 2 · S4에서 쫓아온 몹을 달고 S3로 넘어갈 때 (현재 규칙: 서 있는 섹터만 켬)</div>
+  <svg viewBox="0 0 700 232" width="100%">
+    <!-- panel template: S3 y28-104, S4 y92-178 -->
+    <g transform="translate(18,0)">
+      <rect x="0" y="28" width="200" height="76" fill="#f7f8fa" stroke="#d5d9e0"/>
+      <rect x="0" y="92" width="200" height="86" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4" fill-opacity="0.85"/>
+      <rect x="0" y="92" width="200" height="12" fill="#7048e8" fill-opacity="0.25"/>
+      <text x="8" y="44" class="t" fill="#8a91a0">S3 · 꺼짐</text>
+      <text x="8" y="172" class="t" fill="#2b3a8f">S4 · 켜짐</text>
+      <circle cx="100" cy="140" r="30" fill="none" stroke="#2b8a3e" stroke-dasharray="3 2"/>
+      <line x1="112" y1="160" x2="102" y2="144" stroke="#e8590c" stroke-dasharray="3 2" marker-end="url(#ara)"/>
+      <circle cx="100" cy="140" r="5" fill="#1a1c22" stroke="#fff"/>
+      <circle cx="114" cy="163" r="5" fill="#e8590c"/>
+      <line x1="100" y1="132" x2="100" y2="112" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#ar)"/>
+      <text x="100" y="200" class="t" text-anchor="middle">① S4 몹이 감지 거리 안에서 쫓아옴</text>
+      <text x="100" y="214" class="s" text-anchor="middle">플레이어는 북쪽 통로로 이동</text>
+    </g>
+    <g transform="translate(250,0)">
+      <rect x="0" y="28" width="200" height="76" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4" fill-opacity="0.85"/>
+      <rect x="0" y="92" width="200" height="86" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4" fill-opacity="0.85"/>
+      <rect x="0" y="92" width="200" height="12" fill="#7048e8" fill-opacity="0.35"/>
+      <text x="8" y="44" class="t" fill="#2b3a8f">S3 · 켜짐</text>
+      <text x="8" y="172" class="t" fill="#2b3a8f">S4 · 켜짐</text>
+      <circle cx="100" cy="98" r="5" fill="#1a1c22" stroke="#fff"/>
+      <circle cx="108" cy="122" r="5" fill="#e8590c"/>
+      <line x1="107" y1="116" x2="102" y2="105" stroke="#e8590c" stroke-dasharray="3 2" marker-end="url(#ara)"/>
+      <text x="100" y="200" class="t" text-anchor="middle">② 겹침 구간 — 두 섹터 다 켜짐</text>
+      <text x="100" y="214" class="s" text-anchor="middle">아직 문제 없음</text>
+    </g>
+    <g transform="translate(482,0)">
+      <rect x="0" y="28" width="200" height="76" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4" fill-opacity="0.85"/>
+      <rect x="0" y="92" width="200" height="86" fill="#f7f8fa" stroke="#d5d9e0"/>
+      <rect x="0" y="92" width="200" height="12" fill="#7048e8" fill-opacity="0.25"/>
+      <text x="8" y="44" class="t" fill="#2b3a8f">S3 · 켜짐</text>
+      <text x="8" y="172" class="t" fill="#e8590c">S4 · 꺼짐 → 산 몹 즉시 회수</text>
+      <circle cx="100" cy="72" r="5" fill="#1a1c22" stroke="#fff"/>
+      <circle cx="106" cy="90" r="6" fill="none" stroke="#e8590c" stroke-dasharray="2 2"/>
+      <path d="M101,85 L111,95 M111,85 L101,95" stroke="#e8590c" stroke-width="1.8"/>
+      <text x="118" y="88" class="s" fill="#8a3708">바로 뒤에서 사라짐</text>
+      <text x="100" y="200" class="t" text-anchor="middle">③ 플레이어가 S4를 벗어난 순간</text>
+      <text x="100" y="214" class="s" text-anchor="middle">몹은 S3 안 · 플레이어 옆인데 S4 소속이라 회수</text>
+    </g>
+  </svg>
+  <div class="figcap">코드: <code>SpawnerManager.DeActivate</code>의 Alive 분기 — 구독 해제 → <code>Resource.Destroy</code> → 슬롯 Waiting · <code>ReadyAt = now</code>. 몹이 지금 어디 있는지, 싸우는 중인지는 보지 않는다.</div>
+</div>
+
+<div class="pb"></div>
+<div class="fig">
+  <div class="figt">그림 3 · 몬스터의 운명이 정해지는 길 — 몬스터 자신은 한 번도 물어보지 않는다</div>
+  <svg viewBox="0 0 700 132" width="100%">
+    <rect x="10" y="20" width="110" height="38" rx="8" fill="#fff" stroke="#1a1c22"/>
+    <text x="65" y="37" class="t" text-anchor="middle">플레이어 위치</text><text x="65" y="50" class="xs" text-anchor="middle">매 프레임</text>
+    <line x1="122" y1="39" x2="148" y2="39" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="150" y="20" width="120" height="38" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="210" y="37" class="t" fill="#5028c0" text-anchor="middle">Sector 판정</text><text x="210" y="50" class="xs" fill="#5028c0" text-anchor="middle">박스 안인가?</text>
+    <line x1="272" y1="39" x2="298" y2="39" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="300" y="20" width="120" height="38" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="360" y="37" class="t" fill="#2b3a8f" text-anchor="middle">스포너 켜기/끄기</text><text x="360" y="50" class="xs" fill="#2b3a8f" text-anchor="middle">id 목록 전체</text>
+    <line x1="422" y1="39" x2="448" y2="39" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="450" y="20" width="100" height="38" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="500" y="37" class="t" fill="#2b3a8f" text-anchor="middle">슬롯</text><text x="500" y="50" class="xs" fill="#2b3a8f" text-anchor="middle">Alive → 회수</text>
+    <line x1="552" y1="39" x2="578" y2="39" stroke="#e8590c" stroke-width="1.3" marker-end="url(#ara)"/>
+    <rect x="580" y="20" width="110" height="38" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="635" y="37" class="t" fill="#8a3708" text-anchor="middle">몬스터 사라짐</text><text x="635" y="50" class="xs" fill="#8a3708" text-anchor="middle">즉시 · 체력 무관</text>
+
+    <rect x="470" y="88" width="210" height="34" rx="8" fill="#f7f8fa" stroke="#b8bfcc" stroke-dasharray="4 3"/>
+    <text x="575" y="103" class="t" fill="#5b6270" text-anchor="middle">몬스터의 현재 위치 · 전투 중인가</text>
+    <text x="575" y="116" class="xs" text-anchor="middle">이 정보가 판단에 들어가지 않는다</text>
+    <line x1="470" y1="105" x2="215" y2="62" stroke="#b8bfcc" stroke-dasharray="4 3"/>
+    <path d="M337,78 L349,90 M349,78 L337,90" stroke="#e8590c" stroke-width="2"/>
+  </svg>
+</div>
+
+<!-- ============================ 3쪽 ============================ -->
+<div class="callout c-violet">
+  <span class="lbl">원인</span>
+  몬스터는 움직이는데 <strong>소속은 태어난 섹터에 고정</strong>돼 있다. 섹터가 꺼질 때 "그 섹터 출신 산 몹 = 즉시 회수"이므로 몹을 끌고 벗어나는 순간 전투가 통째로 사라진다.
+  화면 밖이어도 문제다. 쏘던 몹이 갑자기 없어지고, 돌아가면 <strong>만피 새 몹</strong>이 서 있다("도망치면 초기화").
+</div>
+
+<div class="fig">
+  <div class="figt">그림 4 · 인접 켜두기에서 S4 몹을 끌고 S2까지 갈 때 — 사라지는 곳이 한 칸 밀릴 뿐</div>
+  <svg viewBox="0 0 700 200" width="100%">
+    <g transform="translate(40,14)">
+    <text x="60" y="0" class="t" text-anchor="middle">① S4에 있음</text>
+    <rect x="0" y="8" width="120" height="25" fill="#f7f8fa" stroke="#d5d9e0"/><text x="8" y="24" class="s" fill="#8a91a0">S1</text>
+    <rect x="0" y="37" width="120" height="25" fill="#f7f8fa" stroke="#d5d9e0"/><text x="8" y="53" class="s" fill="#8a91a0">S2</text>
+    <rect x="0" y="66" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1"/><text x="8" y="82" class="s" fill="#2b3a8f">S3</text>
+    <rect x="0" y="95" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/><text x="8" y="111" class="s" fill="#2b3a8f">S4 ★</text>
+    <rect x="0" y="124" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1"/><text x="8" y="140" class="s" fill="#2b3a8f">S5</text>
+    <circle cx="78" cy="107.5" r="5" fill="#1a1c22" stroke="#fff"/>
+    <circle cx="96" cy="107.5" r="5" fill="#e8590c"/>
+    <text x="60" y="166" class="s" text-anchor="middle">켜짐: S3 · S4 · S5</text>
+    <text x="60" y="179" class="s" text-anchor="middle">S4 몹이 쫓아오기 시작</text>
+    </g>
+    <line x1="176" y1="86" x2="214" y2="86" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <g transform="translate(230,14)">
+    <text x="60" y="0" class="t" text-anchor="middle">② S3까지 끌고 옴</text>
+    <rect x="0" y="8" width="120" height="25" fill="#f7f8fa" stroke="#d5d9e0"/><text x="8" y="24" class="s" fill="#8a91a0">S1</text>
+    <rect x="0" y="37" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1"/><text x="8" y="53" class="s" fill="#2b3a8f">S2</text>
+    <rect x="0" y="66" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/><text x="8" y="82" class="s" fill="#2b3a8f">S3 ★</text>
+    <rect x="0" y="95" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1"/><text x="8" y="111" class="s" fill="#2b3a8f">S4</text>
+    <rect x="0" y="124" width="120" height="25" fill="#f7f8fa" stroke="#d5d9e0"/><text x="8" y="140" class="s" fill="#8a91a0">S5</text>
+    <circle cx="78" cy="78.5" r="5" fill="#1a1c22" stroke="#fff"/>
+    <circle cx="96" cy="78.5" r="5" fill="#e8590c"/>
+    <text x="60" y="166" class="s" text-anchor="middle">켜짐: S2 · S3 · S4</text>
+    <text x="60" y="179" class="s" text-anchor="middle"><tspan fill="#1f6b2e" font-weight="700">S4가 켜져 있어 몹이 남음</tspan></text>
+    </g>
+    <line x1="366" y1="86" x2="404" y2="86" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#ar)"/>
+    <g transform="translate(420,14)">
+    <text x="60" y="0" class="t" text-anchor="middle">③ S2로 넘어감</text>
+    <rect x="0" y="8" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1"/><text x="8" y="24" class="s" fill="#2b3a8f">S1</text>
+    <rect x="0" y="37" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/><text x="8" y="53" class="s" fill="#2b3a8f">S2 ★</text>
+    <rect x="0" y="66" width="120" height="25" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1"/><text x="8" y="82" class="s" fill="#2b3a8f">S3</text>
+    <rect x="0" y="95" width="120" height="25" fill="#fff4ec" stroke="#e8590c"/><text x="8" y="111" class="s" fill="#8a3708">S4 꺼짐</text>
+    <rect x="0" y="124" width="120" height="25" fill="#f7f8fa" stroke="#d5d9e0"/><text x="8" y="140" class="s" fill="#8a91a0">S5</text>
+    <circle cx="78" cy="49.5" r="5" fill="#1a1c22" stroke="#fff"/>
+    <circle cx="96" cy="49.5" r="6" fill="none" stroke="#e8590c" stroke-dasharray="2 2"/>
+    <path d="M91,44.5 L101,54.5 M101,44.5 L91,54.5" stroke="#e8590c" stroke-width="1.8"/>
+    <text x="60" y="166" class="s" text-anchor="middle">켜짐: S1 · S2 · S3</text>
+    <text x="60" y="179" class="s" text-anchor="middle"><tspan fill="#8a3708" font-weight="700">S4 꺼짐 → 옆의 몹이 사라짐</tspan></text>
+    </g>
+    <g transform="translate(572,22)">
+      <rect x="0" y="0" width="118" height="142" rx="9" fill="#fff4ec"/>
+      <text x="10" y="19" class="t" fill="#8a3708">결과</text>
+      <text x="10" y="38" class="s" fill="#8a3708">현상은 같다.</text>
+      <text x="10" y="53" class="s" fill="#8a3708">몹을 한 섹터 더</text>
+      <text x="10" y="67" class="s" fill="#8a3708">(약 30m) 끌어야</text>
+      <text x="10" y="81" class="s" fill="#8a3708">나타날 뿐이다.</text>
+      <text x="10" y="102" class="s" fill="#8a3708">몹은 여전히</text>
+      <text x="10" y="116" class="s" fill="#8a3708">플레이어 옆에서</text>
+      <text x="10" y="130" class="s" fill="#8a3708">사라진다.</text>
+    </g>
+  </svg>
+</div>
+
+<div class="two">
+  <div class="card g">
+    <div class="hd"><b>인접 섹터로 좋아지는 것</b><span>팝인·팝아웃</span></div>
+    <p>가만히 있는 몹이 켜지고 꺼지는 모습이 화면 밖으로 밀린다. S3→S2 통로에서 새로 켜지는 S1은 최소 <strong>29.5m</strong>, 꺼지는 S4는 최소 <strong>42.5m</strong> 떨어져 있다. 화면은 9m까지다.</p>
+  </div>
+  <div class="card a">
+    <div class="hd"><b>못 고치는 것 · 대가</b><span>그림 4</span></div>
+    <p><strong>따라온 몹 소실은 그대로</strong>다(한 칸 지연). 대가: 켜진 몹 <span class="num">119 → 193</span>, 화면 밖 <span class="num">87% → 94%</span>, 넘을 때 큰 섹터 둘이 동시에 바뀜(102 켜기 + 119 회수), 인접 표 관리. 바둑판 맵이면 9칸.</p>
+  </div>
+</div>
+
+<div class="callout c-amber">
+  <span class="lbl">정정 — 지난 대화</span>
+  "어디서 싸워도 이웃 경계까지 15m 이내라 경계 소실이 자주 난다"는 <strong>틀렸다.</strong> 이웃과 맞닿는 곳은 통로뿐이고, 감지 거리 안에서 넘어갈 자리는 363개 중 81개다.
+  → 경계 소실은 "팔에서 몹을 달고 통로까지 끌고 왔을 때" 난다. <strong>Before 측정 경로는 일부러 그렇게 짜야 한다.</strong>
+</div>
+
+<h2 class="pb">2. 전제를 바꿈 — 리쉬를 항상 적용하면</h2>
+<div class="h2sub">"어느 정도까지 따라오고, 상한을 넘으면 위치·체력이 원위치" — 일반적인 게임의 규칙을 모든 방식에 적용</div>
+
+<p>따라온 몹이 사라지지 않으려면 섹터가 꺼지기 전에 몹이 먼저 포기해야 한다. 즉 <strong>리쉬 거리 &lt; 스폰 자리에서 그 섹터가 꺼지는 곳까지의 거리</strong>.</p>
+
+<div class="fig">
+  <div class="figt">그림 5 · 스폰 자리 → 소속 섹터가 꺼지는 곳까지 최소 거리 = 리쉬의 상한</div>
+  <svg viewBox="0 0 700 196" width="100%">
+    <g class="s">
+      <line x1="80" y1="22" x2="80" y2="170" stroke="#b8bfcc"/>
+      <line x1="80" y1="170" x2="530" y2="170" stroke="#b8bfcc"/>
+      <text x="80" y="184" text-anchor="middle">0</text>
+      <text x="208.6" y="184" text-anchor="middle">10m</text>
+      <text x="337.1" y="184" text-anchor="middle">20m</text>
+      <text x="465.7" y="184" text-anchor="middle">30m</text>
+      <line x1="208.6" y1="22" x2="208.6" y2="170" stroke="#eef0f4"/>
+      <line x1="337.1" y1="22" x2="337.1" y2="170" stroke="#eef0f4"/>
+      <line x1="465.7" y1="22" x2="465.7" y2="170" stroke="#eef0f4"/>
+    </g>
+    <line x1="401.4" y1="16" x2="401.4" y2="170" stroke="#2b8a3e" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="401.4" y="12" class="xs" fill="#1f6b2e" text-anchor="middle">리쉬 25m</text>
+    <text x="70" y="41" class="t" text-anchor="end">S1</text>
+    <rect x="80" y="28" width="10.3" height="9" fill="#e8590c"/>
+    <text x="94.3" y="36" class="xs" fill="#8a3708">0.8</text>
+    <rect x="80" y="39" width="365.1" height="9" fill="#3b5bdb"/>
+    <text x="449.1" y="47" class="xs" fill="#2b3a8f">28.4</text>
+    <text x="70" y="70" class="t" text-anchor="end">S2</text>
+    <rect x="80" y="57" width="124.7" height="9" fill="#e8590c"/>
+    <text x="208.7" y="65" class="xs" fill="#8a3708">9.7</text>
+    <rect x="80" y="68" width="351.0" height="9" fill="#3b5bdb"/>
+    <text x="435.0" y="76" class="xs" fill="#2b3a8f">27.3</text>
+    <text x="70" y="99" class="t" text-anchor="end">S3</text>
+    <rect x="80" y="86" width="270.0" height="9" fill="#e8590c"/>
+    <text x="354.0" y="94" class="xs" fill="#8a3708">21.0</text>
+    <rect x="80" y="97" width="366.4" height="9" fill="#3b5bdb"/>
+    <text x="450.4" y="105" class="xs" fill="#2b3a8f">28.5</text>
+    <text x="70" y="128" class="t" text-anchor="end">S4</text>
+    <rect x="80" y="115" width="133.7" height="9" fill="#e8590c"/>
+    <text x="217.7" y="123" class="xs" fill="#8a3708">10.4</text>
+    <rect x="80" y="126" width="394.7" height="9" fill="#3b5bdb"/>
+    <text x="478.7" y="134" class="xs" fill="#2b3a8f">30.7</text>
+    <text x="70" y="157" class="t" text-anchor="end">S5</text>
+    <rect x="80" y="144" width="88.7" height="9" fill="#e8590c"/>
+    <text x="172.7" y="152" class="xs" fill="#8a3708">6.9</text>
+    <rect x="80" y="155" width="384.4" height="9" fill="#3b5bdb"/>
+    <text x="468.4" y="163" class="xs" fill="#2b3a8f">29.9</text>
+    <g transform="translate(548,40)">
+      <rect x="0" y="0" width="14" height="9" fill="#e8590c"/><text x="20" y="8" class="s">서 있는 섹터만</text>
+      <rect x="0" y="18" width="14" height="9" fill="#3b5bdb"/><text x="20" y="26" class="s">인접 섹터 켜두기</text>
+      <text x="0" y="56" class="t" fill="#8a3708">서 있는 섹터만</text>
+      <text x="0" y="70" class="s">S1 0.8m → 리쉬 불가능</text>
+      <text x="0" y="96" class="t" fill="#2b3a8f">인접 켜두기</text>
+      <text x="0" y="110" class="s">최소 27.3m → 약 25m까지</text>
+    </g>
+  </svg>
+  <div class="figcap">"서 있는 섹터만" = 이웃 섹터 박스까지의 최소 거리. "인접" = 두 칸 떨어진 섹터 박스까지의 직선거리(실제 걷는 길은 더 길다).</div>
+</div>
+
+<div class="callout c-green">
+  <span class="lbl">정리</span>
+  <strong>리쉬 + 인접 섹터</strong>면 따라온 몹 소실은 거의 없어지고, "도망치면 초기화"는 버그가 아니라 <strong>의도된 규칙</strong>이 된다(리쉬 자체가 원복).
+  대신 <strong>리쉬 최대치가 섹터 폭(이 맵 30m)에 묶인다.</strong> 이것이 결론 표의 5번이다.
+</div>
+
+<!-- ============================ 4쪽 ============================ -->
+<h2>3. 그래도 남는 Sector의 문제 — 결론 표의 근거</h2>
+<div class="h2sub">리쉬로 몬스터 쪽 문제를 걷어낸 뒤에도 Sector라서 생기는 문제</div>
+
+<div class="fig">
+  <div class="figt">그림 6 · 플레이어가 S3 통로에 있을 때 켜지는 범위</div>
+  <svg viewBox="0 0 700 248" width="100%">
+    <text x="168" y="20" class="tb" text-anchor="middle">서 있는 섹터만</text>
+    <text x="528" y="20" class="tb" text-anchor="middle">인접 켜두기 — S2 · S3 · S4</text>
+    <line x1="350" y1="8" x2="350" y2="238" stroke="#e3e6ec"/>
+    <rect x="160.0" y="33.9" width="118.6" height="40.7" fill="#f7f8fa" fill-opacity="0.85" stroke="#d5d9e0" stroke-width="1"/>
+<rect x="74.9" y="72.7" width="120.0" height="38.6" fill="#f7f8fa" fill-opacity="0.85" stroke="#d5d9e0" stroke-width="1"/>
+<rect x="155.6" y="108.5" width="118.6" height="38.4" fill="#eef2ff" fill-opacity="0.85" stroke="#3b5bdb" stroke-width="1.4"/>
+<rect x="60.6" y="144.7" width="118.7" height="39.1" fill="#f7f8fa" fill-opacity="0.85" stroke="#d5d9e0" stroke-width="1"/>
+<rect x="143.6" y="180.7" width="118.7" height="41.8" fill="#f7f8fa" fill-opacity="0.85" stroke="#d5d9e0" stroke-width="1"/>
+<rect x="160.0" y="72.7" width="34.9" height="2.2" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="155.6" y="108.5" width="39.2" height="2.8" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="155.6" y="144.7" width="23.7" height="2.2" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="143.6" y="180.7" width="35.8" height="3.0" fill="#7048e8" fill-opacity="0.55"/>
+<circle cx="191.1" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="192.9" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="194.5" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="196.1" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="197.7" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="199.2" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="200.8" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="191.1" cy="39.9" r="1.0" fill="#c9ced8"/>
+<circle cx="191.1" cy="41.6" r="1.0" fill="#c9ced8"/>
+<circle cx="191.1" cy="43.4" r="1.0" fill="#c9ced8"/>
+<circle cx="191.1" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="192.5" cy="45.1" r="1.0" fill="#c9ced8"/>
+<circle cx="194.2" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="196.0" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="197.7" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="199.3" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="201.0" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="259.0" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="260.7" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="262.4" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="264.0" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="265.6" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="267.1" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="268.6" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="259.0" cy="44.0" r="1.0" fill="#c9ced8"/>
+<circle cx="259.0" cy="45.6" r="1.0" fill="#c9ced8"/>
+<circle cx="259.0" cy="47.4" r="1.0" fill="#c9ced8"/>
+<circle cx="259.0" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="260.4" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="262.1" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="263.9" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="265.5" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="267.2" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="268.8" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="163.6" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="165.4" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="167.0" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="168.6" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="170.2" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="171.7" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="173.3" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="163.6" cy="66.4" r="1.0" fill="#c9ced8"/>
+<circle cx="163.6" cy="68.0" r="1.0" fill="#c9ced8"/>
+<circle cx="163.6" cy="69.8" r="1.0" fill="#c9ced8"/>
+<circle cx="163.6" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="165.0" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="166.8" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="168.5" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="170.2" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="171.8" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="173.5" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="186.7" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="188.4" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="190.1" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="191.7" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="193.3" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="194.8" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="196.3" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="186.7" cy="66.4" r="1.0" fill="#c9ced8"/>
+<circle cx="186.7" cy="68.0" r="1.0" fill="#c9ced8"/>
+<circle cx="186.7" cy="69.8" r="1.0" fill="#c9ced8"/>
+<circle cx="186.7" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="188.1" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="189.8" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="191.6" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="193.2" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="194.9" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="196.5" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="232.9" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="234.7" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="236.3" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="237.9" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="239.6" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="241.0" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="242.6" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="232.9" cy="47.1" r="1.0" fill="#c9ced8"/>
+<circle cx="232.9" cy="48.7" r="1.0" fill="#c9ced8"/>
+<circle cx="232.9" cy="50.5" r="1.0" fill="#c9ced8"/>
+<circle cx="232.9" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="234.3" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="236.1" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="237.8" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="239.5" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="241.1" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="242.8" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="221.7" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="223.4" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="225.1" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="226.7" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="228.3" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="229.8" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="231.3" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="221.7" cy="37.7" r="1.0" fill="#c9ced8"/>
+<circle cx="221.7" cy="39.4" r="1.0" fill="#c9ced8"/>
+<circle cx="221.7" cy="41.1" r="1.0" fill="#c9ced8"/>
+<circle cx="221.7" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="223.1" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="224.8" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="226.6" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="228.2" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="229.9" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="231.5" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="102.1" cy="81.2" r="1.0" fill="#c9ced8"/>
+<circle cx="103.9" cy="81.2" r="1.0" fill="#c9ced8"/>
+<circle cx="105.5" cy="81.2" r="1.0" fill="#c9ced8"/>
+<circle cx="107.1" cy="81.2" r="1.0" fill="#c9ced8"/>
+<circle cx="108.7" cy="81.2" r="1.0" fill="#c9ced8"/>
+<circle cx="110.2" cy="81.2" r="1.0" fill="#c9ced8"/>
+<circle cx="111.7" cy="81.2" r="1.0" fill="#c9ced8"/>
+<circle cx="102.1" cy="82.9" r="1.0" fill="#c9ced8"/>
+<circle cx="102.1" cy="84.6" r="1.0" fill="#c9ced8"/>
+<circle cx="102.1" cy="86.3" r="1.0" fill="#c9ced8"/>
+<circle cx="102.1" cy="88.2" r="1.0" fill="#c9ced8"/>
+<circle cx="103.5" cy="88.1" r="1.0" fill="#c9ced8"/>
+<circle cx="105.2" cy="88.2" r="1.0" fill="#c9ced8"/>
+<circle cx="107.0" cy="88.2" r="1.0" fill="#c9ced8"/>
+<circle cx="108.6" cy="88.2" r="1.0" fill="#c9ced8"/>
+<circle cx="110.3" cy="88.2" r="1.0" fill="#c9ced8"/>
+<circle cx="112.0" cy="88.2" r="1.0" fill="#c9ced8"/>
+<circle cx="133.2" cy="102.3" r="1.0" fill="#c9ced8"/>
+<circle cx="135.0" cy="102.3" r="1.0" fill="#c9ced8"/>
+<circle cx="136.6" cy="102.3" r="1.0" fill="#c9ced8"/>
+<circle cx="138.2" cy="102.3" r="1.0" fill="#c9ced8"/>
+<circle cx="139.8" cy="102.3" r="1.0" fill="#c9ced8"/>
+<circle cx="141.3" cy="102.3" r="1.0" fill="#c9ced8"/>
+<circle cx="142.8" cy="102.3" r="1.0" fill="#c9ced8"/>
+<circle cx="133.2" cy="103.9" r="1.0" fill="#c9ced8"/>
+<circle cx="133.2" cy="105.6" r="1.0" fill="#c9ced8"/>
+<circle cx="133.2" cy="107.4" r="1.0" fill="#c9ced8"/>
+<circle cx="133.2" cy="109.2" r="1.0" fill="#c9ced8"/>
+<circle cx="134.6" cy="109.2" r="1.0" fill="#c9ced8"/>
+<circle cx="136.3" cy="109.2" r="1.0" fill="#c9ced8"/>
+<circle cx="138.1" cy="109.2" r="1.0" fill="#c9ced8"/>
+<circle cx="139.7" cy="109.2" r="1.0" fill="#c9ced8"/>
+<circle cx="141.4" cy="109.2" r="1.0" fill="#c9ced8"/>
+<circle cx="143.1" cy="109.2" r="1.0" fill="#c9ced8"/>
+<circle cx="79.5" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="81.3" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="82.9" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="84.5" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="86.1" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="87.6" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="89.1" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="79.5" cy="103.6" r="1.0" fill="#c9ced8"/>
+<circle cx="79.5" cy="105.3" r="1.0" fill="#c9ced8"/>
+<circle cx="79.5" cy="107.0" r="1.0" fill="#c9ced8"/>
+<circle cx="79.5" cy="108.9" r="1.0" fill="#c9ced8"/>
+<circle cx="80.9" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="82.6" cy="108.9" r="1.0" fill="#c9ced8"/>
+<circle cx="84.4" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="86.0" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="87.7" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="89.4" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="112.6" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="114.4" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="116.0" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="117.6" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="119.2" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="120.7" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="122.3" cy="101.9" r="1.0" fill="#c9ced8"/>
+<circle cx="112.6" cy="103.6" r="1.0" fill="#c9ced8"/>
+<circle cx="112.6" cy="105.3" r="1.0" fill="#c9ced8"/>
+<circle cx="112.6" cy="107.0" r="1.0" fill="#c9ced8"/>
+<circle cx="112.6" cy="108.9" r="1.0" fill="#c9ced8"/>
+<circle cx="114.0" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="115.8" cy="108.9" r="1.0" fill="#c9ced8"/>
+<circle cx="117.5" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="119.2" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="120.8" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="122.5" cy="108.8" r="1.0" fill="#c9ced8"/>
+<circle cx="260.2" cy="138.7" r="1.0" fill="#e8590c"/>
+<circle cx="260.2" cy="141.6" r="1.0" fill="#e8590c"/>
+<circle cx="260.2" cy="143.7" r="1.0" fill="#e8590c"/>
+<circle cx="209.8" cy="139.3" r="1.0" fill="#e8590c"/>
+<circle cx="209.8" cy="136.5" r="1.0" fill="#e8590c"/>
+<circle cx="209.8" cy="134.0" r="1.0" fill="#e8590c"/>
+<circle cx="114.1" cy="151.2" r="1.0" fill="#c9ced8"/>
+<circle cx="115.8" cy="151.2" r="1.0" fill="#c9ced8"/>
+<circle cx="117.5" cy="151.2" r="1.0" fill="#c9ced8"/>
+<circle cx="119.1" cy="151.2" r="1.0" fill="#c9ced8"/>
+<circle cx="120.7" cy="151.2" r="1.0" fill="#c9ced8"/>
+<circle cx="122.2" cy="151.2" r="1.0" fill="#c9ced8"/>
+<circle cx="123.7" cy="151.2" r="1.0" fill="#c9ced8"/>
+<circle cx="114.1" cy="152.9" r="1.0" fill="#c9ced8"/>
+<circle cx="114.1" cy="154.5" r="1.0" fill="#c9ced8"/>
+<circle cx="114.1" cy="156.3" r="1.0" fill="#c9ced8"/>
+<circle cx="114.1" cy="158.1" r="1.0" fill="#c9ced8"/>
+<circle cx="115.5" cy="158.1" r="1.0" fill="#c9ced8"/>
+<circle cx="117.2" cy="158.1" r="1.0" fill="#c9ced8"/>
+<circle cx="119.0" cy="158.1" r="1.0" fill="#c9ced8"/>
+<circle cx="120.6" cy="158.1" r="1.0" fill="#c9ced8"/>
+<circle cx="122.3" cy="158.1" r="1.0" fill="#c9ced8"/>
+<circle cx="123.9" cy="158.1" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="67.8" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="69.5" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="71.1" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="72.7" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="74.2" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="75.7" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="176.1" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="177.8" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="179.5" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="67.5" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="69.2" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="71.0" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="72.6" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="74.3" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="75.9" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="142.2" cy="160.0" r="1.0" fill="#c9ced8"/>
+<circle cx="143.9" cy="160.0" r="1.0" fill="#c9ced8"/>
+<circle cx="145.6" cy="160.0" r="1.0" fill="#c9ced8"/>
+<circle cx="147.2" cy="160.0" r="1.0" fill="#c9ced8"/>
+<circle cx="148.8" cy="160.0" r="1.0" fill="#c9ced8"/>
+<circle cx="150.3" cy="160.0" r="1.0" fill="#c9ced8"/>
+<circle cx="151.8" cy="160.0" r="1.0" fill="#c9ced8"/>
+<circle cx="142.2" cy="161.7" r="1.0" fill="#c9ced8"/>
+<circle cx="142.2" cy="163.3" r="1.0" fill="#c9ced8"/>
+<circle cx="142.2" cy="165.1" r="1.0" fill="#c9ced8"/>
+<circle cx="142.2" cy="166.9" r="1.0" fill="#c9ced8"/>
+<circle cx="143.6" cy="166.9" r="1.0" fill="#c9ced8"/>
+<circle cx="145.3" cy="166.9" r="1.0" fill="#c9ced8"/>
+<circle cx="147.1" cy="166.9" r="1.0" fill="#c9ced8"/>
+<circle cx="148.7" cy="166.9" r="1.0" fill="#c9ced8"/>
+<circle cx="150.4" cy="166.9" r="1.0" fill="#c9ced8"/>
+<circle cx="152.0" cy="166.9" r="1.0" fill="#c9ced8"/>
+<circle cx="92.8" cy="155.8" r="1.0" fill="#c9ced8"/>
+<circle cx="94.5" cy="155.8" r="1.0" fill="#c9ced8"/>
+<circle cx="96.2" cy="155.8" r="1.0" fill="#c9ced8"/>
+<circle cx="97.8" cy="155.8" r="1.0" fill="#c9ced8"/>
+<circle cx="99.4" cy="155.8" r="1.0" fill="#c9ced8"/>
+<circle cx="100.9" cy="155.8" r="1.0" fill="#c9ced8"/>
+<circle cx="102.4" cy="155.8" r="1.0" fill="#c9ced8"/>
+<circle cx="92.8" cy="157.5" r="1.0" fill="#c9ced8"/>
+<circle cx="92.8" cy="159.1" r="1.0" fill="#c9ced8"/>
+<circle cx="92.8" cy="160.9" r="1.0" fill="#c9ced8"/>
+<circle cx="92.8" cy="162.7" r="1.0" fill="#c9ced8"/>
+<circle cx="94.1" cy="162.7" r="1.0" fill="#c9ced8"/>
+<circle cx="95.9" cy="162.7" r="1.0" fill="#c9ced8"/>
+<circle cx="97.7" cy="162.7" r="1.0" fill="#c9ced8"/>
+<circle cx="99.3" cy="162.7" r="1.0" fill="#c9ced8"/>
+<circle cx="100.9" cy="162.7" r="1.0" fill="#c9ced8"/>
+<circle cx="102.6" cy="162.7" r="1.0" fill="#c9ced8"/>
+<circle cx="94.1" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="95.9" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="97.5" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="99.1" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="100.7" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="102.2" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="103.8" cy="174.4" r="1.0" fill="#c9ced8"/>
+<circle cx="94.1" cy="176.1" r="1.0" fill="#c9ced8"/>
+<circle cx="94.1" cy="177.8" r="1.0" fill="#c9ced8"/>
+<circle cx="94.1" cy="179.5" r="1.0" fill="#c9ced8"/>
+<circle cx="94.1" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="95.5" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="97.2" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="99.0" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="100.7" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="102.3" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="104.0" cy="181.3" r="1.0" fill="#c9ced8"/>
+<circle cx="117.3" cy="174.5" r="1.0" fill="#c9ced8"/>
+<circle cx="119.1" cy="174.5" r="1.0" fill="#c9ced8"/>
+<circle cx="120.8" cy="174.5" r="1.0" fill="#c9ced8"/>
+<circle cx="122.4" cy="174.5" r="1.0" fill="#c9ced8"/>
+<circle cx="124.0" cy="174.5" r="1.0" fill="#c9ced8"/>
+<circle cx="125.4" cy="174.5" r="1.0" fill="#c9ced8"/>
+<circle cx="127.0" cy="174.5" r="1.0" fill="#c9ced8"/>
+<circle cx="117.3" cy="176.2" r="1.0" fill="#c9ced8"/>
+<circle cx="117.3" cy="177.9" r="1.0" fill="#c9ced8"/>
+<circle cx="117.3" cy="179.6" r="1.0" fill="#c9ced8"/>
+<circle cx="117.3" cy="181.5" r="1.0" fill="#c9ced8"/>
+<circle cx="118.7" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="120.5" cy="181.5" r="1.0" fill="#c9ced8"/>
+<circle cx="122.3" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="123.9" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="125.5" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="127.2" cy="181.4" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="160.5" r="1.0" fill="#c9ced8"/>
+<circle cx="67.8" cy="160.5" r="1.0" fill="#c9ced8"/>
+<circle cx="69.5" cy="160.5" r="1.0" fill="#c9ced8"/>
+<circle cx="71.1" cy="160.5" r="1.0" fill="#c9ced8"/>
+<circle cx="72.7" cy="160.5" r="1.0" fill="#c9ced8"/>
+<circle cx="74.2" cy="160.5" r="1.0" fill="#c9ced8"/>
+<circle cx="75.7" cy="160.5" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="162.2" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="163.8" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="165.6" r="1.0" fill="#c9ced8"/>
+<circle cx="66.1" cy="167.4" r="1.0" fill="#c9ced8"/>
+<circle cx="67.5" cy="167.4" r="1.0" fill="#c9ced8"/>
+<circle cx="69.2" cy="167.4" r="1.0" fill="#c9ced8"/>
+<circle cx="71.0" cy="167.4" r="1.0" fill="#c9ced8"/>
+<circle cx="72.6" cy="167.4" r="1.0" fill="#c9ced8"/>
+<circle cx="74.3" cy="167.4" r="1.0" fill="#c9ced8"/>
+<circle cx="75.9" cy="167.4" r="1.0" fill="#c9ced8"/>
+<circle cx="204.8" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="206.5" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="208.2" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="209.8" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="211.4" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="212.9" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="214.4" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="204.8" cy="187.5" r="1.0" fill="#c9ced8"/>
+<circle cx="204.8" cy="189.1" r="1.0" fill="#c9ced8"/>
+<circle cx="204.8" cy="190.9" r="1.0" fill="#c9ced8"/>
+<circle cx="204.8" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="206.2" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="207.9" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="209.7" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="211.3" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="213.0" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="214.6" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="149.0" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="150.7" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="152.4" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="154.0" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="155.6" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="157.1" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="158.6" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="149.0" cy="214.4" r="1.0" fill="#c9ced8"/>
+<circle cx="149.0" cy="216.0" r="1.0" fill="#c9ced8"/>
+<circle cx="149.0" cy="217.8" r="1.0" fill="#c9ced8"/>
+<circle cx="149.0" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="150.4" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="152.1" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="153.9" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="155.5" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="157.2" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="158.8" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="237.0" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="238.8" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="240.4" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="242.0" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="243.6" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="245.1" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="246.6" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="237.0" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="237.0" cy="194.3" r="1.0" fill="#c9ced8"/>
+<circle cx="237.0" cy="196.1" r="1.0" fill="#c9ced8"/>
+<circle cx="237.0" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="238.4" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="240.1" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="241.9" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="243.5" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="245.2" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="246.9" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="177.9" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="179.6" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="181.3" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="182.9" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="184.5" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="186.0" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="187.5" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="177.9" cy="194.5" r="1.0" fill="#c9ced8"/>
+<circle cx="177.9" cy="196.2" r="1.0" fill="#c9ced8"/>
+<circle cx="177.9" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="177.9" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="179.2" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="181.0" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="182.8" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="184.4" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="186.0" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="187.7" cy="199.7" r="1.0" fill="#c9ced8"/>
+<text x="276.0" y="69.2" class="t" fill="#8a91a0" text-anchor="end">S1</text>
+<text x="276.0" y="77.2" class="xs" fill="#8a91a0" text-anchor="end">102마리</text>
+<text x="152.9" y="94.0" class="t" fill="#8a91a0" text-anchor="start">S2</text>
+<text x="152.9" y="102.0" class="xs" fill="#8a91a0" text-anchor="start">68마리</text>
+<text x="271.6" y="117.4" class="t" fill="#2b3a8f" text-anchor="end">S3</text>
+<text x="271.6" y="125.4" class="xs" fill="#2b3a8f" text-anchor="end">6마리</text>
+<text x="63.2" y="153.8" class="t" fill="#8a91a0" text-anchor="start">S4</text>
+<text x="63.2" y="161.8" class="xs" fill="#8a91a0" text-anchor="start">119마리</text>
+<text x="259.6" y="217.0" class="t" fill="#8a91a0" text-anchor="end">S5</text>
+<text x="259.6" y="225.0" class="xs" fill="#8a91a0" text-anchor="end">68마리</text>
+<circle cx="176.3" cy="128.2" r="3.2" fill="#1a1c22" stroke="#fff" stroke-width="1"/>
+    <rect x="520.0" y="33.9" width="118.6" height="40.7" fill="#f7f8fa" fill-opacity="0.85" stroke="#d5d9e0" stroke-width="1"/>
+<rect x="434.9" y="72.7" width="120.0" height="38.6" fill="#eef2ff" fill-opacity="0.85" stroke="#3b5bdb" stroke-width="1.4"/>
+<rect x="515.6" y="108.5" width="118.6" height="38.4" fill="#eef2ff" fill-opacity="0.85" stroke="#3b5bdb" stroke-width="1.4"/>
+<rect x="420.6" y="144.7" width="118.7" height="39.1" fill="#eef2ff" fill-opacity="0.85" stroke="#3b5bdb" stroke-width="1.4"/>
+<rect x="503.6" y="180.7" width="118.7" height="41.8" fill="#f7f8fa" fill-opacity="0.85" stroke="#d5d9e0" stroke-width="1"/>
+<rect x="520.0" y="72.7" width="34.9" height="2.2" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="515.6" y="108.5" width="39.2" height="2.8" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="515.6" y="144.7" width="23.7" height="2.2" fill="#7048e8" fill-opacity="0.55"/>
+<rect x="503.6" y="180.7" width="35.8" height="3.0" fill="#7048e8" fill-opacity="0.55"/>
+<circle cx="551.1" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="552.9" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="554.5" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="556.1" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="557.7" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="559.2" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="560.8" cy="38.2" r="1.0" fill="#c9ced8"/>
+<circle cx="551.1" cy="39.9" r="1.0" fill="#c9ced8"/>
+<circle cx="551.1" cy="41.6" r="1.0" fill="#c9ced8"/>
+<circle cx="551.1" cy="43.4" r="1.0" fill="#c9ced8"/>
+<circle cx="551.1" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="552.5" cy="45.1" r="1.0" fill="#c9ced8"/>
+<circle cx="554.2" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="556.0" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="557.7" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="559.3" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="561.0" cy="45.2" r="1.0" fill="#c9ced8"/>
+<circle cx="619.0" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="620.7" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="622.4" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="624.0" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="625.6" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="627.1" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="628.6" cy="42.3" r="1.0" fill="#c9ced8"/>
+<circle cx="619.0" cy="44.0" r="1.0" fill="#c9ced8"/>
+<circle cx="619.0" cy="45.6" r="1.0" fill="#c9ced8"/>
+<circle cx="619.0" cy="47.4" r="1.0" fill="#c9ced8"/>
+<circle cx="619.0" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="620.4" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="622.1" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="623.9" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="625.5" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="627.2" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="628.8" cy="49.2" r="1.0" fill="#c9ced8"/>
+<circle cx="523.6" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="525.4" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="527.0" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="528.6" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="530.2" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="531.7" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="533.3" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="523.6" cy="66.4" r="1.0" fill="#c9ced8"/>
+<circle cx="523.6" cy="68.0" r="1.0" fill="#c9ced8"/>
+<circle cx="523.6" cy="69.8" r="1.0" fill="#c9ced8"/>
+<circle cx="523.6" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="525.0" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="526.8" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="528.5" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="530.2" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="531.8" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="533.5" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="546.7" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="548.4" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="550.1" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="551.7" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="553.3" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="554.8" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="556.3" cy="64.7" r="1.0" fill="#c9ced8"/>
+<circle cx="546.7" cy="66.4" r="1.0" fill="#c9ced8"/>
+<circle cx="546.7" cy="68.0" r="1.0" fill="#c9ced8"/>
+<circle cx="546.7" cy="69.8" r="1.0" fill="#c9ced8"/>
+<circle cx="546.7" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="548.1" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="549.8" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="551.6" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="553.2" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="554.9" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="556.5" cy="71.6" r="1.0" fill="#c9ced8"/>
+<circle cx="592.9" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="594.7" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="596.3" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="597.9" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="599.6" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="601.0" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="602.6" cy="45.4" r="1.0" fill="#c9ced8"/>
+<circle cx="592.9" cy="47.1" r="1.0" fill="#c9ced8"/>
+<circle cx="592.9" cy="48.7" r="1.0" fill="#c9ced8"/>
+<circle cx="592.9" cy="50.5" r="1.0" fill="#c9ced8"/>
+<circle cx="592.9" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="594.3" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="596.1" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="597.8" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="599.5" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="601.1" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="602.8" cy="52.3" r="1.0" fill="#c9ced8"/>
+<circle cx="581.7" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="583.4" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="585.1" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="586.7" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="588.3" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="589.8" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="591.3" cy="36.0" r="1.0" fill="#c9ced8"/>
+<circle cx="581.7" cy="37.7" r="1.0" fill="#c9ced8"/>
+<circle cx="581.7" cy="39.4" r="1.0" fill="#c9ced8"/>
+<circle cx="581.7" cy="41.1" r="1.0" fill="#c9ced8"/>
+<circle cx="581.7" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="583.1" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="584.8" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="586.6" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="588.2" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="589.9" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="591.5" cy="42.9" r="1.0" fill="#c9ced8"/>
+<circle cx="462.1" cy="81.2" r="1.0" fill="#e8590c"/>
+<circle cx="463.9" cy="81.2" r="1.0" fill="#e8590c"/>
+<circle cx="465.5" cy="81.2" r="1.0" fill="#e8590c"/>
+<circle cx="467.1" cy="81.2" r="1.0" fill="#e8590c"/>
+<circle cx="468.7" cy="81.2" r="1.0" fill="#e8590c"/>
+<circle cx="470.2" cy="81.2" r="1.0" fill="#e8590c"/>
+<circle cx="471.7" cy="81.2" r="1.0" fill="#e8590c"/>
+<circle cx="462.1" cy="82.9" r="1.0" fill="#e8590c"/>
+<circle cx="462.1" cy="84.6" r="1.0" fill="#e8590c"/>
+<circle cx="462.1" cy="86.3" r="1.0" fill="#e8590c"/>
+<circle cx="462.1" cy="88.2" r="1.0" fill="#e8590c"/>
+<circle cx="463.5" cy="88.1" r="1.0" fill="#e8590c"/>
+<circle cx="465.2" cy="88.2" r="1.0" fill="#e8590c"/>
+<circle cx="467.0" cy="88.2" r="1.0" fill="#e8590c"/>
+<circle cx="468.6" cy="88.2" r="1.0" fill="#e8590c"/>
+<circle cx="470.3" cy="88.2" r="1.0" fill="#e8590c"/>
+<circle cx="472.0" cy="88.2" r="1.0" fill="#e8590c"/>
+<circle cx="493.2" cy="102.3" r="1.0" fill="#e8590c"/>
+<circle cx="495.0" cy="102.3" r="1.0" fill="#e8590c"/>
+<circle cx="496.6" cy="102.3" r="1.0" fill="#e8590c"/>
+<circle cx="498.2" cy="102.3" r="1.0" fill="#e8590c"/>
+<circle cx="499.8" cy="102.3" r="1.0" fill="#e8590c"/>
+<circle cx="501.3" cy="102.3" r="1.0" fill="#e8590c"/>
+<circle cx="502.8" cy="102.3" r="1.0" fill="#e8590c"/>
+<circle cx="493.2" cy="103.9" r="1.0" fill="#e8590c"/>
+<circle cx="493.2" cy="105.6" r="1.0" fill="#e8590c"/>
+<circle cx="493.2" cy="107.4" r="1.0" fill="#e8590c"/>
+<circle cx="493.2" cy="109.2" r="1.0" fill="#e8590c"/>
+<circle cx="494.6" cy="109.2" r="1.0" fill="#e8590c"/>
+<circle cx="496.3" cy="109.2" r="1.0" fill="#e8590c"/>
+<circle cx="498.1" cy="109.2" r="1.0" fill="#e8590c"/>
+<circle cx="499.7" cy="109.2" r="1.0" fill="#e8590c"/>
+<circle cx="501.4" cy="109.2" r="1.0" fill="#e8590c"/>
+<circle cx="503.1" cy="109.2" r="1.0" fill="#e8590c"/>
+<circle cx="439.5" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="441.3" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="442.9" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="444.5" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="446.1" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="447.6" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="449.1" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="439.5" cy="103.6" r="1.0" fill="#e8590c"/>
+<circle cx="439.5" cy="105.3" r="1.0" fill="#e8590c"/>
+<circle cx="439.5" cy="107.0" r="1.0" fill="#e8590c"/>
+<circle cx="439.5" cy="108.9" r="1.0" fill="#e8590c"/>
+<circle cx="440.9" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="442.6" cy="108.9" r="1.0" fill="#e8590c"/>
+<circle cx="444.4" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="446.0" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="447.7" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="449.4" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="472.6" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="474.4" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="476.0" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="477.6" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="479.2" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="480.7" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="482.3" cy="101.9" r="1.0" fill="#e8590c"/>
+<circle cx="472.6" cy="103.6" r="1.0" fill="#e8590c"/>
+<circle cx="472.6" cy="105.3" r="1.0" fill="#e8590c"/>
+<circle cx="472.6" cy="107.0" r="1.0" fill="#e8590c"/>
+<circle cx="472.6" cy="108.9" r="1.0" fill="#e8590c"/>
+<circle cx="474.0" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="475.8" cy="108.9" r="1.0" fill="#e8590c"/>
+<circle cx="477.5" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="479.2" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="480.8" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="482.5" cy="108.8" r="1.0" fill="#e8590c"/>
+<circle cx="620.2" cy="138.7" r="1.0" fill="#e8590c"/>
+<circle cx="620.2" cy="141.6" r="1.0" fill="#e8590c"/>
+<circle cx="620.2" cy="143.7" r="1.0" fill="#e8590c"/>
+<circle cx="569.8" cy="139.3" r="1.0" fill="#e8590c"/>
+<circle cx="569.8" cy="136.5" r="1.0" fill="#e8590c"/>
+<circle cx="569.8" cy="134.0" r="1.0" fill="#e8590c"/>
+<circle cx="474.1" cy="151.2" r="1.0" fill="#e8590c"/>
+<circle cx="475.8" cy="151.2" r="1.0" fill="#e8590c"/>
+<circle cx="477.5" cy="151.2" r="1.0" fill="#e8590c"/>
+<circle cx="479.1" cy="151.2" r="1.0" fill="#e8590c"/>
+<circle cx="480.7" cy="151.2" r="1.0" fill="#e8590c"/>
+<circle cx="482.2" cy="151.2" r="1.0" fill="#e8590c"/>
+<circle cx="483.7" cy="151.2" r="1.0" fill="#e8590c"/>
+<circle cx="474.1" cy="152.9" r="1.0" fill="#e8590c"/>
+<circle cx="474.1" cy="154.5" r="1.0" fill="#e8590c"/>
+<circle cx="474.1" cy="156.3" r="1.0" fill="#e8590c"/>
+<circle cx="474.1" cy="158.1" r="1.0" fill="#e8590c"/>
+<circle cx="475.5" cy="158.1" r="1.0" fill="#e8590c"/>
+<circle cx="477.2" cy="158.1" r="1.0" fill="#e8590c"/>
+<circle cx="479.0" cy="158.1" r="1.0" fill="#e8590c"/>
+<circle cx="480.6" cy="158.1" r="1.0" fill="#e8590c"/>
+<circle cx="482.3" cy="158.1" r="1.0" fill="#e8590c"/>
+<circle cx="483.9" cy="158.1" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="427.8" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="429.5" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="431.1" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="432.7" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="434.2" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="435.7" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="176.1" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="177.8" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="179.5" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="427.5" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="429.2" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="431.0" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="432.6" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="434.3" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="435.9" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="502.2" cy="160.0" r="1.0" fill="#e8590c"/>
+<circle cx="503.9" cy="160.0" r="1.0" fill="#e8590c"/>
+<circle cx="505.6" cy="160.0" r="1.0" fill="#e8590c"/>
+<circle cx="507.2" cy="160.0" r="1.0" fill="#e8590c"/>
+<circle cx="508.8" cy="160.0" r="1.0" fill="#e8590c"/>
+<circle cx="510.3" cy="160.0" r="1.0" fill="#e8590c"/>
+<circle cx="511.8" cy="160.0" r="1.0" fill="#e8590c"/>
+<circle cx="502.2" cy="161.7" r="1.0" fill="#e8590c"/>
+<circle cx="502.2" cy="163.3" r="1.0" fill="#e8590c"/>
+<circle cx="502.2" cy="165.1" r="1.0" fill="#e8590c"/>
+<circle cx="502.2" cy="166.9" r="1.0" fill="#e8590c"/>
+<circle cx="503.6" cy="166.9" r="1.0" fill="#e8590c"/>
+<circle cx="505.3" cy="166.9" r="1.0" fill="#e8590c"/>
+<circle cx="507.1" cy="166.9" r="1.0" fill="#e8590c"/>
+<circle cx="508.7" cy="166.9" r="1.0" fill="#e8590c"/>
+<circle cx="510.4" cy="166.9" r="1.0" fill="#e8590c"/>
+<circle cx="512.0" cy="166.9" r="1.0" fill="#e8590c"/>
+<circle cx="452.8" cy="155.8" r="1.0" fill="#e8590c"/>
+<circle cx="454.5" cy="155.8" r="1.0" fill="#e8590c"/>
+<circle cx="456.2" cy="155.8" r="1.0" fill="#e8590c"/>
+<circle cx="457.8" cy="155.8" r="1.0" fill="#e8590c"/>
+<circle cx="459.4" cy="155.8" r="1.0" fill="#e8590c"/>
+<circle cx="460.9" cy="155.8" r="1.0" fill="#e8590c"/>
+<circle cx="462.4" cy="155.8" r="1.0" fill="#e8590c"/>
+<circle cx="452.8" cy="157.5" r="1.0" fill="#e8590c"/>
+<circle cx="452.8" cy="159.1" r="1.0" fill="#e8590c"/>
+<circle cx="452.8" cy="160.9" r="1.0" fill="#e8590c"/>
+<circle cx="452.8" cy="162.7" r="1.0" fill="#e8590c"/>
+<circle cx="454.1" cy="162.7" r="1.0" fill="#e8590c"/>
+<circle cx="455.9" cy="162.7" r="1.0" fill="#e8590c"/>
+<circle cx="457.7" cy="162.7" r="1.0" fill="#e8590c"/>
+<circle cx="459.3" cy="162.7" r="1.0" fill="#e8590c"/>
+<circle cx="460.9" cy="162.7" r="1.0" fill="#e8590c"/>
+<circle cx="462.6" cy="162.7" r="1.0" fill="#e8590c"/>
+<circle cx="454.1" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="455.9" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="457.5" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="459.1" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="460.7" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="462.2" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="463.8" cy="174.4" r="1.0" fill="#e8590c"/>
+<circle cx="454.1" cy="176.1" r="1.0" fill="#e8590c"/>
+<circle cx="454.1" cy="177.8" r="1.0" fill="#e8590c"/>
+<circle cx="454.1" cy="179.5" r="1.0" fill="#e8590c"/>
+<circle cx="454.1" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="455.5" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="457.2" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="459.0" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="460.7" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="462.3" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="464.0" cy="181.3" r="1.0" fill="#e8590c"/>
+<circle cx="477.3" cy="174.5" r="1.0" fill="#e8590c"/>
+<circle cx="479.1" cy="174.5" r="1.0" fill="#e8590c"/>
+<circle cx="480.8" cy="174.5" r="1.0" fill="#e8590c"/>
+<circle cx="482.4" cy="174.5" r="1.0" fill="#e8590c"/>
+<circle cx="484.0" cy="174.5" r="1.0" fill="#e8590c"/>
+<circle cx="485.4" cy="174.5" r="1.0" fill="#e8590c"/>
+<circle cx="487.0" cy="174.5" r="1.0" fill="#e8590c"/>
+<circle cx="477.3" cy="176.2" r="1.0" fill="#e8590c"/>
+<circle cx="477.3" cy="177.9" r="1.0" fill="#e8590c"/>
+<circle cx="477.3" cy="179.6" r="1.0" fill="#e8590c"/>
+<circle cx="477.3" cy="181.5" r="1.0" fill="#e8590c"/>
+<circle cx="478.7" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="480.5" cy="181.5" r="1.0" fill="#e8590c"/>
+<circle cx="482.3" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="483.9" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="485.5" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="487.2" cy="181.4" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="160.5" r="1.0" fill="#e8590c"/>
+<circle cx="427.8" cy="160.5" r="1.0" fill="#e8590c"/>
+<circle cx="429.5" cy="160.5" r="1.0" fill="#e8590c"/>
+<circle cx="431.1" cy="160.5" r="1.0" fill="#e8590c"/>
+<circle cx="432.7" cy="160.5" r="1.0" fill="#e8590c"/>
+<circle cx="434.2" cy="160.5" r="1.0" fill="#e8590c"/>
+<circle cx="435.7" cy="160.5" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="162.2" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="163.8" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="165.6" r="1.0" fill="#e8590c"/>
+<circle cx="426.1" cy="167.4" r="1.0" fill="#e8590c"/>
+<circle cx="427.5" cy="167.4" r="1.0" fill="#e8590c"/>
+<circle cx="429.2" cy="167.4" r="1.0" fill="#e8590c"/>
+<circle cx="431.0" cy="167.4" r="1.0" fill="#e8590c"/>
+<circle cx="432.6" cy="167.4" r="1.0" fill="#e8590c"/>
+<circle cx="434.3" cy="167.4" r="1.0" fill="#e8590c"/>
+<circle cx="435.9" cy="167.4" r="1.0" fill="#e8590c"/>
+<circle cx="564.8" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="566.5" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="568.2" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="569.8" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="571.4" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="572.9" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="574.4" cy="185.8" r="1.0" fill="#c9ced8"/>
+<circle cx="564.8" cy="187.5" r="1.0" fill="#c9ced8"/>
+<circle cx="564.8" cy="189.1" r="1.0" fill="#c9ced8"/>
+<circle cx="564.8" cy="190.9" r="1.0" fill="#c9ced8"/>
+<circle cx="564.8" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="566.2" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="567.9" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="569.7" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="571.3" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="573.0" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="574.6" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="509.0" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="510.7" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="512.4" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="514.0" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="515.6" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="517.1" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="518.6" cy="212.7" r="1.0" fill="#c9ced8"/>
+<circle cx="509.0" cy="214.4" r="1.0" fill="#c9ced8"/>
+<circle cx="509.0" cy="216.0" r="1.0" fill="#c9ced8"/>
+<circle cx="509.0" cy="217.8" r="1.0" fill="#c9ced8"/>
+<circle cx="509.0" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="510.4" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="512.1" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="513.9" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="515.5" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="517.2" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="518.8" cy="219.6" r="1.0" fill="#c9ced8"/>
+<circle cx="597.0" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="598.8" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="600.4" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="602.0" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="603.6" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="605.1" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="606.6" cy="191.0" r="1.0" fill="#c9ced8"/>
+<circle cx="597.0" cy="192.7" r="1.0" fill="#c9ced8"/>
+<circle cx="597.0" cy="194.3" r="1.0" fill="#c9ced8"/>
+<circle cx="597.0" cy="196.1" r="1.0" fill="#c9ced8"/>
+<circle cx="597.0" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="598.4" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="600.1" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="601.9" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="603.5" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="605.2" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="606.9" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="537.9" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="539.6" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="541.3" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="542.9" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="544.5" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="546.0" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="547.5" cy="192.8" r="1.0" fill="#c9ced8"/>
+<circle cx="537.9" cy="194.5" r="1.0" fill="#c9ced8"/>
+<circle cx="537.9" cy="196.2" r="1.0" fill="#c9ced8"/>
+<circle cx="537.9" cy="197.9" r="1.0" fill="#c9ced8"/>
+<circle cx="537.9" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="539.2" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="541.0" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="542.8" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="544.4" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="546.0" cy="199.7" r="1.0" fill="#c9ced8"/>
+<circle cx="547.7" cy="199.7" r="1.0" fill="#c9ced8"/>
+<text x="636.0" y="69.2" class="t" fill="#8a91a0" text-anchor="end">S1</text>
+<text x="636.0" y="77.2" class="xs" fill="#8a91a0" text-anchor="end">102마리</text>
+<text x="512.9" y="94.0" class="t" fill="#2b3a8f" text-anchor="start">S2</text>
+<text x="512.9" y="102.0" class="xs" fill="#2b3a8f" text-anchor="start">68마리</text>
+<text x="631.6" y="117.4" class="t" fill="#2b3a8f" text-anchor="end">S3</text>
+<text x="631.6" y="125.4" class="xs" fill="#2b3a8f" text-anchor="end">6마리</text>
+<text x="423.2" y="153.8" class="t" fill="#2b3a8f" text-anchor="start">S4</text>
+<text x="423.2" y="161.8" class="xs" fill="#2b3a8f" text-anchor="start">119마리</text>
+<text x="619.6" y="217.0" class="t" fill="#8a91a0" text-anchor="end">S5</text>
+<text x="619.6" y="225.0" class="xs" fill="#8a91a0" text-anchor="end">68마리</text>
+<circle cx="536.3" cy="128.2" r="3.2" fill="#1a1c22" stroke="#fff" stroke-width="1"/>
+    <text x="168" y="242" class="t" text-anchor="middle">켜진 몬스터 <tspan fill="#8a3708">6마리</tspan> · 화면 밖 56%</text>
+    <text x="528" y="242" class="t" text-anchor="middle">켜진 몬스터 <tspan fill="#8a3708">193마리</tspan> · 화면 밖 99%</text>
+  </svg>
+  <div class="figcap">S3 자체는 6마리뿐인데 이웃 S4(119)와 S2(68)의 팔 끝까지 켜진다. 그 몹들은 통로에서 34~100m 떨어져 있다.</div>
+</div>
+
+<div class="two">
+  <div class="card a">
+    <div class="hd"><b>1. 팝인/팝아웃 → 인접 표</b><span>저작 · 검수</span></div>
+    <p>박스 겹침으로 자동 계산은 된다. 하지만 자동 계산은 "닿아 있다"만 알고 "걸어갈 수 있다 · 보인다"는 모른다. 벽 너머나 멀리 내다보이는 섹터는 사람이 검수해야 하고, 맵을 고칠 때마다 다시 맞춰야 한다. 빠진 칸은 조용한 버그가 된다.</p>
+  </div>
+  <div class="card a">
+    <div class="hd"><b>2. 새 맵마다 저작</b><span>저작</span></div>
+    <p>스포너 설치는 어떤 방식이든 필요하다. Sector만의 비용은 <strong>박스 분할 · 섹터 소속(자식 배치) · 인접 표</strong>다. 계층을 옮기면 소속이 조용히 바뀌고, 겹치면 이중 활성(S4+S5 = 187), 틈이 있으면 아무 섹터도 안 켜진다.</p>
+  </div>
+  <div class="card a">
+    <div class="hd"><b>3. 유지 비용 — 안 보이는 곳까지</b><span>화면 밖 87%</span></div>
+    <p>통로를 지나가기만 해도 팔 끝 90m까지 켜진다. 화면에 동시에 보이는 몹은 평균 <strong>약 12마리</strong>인데 켜지는 건 최대 119마리다. 화면 밖 몹도 행동 트리와 NavMesh는 계속 돈다.</p>
+  </div>
+  <div class="card a">
+    <div class="hd"><b>4. 순간 비용 — 크기만큼 한꺼번에</b><span>스파이크</span></div>
+    <p>켜지는 순간 슬롯 전부가 같은 프레임에 요청한다(<code>_spawnBudgetPerFrame = int.MaxValue</code>). S3는 6마리, S4는 119마리로 <span class="num">20배</span>. 스파이크 크기를 필요가 아니라 박스 크기가 정한다.</p>
+  </div>
+</div>
+
+<div class="card a">
+  <div class="hd"><b>5. 리쉬 거리가 섹터 폭보다 길 수 없음</b><span>그림 5</span></div>
+  <p>인접 섹터를 켜도 리쉬는 약 25m가 한계다. "몇 m까지 쫓아오게 할지"라는 전투 감각을 기획이 아니라 <strong>맵을 어떻게 나눴느냐</strong>가 정한다.</p>
+</div>
+
+<h2>4. 근본 — 섹터 크기라는 손잡이 하나</h2>
+<div class="h2sub">하나를 돌리면 세 가지가 같이 변하는데, 원하는 방향이 서로 반대다</div>
+
+<div class="fig">
+  <div class="figt">그림 7 · Sector는 손잡이 하나, 거리 방식은 손잡이 셋</div>
+  <svg viewBox="0 0 700 214" width="100%">
+    <rect x="8" y="8" width="404" height="198" rx="11" fill="#fff4ec"/>
+    <text x="20" y="28" class="tb" fill="#8a3708">Sector — 섹터 크기 하나로 셋을 정함</text>
+    <text x="150" y="52" class="s" text-anchor="end">작게</text>
+    <text x="388" y="52" class="s" text-anchor="end">크게</text>
+    <line x1="160" y1="48" x2="350" y2="48" stroke="#8a3708" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="255" cy="48" r="8" fill="#fff" stroke="#8a3708" stroke-width="2"/>
+    <path d="M244,48 L233,48" stroke="#e8590c" stroke-width="1.4" marker-end="url(#ara)"/>
+    <path d="M266,48 L277,48" stroke="#e8590c" stroke-width="1.4" marker-end="url(#ara)"/>
+    <text x="255" y="68" class="xs" text-anchor="middle">섹터 크기</text>
+    <g class="s">
+      <text x="20" y="98" class="t">비용 (3·4)</text>
+      <text x="20" y="132" class="t">리쉬 (5)</text>
+      <text x="20" y="166" class="t">팝인 (1)</text>
+      <text x="200" y="98" text-anchor="middle" fill="#1f6b2e" font-weight="700">✓ 줄어듦</text>
+      <text x="200" y="132" text-anchor="middle" fill="#8a3708" font-weight="700">✗ 짧아짐 · 금방 포기</text>
+      <text x="200" y="166" text-anchor="middle" fill="#8a3708" font-weight="700">✗ 눈앞에서 생김</text>
+      <text x="330" y="98" text-anchor="middle" fill="#8a3708" font-weight="700">✗ 늘어남</text>
+      <text x="330" y="132" text-anchor="middle" fill="#1f6b2e" font-weight="700">✓ 길게 가능</text>
+      <text x="330" y="166" text-anchor="middle" fill="#1f6b2e" font-weight="700">✓ 화면 밖에서</text>
+    </g>
+    <line x1="20" y1="110" x2="400" y2="110" stroke="#f3d9c6"/>
+    <line x1="20" y1="144" x2="400" y2="144" stroke="#f3d9c6"/>
+    <text x="20" y="194" class="xs" fill="#8a3708">어느 쪽으로 돌려도 하나 이상은 나빠진다 — 온도와 수압을 꼭지 하나로 맞추는 샤워기</text>
+
+    <rect x="424" y="8" width="268" height="198" rx="11" fill="#eef2ff"/>
+    <text x="436" y="28" class="tb" fill="#2b3a8f">거리(B) — 손잡이가 따로</text>
+    <g>
+      <text x="436" y="62" class="t" fill="#2b3a8f">활성 반경</text>
+      <line x1="510" y1="58" x2="610" y2="58" stroke="#3b5bdb" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="548" cy="58" r="6" fill="#fff" stroke="#3b5bdb" stroke-width="2"/>
+      <text x="618" y="61" class="xs" fill="#2b3a8f">← 화면 크기</text>
+      <text x="436" y="102" class="t" fill="#2b3a8f">리쉬 거리</text>
+      <line x1="510" y1="98" x2="610" y2="98" stroke="#3b5bdb" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="585" cy="98" r="6" fill="#fff" stroke="#3b5bdb" stroke-width="2"/>
+      <text x="618" y="101" class="xs" fill="#2b3a8f">← 게임플레이</text>
+      <text x="436" y="142" class="t" fill="#2b3a8f">비용 단위</text>
+      <line x1="510" y1="138" x2="610" y2="138" stroke="#3b5bdb" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="525" cy="138" r="6" fill="#fff" stroke="#3b5bdb" stroke-width="2"/>
+      <text x="618" y="141" class="xs" fill="#2b3a8f">← 스포너 하나</text>
+    </g>
+    <text x="436" y="180" class="s" fill="#2b3a8f">하나를 바꿔도 다른 것이 따라 움직이지 않는다.</text>
+    <text x="436" y="194" class="s" fill="#2b3a8f">박스 · 인접 표도 없다.</text>
+  </svg>
+</div>
+
+<!-- ============================ 5쪽 ============================ -->
+<h2 class="pb">5. 비교 분석으로 가는 이유와 틀</h2>
+<div class="h2sub">Sector의 문제는 크기 튜닝으로 풀리지 않는 결합이고, 거리 방식은 그 결합을 끊는다 → "Sector를 개선하는 방식"으로 거리 · 청크를 비교한다</div>
+
+<h3>5.1 거리와 청크는 대등한 후보가 아니다</h3>
+<table>
+  <thead><tr><th style="width:20%">방식</th><th style="width:36%">무엇인가</th><th>Sector 문제를 푸나</th></tr></thead>
+  <tbody>
+    <tr><td class="k">거리 (B)</td><td>플레이어 ↔ 스포너 거리로 켜고 끔</td><td class="ok">푼다 — 손잡이가 분리됨 (그림 7)</td></tr>
+    <tr><td class="k">청크 단위 활성</td><td>맵을 자동 격자로 나누고 주변 N칸을 켬</td><td><span class="mid">일부만.</span> 저작은 자동이 되지만 <strong>칸 크기가 비용·리쉬를 정하는 결합은 그대로</strong></td></tr>
+    <tr><td class="k">청크 + 거리 (C)</td><td>격자는 "가까운 스포너 찾기"용, 판정은 거리</td><td>결과는 B와 같고 스포너가 많을 때 <strong>판정 비용만</strong> 줄임 → 질문이 다름 (B vs C 확장)</td></tr>
+  </tbody>
+</table>
+<p class="figcap">선택지(미정): 청크 단위 활성을 중간 단계로 끼우면 <strong>손으로 그린 구역 → 자동 격자 → 거리</strong> 세 지점이 된다. 문제를 "손으로 그려서"(저작)와 "구역이라서"(결합)로 갈라 보여줄 수 있다. 구현이 하나 늘어난다.</p>
+
+<div class="two">
+  <div>
+    <h3>5.2 리쉬는 모든 방식에 똑같이</h3>
+    <table>
+      <thead><tr><th style="width:26%">구간</th><th>조건</th></tr></thead>
+      <tbody>
+        <tr><td class="k">Before</td><td>지금 Sector · <strong>리쉬 없음</strong> — 경계 소실 영상</td></tr>
+        <tr><td class="k">비교</td><td>모든 방식에 리쉬를 켜고 <strong>정책만</strong> 바꿈</td></tr>
+      </tbody>
+    </table>
+    <p class="figcap">리쉬 유무로 결과가 갈리면 정책이 아니라 리쉬를 잰 것이 된다.</p>
+  </div>
+  <div>
+    <h3>5.3 문제마다 지표 하나</h3>
+    <table>
+      <thead><tr><th style="width:36%">문제</th><th>지표</th></tr></thead>
+      <tbody>
+        <tr><td class="k">1 팝인/팝아웃</td><td>화면 안에서 생성·회수된 횟수</td></tr>
+        <tr><td class="k">3 유지 비용</td><td>화면 밖 비율 · 최대 활성 수</td></tr>
+        <tr><td class="k">4 순간 비용</td><td>한 프레임 최대 스폰·회수 수</td></tr>
+        <tr><td class="k">5 리쉬 제약</td><td>리쉬를 늘릴 때 소실이 시작되는 거리</td></tr>
+        <tr><td class="k">2 저작</td><td>새 맵 적용 시 사람이 할 작업 목록</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<p class="figcap">평균 FPS는 헤드라인이 아니라 참고 지표다 — 363마리 규모에서는 차이가 작다(계획서와 같음).</p>
+
+<h3>5.4 Sector가 맞는 경우</h3>
+<div class="callout c-violet">
+  판정 비용이 거의 0이고, 구역이 지역명·BGM·필드 보스 같은 게임플레이 단위와 겹친다. 문으로 닫힌 던전 방처럼 <strong>경계가 실제 벽과 일치하는 곳</strong>에서는 Sector가 맞다.
+  "무조건 거리가 좋다"가 아니라 <strong>이 맵(통로 + 팔, 열린 경계)이라서 거리가 맞다</strong>고 말한다.
+</div>
+
+<h2>6. 계획서에 반영할 것 (미반영)</h2>
+<table>
+  <thead><tr><th style="width:4%"></th><th>항목</th></tr></thead>
+  <tbody>
+    <tr><td class="c">☐</td><td>거리 반경(진입 35m / 이탈 50m)은 "화면 ≈ 25m" 가정 → 실제 앞 6m · 좌우 최대 9m. Phase 5에서 재설정. 단 반경이 작을수록 리쉬 제약이 커진다</td></tr>
+    <tr><td class="c">☐</td><td>리쉬를 공통 규칙으로 명시 — Phase 5-4 "움직이는 몬스터 규칙"을 비교의 전제로</td></tr>
+    <tr><td class="c">☐</td><td>청크 단위 활성을 중간 단계로 넣을지 결정</td></tr>
+    <tr><td class="c">☐</td><td>Before 경로 = "팔에서 몹을 달고 통로를 건너는" 구간</td></tr>
+    <tr><td class="c">☐</td><td>측정 규칙 — 첫 바퀴(풀 증설) 기록은 버림</td></tr>
+  </tbody>
+</table>
+
+<h2>7. 리쉬 구현 (2026-10-03 · 미커밋 · 플레이 미확인)</h2>
+<table>
+  <thead><tr><th style="width:18%">항목</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td class="k">위치</td><td><code>NormalMonsterController</code> (AR · RL · Tank 공통). 행동 트리 <code>사망 → <strong>리쉬</strong> → 전투 → 추적 → 대기</code></td></tr>
+    <tr><td class="k">발동</td><td>① 집에서 수평 25m 초과 ② 집에서 2m 넘게 떨어졌는데 대상이 감지 거리 밖(쫓아왔다가 놓침)</td></tr>
+    <tr><td class="k">귀환 중</td><td>감지·추적·공격 노드가 평가되지 않음 · 무적 · 정지거리 0으로 집까지. 8초 안에 못 가면 <code>Warp</code></td></tr>
+    <tr><td class="k">도착</td><td>체력 원복(<code>Health.Recover</code>) · 탄약 원복 · 대기</td></tr>
+    <tr><td class="k">적용 범위</td><td><strong>필드 스포너가 만든 몹만</strong> (<code>SpawnerManager</code> → <code>EnableLeash()</code>). 던전 웨이브 · 보스 소환 몹은 리쉬 없음</td></tr>
+    <tr><td class="k">스위치</td><td><code>LeashEnabled</code> — <code>BenchmarkTester</code> <strong>F3</strong> (Before 녹화 = 끔) · 로그 <code>[Leash]</code></td></tr>
+  </tbody>
+</table>
+
+<div class="footer">2026-10-03 · 텍스트판 <code>Sector_Problems.md</code> · 근거: <code>BackStreetMap.prefab</code>(섹터 5 · 스포너 23 · 슬롯 363) · <code>Game.unity</code> 카메라 · <code>SpawnerManager.cs</code> · <code>Sector.cs</code> · <code>SectorManager.cs</code>(<code>1872a610</code>)
+· 수치는 기하 계산값이며 플레이 측정값이 아니다. 실측은 Phase 4 하네스로.</div>
+
+</body>
+</html>

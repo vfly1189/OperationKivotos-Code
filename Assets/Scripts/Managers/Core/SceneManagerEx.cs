@@ -33,7 +33,7 @@ public class SceneManagerEx
     public async UniTask InitAsync()
     {
         // 글로벌(게임 내내 유지)로 로드하여 캐싱
-        _sceneTable = await Managers.Resource.LoadAsync<SceneTableSO>("SceneTable", true);
+        _sceneTable = await Managers.Resource.LoadAsync<SceneTableSO>("SceneTable", ResourceScopeType.Global);
 
         if (_sceneTable == null)
         {

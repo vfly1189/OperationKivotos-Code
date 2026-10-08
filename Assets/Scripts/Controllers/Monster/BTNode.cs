@@ -15,6 +15,7 @@ public abstract class Node
     public NodeState nodeState => _nodeState;
 
     public abstract NodeState Evaluate();
+    public abstract void Reset();
 }
 
 // [Selector]: 자식 중 하나라도 성공하면 성공 (OR 조건)
@@ -43,6 +44,12 @@ public class Selector : Node
         }
         _nodeState = NodeState.Failure;
         return _nodeState;
+    }
+
+    public override void Reset() 
+    {
+        foreach (var node in nodes)
+            node.Reset();
     }
 }
 
@@ -77,6 +84,11 @@ public class Sequence : Node
         }
         _nodeState = isAnyChildRunning ? NodeState.Running : NodeState.Success;
         return _nodeState;
+    }
+    public override void Reset() 
+    {
+        foreach (var node in nodes)
+            node.Reset();
     }
 }
 
@@ -134,14 +146,21 @@ public class RandomNode : Node
 
         return state;
     }
+    public override void Reset()
+    {
+        foreach (var node in _nodes)
+            node.Reset();
+
+        _currentNode = null;
+    }
 }
 
 
 
 public class WaitNode : Node
 {
-    private float _duration;
-    private float _startTime;
+    private float _duration = 0.0f;
+    private float _startTime = 0.0f;
     private bool _isWaiting = false;
 
     public WaitNode(float duration) { _duration = duration; }
@@ -165,6 +184,13 @@ public class WaitNode : Node
 
         return NodeState.Running;
     }
+
+    public override void Reset()
+    {
+        // _duration은 생성자에서 받은 구조(설정값) — 리셋 대상이 아니다. 상태만 되돌린다.
+        _startTime = 0.0f;
+        _isWaiting = false;
+    }
 }
 
 
@@ -173,9 +199,7 @@ public class BossSequence : Node
 {
     protected List<Node> nodes = new List<Node>();
     private int _childIndex = 0; // 현재 실행 중인 단계 기억
-
     public BossSequence(List<Node> nodes) { this.nodes = nodes; }
-
     public override NodeState Evaluate()
     {
         // 처음부터가 아니라, 기억해둔 _childIndex부터 실행
@@ -203,6 +227,12 @@ public class BossSequence : Node
         _nodeState = NodeState.Success;
         return _nodeState;
     }
+    public override void Reset()
+    {
+        foreach (var node in nodes)
+            node.Reset();
+        _childIndex = 0;
+    }
 }
 
 // Node 클래스들 (그대로 유지)
@@ -212,4 +242,8 @@ public class ActionNode : Node
     private ActionDelegate _action;
     public ActionNode(ActionDelegate action) { _action = action; }
     public override NodeState Evaluate() { return _action(); }
+    public override void Reset()
+    {
+
+    }
 }
