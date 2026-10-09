@@ -39,6 +39,11 @@ public class SelectScene : BaseScene
 
         // [추가] 3D 모델과 UI 로딩이 완벽히 끝난 후, 초기 학교(0번)를 선택 상태로 만듦
         SelectSchool(0);
+
+        // 측정 하네스(-harness): 사람 대신 새로하기 — 매 실행 같은 깨끗한 세이브로 시작(재현성).
+        //  페이드인은 건너뛴다(곧바로 씬이 바뀌어 파괴된 커버를 만지게 된다)
+        if (HarnessArgs.Harness) { _uiCanvas?.PressNewStart(); return; }
+
         // [수정점 2] 코루틴 제거 -> UniTaskVoid 호출 (Fire and Forget)
         FadeInSequence().Forget();
     }

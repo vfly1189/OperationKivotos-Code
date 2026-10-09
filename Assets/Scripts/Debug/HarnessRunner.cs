@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // 측정 하네스 (계획서 0-5) — HarnessRoute를 고정 속도로 자동 주행한다.
-//  시작: 에디터 F10 (다시 누르면 중단) · 빌드 -harness 인자면 GameScene 준비 3초 뒤 자동, 끝나면 종료.
+//  시작: 에디터 F10 (다시 누르면 중단) · 빌드 -harness 인자면 Start → Select(새로하기)를 자동으로 넘기고 GameScene 준비 3초 뒤 자동, 끝나면 종료.
 //  주행: 위치를 "구간 경과 시간 × 속도"로 정한다(속도를 매 프레임 더하지 않음) → 프레임 시간이 흔들려도 같은 시각에 같은 자리.
 //    남은 시간은 다음 구간으로 넘겨 누적 오차가 없다. 걷기 애니메이션은 안 바뀐다(정책 7개에 똑같이 붙는 비용이라 비교엔 무관).
 //  측정 규칙: 프레임 상한 해제(targetFrameRate −1 · vSync 0) · 파티 무적 · 공격 없음(사망 · 리스폰 없음). 끝나면 원래대로.
@@ -23,7 +23,7 @@ public class HarnessRunner : MonoBehaviour
     private Vector2 _pos;          // 하네스가 정한 플레이어 위치 (x · z)
     private Vector2 _legFrom;
     private float _y;
-    private GameScene _scene;      // 시작 때 한 번 — SceneEx.CurrentScene은 호출마다 씬을 검색하므로 측정 중 매 프레임 부르지 않는다
+    private GameScene _scene;      // 시작 때 한 번 잡아 둔다 (SceneEx.CurrentScene도 이제 씬마다 캐시하지만 GameScene 캐스트까지 한 번에)
     private float _readySince = -1f;
     private bool _autoStarted;
 

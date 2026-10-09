@@ -98,8 +98,12 @@ public class PoolManager
 #endif
             }
 
-            // 위치 초기화 부분 수정
-            poolable.transform.SetParent(parent ?? Managers.SceneEx.CurrentScene.transform);
+            // 위치 초기화 부분 수정 (계측: 씬 찾기 · 계층 이동을 따로 잰다 — Phase 1-3)
+            if (parent == null)
+                using (FieldMetrics.PopSub(FieldMetrics.PopFindScene))
+                    parent = Managers.SceneEx.CurrentScene.transform;
+            using (FieldMetrics.PopSub(FieldMetrics.PopSetParent))
+                poolable.transform.SetParent(parent);
             poolable.transform.localScale = Vector3.one;
 
             // NavMeshAgent가 붙어있다면, 위치를 옮기기 전에 반드시 꺼야 합니다.

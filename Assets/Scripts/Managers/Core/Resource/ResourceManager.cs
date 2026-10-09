@@ -351,7 +351,8 @@ public class ResourceManager
         if (go == null) return null;
 
         // 꺼진 상태에서 배치하므로 NavMeshAgent가 있어도 Warp 없이 이 위치에서 시작한다.
-        go.transform.SetPositionAndRotation(position, rotation);
+        using (FieldMetrics.PopSub(FieldMetrics.PopSetPose))
+            go.transform.SetPositionAndRotation(position, rotation);
         if (activate) go.SetActive(true);
         return go;
     }

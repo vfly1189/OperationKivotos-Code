@@ -27,11 +27,37 @@ public static class FieldMetrics
     public static readonly ProfilerMarker ShadowSelect = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Activation.Shadow");
     public static readonly ProfilerMarker SpawnerTick = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawner.Tick");
     public static readonly ProfilerMarker SpawnPop = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawn.PoolPop");
+    // 풀 꺼내기 안쪽 분해(Phase 1-3 원인 확인) — PoolPop 안에 중첩. 나머지(PoolPop − 셋)는 GetComponent · 이름 문자열 · 사전 · HashSet.
+    //  같은 Pool.Pop · Instantiate를 HP바 · 투사체 · VFX도 지나므로(교전 중 매 발사) 몬스터 스폰의 꺼내기 안에서만 센다 → PopSub.
+    public static readonly ProfilerMarker PopFindScene = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.FindScene");
+    public static readonly ProfilerMarker PopSetParent = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.SetParent");
+    public static readonly ProfilerMarker PopSetPose = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.SetPose");
     public static readonly ProfilerMarker SpawnStat = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawn.SetStat");
     public static readonly ProfilerMarker SpawnOnSpawn = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawn.OnSpawn");
     public static readonly ProfilerMarker SpawnActivate = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawn.SetActive");
     public static readonly ProfilerMarker Recall = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Recall");
     public static readonly ProfilerMarker Sample = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Metrics");
+
+    private static bool _inMonsterPop;
+
+    // 몬스터 스폰의 풀 꺼내기 구간(PoolPop 마커) — 이 안에서만 PopSub가 센다.
+    public static MonsterPopScope MonsterPop() => new MonsterPopScope(SpawnPop);
+    public static SubScope PopSub(ProfilerMarker marker) => new SubScope(marker, _inMonsterPop);
+
+    public readonly struct MonsterPopScope : System.IDisposable
+    {
+        private readonly ProfilerMarker _marker;
+        public MonsterPopScope(ProfilerMarker marker) { _marker = marker; _marker.Begin(); _inMonsterPop = true; }
+        public void Dispose() { _inMonsterPop = false; _marker.End(); }
+    }
+
+    public readonly struct SubScope : System.IDisposable
+    {
+        private readonly ProfilerMarker _marker;
+        private readonly bool _on;
+        public SubScope(ProfilerMarker marker, bool on) { _marker = marker; _on = on; if (on) marker.Begin(); }
+        public void Dispose() { if (_on) _marker.End(); }
+    }
 
     public enum EventKind { Spawn, Recall, Defer, Segment }
 
@@ -40,6 +66,7 @@ public static class FieldMetrics
         public int Frame;
         public float DtMs, MainMs;
         public float SelectUs, ShadowUs, TickUs, PopUs, StatUs, OnSpawnUs, ActivateUs, RecallUs, MetricsUs;
+        public float PopFindUs, PopParentUs, PopPoseUs;
         public int Spawns, Recalls, Defers;
         public int Live, OnScreen, Deferred, ActiveSpawners;
         public float MemMB;
@@ -61,8 +88,14 @@ public static class FieldMetrics
         public int Initial, Peak, Grows;
     }
 
-    private static readonly List<FrameRow> _frames = new List<FrameRow>(65536);
-    private static readonly List<EventRow> _events = new List<EventRow>(8192);
+    // 프레임 기록은 고정 크기 묶음(청크)으로 쌓는다. List 하나에 쌓으면 용량을 두 배로 늘릴 때 기존 줄을 전부 복사해
+    //  그 프레임에 수 ms가 튄다(정책 7개 측정 10-09: 계측 자체 4.8~6.7ms가 거리형의 최악 프레임이었다).
+    //  묶음은 Begin에서 예상치만큼 미리 만들어 세션 사이에 재사용 → 측정 중엔 할당도 복사도 없다. 넘치면 묶음 하나만 추가.
+    private const int ChunkSize = 8192;
+    private const int PreallocChunks = 32;   // 262,144프레임 — 상한 없는 하네스 1회(약 20만) + 여유. 한 줄 92B라 약 24MB
+    private static readonly List<FrameRow[]> _chunks = new List<FrameRow[]>(PreallocChunks);
+    private static int _frameCount;
+    private static readonly List<EventRow> _events = new List<EventRow>(16384);   // 하네스 1회 최대 약 6천 줄(①) — 확장 없음
     private static readonly Dictionary<string, PoolStat> _pools = new Dictionary<string, PoolStat>();
 
     // 그 프레임에 일어난 수 — 프레임 번호 홀짝으로 두 칸. 표본은 다음 프레임에 뜨므로 현재 프레임 칸을 건드리지 않는다.
@@ -78,6 +111,7 @@ public static class FieldMetrics
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static ProfilerRecorder _main, _select, _shadow, _tick, _pop, _stat, _onSpawn, _activate, _recall, _sample;
+    private static ProfilerRecorder _popFind, _popParent, _popPose;
 #endif
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -96,6 +130,11 @@ public static class FieldMetrics
         System.Array.Clear(_defers, 0, 2);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        _frameCount = 0;
+        while (_chunks.Count < PreallocChunks) _chunks.Add(new FrameRow[ChunkSize]);
+#endif
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         _main = ProfilerRecorder.StartNew(ProfilerCategory.Internal, "Main Thread");
         _select = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Activation.Select");
         _shadow = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Activation.Shadow");
@@ -106,6 +145,9 @@ public static class FieldMetrics
         _activate = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Spawn.SetActive");
         _recall = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Recall");
         _sample = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Metrics");
+        _popFind = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.FindScene");
+        _popParent = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.SetParent");
+        _popPose = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.SetPose");
 #endif
     }
 
@@ -125,7 +167,7 @@ public static class FieldMetrics
         _lastSampledFrame = frame;
 
         int p = frame & 1;
-        _frames.Add(new FrameRow
+        AddFrame(new FrameRow
         {
             Frame = frame,
             DtMs = Time.unscaledDeltaTime * 1000f,
@@ -138,6 +180,9 @@ public static class FieldMetrics
             OnSpawnUs = _onSpawn.LastValue * 1e-3f,
             ActivateUs = _activate.LastValue * 1e-3f,
             RecallUs = _recall.LastValue * 1e-3f,
+            PopFindUs = _popFind.LastValue * 1e-3f,
+            PopParentUs = _popParent.LastValue * 1e-3f,
+            PopPoseUs = _popPose.LastValue * 1e-3f,
             MetricsUs = _sample.LastValue * 1e-3f,
             Spawns = _spawns[p],
             Recalls = _recalls[p],
@@ -151,6 +196,16 @@ public static class FieldMetrics
         _spawns[p] = _recalls[p] = _defers[p] = 0;
 #endif
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private static void AddFrame(in FrameRow row)
+    {
+        int chunk = _frameCount / ChunkSize;
+        if (chunk == _chunks.Count) _chunks.Add(new FrameRow[ChunkSize]);   // 예상 초과 — 묶음 하나(약 0.75MB)만, 복사 없음
+        _chunks[chunk][_frameCount % ChunkSize] = row;
+        _frameCount++;
+    }
+#endif
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -250,9 +305,10 @@ public static class FieldMetrics
             foreach (KeyValuePair<string, PoolStat> kv in _pools)
                 w.WriteLine($"# pool {kv.Key}: 시작 {kv.Value.Initial} · 최대 사용 {kv.Value.Peak} · 확장 {kv.Value.Grows}");
             w.WriteLine("frame,dtMs,mainMs,selectUs,shadowUs,tickUs,popUs,statUs,onSpawnUs,activateUs,recallUs,metricsUs," +
-                        "spawns,recalls,defers,live,onScreen,deferred,activeSpawners,memMB");
-            foreach (FrameRow r in _frames)
+                        "spawns,recalls,defers,live,onScreen,deferred,activeSpawners,memMB,popFindUs,popParentUs,popPoseUs");
+            for (int i = 0; i < _frameCount; i++)
             {
+                FrameRow r = _chunks[i / ChunkSize][i % ChunkSize];
                 w.WriteLine(string.Join(",",
                     r.Frame.ToString(inv),
                     r.DtMs.ToString("F3", inv), r.MainMs.ToString("F3", inv),
@@ -261,7 +317,8 @@ public static class FieldMetrics
                     r.ActivateUs.ToString("F1", inv), r.RecallUs.ToString("F1", inv), r.MetricsUs.ToString("F1", inv),
                     r.Spawns.ToString(inv), r.Recalls.ToString(inv), r.Defers.ToString(inv),
                     r.Live.ToString(inv), r.OnScreen.ToString(inv), r.Deferred.ToString(inv), r.ActiveSpawners.ToString(inv),
-                    r.MemMB.ToString("F1", inv)));
+                    r.MemMB.ToString("F1", inv),
+                    r.PopFindUs.ToString("F1", inv), r.PopParentUs.ToString("F1", inv), r.PopPoseUs.ToString("F1", inv)));
             }
         }
 
@@ -283,12 +340,13 @@ public static class FieldMetrics
 
         foreach (KeyValuePair<string, PoolStat> kv in _pools)
             if (kv.Value.Grows > 0) GameLog.LogWarning($"[FieldMetrics] 풀 확장 {kv.Key}: {kv.Value.Grows}회 (시작 {kv.Value.Initial} · 최대 사용 {kv.Value.Peak})");
-        GameLog.Log($"[FieldMetrics] {_name} — 프레임 {_frames.Count}줄 · 이벤트 {_events.Count}줄 → {stem}_*.csv");
+        GameLog.Log($"[FieldMetrics] {_name} — 프레임 {_frameCount}줄 · 이벤트 {_events.Count}줄 → {stem}_*.csv");
 
         _main.Dispose(); _select.Dispose(); _shadow.Dispose(); _tick.Dispose(); _pop.Dispose();
         _stat.Dispose(); _onSpawn.Dispose(); _activate.Dispose(); _recall.Dispose(); _sample.Dispose();
+        _popFind.Dispose(); _popParent.Dispose(); _popPose.Dispose();
 
-        _frames.Clear();
+        _frameCount = 0;   // 묶음은 남겨 다음 세션이 재사용
         _events.Clear();
         _pools.Clear();
         _active = false;

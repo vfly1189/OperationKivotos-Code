@@ -12,9 +12,10 @@ public class GameScene : BaseScene
     [SerializeField] private GameObject _loadingCover;
 
     [Header("존재 판정 (씬 로드 전에 고른다 — 런타임 전환 없음)")]
-    [SerializeField] private ActivationPolicyType _activationPolicy = ActivationPolicyType.CullingGroup;
-    [Tooltip("나머지 6개를 그림자(계산 · 로그만)로 같이 돌린다. 동등성 · 집합 지표용. 비용 측정 때는 끈다.")]
-    [SerializeField] private bool _activationShadows = true;
+    [Tooltip("기본 = ⑤ Distance (2026-10-10 채택, 03_Comparison_Plan 8절). 나머지는 비교 · 측정용으로 남겨 둔 것.")]
+    [SerializeField] private ActivationPolicyType _activationPolicy = ActivationPolicyType.Distance;
+    [Tooltip("나머지 6개를 그림자(계산 · 로그만)로 같이 돌린다. 동등성 · 집합 지표용 측정 도구 — 평소엔 끈다.")]
+    [SerializeField] private bool _activationShadows = false;
 
     // 초기화가 끝났는가 — 측정 하네스(-harness)가 이 뒤에 자동 시작한다.
     public bool IsReady { get; private set; }

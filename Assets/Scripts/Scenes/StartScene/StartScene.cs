@@ -47,6 +47,9 @@ public class StartScene : BaseScene
 
         ActiveUI();
 
+        // 측정 하네스(-harness): 사람 대신 바로 시작 — 빌드 반복 실행(run_harness.ps1)을 무인으로
+        if (HarnessArgs.Harness) { OnClick(); return; }
+
         // 보이스 재생 (Invoke 대신 딜레이를 직접 주거나 UniTask.Delay 사용 가능)
         // 여기서는 안전하게 Fire-and-forget 방식(UniTaskVoid)으로 백그라운드 재생
         PlayTitleVoiceWithDelay(_voiceDelay).Forget();    

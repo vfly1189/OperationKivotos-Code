@@ -1,6 +1,7 @@
 ﻿# (Windows PowerShell 5.1이 한글을 읽도록 UTF-8 BOM으로 저장)
 # 측정 하네스 반복 실행 (계획서 0-5 · Phase 3) — 개발 빌드를 정책별로 여러 번 돌린다.
 #  사용: powershell -ExecutionPolicy Bypass -File run_harness.ps1 -Exe <빌드 경로\OperationKivotos.exe> [-Policies Sector,Distance] [-Runs 3]
+#  무인: -harness면 StartScene · SelectScene(새로하기 = 매번 깨끗한 세이브)을 자동으로 넘긴다 — 세이브는 에디터와 같은 persistentDataPath
 #  순서: 1회차에 정책 7개 → 2회차에 7개 → ... (같은 정책을 연달아 돌리지 않아 발열 · 백그라운드 변화가 한 정책에 몰리지 않게)
 #  결과: 빌드 폴더의 MetricsLogs\field_* · activation_* (실행마다 시각이 다른 파일)
 #  분석: python analyze_field.py <같은 정책 3개의 _frames.csv>  → 3회 편차

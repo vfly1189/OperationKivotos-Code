@@ -7,6 +7,7 @@
 | `analyze_shadow.py` | 그림자 측정 로그 분석. `python analyze_shadow.py <MetricsLogs/activation_*_shadow_*.csv> [original\|balanced]` |
 | `analyze_field.py` | 계측(0-4) 분석. `python analyze_field.py <MetricsLogs/field_*_frames.csv> [--skip 초]` — 같은 시각의 `_events.csv` · `activation_*.csv`를 자동으로 찾는다. 하네스 기록이면 a_sweep ~ end만 보고 구간별 표를 더한다. 파일을 여러 개 주면 실행 비교(3회 편차) |
 | `harness_report/` | 측정 기록 문서(Harness_Result.html) 생성 — `cd harness_report && python -B gen.py`. 쓰는 로그는 `data.py`의 `DEV` · `RUNS` |
+| `policy_report/` | 정책 7개 × 3회 결과 문서(Policy_Result.html) 생성 — `cd policy_report && python -B gen.py`. 쓰는 로그는 `data.py`의 `DEV` · `RUN_FROM` · `BEFORE_*` |
 | `run_harness.ps1` | 개발 빌드를 정책 × 회차로 반복 실행(0-5). `powershell -ExecutionPolicy Bypass -File run_harness.ps1 -Exe <빌드\OperationKivotos.exe> [-Policies Sector,Distance] [-Runs 3]` |
 
 그림자 측정: GameScene 인스펙터 `Activation Shadows` 켜고 플레이 → 종료 시 `MetricsLogs/activation_{실제 정책}_shadow_{시각}.csv`.

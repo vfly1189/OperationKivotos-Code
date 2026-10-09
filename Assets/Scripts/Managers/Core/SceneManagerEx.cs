@@ -19,7 +19,21 @@ public class SceneManagerEx
     private LoadingSceneController _transitionUI;
     private SceneTableSO _sceneTable;
 
-    public BaseScene CurrentScene { get { return GameObject.FindAnyObjectByType<BaseScene>(); } }
+    // 씬마다 한 번만 검색해 캐시한다. 매 호출 FindAnyObjectByType은 로드된 객체 전체를 훑어
+    //  풀을 미리 채운 필드에서 호출당 약 300μs — 몬스터 · 투사체 Pop마다 불려 스폰 비용의 60%였다(Phase 1-3 측정).
+    //  무효화: 씬이 바뀌면 이전 BaseScene이 파괴돼 Unity null이 되어 다시 찾고,
+    //  새 씬 Awake 중 파괴 전의 이전 씬을 잡았을 경우에 대비해 씬 로드 완료 때도 비운다.
+    private BaseScene _currentScene;
+
+    public BaseScene CurrentScene
+    {
+        get
+        {
+            if (_currentScene == null)
+                _currentScene = GameObject.FindAnyObjectByType<BaseScene>();
+            return _currentScene;
+        }
+    }
 
     public Define.Scene CurrentSceneType
     {
@@ -32,6 +46,8 @@ public class SceneManagerEx
 
     public async UniTask InitAsync()
     {
+        SceneManager.sceneLoaded += (_, _) => _currentScene = null;   // CurrentScene 캐시 무효화
+
         // 글로벌(게임 내내 유지)로 로드하여 캐싱
         _sceneTable = await Managers.Resource.LoadAsync<SceneTableSO>("SceneTable", ResourceScopeType.Global);
 

@@ -77,6 +77,9 @@ public class SelectSceneCanvas : UI_Scene
         Managers.SceneEx.LoadScene(Define.Scene.Game);     
     }
 
+    // 측정 하네스(-harness)가 새로하기를 대신 누른다 — 버튼과 같은 경로
+    public void PressNewStart() => OnClickNewStart();
+
     private void OnClickNewStart()
     {
         OnNewStart?.Invoke();

@@ -15,6 +15,10 @@ MARKERS = [('selectUs', '정책 선택(실제)'), ('shadowUs', '정책 선택(�
            ('popUs', '스폰: 풀 꺼내기'), ('statUs', '스폰: SetStat'), ('onSpawnUs', '스폰: OnSpawn'),
            ('activateUs', '스폰: SetActive'), ('recallUs', '정책 회수'), ('metricsUs', '계측 자체')]
 SPAWN_STEPS = ['popUs', 'statUs', 'onSpawnUs', 'activateUs']
+# 풀 확장 탈락 판정 대상 = 스폰 경로의 풀(스포너 몹 · HP바)만 — 목적이 "스폰 비용에 런타임 Instantiate가 섞이지 않음"이라서.
+#  데미지 토스트 · 총알 궤적처럼 교전량에 따라 쓰이는 풀은 정책과 무관해 참고로만 출력한다.
+#  (22:09 실행: UI_DamageToast 시작 10 → 24로 14회 확장 — 교전이 실제로 일어난 실행에서만 나타남)
+SPAWN_POOLS = ('Droid_Helmet_', 'MonsterHPBar')
 
 
 def read(path):
@@ -109,7 +113,10 @@ def summarize(d):
         s['flicker'] = len(d['flicker'][1])
         if d['segments']:
             s['flicker_wiggle'] = sum(group(segment_of(c[0], d['segments'])).startswith('c') for c in d['flicker'][1])
-    s['pool_grows'] = sum(int(re.search(r'확장 (\d+)', l).group(1)) for l in d['header'] if l.startswith('# pool '))
+    grows = {re.match(r'# pool (\S+):', l).group(1): int(re.search(r'확장 (\d+)', l).group(1))
+             for l in d['header'] if l.startswith('# pool ')}
+    s['pool_grows'] = sum(v for k, v in grows.items() if k.startswith(SPAWN_POOLS))
+    s['pool_grows_other'] = {k: v for k, v in grows.items() if v and not k.startswith(SPAWN_POOLS)}
     return s
 
 
@@ -146,6 +153,11 @@ def report(d):
     if total_spawns:
         per = {k: sum(f(k)) / total_spawns for k in SPAWN_STEPS}
         print(f'  스폰 1회 평균: {sum(per.values()):.1f}μs = ' + ' + '.join(f'{k[:-2]} {v:.1f}' for k, v in per.items()))
+        if 'popFindUs' in fr[0]:   # 풀 꺼내기 안쪽 분해(Phase 1-3) — 이 열이 생기기 전 로그엔 없다
+            sub = {k: sum(f(k)) / total_spawns for k in ('popFindUs', 'popParentUs', 'popPoseUs')}
+            rest = per['popUs'] - sum(sub.values())
+            print(f'    └ pop {per["popUs"]:.1f} = 씬 찾기 {sub["popFindUs"]:.1f} + SetParent {sub["popParentUs"]:.1f}'
+                  f' + 위치 {sub["popPoseUs"]:.1f} + 나머지 {rest:.1f}')
     if sum(recalls):
         print(f'  회수 1회 평균: {sum(f("recallUs")) / sum(recalls):.1f}μs')
 
@@ -231,14 +243,16 @@ def report(d):
             verdict('경계 떨림 0회 (왕복 구간 c*)', f'{s["flicker_wiggle"]} (전체 {s["flicker"]} — 나머지는 경로가 되돌아온 곳)', s['flicker_wiggle'] == 0)
         else:
             verdict('경계 떨림 0회 (하네스가 아님 — 참고)', s['flicker'], s['flicker'] == 0)
-    verdict('풀 확장 0회', s['pool_grows'], s['pool_grows'] == 0)
+    verdict('풀 확장 0회 (스폰 경로: 몹 · HP바)', s['pool_grows'], s['pool_grows'] == 0)
+    if s['pool_grows_other']:
+        print('        참고 — 교전 풀 확장: ' + ' · '.join(f'{k} {v}회' for k, v in s['pool_grows_other'].items()))
     print('  (p99 기준은 ① 기준선 측정 후 확정)')
 
 
 def compare(ds):
     """실행 여러 개 — 같은 정책 3회면 편차 검증(0-5): 이벤트 수는 같아야 하고, 시간 지표는 편차를 본다."""
     sums = [summarize(d) for d in ds]
-    keys = list(sums[0].keys())
+    keys = [k for k, v in sums[0].items() if isinstance(v, (int, float))]   # 참고용 dict(pool_grows_other) 제외
     width = max(len(d['name']) for d in ds)
     print('실행 비교 — 분석 구간: ' + ' / '.join(sorted({d['how'] for d in ds})))
     for i, d in enumerate(ds): print(f'  [{i + 1}] {d["name"]}')

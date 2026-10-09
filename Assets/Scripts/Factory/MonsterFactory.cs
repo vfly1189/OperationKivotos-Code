@@ -79,7 +79,7 @@ public static class MonsterFactory
         //    위치는 호출 시점의 값 — 로드 대기 중 포인트가 파괴돼도 영향 없다.
         //    단계마다 계측 마커 (계획서 0-4 · Phase 1 스폰 1회 분해)
         GameObject monsterObj;
-        using (FieldMetrics.SpawnPop.Auto())
+        using (FieldMetrics.MonsterPop())   // 안쪽 분해(씬 찾기 · SetParent · 위치)도 이 구간에서만 센다
             monsterObj = Managers.Resource.Instantiate(prefab, position, rotation, activate: false);
 
         // 5. 데이터 주입 → 생애 시작 → 켜기 (순서 고정: OnSpawn이 채운 HP/HP바가 SetStat 값을 읽는다)
