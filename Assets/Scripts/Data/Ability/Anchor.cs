@@ -1,11 +1,11 @@
 using UnityEngine;
 
 // 배치(어디에 놓나)를 캡슐화한 공용 타입.
-// 위치가 필요한 Effect(SpawnVFX·ScatterPattern·RadialBurstPattern 등)가 이 필드 하나로 원점을 해결한다.
+// 위치가 필요한 Effect(SpawnVFX 등)가 이 필드 하나로 원점을 해결한다.
 // "원점을 어떻게 구하나"의 정의가 여기 한 곳에만 존재 → Effect마다 anchor/offset 을 복제하지 않는다.
 //   차이는 asset 값(_source·_localOffset·_forwardDistance …)으로만 표현.
 [System.Serializable]
-public class Anchor
+public class DAnchor
 {
     public enum Source
     {

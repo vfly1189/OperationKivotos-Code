@@ -1,0 +1,448 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>보스 구조 기획</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; font-size:10.4pt; line-height:1.6; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:14px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:9px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; margin:2px 0; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.4pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:4px 7px; border-bottom:1px solid var(--line2); vertical-align:top; font-size:8.8pt; line-height:1.45; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.k{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9pt; line-height:1.55; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; display:block; margin-bottom:3px; }
+  .callout ul{ margin:2px 0 0; padding-left:16px; } .callout li{ margin:2px 0; }
+  .pb{ break-before:page; }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .three{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
+  .card{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:7px 11px 6px; margin:7px 0; break-inside:avoid; font-size:8.8pt; line-height:1.5; }
+  .card.a{ border-left-color:var(--amber); } .card.v{ border-left-color:var(--violet); } .card.g{ border-left-color:var(--green); } .card.k{ border-left-color:var(--ink); }
+  .card .hd{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; gap:8px; }
+  .card .hd b{ font-size:9.6pt; } .card .hd span{ font-size:7.8pt; color:var(--muted); white-space:nowrap; }
+  .card p{ margin:0 0 3px; }
+  .word{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 6px; }
+  .word div{ background:var(--shade); border-radius:10px; padding:8px 10px; font-size:8.8pt; line-height:1.45; }
+  .word b{ display:block; font-size:8pt; color:var(--blue); letter-spacing:.04em; margin-bottom:2px; }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--amber-ink); font-weight:800; }
+  .tag{ display:inline-block; font-size:7.4pt; font-weight:800; padding:0 6px; border-radius:6px; background:var(--shade); color:var(--muted); border:1px solid var(--line); }
+  .footer{ margin-top:6px; padding-top:5px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+</style>
+<style>
+  .red{ color:#c92a2a; font-weight:800; }
+  .card.pick{ border:2px solid var(--green); border-left:5px solid var(--green); }
+  .card.no{ opacity:.85; }
+  ol.steps{ margin:4px 0 6px; padding-left:20px; font-size:9.2pt; } ol.steps li{ margin:2px 0; }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker>
+    <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a91a0"/></marker>
+  </defs>
+</svg>
+
+<div class="kicker">Boss · 기획 초안 2 · 2026-10-19</div>
+<h1>보스 구조 — 컨테이너 + 패턴 조각</h1>
+<p class="lead">레퍼런스: 로스트아크 레이드. 평소에는 짤패턴을 무작위로, 체력이 정해진 줄에 닿으면 정해진 패턴(기믹)을 수행한다. 보스마다 스크립트를 만들지 않고, 공통 컨테이너에 조각을 끼워 맞춘다.</p>
+
+<h2>1. 전투 흐름</h2>
+<div class="fig">
+  <div class="figt">평상 루프와 고정 패턴</div>
+  <svg viewBox="0 0 700 262" width="100%">
+    <!-- lanes -->
+    <rect x="4" y="8" width="692" height="100" rx="12" fill="#eef2ff"/>
+    <text x="16" y="25" class="tb" fill="#2b3a8f">평상 루프</text>
+    <rect x="4" y="120" width="692" height="96" rx="12" fill="#fff4ec"/>
+    <text x="16" y="137" class="tb" fill="#8a3708">고정 패턴 (기믹)</text>
+
+    <!-- row 1 -->
+    <g>
+      <rect x="20" y="36" width="100" height="42" rx="9" fill="#fff" stroke="#3b5bdb" stroke-width="1.4"/>
+      <text x="70" y="54" text-anchor="middle" class="t">타겟팅</text>
+      <text x="70" y="69" text-anchor="middle" class="s">대상 갱신</text>
+
+      <rect x="145" y="36" width="125" height="42" rx="9" fill="#fff" stroke="#3b5bdb" stroke-width="1.4"/>
+      <text x="207" y="54" text-anchor="middle" class="t">짤패턴 고르기</text>
+      <text x="207" y="69" text-anchor="middle" class="s">가중치 · 직전 제외 · 쿨</text>
+
+      <rect x="295" y="36" width="95" height="42" rx="9" fill="#fff" stroke="#8a91a0" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <text x="342" y="54" text-anchor="middle" class="t" fill="#8a91a0">추적</text>
+      <text x="342" y="69" text-anchor="middle" class="s">지금은 생략</text>
+
+      <rect x="415" y="36" width="120" height="42" rx="9" fill="#3b5bdb"/>
+      <text x="475" y="54" text-anchor="middle" class="t" fill="#fff">패턴 실행</text>
+      <text x="475" y="69" text-anchor="middle" class="s" fill="#dfe6ff">끝까지 (원자적)</text>
+
+      <rect x="560" y="36" width="120" height="42" rx="9" fill="#fff" stroke="#3b5bdb" stroke-width="1.4"/>
+      <text x="620" y="54" text-anchor="middle" class="t">간격 대기</text>
+      <text x="620" y="69" text-anchor="middle" class="s">예: 1.5초</text>
+
+      <line x1="120" y1="57" x2="143" y2="57" stroke="#3b5bdb" stroke-width="1.4" marker-end="url(#arB)"/>
+      <line x1="270" y1="57" x2="293" y2="57" stroke="#3b5bdb" stroke-width="1.4" marker-end="url(#arB)"/>
+      <line x1="390" y1="57" x2="413" y2="57" stroke="#3b5bdb" stroke-width="1.4" marker-end="url(#arB)"/>
+      <line x1="535" y1="57" x2="558" y2="57" stroke="#3b5bdb" stroke-width="1.4" marker-end="url(#arB)"/>
+      <path d="M620,78 L620,94 L70,94 L70,80" fill="none" stroke="#3b5bdb" stroke-width="1.3" marker-end="url(#arB)"/>
+      <text x="250" y="90" class="s" fill="#2b3a8f">반복</text>
+    </g>
+
+    <!-- connector -->
+    <path d="M475,78 L475,124 L377,124 L377,148" fill="none" stroke="#e8590c" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#arA)"/>
+    <text x="483" y="117" class="xs" fill="#8a3708">대기열이 있으면, 지금 패턴이 끝난 뒤 먼저</text>
+
+    <!-- row 2 -->
+    <g>
+      <rect x="20" y="150" width="110" height="42" rx="9" fill="#fff" stroke="#e8590c" stroke-width="1.4"/>
+      <text x="75" y="168" text-anchor="middle" class="t">조건 확인</text>
+      <text x="75" y="183" text-anchor="middle" class="s">매 틱 · 줄을 넘었나?</text>
+
+      <rect x="160" y="150" width="125" height="42" rx="9" fill="#fff" stroke="#e8590c" stroke-width="1.4"/>
+      <text x="222" y="168" text-anchor="middle" class="t">기믹 대기열</text>
+      <text x="222" y="183" text-anchor="middle" class="s">넘은 순서대로 쌓임</text>
+
+      <rect x="315" y="150" width="125" height="42" rx="9" fill="#e8590c"/>
+      <text x="377" y="168" text-anchor="middle" class="t" fill="#fff">고정 패턴 실행</text>
+      <text x="377" y="183" text-anchor="middle" class="s" fill="#ffe3d1">하나씩 끝까지</text>
+
+      <rect x="470" y="150" width="120" height="42" rx="9" fill="#fff" stroke="#e8590c" stroke-width="1.4"/>
+      <text x="530" y="168" text-anchor="middle" class="t">NextFillers</text>
+      <text x="530" y="183" text-anchor="middle" class="s">짤 표 교체 (선택)</text>
+
+      <line x1="130" y1="171" x2="158" y2="171" stroke="#e8590c" stroke-width="1.4" marker-end="url(#arA)"/>
+      <line x1="285" y1="171" x2="313" y2="171" stroke="#e8590c" stroke-width="1.4" marker-end="url(#arA)"/>
+      <line x1="440" y1="171" x2="468" y2="171" stroke="#e8590c" stroke-width="1.4" marker-end="url(#arA)"/>
+      <text x="598" y="175" class="s" fill="#8a3708">→ 타겟팅부터 다시</text>
+    </g>
+
+    <!-- death -->
+    <rect x="4" y="226" width="692" height="30" rx="10" fill="#fff5f5" stroke="#c92a2a" stroke-width="1"/>
+    <text x="18" y="245" class="t" fill="#c92a2a">사망</text>
+    <text x="56" y="245" class="s" fill="#7a1d1d">실행 중 패턴 취소 · 대기열 비움 · 장판 정리 · 사망 처리 — 패턴을 중간에 끊는 유일한 경로</text>
+  </svg>
+</div>
+
+<div class="fig">
+  <div class="figt">체력 줄에 따라 나오는 패턴 (예시 구성)</div>
+  <svg viewBox="0 0 700 150" width="100%">
+    <text x="60" y="30" class="s">100줄</text>
+    <text x="660" y="30" text-anchor="end" class="s">0줄</text>
+    <rect x="60" y="38" width="600" height="16" rx="5" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1"/>
+    <line x1="300" y1="30" x2="300" y2="62" stroke="#e8590c" stroke-width="2"/>
+    <line x1="480" y1="30" x2="480" y2="62" stroke="#e8590c" stroke-width="2"/>
+    <text x="300" y="22" text-anchor="middle" class="t" fill="#8a3708">60줄 → 기믹 A</text>
+    <text x="480" y="22" text-anchor="middle" class="t" fill="#8a3708">30줄 → 기믹 B</text>
+
+    <g class="s">
+      <rect x="64" y="74" width="52" height="24" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="90" y="90" text-anchor="middle" class="s" fill="#2b3a8f">짤</text>
+      <rect x="122" y="74" width="52" height="24" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="148" y="90" text-anchor="middle" class="s" fill="#2b3a8f">짤</text>
+      <rect x="180" y="74" width="52" height="24" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="206" y="90" text-anchor="middle" class="s" fill="#2b3a8f">짤</text>
+      <rect x="238" y="74" width="52" height="24" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="264" y="90" text-anchor="middle" class="s" fill="#2b3a8f">짤</text>
+      <rect x="300" y="74" width="58" height="24" rx="6" fill="#e8590c"/><text x="329" y="90" text-anchor="middle" class="s" fill="#fff">기믹 A</text>
+      <rect x="364" y="74" width="50" height="24" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="389" y="90" text-anchor="middle" class="s" fill="#2b3a8f">짤</text>
+      <rect x="420" y="74" width="50" height="24" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="445" y="90" text-anchor="middle" class="s" fill="#2b3a8f">짤</text>
+      <rect x="480" y="74" width="58" height="24" rx="6" fill="#e8590c"/><text x="509" y="90" text-anchor="middle" class="s" fill="#fff">기믹 B</text>
+      <rect x="544" y="74" width="54" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="571" y="90" text-anchor="middle" class="s" fill="#5028c0">짤+</text>
+      <rect x="604" y="74" width="54" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="631" y="90" text-anchor="middle" class="s" fill="#5028c0">짤+</text>
+    </g>
+
+    <path d="M64,106 L64,112 L290,112 L290,106" fill="none" stroke="#8a91a0"/>
+    <text x="177" y="126" text-anchor="middle" class="s">처음 짤 표</text>
+    <path d="M364,106 L364,112 L470,112 L470,106" fill="none" stroke="#8a91a0"/>
+    <text x="417" y="126" text-anchor="middle" class="s">그대로 (NextFillers 비움)</text>
+    <path d="M544,106 L544,112 L658,112 L658,106" fill="none" stroke="#8a91a0"/>
+    <text x="601" y="126" text-anchor="middle" class="s">강화 짤 표로 교체</text>
+    <text x="60" y="145" class="xs">가로축 = 체력이 깎이는 순서 (시간이 아님). 체력은 잠그지 않으므로 기믹 중에도 계속 깎인다.</text>
+  </svg>
+</div>
+
+<h2>2. 결정 사항</h2>
+<table>
+  <thead><tr><th style="width:8%">#</th><th style="width:38%">질문</th><th>결정</th></tr></thead>
+  <tbody>
+    <tr><td class="k">D1</td><td>한 번에 여러 줄을 넘거나, 기믹 중 다음 줄에 닿으면</td><td><b>넘은 기믹을 전부 순서대로 실행.</b> 사망만 예외 → 기믹 대기열</td></tr>
+    <tr><td class="k">D2</td><td>짤패턴 도중 줄을 넘으면</td><td><b>모든 패턴은 원자적.</b> 하던 패턴이 끝난 뒤 기믹</td></tr>
+    <tr><td class="k">D3</td><td>기믹 중 체력</td><td><b>잠그지 않음.</b> 계속 피격 가능</td></tr>
+    <tr><td class="k">D4</td><td>기믹 이후 짤패턴 변화</td><td><b>NextFillers</b> — 비우면 유지, 채우면 교체</td></tr>
+    <tr><td class="k">D5</td><td>사망 시 정리 범위</td><td>타임라인 · 장판 · 투사체 정리, 소환물은 사망 때 일괄 정리</td></tr>
+    <tr><td class="k">D6</td><td>조각의 크기와 재료</td><td><b>패턴 단위 조각(컴포넌트) + 기믹 조건 조각(SO)</b></td></tr>
+    <tr><td class="k">D7</td><td>결정 구조</td><td><b>BT</b>를 기본으로</td></tr>
+    <tr><td class="k">D8</td><td>사거리 밖</td><td>사거리까지 이동 후 진행. 지금은 고정형이라 추적 생략</td></tr>
+  </tbody>
+</table>
+
+<h2 class="pb">3. 구조 — 조각은 "무엇을", 표는 "언제"</h2>
+<div class="fig">
+  <div class="figt">보스 프리팹 하나의 구성 (예시: 기존 타임라인 5개)</div>
+  <svg viewBox="0 0 700 330" width="100%">
+    <!-- prefab -->
+    <rect x="6" y="26" width="512" height="296" rx="14" fill="#f7f8fa" stroke="#1a1c22" stroke-width="1.2"/>
+    <text x="18" y="18" class="tb">Boss_01 프리팹</text>
+
+    <!-- controller -->
+    <rect x="20" y="40" width="268" height="270" rx="11" fill="#fff" stroke="#3b5bdb" stroke-width="1.6"/>
+    <text x="32" y="60" class="tb" fill="#2b3a8f">BossController</text>
+    <text x="276" y="60" text-anchor="end" class="s">공통 컨테이너 · 언제</text>
+
+    <text x="32" y="86" class="t">짤 표</text>
+    <rect x="32" y="92" width="244" height="18" rx="4" fill="#1a1c22"/>
+    <text x="40" y="105" class="s" fill="#fff">패턴 조각</text><text x="190" y="105" text-anchor="middle" class="s" fill="#fff">가중치</text><text x="248" y="105" text-anchor="middle" class="s" fill="#fff">쿨</text>
+    <g>
+      <rect x="32" y="110" width="244" height="22" fill="#fff"/><text x="40" y="125" class="s" fill="#2b3a8f">Normal_Attack</text><text x="190" y="125" text-anchor="middle" class="s">3</text><text x="248" y="125" text-anchor="middle" class="s">0초</text>
+      <rect x="32" y="132" width="244" height="22" fill="#f7f8fa"/><text x="40" y="147" class="s" fill="#2b3a8f">Skill_01</text><text x="190" y="147" text-anchor="middle" class="s">2</text><text x="248" y="147" text-anchor="middle" class="s">6초</text>
+      <rect x="32" y="154" width="244" height="22" fill="#fff"/><text x="40" y="169" class="s" fill="#2b3a8f">Skill_02</text><text x="190" y="169" text-anchor="middle" class="s">2</text><text x="248" y="169" text-anchor="middle" class="s">6초</text>
+      <rect x="32" y="176" width="244" height="22" fill="#f7f8fa"/><text x="40" y="191" class="s" fill="#2b3a8f">Skill_03</text><text x="190" y="191" text-anchor="middle" class="s">1</text><text x="248" y="191" text-anchor="middle" class="s">10초</text>
+    </g>
+
+    <text x="32" y="222" class="t">기믹 표</text>
+    <rect x="32" y="228" width="244" height="18" rx="4" fill="#1a1c22"/>
+    <text x="40" y="241" class="s" fill="#fff">조건 조각</text><text x="122" y="241" class="s" fill="#fff">패턴 조각</text><text x="200" y="241" class="s" fill="#fff">NextFillers</text>
+    <rect x="32" y="246" width="244" height="22" fill="#fff"/><text x="40" y="261" class="s" fill="#5028c0">HpLine_60</text><text x="122" y="261" class="s" fill="#2b3a8f">Skill_04</text><text x="200" y="261" class="s">— (유지)</text>
+    <rect x="32" y="268" width="244" height="22" fill="#f7f8fa"/><text x="40" y="283" class="s" fill="#5028c0">HpLine_30</text><text x="122" y="283" class="s" fill="#2b3a8f">Skill_04</text><text x="200" y="283" class="s">강화 짤 표</text>
+    <text x="32" y="303" class="xs">위에서부터 확인 = 실행 순서</text>
+
+    <!-- components -->
+    <text x="322" y="60" class="tb" fill="#2b3a8f">패턴 조각</text>
+    <text x="505" y="60" text-anchor="end" class="s">컴포넌트 · 무엇을</text>
+    <g>
+      <rect x="322" y="78" width="183" height="25" rx="7" fill="#eef2ff" stroke="#3b5bdb"/><text x="332" y="95" class="t" fill="#2b3a8f">Normal_Attack</text><text x="497" y="95" text-anchor="end" class="xs">Timeline</text>
+      <rect x="322" y="110" width="183" height="25" rx="7" fill="#eef2ff" stroke="#3b5bdb"/><text x="332" y="127" class="t" fill="#2b3a8f">Skill_01</text><text x="497" y="127" text-anchor="end" class="xs">Timeline</text>
+      <rect x="322" y="142" width="183" height="25" rx="7" fill="#eef2ff" stroke="#3b5bdb"/><text x="332" y="159" class="t" fill="#2b3a8f">Skill_02</text><text x="497" y="159" text-anchor="end" class="xs">Timeline</text>
+      <rect x="322" y="174" width="183" height="25" rx="7" fill="#eef2ff" stroke="#3b5bdb"/><text x="332" y="191" class="t" fill="#2b3a8f">Skill_03</text><text x="497" y="191" text-anchor="end" class="xs">Timeline</text>
+      <rect x="322" y="206" width="183" height="25" rx="7" fill="#eef2ff" stroke="#3b5bdb"/><text x="332" y="223" class="t" fill="#2b3a8f">Skill_04</text><text x="497" y="223" text-anchor="end" class="xs">Timeline</text>
+    </g>
+    <line x1="276" y1="121" x2="320" y2="91" stroke="#3b5bdb" stroke-width="1" marker-end="url(#arB)"/>
+    <line x1="276" y1="143" x2="320" y2="123" stroke="#3b5bdb" stroke-width="1" marker-end="url(#arB)"/>
+    <line x1="276" y1="165" x2="320" y2="155" stroke="#3b5bdb" stroke-width="1" marker-end="url(#arB)"/>
+    <line x1="276" y1="187" x2="320" y2="187" stroke="#3b5bdb" stroke-width="1" marker-end="url(#arB)"/>
+    <line x1="276" y1="257" x2="320" y2="221" stroke="#3b5bdb" stroke-width="1" marker-end="url(#arB)"/>
+    <line x1="276" y1="279" x2="320" y2="224" stroke="#3b5bdb" stroke-width="1" marker-end="url(#arB)"/>
+
+    <rect x="322" y="262" width="183" height="46" rx="8" fill="#fff" stroke="#8a91a0" stroke-dasharray="4 3"/>
+    <text x="332" y="280" class="s">PlayableDirector · SpawnPointSet</text>
+    <text x="332" y="297" class="s">VfxAnchorSet · 유물 오브젝트</text>
+    <line x1="413" y1="231" x2="413" y2="260" stroke="#8a91a0" stroke-width="1.1" marker-end="url(#arG)"/>
+    <text x="420" y="250" class="xs">프리팹 안을 직접 참조</text>
+
+    <!-- SO -->
+    <text x="538" y="60" class="tb" fill="#5028c0">SO 에셋</text>
+    <text x="694" y="60" text-anchor="end" class="s">값만 본다</text>
+    <rect x="538" y="78" width="156" height="42" rx="8" fill="#fff" stroke="#8a91a0"/>
+    <text x="548" y="96" class="t">AbilityData</text>
+    <text x="548" y="111" class="s">피해 · 장판 수치 (기존)</text>
+    <path d="M505,154 L522,154 L522,99 L536,99" fill="none" stroke="#8a91a0" stroke-dasharray="4 3" marker-end="url(#arG)"/>
+
+    <text x="538" y="214" class="s" fill="#5028c0">기믹 표의 조건 칸</text>
+    <rect x="538" y="222" width="156" height="38" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="548" y="238" class="t" fill="#5028c0">HpLine_60</text>
+    <text x="548" y="252" class="xs">60줄 이하면 참</text>
+    <rect x="538" y="268" width="156" height="38" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="548" y="284" class="t" fill="#5028c0">HpLine_30</text>
+    <text x="548" y="298" class="xs">(나중에 TimeCondition 등)</text>
+  </svg>
+</div>
+
+<div class="callout c-blue"><span class="lbl">원칙 세 가지</span>
+<ul>
+  <li><b>조각은 "무엇을", 표는 "언제".</b> 조각은 자기가 짤인지 기믹인지 모른다. 같은 조각을 짤 표와 기믹 표 양쪽에 넣을 수 있다.</li>
+  <li><b>프리팹 안의 것을 쓰면 컴포넌트, 값만 보면 SO.</b> 패턴은 Director · 앵커 · 유물을 직접 가리켜야 해서 컴포넌트. 조건은 체력 · 전투 시간만 읽어서 SO (프로젝트의 <code>EffectData</code>와 같은 방식).</li>
+  <li><b>상태는 컨테이너에.</b> 조건 조각은 판정만 한다(<code>IsMet</code>). "이 기믹을 이미 썼나" · 쿨 · 직전 패턴은 컨테이너가 기억한다.</li>
+</ul></div>
+
+<h2>4. D6 — 조각을 어디서 자를까</h2>
+<div class="three">
+  <div class="card pick"><div class="hd"><b>1. 패턴 단위</b><span class="ok">채택</span></div>
+    <p>조각 하나 = 패턴 하나 (내려찍기, 운석).</p>
+    <p>보스마다 다른 것 = 어떤 패턴을 갖고 있는가.</p></div>
+  <div class="card a no"><div class="hd"><b>2. 단계 단위</b><span class="ng">안 함</span></div>
+    <p>조각 하나 = 바라보기 · 재생 · 장판 · 대기.</p>
+    <p>타임라인과 <code>AbilityData</code> 이펙트가 이미 단계를 맡고 있어 순서를 정하는 곳이 세 군데가 된다.</p></div>
+  <div class="card v"><div class="hd"><b>3. 기능 단위</b><span class="ok">조건만</span></div>
+    <p>조각 하나 = 선택 규칙 · 기믹 조건 · 이동.</p>
+    <p>바뀔 여지가 있는 건 기믹 조건뿐 (HP 줄 → 시간 · 광폭화).</p></div>
+</div>
+
+<h2 class="pb">5. 판단 순서 — BT</h2>
+<div class="fig">
+  <div class="figt">매 틱: 조건 확인 → BT 평가</div>
+  <svg viewBox="0 0 700 236" width="100%">
+    <rect x="20" y="6" width="660" height="28" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="34" y="25" class="t" fill="#8a3708">① 조건 확인</text>
+    <text x="120" y="25" class="s" fill="#8a3708">기믹 표를 위에서부터 보며, 아직 안 쓴 기믹 중 IsMet이 참이면 대기열에 추가</text>
+    <text x="666" y="25" text-anchor="end" class="t" fill="#8a3708">→ ② BT</text>
+
+    <rect x="290" y="50" width="120" height="30" rx="9" fill="#1a1c22"/>
+    <text x="350" y="70" text-anchor="middle" class="t" fill="#fff">Selector</text>
+    <g stroke="#1a1c22" stroke-width="1.2" fill="none">
+      <path d="M350,80 L350,94 L95,94 L95,108"/>
+      <path d="M350,94 L265,94 L265,108"/>
+      <path d="M350,94 L435,94 L435,108"/>
+      <path d="M350,94 L605,94 L605,108"/>
+    </g>
+
+    <rect x="20" y="110" width="150" height="30" rx="8" fill="#fff5f5" stroke="#c92a2a" stroke-width="1.4"/>
+    <text x="95" y="130" text-anchor="middle" class="t" fill="#c92a2a">1. 사망?</text>
+    <rect x="190" y="110" width="150" height="30" rx="8" fill="#f7f8fa" stroke="#1a1c22" stroke-width="1.2"/>
+    <text x="265" y="130" text-anchor="middle" class="t">2. 실행 중인 패턴?</text>
+    <rect x="360" y="110" width="150" height="30" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+    <text x="435" y="130" text-anchor="middle" class="t" fill="#8a3708">3. 기믹 대기열?</text>
+    <rect x="530" y="110" width="150" height="30" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+    <text x="605" y="130" text-anchor="middle" class="t" fill="#2b3a8f">4. 평상</text>
+
+    <g stroke="#8a91a0" stroke-width="1">
+      <line x1="95" y1="140" x2="95" y2="150"/><line x1="265" y1="140" x2="265" y2="150"/>
+      <line x1="435" y1="140" x2="435" y2="150"/><line x1="605" y1="140" x2="605" y2="150"/>
+    </g>
+    <rect x="20" y="150" width="150" height="44" rx="8" fill="#fff" stroke="#e3e6ec"/>
+    <text x="95" y="168" text-anchor="middle" class="s">실행 중 패턴 취소</text>
+    <text x="95" y="184" text-anchor="middle" class="s">대기열 비움 · 사망 처리</text>
+    <rect x="190" y="150" width="150" height="44" rx="8" fill="#fff" stroke="#e3e6ec"/>
+    <text x="265" y="168" text-anchor="middle" class="s">Running 유지</text>
+    <text x="265" y="184" text-anchor="middle" class="s">끼어들기 없음 (원자적)</text>
+    <rect x="360" y="150" width="150" height="44" rx="8" fill="#fff" stroke="#e3e6ec"/>
+    <text x="435" y="168" text-anchor="middle" class="s">맨 앞 기믹 실행</text>
+    <text x="435" y="184" text-anchor="middle" class="s">끝나면 NextFillers 적용</text>
+    <rect x="530" y="150" width="150" height="44" rx="8" fill="#fff" stroke="#e3e6ec"/>
+    <text x="605" y="168" text-anchor="middle" class="s">간격 → 타겟팅</text>
+    <text x="605" y="184" text-anchor="middle" class="s">→ 짤 고르기 → 실행</text>
+
+    <line x1="20" y1="214" x2="678" y2="214" stroke="#8a91a0" stroke-width="1.1" marker-end="url(#arG)"/>
+    <text x="20" y="230" class="xs">먼저 확인 (우선순위 높음)</text>
+    <text x="680" y="230" text-anchor="end" class="xs">나중 (우선순위 낮음)</text>
+  </svg>
+</div>
+
+<div class="fig">
+  <div class="figt">엣지 케이스 — 시간 순서</div>
+  <svg viewBox="0 0 700 214" width="100%">
+    <!-- row a -->
+    <text x="12" y="34" class="t">짤 도중 줄 통과</text>
+    <text x="12" y="50" class="s">끝난 뒤 기믹 (D2)</text>
+    <line x1="165" y1="52" x2="690" y2="52" stroke="#e3e6ec"/>
+    <rect x="170" y="28" width="180" height="22" rx="5" fill="#eef2ff" stroke="#3b5bdb"/><text x="260" y="43" text-anchor="middle" class="s" fill="#2b3a8f">짤 Skill_01</text>
+    <line x1="320" y1="18" x2="320" y2="56" stroke="#e8590c" stroke-width="2"/>
+    <text x="326" y="18" class="xs" fill="#8a3708">60줄 통과</text>
+    <rect x="355" y="28" width="115" height="22" rx="5" fill="#e8590c"/><text x="412" y="43" text-anchor="middle" class="s" fill="#fff">기믹 A</text>
+    <rect x="475" y="28" width="85" height="22" rx="5" fill="#eef2ff" stroke="#3b5bdb"/><text x="517" y="43" text-anchor="middle" class="s" fill="#2b3a8f">짤</text>
+
+    <!-- row b -->
+    <text x="12" y="104" class="t">한 방에 두 줄 통과</text>
+    <text x="12" y="120" class="s">순서대로 전부 (D1)</text>
+    <line x1="165" y1="122" x2="690" y2="122" stroke="#e3e6ec"/>
+    <rect x="170" y="98" width="110" height="22" rx="5" fill="#eef2ff" stroke="#3b5bdb"/><text x="225" y="113" text-anchor="middle" class="s" fill="#2b3a8f">짤</text>
+    <line x1="210" y1="88" x2="210" y2="126" stroke="#e8590c" stroke-width="2"/>
+    <text x="216" y="88" class="xs" fill="#8a3708">60 · 30줄 동시</text>
+    <text x="285" y="88" class="xs" fill="#8a3708">대기열 [A, B]</text>
+    <rect x="285" y="98" width="105" height="22" rx="5" fill="#e8590c"/><text x="337" y="113" text-anchor="middle" class="s" fill="#fff">기믹 A</text>
+    <rect x="395" y="98" width="105" height="22" rx="5" fill="#e8590c"/><text x="447" y="113" text-anchor="middle" class="s" fill="#fff">기믹 B</text>
+    <rect x="505" y="98" width="85" height="22" rx="5" fill="#f3f0ff" stroke="#7048e8"/><text x="547" y="113" text-anchor="middle" class="s" fill="#5028c0">짤+ (강화 표)</text>
+
+    <!-- row c -->
+    <text x="12" y="174" class="t">기믹 도중 사망</text>
+    <text x="12" y="190" class="s">유일한 중단 (D5)</text>
+    <line x1="165" y1="192" x2="690" y2="192" stroke="#e3e6ec"/>
+    <rect x="170" y="168" width="130" height="22" rx="5" fill="#e8590c"/><text x="235" y="183" text-anchor="middle" class="s" fill="#fff">기믹 B</text>
+    <rect x="300" y="168" width="60" height="22" rx="0" fill="#fff" stroke="#e8590c" stroke-dasharray="3 3"/>
+    <line x1="300" y1="158" x2="300" y2="196" stroke="#c92a2a" stroke-width="2"/>
+    <text x="306" y="158" class="xs" fill="#c92a2a">HP 0</text>
+    <rect x="370" y="168" width="250" height="22" rx="5" fill="#fff5f5" stroke="#c92a2a"/>
+    <text x="495" y="183" text-anchor="middle" class="s" fill="#7a1d1d">취소 · 장판 정리 · 대기열 비움 · 사망 처리</text>
+    <text x="165" y="210" class="xs">점선 = 실행되지 않은 나머지</text>
+  </svg>
+</div>
+
+<h2>6. 짤패턴 고르는 규칙 (선택기)</h2>
+<ol class="steps">
+  <li>현재 짤 표</li>
+  <li>쿨 중인 조각 제외</li>
+  <li>직전 조각 제외 — 같은 패턴 연속 방지</li>
+  <li>남은 후보에서 가중치 추첨</li>
+  <li>후보가 0개면 → 직전 제외만 풀고 다시</li>
+</ol>
+
+<h2 class="pb">7. 지금 코드에서 바뀌는 것</h2>
+<table>
+  <thead><tr><th style="width:50%">지금 (BossMonsterController)</th><th>바뀐 뒤</th></tr></thead>
+  <tbody>
+    <tr><td><code>_skills</code> 타임라인 5개를 컨트롤러가 직접 보유</td><td>패턴 조각 5개 (컴포넌트) + 짤 표 · 기믹 표</td></tr>
+    <tr><td><code>RandomNode</code> + <code>UseSkill(0~4)</code> 하드코딩, 균등 무작위</td><td>선택기: 가중치 · 직전 제외 · 쿨</td></tr>
+    <tr><td>패턴 수명이 세 곳에 흩어짐: <code>_isActionRunning</code> · <code>_isSkillFiring</code> · <code>OnTimelineStopped</code></td><td>실행기 하나: <code>await pattern.Run(ctx, ct)</code></td></tr>
+    <tr><td>체력과 패턴이 무관</td><td>조건 조각 → 기믹 대기열</td></tr>
+    <tr><td>중단 = 사망 때 타임라인 Stop</td><td>취소 토큰 하나 (사망 때만 취소)</td></tr>
+  </tbody>
+</table>
+<p style="font-size:9pt">그대로 쓰는 것: 타임라인 에셋 5개 · 시그널 → <code>CastAbility</code> 경로 · <code>ISummonRegistry</code> 소환물 정리 · 입장 연출.</p>
+
+<h2>8. 실제 게임들은 어떻게 하나</h2>
+<table>
+  <thead><tr><th style="width:20%">사례</th><th style="width:44%">구조</th><th>이 기획과 비교</th></tr></thead>
+  <tbody>
+    <tr><td class="k">WoW 서버<br>SmartAI</td><td>공통 AI + DB 행. 한 행 = 이벤트(체력 % 등) + 페이즈 + 확률 + 행동</td><td>기믹 표와 거의 같은 모양 — <b>공통 뼈대 + 데이터</b></td></tr>
+    <tr><td class="k">WoW 서버<br>레이드 보스</td><td>보스마다 C++ 스크립트. 체력 % 확인 + 한 번만 발동 플래그</td><td>반대 갈래 — 기믹이 복잡하면 보스별 코드로 간다</td></tr>
+    <tr><td class="k">엘든 링</td><td>보스별 전투 스크립트 + 공용 함수: 거리 구간별 가중치 추첨, 쿨이면 가중치 0</td><td>선택기 규칙이 거의 같음</td></tr>
+    <tr><td class="k">언리얼 GAS</td><td>어빌리티를 조각처럼 부여, BT · StateTree가 고름</td><td>"조각 끼워 맞추기"와 가장 가까움</td></tr>
+    <tr><td class="k">로스트아크</td><td>구현 방식은 공개 자료 없음</td><td>동작(짤 + HP 줄 기믹)만 레퍼런스</td></tr>
+  </tbody>
+</table>
+<div class="callout c-green"><span class="lbl">이 기획의 자리</span>
+평범한 패턴은 데이터(<code>TimelinePattern</code>), 코드가 꼭 필요한 기믹만 전용 조각. 보스 전체를 스크립트로 만들지 않지만, 코드가 필요한 곳에서 막히지도 않는다 — 두 갈래의 중간.</div>
+
+<h2>9. 구현 순서</h2>
+<div class="fig">
+  <svg viewBox="0 0 700 78" width="100%">
+    <g>
+      <rect x="6" y="10" width="124" height="56" rx="10" fill="#3b5bdb"/>
+      <text x="68" y="33" text-anchor="middle" class="t" fill="#fff">1. 실행기</text>
+      <text x="68" y="51" text-anchor="middle" class="s" fill="#dfe6ff">TimelinePattern</text>
+      <rect x="146" y="10" width="124" height="56" rx="10" fill="#fff" stroke="#3b5bdb" stroke-width="1.4"/>
+      <text x="208" y="33" text-anchor="middle" class="t">2. 짤 표</text>
+      <text x="208" y="51" text-anchor="middle" class="s">선택기</text>
+      <rect x="286" y="10" width="124" height="56" rx="10" fill="#fff" stroke="#e8590c" stroke-width="1.4"/>
+      <text x="348" y="33" text-anchor="middle" class="t">3. 기믹 표</text>
+      <text x="348" y="51" text-anchor="middle" class="s">조건 조각 · 대기열</text>
+      <rect x="426" y="10" width="124" height="56" rx="10" fill="#fff" stroke="#e8590c" stroke-width="1.4"/>
+      <text x="488" y="33" text-anchor="middle" class="t">4. NextFillers</text>
+      <text x="488" y="51" text-anchor="middle" class="s">짤 표 교체</text>
+      <rect x="566" y="10" width="128" height="56" rx="10" fill="#fff" stroke="#7048e8" stroke-width="1.4"/>
+      <text x="630" y="33" text-anchor="middle" class="t">5. 전용 조각</text>
+      <text x="630" y="51" text-anchor="middle" class="s">코드가 필요한 기믹</text>
+      <line x1="130" y1="38" x2="144" y2="38" stroke="#1a1c22" marker-end="url(#ar)"/>
+      <line x1="270" y1="38" x2="284" y2="38" stroke="#1a1c22" marker-end="url(#ar)"/>
+      <line x1="410" y1="38" x2="424" y2="38" stroke="#1a1c22" marker-end="url(#ar)"/>
+      <line x1="550" y1="38" x2="564" y2="38" stroke="#1a1c22" marker-end="url(#ar)"/>
+    </g>
+  </svg>
+</div>
+<p style="font-size:9pt">1단계는 동작을 지금과 같게(무작위 5개) 두고 패턴 실행 부분만 바꾼다. 각 단계는 플레이로 확인할 수 있는 크기.</p>
+<p style="font-size:9pt"><b>범위 밖:</b> 기믹 성공/실패 분기(무력화 → 그로기, 실패 → 전멸기) · 추적 · 어그로/다중 대상 · HP 바 줄 표시 UI.</p>
+
+<div class="footer">원본: docs/Boss/BossContainer_Draft.md · 출처: azerothcore.org/wiki/smart_scripts · trinitycore.net (boss_mal_ganis) · nega.tv/posts/low-tech-ai-of-elden-ring · dev.epicgames.com (Abilities in Lyra) · inven.co.kr/board/lostark/4820/3667</div>
+</body></html>

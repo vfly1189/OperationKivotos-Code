@@ -6,7 +6,7 @@ using UnityEngine;
 // 켜고 끈 로그 (계획서 0-3) — 정책이 스포너를 켜거나 끈 순간을 한 줄씩 모았다가 씬 Clear · 플레이 종료 때 CSV로 쓴다.
 //  프레임 중엔 메모리 목록에 쌓기만 한다(Debug.Log · 파일 쓰기 없음) → 0-4 계측의 프레임 시간을 흐리지 않는다.
 //  그림자를 켜면 7개 정책이 한 파일에 같은 프레임 번호로 쌓인다(policy 열 = 계획서 번호 1~7).
-//  출력: MetricsLogs/activation_{실제 정책}[_shadow]_{시각}.csv
+//  출력: MetricsLogs/activation_{실제 정책}[_shadow][_x밀도][_off-항목][_lod]_{시각}.csv
 //    열: frame, time, policy, spawnerId, state(on/off), playerX, playerZ, distance(스포너 중심까지 x·z 거리)
 //    '#' 줄 = 정책 설정 · 실제/그림자 · 프레임 범위 · 동등성 검사 요약 (pandas: read_csv(path, comment='#'))
 //  에디터 · 개발 빌드에서만. 릴리즈 빌드에선 호출째(인자 평가 포함) 사라진다.
@@ -39,19 +39,21 @@ public static class ActivationLog
     private static bool _active;
     private static string _realName;
     private static bool _shadows;
+    private static RunConditions _conditions;
     private static int _spawnerCount;
     private static int _startFrame;
     private static System.DateTime _startedAt;
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-    public static void Begin(SpawnerRecord[] records, bool shadows, System.DateTime startedAt)
+    public static void Begin(SpawnerRecord[] records, bool shadows, System.DateTime startedAt, RunConditions conditions)
     {
         Save();   // 이전 세션이 안 닫혔으면 먼저 쓴다
 
         _active = true;
         _realName = null;
         _shadows = shadows;
+        _conditions = conditions;
         _spawnerCount = records.Length;
         _startFrame = UnityEngine.Time.frameCount;
         _startedAt = startedAt;
@@ -120,13 +122,13 @@ public static class ActivationLog
         //  ([Conditional]은 호출만 지우고 이 본문은 릴리즈에서도 컴파일된다).
         string dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "MetricsLogs"));
         Directory.CreateDirectory(dir);
-        string path = Path.Combine(dir, $"activation_{_realName}{(_shadows ? "_shadow" : "")}_{_startedAt:yyyyMMdd_HHmmss}.csv");
+        string path = Path.Combine(dir, $"activation_{_realName}{(_shadows ? "_shadow" : "")}{FieldMetrics.RunTag(_conditions)}_{_startedAt:yyyyMMdd_HHmmss}.csv");
 
         int endFrame = UnityEngine.Time.frameCount;
         CultureInfo inv = CultureInfo.InvariantCulture;
         using (var writer = new StreamWriter(path, false, System.Text.Encoding.UTF8))
         {
-            writer.WriteLine($"# started: {_startedAt:yyyy-MM-dd HH:mm:ss} · spawners: {_spawnerCount} · frames: {_startFrame}~{endFrame} · entries: {_entries.Count}");
+            writer.WriteLine($"# started: {_startedAt:yyyy-MM-dd HH:mm:ss} · spawners: {_spawnerCount} · {FieldMetrics.ConditionsText(_conditions)} · frames: {_startFrame}~{endFrame} · entries: {_entries.Count}");
             foreach (string line in _policyLines) writer.WriteLine(line);
             foreach (KeyValuePair<string, CheckStat> kv in _checks)
                 writer.WriteLine($"# check {kv.Key}: 불일치 {kv.Value.Mismatches} / {kv.Value.Frames} 프레임" +

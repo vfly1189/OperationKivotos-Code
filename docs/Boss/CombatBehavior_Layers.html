@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>전투 행동 설계 — 세 층</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+    --red:#c92a2a; --red-soft:#fff5f5;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; font-size:10.4pt; line-height:1.6; background:#fff; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:13pt; margin:4px 0 6px; font-weight:800; break-after:avoid; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  h2 .chip{ display:inline-block; font-size:9pt; padding:1px 9px; border-radius:7px; color:#fff; margin-right:6px; vertical-align:2px; }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  .lead{ font-size:10.4pt; margin:4px 0 8px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 6px; margin:9px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:10pt; font-weight:800; margin:0 0 4px; }
+  svg{ display:block; margin:2px 0; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:11px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:12.5px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:9.8px; } .s:not([fill]){ fill:#3a3f4a; }
+  .xs{ font-size:8.6px; } .xs:not([fill]){ fill:#5b6270; }
+  .c{ text-anchor:middle; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; break-inside:avoid; }
+  th{ text-align:left; padding:5px 8px; background:var(--ink); color:#fff; font-weight:700; font-size:8.8pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:6px 8px; border-bottom:1px solid var(--line2); vertical-align:top; font-size:9.2pt; line-height:1.45; }
+  tbody tr:last-child td{ border-bottom:none; }
+  td.L{ font-weight:800; color:#fff; white-space:nowrap; text-align:center; vertical-align:middle; width:62px; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9.4pt; line-height:1.55; break-inside:avoid; }
+  .callout .lbl{ font-weight:800; font-size:9.6pt; display:block; margin-bottom:4px; }
+  .callout ul{ margin:2px 0 0; padding-left:16px; } .callout li{ margin:2px 0; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .opt{ background:#fff; border-radius:9px; padding:7px 10px; color:var(--ink); }
+  .opt b{ display:block; margin-bottom:2px; }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--red); font-weight:800; } .mid{ color:var(--amber-ink); font-weight:800; }
+  .pb{ break-before:page; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.4pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker>
+    <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2b8a3e"/></marker>
+    <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c92a2a"/></marker>
+  </defs>
+</svg>
+
+<!-- ───────────────────────── 1쪽 ───────────────────────── -->
+<div class="kicker">Combat · 설계 출발점 · 2026-10-20</div>
+<h1>전투 행동 설계 : 언제, 무엇을, 어떻게 처리하는가</h1>
+<p class="lead">보스 패턴을 만들려고 보니, 기존 구조는 <strong>행동 하나 안에 세 층(언제 · 무엇을 · 어떻게)이 섞여</strong> 있었다. 층을 나눠서 따로 생각하는 것에서 출발한다.</p>
+
+<div class="fig">
+<div class="figt">그림 1. 섞여 있던 것을 나눈다</div>
+<svg viewBox="0 0 700 300" width="100%">
+  <!-- 왼쪽: 기존 -->
+  <rect x="10" y="10" width="320" height="282" rx="12" fill="#fff" stroke="#e3e6ec"/>
+  <text class="tb" x="24" y="34">기존 — 스킬 하나 = Effect 목록 하나</text>
+  <text class="xs" x="24" y="51">예: 연발 (RepeatEffect 주석에 적힌 예시 그대로)</text>
+  <rect x="24" y="60" width="292" height="164" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+  <text class="t" x="34" y="78">AbilityData : 연발</text>
+  <rect x="34" y="86" width="272" height="130" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t" x="44" y="104" fill="#2b3a8f">RepeatEffect — 5회 · 0.1초 간격</text>
+  <rect x="256" y="92" width="44" height="17" rx="5" fill="#3b5bdb"/><text class="xs c" x="278" y="104" fill="#fff">언제</text>
+  <rect x="46" y="114" width="250" height="56" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t" x="56" y="131" fill="#8a3708">SpawnProjectiles — 총알 생성</text>
+  <rect x="246" y="119" width="44" height="17" rx="5" fill="#e8590c"/><text class="xs c" x="268" y="131" fill="#fff">무엇을</text>
+  <rect x="56" y="141" width="184" height="21" rx="5" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="xs" x="63" y="155" fill="#1f6b2e">안에서 피해 계산 (BuildOutgoingDamage)</text>
+  <rect x="246" y="143" width="44" height="17" rx="5" fill="#2b8a3e"/><text class="xs c" x="268" y="155" fill="#fff">어떻게</text>
+  <rect x="46" y="178" width="250" height="30" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t" x="56" y="197" fill="#8a3708">SpawnVFX — 총구 화염</text>
+  <rect x="246" y="184" width="44" height="17" rx="5" fill="#e8590c"/><text class="xs c" x="268" y="196" fill="#fff">무엇을</text>
+  <rect x="24" y="234" width="292" height="46" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+  <text class="t" x="34" y="253">총알 프리팹 — OnTriggerEnter</text>
+  <text class="s" x="34" y="270">명중하면 여기서 피해 적용 + 상태이상 부여</text>
+  <rect x="256" y="244" width="44" height="17" rx="5" fill="#2b8a3e"/><text class="xs c" x="278" y="256" fill="#fff">어떻게</text>
+
+  <!-- 가운데 화살표 -->
+  <line x1="336" y1="150" x2="364" y2="150" stroke="#3b5bdb" stroke-width="2" marker-end="url(#arB)"/>
+  <text class="xs c" x="350" y="140" fill="#2b3a8f">나눈다</text>
+
+  <!-- 오른쪽: 나눈 후 -->
+  <rect x="370" y="10" width="320" height="282" rx="12" fill="#fff" stroke="#e3e6ec"/>
+  <text class="tb" x="384" y="34">나눈 후 — 층마다 따로</text>
+  <rect x="384" y="46" width="292" height="70" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="tb" x="396" y="66" fill="#2b3a8f">언제</text>
+  <text class="s" x="396" y="84" fill="#2b3a8f">BT · 실행기 · 패턴(순서 · 가중치 · 쿨)</text>
+  <text class="s" x="396" y="101" fill="#2b3a8f">예: 사거리 안이면 '공격' 패턴 시작</text>
+  <line x1="530" y1="117" x2="530" y2="128" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <rect x="384" y="130" width="292" height="70" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="tb" x="396" y="150" fill="#8a3708">무엇을</text>
+  <text class="s" x="396" y="168" fill="#8a3708">동작: 추적 · 발사 · 소환 · 장판 …</text>
+  <text class="s" x="396" y="185" fill="#8a3708">예: 발사 = 총알 종류 · 5발 · 0.1초 간격</text>
+  <line x1="530" y1="201" x2="530" y2="212" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <rect x="384" y="214" width="292" height="70" rx="9" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="tb" x="396" y="234" fill="#1f6b2e">어떻게</text>
+  <text class="s" x="396" y="252" fill="#1f6b2e">맞으면: 피해 · 상태이상을 한 곳에서 적용</text>
+  <text class="s" x="396" y="269" fill="#1f6b2e">예: 총알은 "맞았다"만 알리고 계산하지 않음</text>
+</svg>
+</div>
+
+<table>
+  <thead><tr><th>층</th><th style="width:190px">묻는 것</th><th style="width:190px">맡는 것</th><th>단위</th></tr></thead>
+  <tbody>
+    <tr><td class="L" style="background:#3b5bdb">언제</td><td>지금 무엇을 할까 · 어떤 순서로</td><td>BT · 실행기 · 조건 감시</td><td><strong>패턴</strong> = 동작 순서 + 고르기 정보(가중치 · 쿨 · 사거리)</td></tr>
+    <tr><td class="L" style="background:#e8590c">무엇을</td><td>세상에 무엇을 할까</td><td>추적 · 발사 · 소환 · 장판 생성</td><td><strong>동작</strong> = 시작 → 진행 → 끝 (또는 취소)</td></tr>
+    <tr><td class="L" style="background:#2b8a3e">어떻게</td><td>맞으면 무슨 일이 생기나</td><td>만들기 → 감지 → 적용</td><td><strong>Payload</strong> = 피해 · 공격자 · 상태이상 묶음</td></tr>
+  </tbody>
+</table>
+
+<!-- ───────────────────────── 2쪽 ───────────────────────── -->
+<h2 class="pb">한 번의 공격이 세 층을 지나가는 모습</h2>
+
+<div class="fig">
+<div class="figt">그림 2. 일반 몬스터(AR)가 플레이어를 쏠 때</div>
+<svg viewBox="0 0 700 395" width="100%">
+  <!-- 언제 -->
+  <rect x="10" y="8" width="680" height="120" rx="12" fill="#eef2ff"/>
+  <text class="tb" x="24" y="30" fill="#3b5bdb">언제</text>
+  <rect x="24" y="44" width="130" height="56" rx="8" fill="#fff" stroke="#3b5bdb"/>
+  <text class="t c" x="89" y="67">BT 틱</text><text class="s c" x="89" y="85">매 프레임 위에서부터</text>
+  <rect x="172" y="44" width="140" height="56" rx="8" fill="#fff" stroke="#3b5bdb"/>
+  <text class="t c" x="242" y="67">사망? 리쉬?</text><text class="s c" x="242" y="85">둘 다 아니오 → 다음</text>
+  <rect x="330" y="44" width="160" height="56" rx="8" fill="#fff" stroke="#3b5bdb"/>
+  <text class="t c" x="410" y="67">'공격' 패턴 고르기</text><text class="s c" x="410" y="85">대상 = 플레이어 · 사거리 확인</text>
+  <rect x="508" y="44" width="168" height="56" rx="8" fill="#fff" stroke="#3b5bdb"/>
+  <text class="t c" x="592" y="67">실행기에 넘김</text><text class="s c" x="592" y="85">끝날 때까지 Running</text>
+  <line x1="154" y1="72" x2="170" y2="72" stroke="#3b5bdb" marker-end="url(#arB)"/>
+  <line x1="312" y1="72" x2="328" y2="72" stroke="#3b5bdb" marker-end="url(#arB)"/>
+  <line x1="490" y1="72" x2="506" y2="72" stroke="#3b5bdb" marker-end="url(#arB)"/>
+  <text class="xs" x="24" y="118" fill="#2b3a8f">대상은 여기서 정해서, 아래 동작들에 입력으로 넘긴다</text>
+  <text class="xs" x="584" y="118" fill="#2b3a8f" text-anchor="end">패턴 '공격' = [추적 → 발사]</text>
+
+  <!-- 무엇을 -->
+  <rect x="10" y="138" width="680" height="110" rx="12" fill="#fff4ec"/>
+  <text class="tb" x="24" y="160" fill="#e8590c">무엇을</text>
+  <path d="M592 100 V132 H230 V168" fill="none" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <rect x="110" y="170" width="240" height="58" rx="8" fill="#fff" stroke="#e8590c"/>
+  <text class="t c" x="230" y="193">추적 동작</text><text class="s c" x="230" y="211">대상까지 사거리 안으로 이동 · 도착하면 끝</text>
+  <rect x="410" y="170" width="266" height="58" rx="8" fill="#fff" stroke="#e8590c"/>
+  <text class="t c" x="543" y="193">발사 동작</text><text class="s c" x="543" y="211">총알 5발 · 0.05초 간격 · 마지막 발이면 끝</text>
+  <line x1="350" y1="199" x2="408" y2="199" stroke="#e8590c" marker-end="url(#arA)"/>
+  <text class="xs c" x="380" y="192" fill="#8a3708">다음</text>
+
+  <!-- 어떻게 -->
+  <rect x="10" y="258" width="680" height="128" rx="12" fill="#ebfbee"/>
+  <text class="tb" x="24" y="280" fill="#2b8a3e">어떻게</text>
+  <path d="M543 228 V252 H124 V290" fill="none" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <rect x="24" y="292" width="200" height="72" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="t c" x="124" y="313">① 만들기 (발사 순간)</text><text class="s c" x="124" y="331">총알마다 Payload 하나</text><text class="s c" x="124" y="347">피해 · 공격자 · 상태이상</text>
+  <rect x="250" y="292" width="190" height="72" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="t c" x="345" y="313">② 감지 (총알)</text><text class="s c" x="345" y="331">충돌만 확인</text><text class="s c" x="345" y="347">계산 · 적용은 하지 않음</text>
+  <rect x="466" y="292" width="210" height="72" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="t c" x="571" y="313">③ 적용 (한 곳)</text><text class="s c" x="571" y="331">피해 → Health.TakeDamage</text><text class="s c" x="571" y="347">상태이상 → StatusRunner</text>
+  <line x1="224" y1="328" x2="248" y2="328" stroke="#2b8a3e" marker-end="url(#arG)"/>
+  <line x1="440" y1="328" x2="464" y2="328" stroke="#2b8a3e" marker-end="url(#arG)"/>
+  <text class="xs" x="24" y="379" fill="#1f6b2e">총알 · 장판 · 번개 무엇이든 ② 감지 방식만 다르고, ① 만들기와 ③ 적용은 같은 길</text>
+</svg>
+</div>
+
+<div class="fig">
+<div class="figt">그림 3. 보스 기믹도 같은 세 층 — HP 60줄에서 '충격파 콤보'</div>
+<svg viewBox="0 0 700 262" width="100%">
+  <rect x="10" y="8" width="680" height="94" rx="12" fill="#eef2ff"/>
+  <text class="tb" x="24" y="28" fill="#3b5bdb">언제</text>
+  <rect x="24" y="40" width="150" height="48" rx="8" fill="#fff" stroke="#3b5bdb"/>
+  <text class="t c" x="99" y="60">조건 감시</text><text class="s c" x="99" y="77">HP 60줄 넘음 → 쌓기</text>
+  <rect x="192" y="40" width="130" height="48" rx="8" fill="#fff" stroke="#3b5bdb"/>
+  <text class="t c" x="257" y="60">기믹 대기열</text><text class="s c" x="257" y="77">[충격파 콤보]</text>
+  <rect x="340" y="40" width="150" height="48" rx="8" fill="#fff" stroke="#3b5bdb"/>
+  <text class="t c" x="415" y="60">지금 짤패턴 끝나면</text><text class="s c" x="415" y="77">대기열에서 꺼냄</text>
+  <rect x="508" y="40" width="168" height="48" rx="8" fill="#fff" stroke="#3b5bdb"/>
+  <text class="t c" x="592" y="60">실행기: 충격파 콤보</text><text class="s c" x="592" y="77">점프 → 충격파 → 소환</text>
+  <line x1="174" y1="64" x2="190" y2="64" stroke="#3b5bdb" marker-end="url(#arB)"/>
+  <line x1="322" y1="64" x2="338" y2="64" stroke="#3b5bdb" marker-end="url(#arB)"/>
+  <line x1="490" y1="64" x2="506" y2="64" stroke="#3b5bdb" marker-end="url(#arB)"/>
+
+  <rect x="10" y="112" width="680" height="68" rx="12" fill="#fff4ec"/>
+  <text class="tb" x="24" y="132" fill="#e8590c">무엇을</text>
+  <path d="M592 88 V106 H185 V126" fill="none" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <rect x="110" y="128" width="150" height="40" rx="8" fill="#fff" stroke="#e8590c"/><text class="t c" x="185" y="152">이동 (점프)</text>
+  <rect x="300" y="128" width="170" height="40" rx="8" fill="#fff" stroke="#e8590c"/><text class="t c" x="385" y="152">장판 생성 (충격파)</text>
+  <rect x="510" y="128" width="166" height="40" rx="8" fill="#fff" stroke="#e8590c"/><text class="t c" x="593" y="152">소환 (졸개 3마리)</text>
+  <line x1="260" y1="148" x2="298" y2="148" stroke="#e8590c" marker-end="url(#arA)"/>
+  <line x1="470" y1="148" x2="508" y2="148" stroke="#e8590c" marker-end="url(#arA)"/>
+
+  <rect x="10" y="190" width="680" height="64" rx="12" fill="#ebfbee"/>
+  <text class="tb" x="24" y="210" fill="#2b8a3e">어떻게</text>
+  <path d="M385 168 V184 H180 V206" fill="none" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <line x1="593" y1="168" x2="593" y2="206" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <rect x="80" y="208" width="300" height="38" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="s c" x="230" y="231">충격파 장판: ① Payload → ② 겹침 감지 → ③ 적용</text>
+  <rect x="420" y="208" width="256" height="38" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="s c" x="548" y="231">졸개는 자기 BT · 자기 패턴 (같은 세 층)</text>
+</svg>
+</div>
+
+<!-- ───────────────────────── 3쪽 ───────────────────────── -->
+<h2 class="pb"><span class="chip" style="background:#3b5bdb">언제</span>BT가 고르고, 실행기가 틀어 준다</h2>
+
+<div class="fig">
+<div class="figt">그림 4. 보스 BT — 위에서부터 검사, 처음 걸린 한 줄만 실행</div>
+<svg viewBox="0 0 700 282" width="100%">
+  <line x1="44" y1="36" x2="44" y2="252" stroke="#b9c4f2" stroke-width="2"/>
+  <g>
+    <rect x="64" y="16" width="300" height="42" rx="8" fill="#fff5f5" stroke="#c92a2a"/>
+    <circle cx="44" cy="37" r="12" fill="#c92a2a"/><text class="t c" x="44" y="41" fill="#fff">1</text>
+    <text class="t" x="76" y="33">사망했나?</text><text class="s" x="76" y="49">→ 실행 중 패턴 취소 · 대기열 비움 · 사망 처리</text>
+  </g>
+  <g>
+    <rect x="64" y="70" width="300" height="42" rx="8" fill="#fff" stroke="#3b5bdb"/>
+    <circle cx="44" cy="91" r="12" fill="#3b5bdb"/><text class="t c" x="44" y="95" fill="#fff">2</text>
+    <text class="t" x="76" y="87">실행 중인 패턴이 있나?</text><text class="s" x="76" y="103">→ 계속 (Running) · 아래로 안 내려감</text>
+  </g>
+  <g>
+    <rect x="64" y="124" width="300" height="42" rx="8" fill="#fff" stroke="#3b5bdb"/>
+    <circle cx="44" cy="145" r="12" fill="#3b5bdb"/><text class="t c" x="44" y="149" fill="#fff">3</text>
+    <text class="t" x="76" y="141">기믹 대기열에 뭐가 있나?</text><text class="s" x="76" y="157">→ 하나 꺼내 실행기에 넘김</text>
+  </g>
+  <g>
+    <rect x="64" y="178" width="300" height="42" rx="8" fill="#fff" stroke="#3b5bdb"/>
+    <circle cx="44" cy="199" r="12" fill="#3b5bdb"/><text class="t c" x="44" y="203" fill="#fff">4</text>
+    <text class="t" x="76" y="195">짤패턴을 고를 수 있나? (간격 지남)</text><text class="s" x="76" y="211">→ 가중치 · 쿨 · 직전 제외로 골라 실행기에</text>
+  </g>
+  <g>
+    <rect x="64" y="232" width="300" height="42" rx="8" fill="#fff" stroke="#8a91a0"/>
+    <circle cx="44" cy="253" r="12" fill="#8a91a0"/><text class="t c" x="44" y="257" fill="#fff">5</text>
+    <text class="t" x="76" y="249">그 외</text><text class="s" x="76" y="265">→ 대기 (Idle)</text>
+  </g>
+
+  <rect x="390" y="16" width="300" height="78" rx="9" fill="#f7f8fa"/>
+  <text class="t" x="404" y="38">1번만 2번보다 위</text>
+  <text class="s" x="404" y="58">사망이 패턴을 끊는 유일한 길</text>
+  <text class="s" x="404" y="76">나머지는 전부 지금 패턴이 끝나야 차례가 옴</text>
+  <rect x="390" y="104" width="300" height="78" rx="9" fill="#f7f8fa"/>
+  <text class="t" x="404" y="126">2번 덕분에 패턴은 끝까지 간다</text>
+  <text class="s" x="404" y="146">기믹이 쌓여도 지금 짤패턴을 끊지 않음</text>
+  <text class="s" x="404" y="164">끝나면 다음 틱에 3번이 먼저 걸림</text>
+  <rect x="390" y="192" width="300" height="82" rx="9" fill="#f7f8fa"/>
+  <text class="t" x="404" y="214">조건 감시는 쌓기만 한다</text>
+  <text class="s" x="404" y="234">매 틱 기믹 조건(HP 줄 등)을 위에서부터 확인</text>
+  <text class="s" x="404" y="252">넘은 기믹을 대기열에 추가 → 실행은 3번 줄</text>
+</svg>
+</div>
+
+<div class="fig">
+<div class="figt">그림 5. 실행기 = 패턴 하나의 수명 (지금 몇 번째 동작인지만 안다)</div>
+<svg viewBox="0 0 700 172" width="100%">
+  <rect x="20" y="16" width="90" height="50" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t c" x="65" y="37">시작</text><text class="s c" x="65" y="54">패턴 받음</text>
+  <rect x="130" y="16" width="120" height="50" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t c" x="190" y="37">동작 1</text><text class="s c" x="190" y="54">점프</text>
+  <rect x="270" y="16" width="130" height="50" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t c" x="335" y="37">동작 2</text><text class="s c" x="335" y="54">충격파 장판</text>
+  <rect x="420" y="16" width="120" height="50" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t c" x="480" y="37">동작 3</text><text class="s c" x="480" y="54">소환</text>
+  <rect x="560" y="16" width="120" height="50" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t c" x="620" y="37">끝</text><text class="s c" x="620" y="54">BT에 Success</text>
+  <line x1="110" y1="41" x2="128" y2="41" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <line x1="250" y1="41" x2="268" y2="41" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <line x1="400" y1="41" x2="418" y2="41" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <line x1="540" y1="41" x2="558" y2="41" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <text class="xs c" x="190" y="84">앞 동작이 "끝"을 알려야 다음 동작으로</text>
+  <line x1="335" y1="118" x2="335" y2="70" stroke="#c92a2a" stroke-dasharray="4 3" marker-end="url(#arR)"/>
+  <rect x="190" y="118" width="290" height="46" rx="8" fill="#fff5f5" stroke="#c92a2a"/>
+  <text class="t c" x="335" y="137" fill="#c92a2a">사망 → 취소</text>
+  <text class="s c" x="335" y="155">진행 중인 동작에 취소 전달 · 장판 · 투사체 정리</text>
+</svg>
+</div>
+
+<div class="fig">
+<div class="figt">그림 6. 패턴 = 동작 순서 + 고르기 정보 — 보스든 일반 몬스터든 같은 모양</div>
+<svg viewBox="0 0 700 150" width="100%">
+  <rect x="10" y="8" width="335" height="132" rx="10" fill="#fff" stroke="#3b5bdb"/>
+  <text class="tb" x="24" y="30">보스 패턴 '충격파 콤보'</text>
+  <text class="xs" x="24" y="52" fill="#2b3a8f">고르기 정보 (언제 층)</text>
+  <rect x="24" y="58" width="80" height="24" rx="6" fill="#eef2ff"/><text class="s c" x="64" y="74" fill="#2b3a8f">가중치 3</text>
+  <rect x="112" y="58" width="80" height="24" rx="6" fill="#eef2ff"/><text class="s c" x="152" y="74" fill="#2b3a8f">쿨 10초</text>
+  <rect x="200" y="58" width="90" height="24" rx="6" fill="#eef2ff"/><text class="s c" x="245" y="74" fill="#2b3a8f">사거리 6m</text>
+  <text class="xs" x="24" y="102" fill="#8a3708">순서 (칸 하나 = 무엇을 층의 동작)</text>
+  <rect x="24" y="108" width="70" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text class="s c" x="59" y="124" fill="#8a3708">점프</text>
+  <rect x="112" y="108" width="80" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text class="s c" x="152" y="124" fill="#8a3708">충격파</text>
+  <rect x="210" y="108" width="70" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text class="s c" x="245" y="124" fill="#8a3708">소환</text>
+  <line x1="94" y1="120" x2="110" y2="120" stroke="#e8590c" marker-end="url(#arA)"/>
+  <line x1="192" y1="120" x2="208" y2="120" stroke="#e8590c" marker-end="url(#arA)"/>
+
+  <rect x="355" y="8" width="335" height="132" rx="10" fill="#fff" stroke="#3b5bdb"/>
+  <text class="tb" x="369" y="30">일반 몬스터 '공격'</text>
+  <text class="xs" x="369" y="52" fill="#2b3a8f">고르기 정보 (언제 층)</text>
+  <rect x="369" y="58" width="90" height="24" rx="6" fill="#eef2ff"/><text class="s c" x="414" y="74" fill="#2b3a8f">사거리 8m</text>
+  <text class="xs" x="469" y="74" fill="#5b6270">선택지가 하나라 가중치 · 쿨 없음</text>
+  <text class="xs" x="369" y="102" fill="#8a3708">순서 (칸 하나 = 무엇을 층의 동작)</text>
+  <rect x="369" y="108" width="70" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text class="s c" x="404" y="124" fill="#8a3708">추적</text>
+  <rect x="457" y="108" width="70" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text class="s c" x="492" y="124" fill="#8a3708">발사</text>
+  <line x1="439" y1="120" x2="455" y2="120" stroke="#e8590c" marker-end="url(#arA)"/>
+</svg>
+</div>
+
+<!-- ───────────────────────── 4쪽 ───────────────────────── -->
+<h2 class="pb"><span class="chip" style="background:#e8590c">무엇을</span>동작은 모두 같은 약속을 따른다</h2>
+
+<div class="fig">
+<div class="figt">그림 7. 동작의 약속 — 시작 · 진행 · 끝 · 취소</div>
+<svg viewBox="0 0 700 192" width="100%">
+  <rect x="20" y="44" width="90" height="46" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t c" x="65" y="64">시작</text><text class="xs c" x="65" y="80">Begin</text>
+  <rect x="150" y="44" width="110" height="46" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t c" x="205" y="64">진행 중</text><text class="xs c" x="205" y="80">Running</text>
+  <rect x="300" y="44" width="90" height="46" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="t c" x="345" y="64">끝</text><text class="xs c" x="345" y="80">Success</text>
+  <path d="M180 44 C180 14, 230 14, 230 42" fill="none" stroke="#e8590c" marker-end="url(#arA)"/>
+  <text class="xs c" x="205" y="16" fill="#8a3708">매 틱</text>
+  <line x1="110" y1="67" x2="148" y2="67" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <line x1="260" y1="67" x2="298" y2="67" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <text class="xs c" x="279" y="60">끝 조건</text>
+  <line x1="205" y1="90" x2="205" y2="128" stroke="#c92a2a" stroke-dasharray="4 3" marker-end="url(#arR)"/>
+  <text class="xs" x="212" y="114" fill="#c92a2a">사망 등</text>
+  <rect x="150" y="130" width="110" height="46" rx="8" fill="#fff5f5" stroke="#c92a2a"/>
+  <text class="t c" x="205" y="150" fill="#c92a2a">취소</text><text class="xs c" x="205" y="166">Cancel · 만든 것 정리</text>
+
+  <text class="tb" x="424" y="30">동작마다 다른 건 "끝"뿐</text>
+  <rect x="424" y="42" width="266" height="28" rx="6" fill="#f7f8fa"/>
+  <text class="t" x="436" y="61">추적</text><text class="s" x="500" y="61">사거리 안에 도착하면</text>
+  <rect x="424" y="74" width="266" height="28" rx="6" fill="#fff"/>
+  <text class="t" x="436" y="93">발사</text><text class="s" x="500" y="93">마지막 발을 만들면</text>
+  <rect x="424" y="106" width="266" height="28" rx="6" fill="#f7f8fa"/>
+  <text class="t" x="436" y="125">소환</text><text class="s" x="500" y="125">생성이 끝나면</text>
+  <text class="s" x="424" y="158" fill="#2b3a8f">이 모양 = BT 노드 상태(Running / Success)와 같음</text>
+  <text class="s" x="424" y="175" fill="#2b3a8f">→ 동작을 BT 말단 노드로 바로 쓸 수 있다</text>
+</svg>
+</div>
+
+<div class="fig">
+<div class="figt">그림 8. "대상 찾기"는 동작 밖으로 뺀다</div>
+<svg viewBox="0 0 700 178" width="100%">
+  <text class="t" x="20" y="20" fill="#c92a2a">안에 두면 — 동작마다 같은 코드</text>
+  <rect x="20" y="32" width="300" height="50" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="tb" x="34" y="62">추적</text>
+  <rect x="90" y="44" width="100" height="26" rx="6" fill="#fff5f5" stroke="#c92a2a"/><text class="s c" x="140" y="61" fill="#c92a2a">대상 찾기</text>
+  <text class="s" x="200" y="61">+ 이동</text>
+  <rect x="20" y="94" width="300" height="50" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="tb" x="34" y="124">발사</text>
+  <rect x="90" y="106" width="100" height="26" rx="6" fill="#fff5f5" stroke="#c92a2a"/><text class="s c" x="140" y="123" fill="#c92a2a">대상 찾기</text>
+  <text class="s" x="200" y="123">+ 생성</text>
+  <text class="xs" x="20" y="166">대상 규칙(캐릭터 교체 등)이 바뀌면 동작마다 고쳐야 함</text>
+
+  <text class="t" x="370" y="20" fill="#1f6b2e">밖으로 빼면 — 한 번 정해서 넘김</text>
+  <rect x="370" y="32" width="140" height="112" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="tb c" x="440" y="74" fill="#2b3a8f">언제 층</text>
+  <text class="s c" x="440" y="94" fill="#2b3a8f">대상 · 지점 정하기</text>
+  <text class="xs c" x="440" y="110" fill="#2b3a8f">(한 번)</text>
+  <rect x="570" y="32" width="120" height="50" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="tb c" x="630" y="54">추적</text><text class="s c" x="630" y="71">이동만</text>
+  <rect x="570" y="94" width="120" height="50" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="tb c" x="630" y="116">발사</text><text class="s c" x="630" y="133">생성만</text>
+  <line x1="510" y1="70" x2="568" y2="57" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <line x1="510" y1="106" x2="568" y2="119" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <text class="xs c" x="540" y="92">입력</text>
+</svg>
+</div>
+
+<div class="fig">
+<div class="figt">그림 9. 설정값과 실행 중 상태를 나눈다</div>
+<svg viewBox="0 0 700 130" width="100%">
+  <rect x="20" y="10" width="290" height="110" rx="10" fill="#fff" stroke="#e8590c"/>
+  <text class="tb" x="34" y="34">설정값 — 에셋, 모두가 공유</text>
+  <text class="s" x="34" y="56">• 총알 프리팹</text>
+  <text class="s" x="34" y="74">• 5발 · 0.05초 간격</text>
+  <text class="s" x="34" y="92">• 실행 중에 바뀌지 않음</text>
+  <line x1="312" y1="65" x2="386" y2="65" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <text class="xs c" x="349" y="57">읽기만</text>
+  <rect x="390" y="10" width="300" height="110" rx="10" fill="#fff" stroke="#e8590c"/>
+  <text class="tb" x="404" y="34">실행 중 상태 — 몬스터마다 따로</text>
+  <text class="s" x="404" y="56">• 지금 몇 발째</text>
+  <text class="s" x="404" y="74">• 다음 발사 시각</text>
+  <text class="s" x="404" y="92" fill="#c92a2a">• 풀에서 다시 꺼낼 때 OnSpawn에서 초기화</text>
+</svg>
+</div>
+
+<div class="callout c-amber">
+  <span class="lbl">정할 것 — 발사 타이밍은 누가 정하나</span>
+  <div class="two">
+    <div class="opt"><b>A. 애니메이션 이벤트가 신호 (지금 방식)</b>모션과 정확히 맞는다. 대신 Animator를 끄면 발사가 멈춘다 — 갱신 LOD 끄기 실험 때 <code>EmulateAnimEvents</code>로 이벤트를 흉내 내야 했던 이유.</div>
+    <div class="opt"><b>B. 동작이 시간으로 정함</b>Animator 없이도 돈다. 대신 모션과 발사 시각을 손으로 맞춰야 한다.</div>
+  </div>
+</div>
+
+<!-- ───────────────────────── 5쪽 ───────────────────────── -->
+<h2 class="pb"><span class="chip" style="background:#2b8a3e">어떻게</span>만들기 → 감지 → 적용</h2>
+
+<div class="fig">
+<div class="figt">그림 10. 피해 파이프라인 세 단계</div>
+<svg viewBox="0 0 700 132" width="100%">
+  <rect x="10" y="10" width="210" height="112" rx="10" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="tb" x="24" y="34" fill="#1f6b2e">① 만들기</text>
+  <text class="s" x="24" y="56">언제: 발사 · 생성 순간</text>
+  <text class="s" x="24" y="74">누가: 공격자 스탯</text>
+  <text class="s" x="24" y="92">결과: Payload</text>
+  <text class="xs" x="24" y="108">(피해 · 공격자 · 상태이상)</text>
+  <line x1="220" y1="66" x2="243" y2="66" stroke="#2b8a3e" stroke-width="2" marker-end="url(#arG)"/>
+  <rect x="245" y="10" width="210" height="112" rx="10" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="tb" x="259" y="34" fill="#1f6b2e">② 감지</text>
+  <text class="s" x="259" y="56">언제: 충돌 · 겹침</text>
+  <text class="s" x="259" y="74">누가: 총알 · 장판 · 번개</text>
+  <text class="s" x="259" y="92">하는 일: "누가 맞았다"만</text>
+  <line x1="455" y1="66" x2="478" y2="66" stroke="#2b8a3e" stroke-width="2" marker-end="url(#arG)"/>
+  <rect x="480" y="10" width="210" height="112" rx="10" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="tb" x="494" y="34" fill="#1f6b2e">③ 적용</text>
+  <text class="s" x="494" y="56">언제: 감지 직후</text>
+  <text class="s" x="494" y="74">누가: 적용기 (한 곳)</text>
+  <text class="s" x="494" y="92">피해 → Health</text>
+  <text class="s" x="494" y="108">상태이상 → StatusRunner</text>
+</svg>
+</div>
+
+<div class="fig">
+<div class="figt">그림 11. 지금 코드 vs 바꾼 후</div>
+<svg viewBox="0 0 700 262" width="100%">
+  <text class="t" x="20" y="18" fill="#c92a2a">지금 — 맞히는 쪽마다 따로 적용</text>
+  <rect x="20" y="30" width="180" height="44" rx="8" fill="#fff" stroke="#8a91a0"/>
+  <text class="t" x="30" y="48">총알 (BulletController)</text><text class="xs" x="30" y="64" fill="#c92a2a">상태이상 부여는 여기에만</text>
+  <rect x="20" y="82" width="180" height="44" rx="8" fill="#fff" stroke="#8a91a0"/>
+  <text class="t" x="30" y="100">장판 (GenesisAttack)</text><text class="xs" x="30" y="116" fill="#c92a2a">숫자만 받음 — Init(float)</text>
+  <rect x="20" y="134" width="180" height="44" rx="8" fill="#fff" stroke="#8a91a0"/>
+  <text class="t" x="30" y="152">번개 (Lightning)</text><text class="xs" x="30" y="168" fill="#c92a2a">피해 10 고정 · 공격자 = 번개 자신</text>
+  <rect x="20" y="186" width="180" height="44" rx="8" fill="#fff" stroke="#8a91a0"/>
+  <text class="t" x="30" y="204">DealDamage (Effect)</text><text class="xs" x="30" y="220" fill="#c92a2a">공격력 직접 사용 · 치명타 없음</text>
+  <rect x="238" y="104" width="92" height="52" rx="8" fill="#fff" stroke="#1a1c22"/>
+  <text class="t c" x="284" y="126">Health</text><text class="xs c" x="284" y="142">TakeDamage</text>
+  <line x1="200" y1="52" x2="236" y2="112" stroke="#8a91a0" marker-end="url(#ar)"/>
+  <line x1="200" y1="104" x2="236" y2="124" stroke="#8a91a0" marker-end="url(#ar)"/>
+  <line x1="200" y1="156" x2="236" y2="136" stroke="#8a91a0" marker-end="url(#ar)"/>
+  <line x1="200" y1="208" x2="236" y2="148" stroke="#8a91a0" marker-end="url(#ar)"/>
+  <text class="xs" x="20" y="250">네 군데가 각자 DamageInfo를 만들고, 각자 적용한다</text>
+
+  <line x1="350" y1="10" x2="350" y2="252" stroke="#e3e6ec"/>
+
+  <text class="t" x="370" y="18" fill="#1f6b2e">바꾼 후 — 감지만 각자, 적용은 한 곳</text>
+  <rect x="370" y="30" width="110" height="44" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="t c" x="425" y="48">총알</text><text class="xs c" x="425" y="64">감지만</text>
+  <rect x="370" y="82" width="110" height="44" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="t c" x="425" y="100">장판</text><text class="xs c" x="425" y="116">감지만</text>
+  <rect x="370" y="134" width="110" height="44" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="t c" x="425" y="152">번개</text><text class="xs c" x="425" y="168">감지만</text>
+  <rect x="370" y="186" width="110" height="44" rx="8" fill="#fff" stroke="#2b8a3e"/>
+  <text class="t c" x="425" y="204">근접 · 기타</text><text class="xs c" x="425" y="220">감지만</text>
+  <rect x="510" y="100" width="76" height="60" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="2"/>
+  <text class="t c" x="548" y="126" fill="#1f6b2e">적용기</text><text class="xs c" x="548" y="142" fill="#1f6b2e">한 곳</text>
+  <line x1="480" y1="52" x2="508" y2="108" stroke="#2b8a3e" marker-end="url(#arG)"/>
+  <line x1="480" y1="104" x2="508" y2="122" stroke="#2b8a3e" marker-end="url(#arG)"/>
+  <line x1="480" y1="156" x2="508" y2="138" stroke="#2b8a3e" marker-end="url(#arG)"/>
+  <line x1="480" y1="208" x2="508" y2="152" stroke="#2b8a3e" marker-end="url(#arG)"/>
+  <rect x="610" y="70" width="80" height="44" rx="8" fill="#fff" stroke="#1a1c22"/>
+  <text class="t c" x="650" y="88">Health</text><text class="xs c" x="650" y="104">피해</text>
+  <rect x="610" y="146" width="80" height="44" rx="8" fill="#fff" stroke="#1a1c22"/>
+  <text class="t c" x="650" y="164">StatusRunner</text><text class="xs c" x="650" y="180">상태이상</text>
+  <line x1="586" y1="120" x2="608" y2="96" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <line x1="586" y1="140" x2="608" y2="164" stroke="#1a1c22" marker-end="url(#ar)"/>
+  <text class="xs" x="370" y="250">Payload는 ① 만들기에서 받아 그대로 넘긴다</text>
+</svg>
+</div>
+
+<table>
+  <thead><tr><th style="width:120px">구간</th><th>지금</th><th>할 일</th></tr></thead>
+  <tbody>
+    <tr><td><strong>때리는 쪽</strong><br>① 만들기</td><td><span class="mid">반쯤</span> — <code>BuildOutgoingDamage</code>가 있지만 안 쓰는 곳이 3군데 (번개 · 장판 · DealDamage)</td><td>모든 발사가 이걸로 Payload를 만든다</td></tr>
+    <tr><td><strong>가운데</strong><br>② 감지 → ③ 적용</td><td><span class="ng">비어 있음</span> — 맞히는 쪽마다 <code>OnTriggerEnter</code> 안에서 직접 적용</td><td>감지만 남기고, 적용은 적용기 한 곳으로</td></tr>
+    <tr><td><strong>맞는 쪽</strong><br>방어자</td><td><span class="ok">이미 하나</span> — <code>Health.TakeDamage</code>가 무적 · 방어 · 표시 · 사망 처리</td><td>그대로 둔다</td></tr>
+  </tbody>
+</table>
+
+<div class="callout c-violet">
+  <span class="lbl">정할 것 — 피해를 언제 확정하나</span>
+  <div class="two">
+    <div class="opt"><b>발사 순간 (지금 방식)</b>단순하다. 총알이 날아가는 중에 공격자가 죽어도 문제없다.</div>
+    <div class="opt"><b>맞는 순간</b>날아가는 동안 바뀐 버프가 반영된다. 대신 공격자가 사라졌을 때의 처리가 필요하다.</div>
+  </div>
+</div>
+
+<div class="callout c-blue">
+  <span class="lbl">이 구조가 잘 됐는지 보는 기준</span>
+  새 보스 기믹 하나를 추가할 때 = <strong>언제 층 표에 한 줄</strong> (없는 동작이면 <strong>무엇을 층에 동작 하나</strong>). <strong>어떻게 층은 건드리지 않는다.</strong>
+</div>
+
+</body></html>

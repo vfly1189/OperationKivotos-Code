@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>GAS 쉽게 보기</title>
+<style>
+  :root{
+    --ink:#1a1c22; --line:#e3e6ec; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+    --red:#c00000; --box:#8c9bb5;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; font-size:10.4pt; line-height:1.55; background:#fff; }
+  h1{ font-size:18pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:6px; }
+  .lead{ font-size:10.6pt; margin:2px 0 8px; }
+  strong{ font-weight:800; }
+  svg{ display:block; margin:4px 0 6px; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:11px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:13px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:10px; } .s:not([fill]){ fill:#1a1c22; }
+  .xs{ font-size:9px; } .xs:not([fill]){ fill:#1a1c22; }
+  .c{ text-anchor:middle; } .e{ text-anchor:end; }
+  .pb{ break-before:page; }
+
+  .lbox{ border:1.6px solid var(--box); border-radius:14px; padding:10px 18px 10px; margin:10px 0; break-inside:avoid; }
+  .lbox h3{ text-align:center; color:var(--red); font-size:12.5pt; font-weight:800; margin:0 0 6px; }
+  .lbox h3 .n{ display:inline-block; background:var(--red); color:#fff; border-radius:7px; padding:0 8px; margin-right:6px; font-size:10.5pt; }
+  .lbox ol{ list-style:none; counter-reset:n; padding:0; margin:2px 0 0; }
+  .lbox ol>li{ counter-increment:n; margin:6px 0 8px; font-size:10.2pt; }
+  .lbox ol>li>b::before{ content:counter(n) ". "; color:var(--red); }
+  .lbox ol>li>b{ font-weight:800; }
+  .lbox ol>li>b .en{ font-weight:700; color:var(--blue-ink); font-size:9.4pt; margin-left:4px; }
+  .lbox ol>li>div{ margin:1px 0 0 16px; font-size:9.6pt; }
+  .lbox ol>li>div::before{ content:"• "; }
+  .lbox ol>li>div .k{ font-weight:800; }
+  .concl{ text-align:center; font-weight:800; color:var(--red); font-size:10.6pt; margin:8px 0 2px; padding-top:7px; border-top:1px dashed var(--line); }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="aK" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker>
+    <marker id="aR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker>
+    <marker id="aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2b8a3e"/></marker>
+    <marker id="aO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/></marker>
+    <marker id="aV" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7048e8"/></marker>
+  </defs>
+</svg>
+
+<!-- ================= 1쪽 : 큰 그림 ================= -->
+<div class="kicker">Boss · GAS Basics</div>
+<h1>GAS 쉽게 보기 — 보스 "방사형 번개"로 배우는 용어</h1>
+<p class="lead"><strong>GAS(Gameplay Ability System)</strong> = 언리얼이 제공하는 "기술 · 스탯 · 효과"를 다루는 틀.<br>
+한 문장으로: <strong>기술(Ability)이 흐름을 짜고, 맞으면 효과(Effect)가 숫자를 바꾸고, 연출(Cue)이 보여 준다.</strong></p>
+
+<svg viewBox="0 0 640 380" width="100%">
+  <!-- 보스 -->
+  <rect x="10" y="10" width="300" height="300" rx="14" fill="#f7f8fa" stroke="#1a1c22" stroke-width="1.6"/>
+  <text x="160" y="32" class="tb c">보스 (예로니무스)</text>
+  <rect x="24" y="44" width="272" height="252" rx="11" fill="#fff" stroke="#3b5bdb" stroke-width="2"/>
+  <text x="160" y="64" class="t c" fill="#2b3a8f">AbilitySystemComponent (ASC)</text>
+  <text x="160" y="78" class="xs c">= 보스 몸에 붙은 "능력 관리자" 컴포넌트</text>
+
+  <rect x="36" y="90" width="122" height="62" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="97" y="108" class="t c" fill="#5028c0">Attribute</text>
+  <text x="97" y="124" class="s c">HP 3000</text>
+  <text x="97" y="139" class="s c">공격력 120</text>
+
+  <rect x="164" y="90" width="120" height="62" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="224" y="108" class="t c" fill="#1f6b2e">가진 Ability</text>
+  <text x="224" y="124" class="s c">GA_평타</text>
+  <text x="224" y="139" class="s c">GA_방사번개 …</text>
+
+  <rect x="36" y="160" width="122" height="62" rx="8" fill="#fff5f5" stroke="#c92a2a"/>
+  <text x="97" y="178" class="t c" fill="#c00000">걸린 Effect</text>
+  <text x="97" y="194" class="s c">쿨다운 (8초 남음)</text>
+  <text x="97" y="209" class="s c">격노 버프</text>
+
+  <rect x="164" y="160" width="120" height="62" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="224" y="178" class="t c" fill="#8a3708">Tag (이름표)</text>
+  <text x="224" y="194" class="s c">State.Enraged</text>
+  <text x="224" y="209" class="s c">Cooldown.Skill02</text>
+
+  <rect x="36" y="232" width="248" height="52" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/>
+  <text x="160" y="252" class="t c" fill="#1f6b2e">실행 중: GA_방사번개</text>
+  <text x="160" y="270" class="s c">AbilityTask: 몽타주 재생하며 기다리는 중</text>
+
+  <!-- 플레이어 -->
+  <rect x="400" y="10" width="230" height="160" rx="14" fill="#f7f8fa" stroke="#1a1c22" stroke-width="1.6"/>
+  <text x="515" y="32" class="tb c">플레이어</text>
+  <rect x="414" y="44" width="202" height="114" rx="11" fill="#fff" stroke="#3b5bdb" stroke-width="2"/>
+  <text x="515" y="64" class="t c" fill="#2b3a8f">플레이어 ASC</text>
+  <rect x="426" y="74" width="178" height="34" rx="7" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="515" y="95" class="s c">Attribute  HP 500 → <tspan fill="#c00000" font-weight="700">320</tspan></text>
+  <rect x="426" y="114" width="178" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="515" y="135" class="s c">Tag  <tspan font-weight="700">State.Shocked</tspan> (2초)</text>
+
+  <!-- GE 화살표 -->
+  <path d="M296,258 C 360,258 360,120 410,96" fill="none" stroke="#c00000" stroke-width="2.2" marker-end="url(#aR)"/>
+  <rect x="316" y="152" width="80" height="54" rx="8" fill="#c00000"/>
+  <text x="356" y="169" class="t c" fill="#fff">Gameplay</text>
+  <text x="356" y="183" class="t c" fill="#fff">Effect</text>
+  <text x="356" y="198" class="xs c" fill="#fff">GE_번개피해</text>
+
+  <!-- Cue -->
+  <rect x="400" y="200" width="230" height="110" rx="14" fill="#fff" stroke="#9aa3b5" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="515" y="222" class="tb c">연출 담당</text>
+  <rect x="414" y="232" width="202" height="62" rx="9" fill="#fff5f5" stroke="#c92a2a"/>
+  <text x="515" y="252" class="t c" fill="#c00000">GameplayCue.Lightning</text>
+  <text x="515" y="270" class="s c">번개 이펙트 + 천둥 소리</text>
+  <text x="515" y="285" class="xs c">게임 규칙(숫자)은 모름</text>
+  <path d="M515,170 L515,198" stroke="#c00000" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#aR)"/>
+  <text x="522" y="188" class="xs" fill="#c00000">GE가 같이 부름</text>
+
+  <!-- 범례 -->
+  <text x="10" y="336" class="t">읽는 법</text>
+  <rect x="10" y="346" width="12" height="12" rx="3" fill="#ebfbee" stroke="#2b8a3e"/><text x="28" y="356" class="s">흐름 (Ability · Task)</text>
+  <rect x="150" y="346" width="12" height="12" rx="3" fill="#fff5f5" stroke="#c92a2a"/><text x="168" y="356" class="s">결과 · 연출 (Effect · Cue)</text>
+  <rect x="306" y="346" width="12" height="12" rx="3" fill="#f3f0ff" stroke="#7048e8"/><text x="324" y="356" class="s">숫자 (Attribute)</text>
+  <rect x="430" y="346" width="12" height="12" rx="3" fill="#fff4ec" stroke="#e8590c"/><text x="448" y="356" class="s">이름표 (Tag)</text>
+</svg>
+
+<div class="lbox">
+  <h3>용어 10개를 네 묶음으로</h3>
+  <ol>
+    <li><b>주인과 숫자</b><div>ASC · Attribute · Tag — 캐릭터가 "무엇을 들고 있나"</div></li>
+    <li><b>기술과 기다림</b><div>GameplayAbility · AbilityTask · 쿨다운/코스트 — "무엇을 어떤 순서로 하나"</div></li>
+    <li><b>신호와 위치</b><div>AnimNotify · GameplayEvent · Targeting — "언제, 어디에"</div></li>
+    <li><b>결과와 연출</b><div>GameplayEffect · GameplayCue — "맞으면 어떻게 되고, 어떻게 보이나"</div></li>
+  </ol>
+</div>
+
+<!-- ================= 2쪽 : 용어 1·2 ================= -->
+<div class="lbox pb">
+  <h3><span class="n">1</span>주인과 숫자</h3>
+  <ol>
+    <li><b>AbilitySystemComponent <span class="en">(ASC)</span></b>
+      <div><span class="k">뜻</span> 캐릭터에 붙이는 컴포넌트 하나. 아래 것들을 전부 들고 있는 "능력 관리자"</div>
+      <div><span class="k">들고 있는 것</span> 가진 Ability 목록 · Attribute · 지금 걸린 Effect · Tag</div>
+      <div><span class="k">보스 예시</span> 보스 프리팹에 ASC 하나 → "방사형 번개 써"도, "번개 맞았다"도 전부 ASC를 거침</div>
+    </li>
+    <li><b>Attribute <span class="en">(AttributeSet)</span></b>
+      <div><span class="k">뜻</span> 숫자로 된 스탯. HP · 공격력 · 방어력처럼 Effect가 바꾸는 대상</div>
+      <div><span class="k">보스 예시</span> 보스 공격력 120 → 번개 피해 계산에 쓰임 / 플레이어 HP 500 → 번개 맞고 320</div>
+    </li>
+    <li><b>GameplayTag</b>
+      <div><span class="k">뜻</span> 점(.)으로 이어 붙인 이름표. 문자열처럼 보이지만 미리 등록해 두고 씀</div>
+      <div><span class="k">쓰는 곳 셋</span> 상태 표시(State.Stunned) · 이벤트 이름(Event.Boss.Strike) · 조건(Cooldown.Skill02 있으면 못 씀)</div>
+      <div><span class="k">보스 예시</span> 보스에 State.Stunned 가 붙으면 → "이 태그 있으면 기술 금지" 규칙에 걸려 패턴이 끊김</div>
+    </li>
+  </ol>
+  <div class="concl">ASC = 그릇, Attribute = 숫자, Tag = 붙였다 뗐다 하는 이름표</div>
+</div>
+
+<div class="lbox">
+  <h3><span class="n">2</span>기술과 기다림</h3>
+  <ol>
+    <li><b>GameplayAbility <span class="en">(GA)</span></b>
+      <div><span class="k">뜻</span> 기술 하나의 "대본". 시작(Activate)부터 끝(End)까지 무엇을 어떤 순서로 할지 적은 코드/블루프린트</div>
+      <div><span class="k">보스 예시</span> GA_방사번개 = "내려찍기 재생 → 내려찍는 순간 원 위 12곳에 번개 → 애니 끝나면 종료"</div>
+      <div><span class="k">끊기</span> Cancel 되면 안에서 돌던 기다림(Task)까지 한 번에 정리됨</div>
+    </li>
+    <li><b>AbilityTask</b>
+      <div><span class="k">뜻</span> Ability 안에서 "끝날 때까지 기다리는 일" 하나. 끝나면 Ability에 알려 줌</div>
+      <div><span class="k">대표</span> PlayMontageAndWait(애니 재생하고 끝까지) · WaitDelay(N초) · WaitGameplayEvent(신호 올 때까지)</div>
+      <div><span class="k">보스 예시</span> 내려찍기 몽타주를 틀어 놓고, 동시에 "Strike 신호 오면 깨워 줘"를 걸어 둠</div>
+    </li>
+    <li><b>쿨다운 · 코스트</b>
+      <div><span class="k">뜻</span> "쓸 수 있나"를 판정하는 문. GAS에선 둘 다 Effect로 만듦</div>
+      <div><span class="k">보스 예시</span> 쿨다운 Effect가 보스에 Cooldown.Skill02 태그를 8초 붙임 → 그동안 GA_방사번개는 시작 자체가 막힘</div>
+      <div><span class="k">주의</span> GAS는 "쓸 수 있나"만 판정 — 여러 기술 중 <b>무엇을 쓸지 고르는 건 AI(BT)의 몫</b></div>
+    </li>
+  </ol>
+  <div class="concl">Ability = 대본, Task = 대본 속 "이 장면 끝날 때까지"</div>
+</div>
+
+<!-- ================= 3쪽 : 용어 3·4 ================= -->
+<div class="lbox pb">
+  <h3><span class="n">3</span>신호와 위치</h3>
+  <ol>
+    <li><b>AnimNotify</b>
+      <div><span class="k">뜻</span> 애니메이션의 특정 프레임에 꽂아 두는 표시. 그 프레임이 재생되면 코드가 불림</div>
+      <div><span class="k">보스 예시</span> 내려찍기 몽타주의 "지팡이가 땅에 닿는 프레임"에 Notify 하나</div>
+    </li>
+    <li><b>GameplayEvent</b>
+      <div><span class="k">뜻</span> "태그 이름 + 약간의 데이터"를 캐릭터에게 보내는 메시지</div>
+      <div><span class="k">보스 예시</span> Notify가 보스에게 Event.Boss.Strike 를 보냄 → 기다리던 WaitGameplayEvent Task가 깨어남</div>
+      <div><span class="k">핵심</span> 애니는 <b>이름만 보내고 누가 받는지 모름</b> → 같은 애니를 다른 기술이 다른 일로 재사용 가능</div>
+    </li>
+    <li><b>Targeting <span class="en">(TargetData · Targeting System)</span></b>
+      <div><span class="k">뜻</span> "어디에 / 누구에게"를 정하는 부품. 모양(구 · 박스 · 원기둥) 고르기 → 거르기 → 정렬</div>
+      <div><span class="k">보스 예시</span> 플레이어를 중심으로 반지름 5m 원 위 12개 점 → 각 점 반경 1m 안의 플레이어</div>
+    </li>
+  </ol>
+  <div class="concl">Notify = "지금!" 이라는 큐 사인, Event = 그 사인을 이름으로 전하는 무전</div>
+</div>
+
+<div class="lbox">
+  <h3><span class="n">4</span>결과와 연출</h3>
+  <ol>
+    <li><b>GameplayEffect <span class="en">(GE)</span></b>
+      <div><span class="k">뜻</span> "맞으면 어떻게 되나"를 적은 <b>데이터 시트</b>. 코드가 아니라 설정값 묶음</div>
+      <div><span class="k">길이</span> Instant(즉시 한 번: HP −180) · Duration(10초간: 공격력 −20%) · Infinite(뗄 때까지)</div>
+      <div><span class="k">안에 적는 것</span> 어떤 Attribute를 얼마나(Modifier) · 복잡한 계산식(Execution) · 붙일 태그 · 같이 부를 Cue</div>
+      <div><span class="k">보스 예시</span> GE_번개피해 = Instant, HP −(보스 공격력 × 1.5), 태그 State.Shocked 2초, Cue.Lightning</div>
+      <div><span class="k">Spec</span> 쓸 때마다 GE를 "이번 값"(시전자 공격력 등)으로 찍어 낸 실행본 — 그래서 같은 GE를 여러 보스가 공유 가능</div>
+    </li>
+    <li><b>GameplayCue</b>
+      <div><span class="k">뜻</span> 이펙트 · 소리만 담당하는 연출 부품. GameplayCue.○○ 태그로 불림</div>
+      <div><span class="k">보스 예시</span> GE_번개피해가 적용될 때 Cue.Lightning 이 그 위치에 번개 이펙트 + 천둥 소리</div>
+      <div><span class="k">핵심</span> Cue는 숫자를 모르고, GE는 이펙트를 모름 → 연출만 바꿔도 규칙은 그대로</div>
+    </li>
+  </ol>
+  <div class="concl">GE = 심판의 판정표, Cue = 조명 · 음향팀</div>
+</div>
+
+<!-- ================= 4쪽 : 상호작용 ================= -->
+<div class="lbox pb">
+  <h3><span class="n">5</span>방사형 번개 한 번 — 누가 누구에게 무엇을</h3>
+  <svg viewBox="0 0 640 500" width="100%">
+    <!-- 레인 머리 -->
+    <g>
+      <rect x="6"   y="6" width="82" height="38" rx="8" fill="#f7f8fa" stroke="#9aa3b5"/><text x="47"  y="23" class="t c">AI (BT)</text><text x="47" y="37" class="xs c">무엇을 쓸지</text>
+      <rect x="96"  y="6" width="82" height="38" rx="8" fill="#eef2ff" stroke="#3b5bdb"/><text x="137" y="23" class="t c" fill="#2b3a8f">보스 ASC</text><text x="137" y="37" class="xs c">문지기</text>
+      <rect x="186" y="6" width="82" height="38" rx="8" fill="#ebfbee" stroke="#2b8a3e"/><text x="227" y="23" class="t c" fill="#1f6b2e">GA</text><text x="227" y="37" class="xs c">방사번개 대본</text>
+      <rect x="276" y="6" width="82" height="38" rx="8" fill="#ebfbee" stroke="#2b8a3e"/><text x="317" y="23" class="t c" fill="#1f6b2e">AbilityTask</text><text x="317" y="37" class="xs c">기다림</text>
+      <rect x="366" y="6" width="82" height="38" rx="8" fill="#fff4ec" stroke="#e8590c"/><text x="407" y="23" class="t c" fill="#8a3708">몽타주</text><text x="407" y="37" class="xs c">+ AnimNotify</text>
+      <rect x="456" y="6" width="82" height="38" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="497" y="23" class="t c" fill="#5028c0">플레이어 ASC</text><text x="497" y="37" class="xs c">맞는 쪽</text>
+      <rect x="546" y="6" width="88" height="38" rx="8" fill="#fff5f5" stroke="#c92a2a"/><text x="590" y="23" class="t c" fill="#c00000">Cue</text><text x="590" y="37" class="xs c">연출</text>
+    </g>
+    <g stroke="#c7ccd6" stroke-dasharray="3 4">
+      <line x1="47" y1="44" x2="47" y2="490"/><line x1="137" y1="44" x2="137" y2="490"/><line x1="227" y1="44" x2="227" y2="490"/>
+      <line x1="317" y1="44" x2="317" y2="490"/><line x1="407" y1="44" x2="407" y2="490"/><line x1="497" y1="44" x2="497" y2="490"/><line x1="590" y1="44" x2="590" y2="490"/>
+    </g>
+
+    <!-- 1 -->
+    <circle cx="16" cy="70" r="8" fill="#c00000"/><text x="16" y="74" class="xs c" fill="#fff" font-weight="700">1</text>
+    <line x1="47" y1="70" x2="134" y2="70" stroke="#1a1c22" stroke-width="1.4" marker-end="url(#aK)"/><text x="92" y="65" class="xs c">"방사번개 써"</text>
+    <!-- 2 -->
+    <circle cx="16" cy="104" r="8" fill="#c00000"/><text x="16" y="108" class="xs c" fill="#fff" font-weight="700">2</text>
+    <rect x="98" y="90" width="80" height="28" rx="6" fill="#eef2ff" stroke="#3b5bdb"/><text x="138" y="102" class="xs c">쿨 · 기절 태그?</text><text x="138" y="113" class="xs c" font-weight="700">없음 → 통과</text>
+    <!-- 3 -->
+    <circle cx="16" cy="138" r="8" fill="#c00000"/><text x="16" y="142" class="xs c" fill="#fff" font-weight="700">3</text>
+    <line x1="137" y1="138" x2="224" y2="138" stroke="#2b8a3e" stroke-width="1.4" marker-end="url(#aG)"/><text x="182" y="133" class="xs c">시작</text>
+    <!-- 4 -->
+    <circle cx="16" cy="170" r="8" fill="#c00000"/><text x="16" y="174" class="xs c" fill="#fff" font-weight="700">4</text>
+    <line x1="227" y1="170" x2="140" y2="170" stroke="#c00000" stroke-width="1.4" marker-end="url(#aR)"/><text x="182" y="165" class="xs c">쿨 Effect 걸기</text>
+    <!-- 5 -->
+    <circle cx="16" cy="204" r="8" fill="#c00000"/><text x="16" y="208" class="xs c" fill="#fff" font-weight="700">5</text>
+    <line x1="227" y1="204" x2="314" y2="204" stroke="#2b8a3e" stroke-width="1.4" marker-end="url(#aG)"/><text x="272" y="199" class="xs c">Task 2개 켬</text>
+    <!-- 6 -->
+    <circle cx="16" cy="238" r="8" fill="#c00000"/><text x="16" y="242" class="xs c" fill="#fff" font-weight="700">6</text>
+    <line x1="317" y1="238" x2="404" y2="238" stroke="#e8590c" stroke-width="1.4" marker-end="url(#aO)"/><text x="362" y="233" class="xs c">내려찍기 재생</text>
+    <!-- 7 -->
+    <circle cx="16" cy="272" r="8" fill="#c00000"/><text x="16" y="276" class="xs c" fill="#fff" font-weight="700">7</text>
+    <line x1="407" y1="272" x2="320" y2="272" stroke="#e8590c" stroke-width="1.8" marker-end="url(#aO)"/><text x="362" y="267" class="xs c" font-weight="700">Strike! (Event)</text>
+    <!-- 8 -->
+    <circle cx="16" cy="306" r="8" fill="#c00000"/><text x="16" y="310" class="xs c" fill="#fff" font-weight="700">8</text>
+    <line x1="317" y1="306" x2="230" y2="306" stroke="#2b8a3e" stroke-width="1.4" marker-end="url(#aG)"/><text x="272" y="301" class="xs c">깨움</text>
+    <rect x="160" y="314" width="134" height="20" rx="5" fill="#ebfbee" stroke="#2b8a3e"/><text x="227" y="328" class="xs c">Targeting: 원 위 12점</text>
+    <!-- 9 -->
+    <circle cx="16" cy="358" r="8" fill="#c00000"/><text x="16" y="362" class="xs c" fill="#fff" font-weight="700">9</text>
+    <line x1="227" y1="358" x2="494" y2="358" stroke="#c00000" stroke-width="2.2" marker-end="url(#aR)"/><text x="362" y="352" class="xs c" fill="#c00000" font-weight="700">점마다 GE_번개피해 적용</text>
+    <!-- 10 -->
+    <circle cx="16" cy="392" r="8" fill="#c00000"/><text x="16" y="396" class="xs c" fill="#fff" font-weight="700">10</text>
+    <rect x="452" y="378" width="90" height="28" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="497" y="390" class="xs c">HP 500 → 320</text><text x="497" y="401" class="xs c">+ State.Shocked</text>
+    <!-- 11 -->
+    <circle cx="16" cy="426" r="8" fill="#c00000"/><text x="16" y="430" class="xs c" fill="#fff" font-weight="700">11</text>
+    <line x1="497" y1="426" x2="587" y2="426" stroke="#c00000" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#aR)"/><text x="543" y="421" class="xs c">Cue 부름</text>
+    <!-- 12 -->
+    <circle cx="16" cy="466" r="8" fill="#c00000"/><text x="16" y="470" class="xs c" fill="#fff" font-weight="700">12</text>
+    <line x1="407" y1="458" x2="320" y2="458" stroke="#e8590c" stroke-width="1.4" marker-end="url(#aO)"/><text x="362" y="453" class="xs c">애니 끝</text>
+    <line x1="317" y1="474" x2="230" y2="474" stroke="#2b8a3e" stroke-width="1.4" marker-end="url(#aG)"/><text x="272" y="486" class="xs c">끝났어요</text>
+    <rect x="186" y="462" width="40" height="20" rx="5" fill="#2b8a3e"/><text x="206" y="476" class="xs c" fill="#fff">End</text>
+  </svg>
+  <ol>
+    <li><b>쓸 수 있나 (1~2)</b><div>AI가 고르고, 보스 ASC가 태그로 막을지 판정 — Cooldown.Skill02나 State.Stunned 가 있으면 여기서 끝</div></li>
+    <li><b>시작하고 쿨 걸기 (3~4)</b><div>GA가 시작하자마자 쿨 Effect를 보스에게 걸어 둠(Commit) → 8초 동안 다시 못 씀</div></li>
+    <li><b>기다리다가 순간에 깨어남 (5~8)</b><div>몽타주 재생 Task + 신호 대기 Task를 켜 둠 → Notify가 Strike 이벤트를 보내면 GA가 깨어나 점 12개 계산</div></li>
+    <li><b>맞으면 (9~11)</b><div>GA는 GE를 "건네기만" 함 → 플레이어 ASC가 숫자 · 태그를 바꾸고, GE에 적힌 Cue가 이펙트를 띄움</div></li>
+    <li><b>끝 (12)</b><div>몽타주가 끝나면 Task가 알려 주고 GA가 End — 도중에 보스가 기절하면 Cancel로 Task까지 한 번에 정리</div></li>
+  </ol>
+</div>
+
+<!-- ================= 5쪽 : 우리 프로젝트와 비교 ================= -->
+<div class="lbox pb">
+  <h3><span class="n">6</span>우리 프로젝트에선 무엇이 이 역할을 하나</h3>
+  <svg viewBox="0 0 640 486" width="100%">
+    <rect x="6"   y="4" width="150" height="30" rx="8" fill="#1a1c22"/><text x="81"  y="24" class="t c" fill="#fff">GAS 용어</text>
+    <rect x="164" y="4" width="232" height="30" rx="8" fill="#3b5bdb"/><text x="280" y="24" class="t c" fill="#fff">③ 보스 (Pattern 구조)</text>
+    <rect x="404" y="4" width="230" height="30" rx="8" fill="#7048e8"/><text x="519" y="24" class="t c" fill="#fff">② AbilityData (플레이어 · 옛 보스)</text>
+
+    <!-- 행: y = 42 + 40*i, 높이 34 -->
+    <g class="rows">
+      <!-- ASC -->
+      <rect x="6" y="42" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="63" class="t">ASC</text>
+      <rect x="164" y="42" width="232" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/><text x="174" y="63" class="s">BossMonsterController + PatternContext</text>
+      <rect x="404" y="42" width="230" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/><text x="414" y="63" class="s">AbilityRunner + 캐릭터 슬롯 목록</text>
+      <!-- Attribute -->
+      <rect x="6" y="82" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="103" class="t">Attribute</text>
+      <rect x="164" y="82" width="232" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="174" y="103" class="s">MonsterStat</text>
+      <rect x="404" y="82" width="230" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="414" y="103" class="s">CharacterStat</text>
+      <!-- Tag -->
+      <rect x="6" y="122" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="143" class="t">GameplayTag</text>
+      <rect x="164" y="122" width="232" height="34" rx="7" fill="#fff5f5" stroke="#c92a2a" stroke-dasharray="4 3"/><text x="174" y="143" class="s">없음 — bool · HashSet · 직접 참조</text>
+      <rect x="404" y="122" width="230" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/><text x="414" y="143" class="s">ApplyStatusTag (상태 이름표만)</text>
+      <!-- GA -->
+      <rect x="6" y="162" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="183" class="t">GameplayAbility</text>
+      <rect x="164" y="162" width="232" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="174" y="183" class="s">Pattern + PatternRunner</text>
+      <rect x="404" y="162" width="230" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/><text x="414" y="183" class="s">AbilityData (흐름 · 결과가 한 목록)</text>
+      <!-- Task -->
+      <rect x="6" y="202" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="223" class="t">AbilityTask</text>
+      <rect x="164" y="202" width="232" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="174" y="223" class="s">AnimationAction · TimelineAction</text>
+      <rect x="404" y="202" width="230" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/><text x="414" y="223" class="s">RepeatEffect · DelayEffect (Effect로)</text>
+      <!-- Cooldown -->
+      <rect x="6" y="242" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="263" class="t">쿨다운 · 코스트</text>
+      <rect x="164" y="242" width="232" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="174" y="263" class="s">표의 쿨 (코스트 없음, 보스엔 불필요)</text>
+      <rect x="404" y="242" width="230" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="414" y="263" class="s">AbilityData.Cooldown · Cost</text>
+      <!-- Notify -->
+      <rect x="6" y="282" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="303" class="t">AnimNotify</text>
+      <rect x="164" y="282" width="232" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="174" y="303" class="s">타임라인 시그널</text>
+      <rect x="404" y="282" width="230" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="414" y="303" class="s">애니메이션 이벤트 (AbilityBeat)</text>
+      <!-- Event -->
+      <rect x="6" y="322" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="343" class="t">GameplayEvent</text>
+      <rect x="164" y="322" width="232" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/><text x="174" y="343" class="s">FireEvent — 이름 대신 직접 가리킴</text>
+      <rect x="404" y="322" width="230" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/><text x="414" y="343" class="s">AbilityBeat → UseAbility — 직접 호출</text>
+      <!-- Targeting -->
+      <rect x="6" y="362" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="383" class="t">Targeting</text>
+      <rect x="164" y="362" width="232" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="174" y="383" class="s">Placement (CirclePlacement)</text>
+      <rect x="404" y="362" width="230" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="414" y="383" class="s">Anchor · ScatterPattern · RadialBurst</text>
+      <!-- GE -->
+      <rect x="6" y="402" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="423" class="t" fill="#c00000">GameplayEffect</text>
+      <rect x="164" y="402" width="232" height="34" rx="7" fill="#fff5f5" stroke="#c92a2a" stroke-dasharray="4 3"/><text x="174" y="423" class="s">없음 — StrikeEvent 안에 피해 코드</text>
+      <rect x="404" y="402" width="230" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/><text x="414" y="423" class="s">DealDamage · AreaStrike · ApplyStatModifier</text>
+      <!-- Cue -->
+      <rect x="6" y="442" width="150" height="34" rx="7" fill="#f7f8fa"/><text x="16" y="463" class="t">GameplayCue</text>
+      <rect x="164" y="442" width="232" height="34" rx="7" fill="#fff5f5" stroke="#c92a2a" stroke-dasharray="4 3"/><text x="174" y="463" class="s">없음 — Event가 직접 이펙트 생성</text>
+      <rect x="404" y="442" width="230" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/><text x="414" y="463" class="s">SpawnVFX (결과와 같은 목록)</text>
+    </g>
+  </svg>
+  <svg viewBox="0 0 640 20" width="100%">
+    <rect x="6" y="4" width="12" height="12" rx="3" fill="#ebfbee" stroke="#2b8a3e"/><text x="24" y="14" class="xs">있음 (역할이 따로 있음)</text>
+    <rect x="160" y="4" width="12" height="12" rx="3" fill="#fff4ec" stroke="#e8590c"/><text x="178" y="14" class="xs">비슷 (다른 것과 섞여 있음 · 직접 연결)</text>
+    <rect x="390" y="4" width="12" height="12" rx="3" fill="#fff5f5" stroke="#c92a2a" stroke-dasharray="3 2"/><text x="408" y="14" class="xs">없음</text>
+  </svg>
+</div>
+
+<div class="lbox">
+  <h3>한 줄씩 정리</h3>
+  <ol>
+    <li><b>②는 GAS의 "결과" 쪽을 갖고 있다</b><div>DealDamage · ApplyStatModifier · SpawnVFX = GameplayEffect · Cue와 같은 일 — 단, 흐름(Repeat · Delay)까지 같은 목록에 섞임</div></li>
+    <li><b>③은 GAS의 "흐름" 쪽을 갖고 있다</b><div>Pattern = Ability, Action = AbilityTask, Placement = Targeting — 단, 결과 · 연출 층이 없음</div></li>
+    <li><b>그래서 둘을 합치면 GAS 모양이 된다</b><div>③에 결과 층(HitEffect)을 만들고, 거기서 ②의 결과 Effect를 살려 쓰는 것이 다음 단계</div></li>
+    <li><b>태그는 지금 안 들여도 된다</b><div>쓸 곳은 둘(이벤트 이름 · 기절 같은 상태)뿐 — 이벤트 키 하나와 기존 상태 값으로 충분, 늘어나면 그때</div></li>
+  </ol>
+  <div class="concl">GAS가 하는 일 = 흐름 · 결과 · 연출을 나눠서, 서로 이름으로만 부르게 하는 것</div>
+</div>
+
+</body></html>

@@ -216,10 +216,14 @@ public class BossDungeonScene : BaseScene
             {
                 var mapScript = _curMap.GetComponent<BossDungeonMap>();
 
-                // AbilitySystem 소환용: Map 스폰포인트를 보스의 SpawnPointSet 에 주입
-                var spawnSet = _boss.GetComponent<SpawnPointSet>();
-                if (spawnSet != null && mapScript != null)
-                    spawnSet.SetPoints(mapScript.GetMonsterSpawnPoints());
+                // Pattern 소환용: 소환 위치는 방 기준이라 맵이 들고 있다 → 보스 AnchorSet에 Spawn_1~N 키로 등록
+                var anchors = _boss.GetComponent<AnchorSet>();
+                if (anchors != null && mapScript != null)
+                {
+                    var points = mapScript.GetMonsterSpawnPoints();
+                    for (int i = 0; i < points.Length; i++)
+                        anchors.Register($"Spawn_{i + 1}", points[i]);
+                }
             }
         }
     }

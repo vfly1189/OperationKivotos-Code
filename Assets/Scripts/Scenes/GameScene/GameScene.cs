@@ -16,6 +16,12 @@ public class GameScene : BaseScene
     [SerializeField] private ActivationPolicyType _activationPolicy = ActivationPolicyType.Distance;
     [Tooltip("나머지 6개를 그림자(계산 · 로그만)로 같이 돌린다. 동등성 · 집합 지표용 측정 도구 — 평소엔 끈다.")]
     [SerializeField] private bool _activationShadows = false;
+    [Tooltip("밀도 배율 — 스포너당 마릿수 ×N (측정 전용, 갱신 LOD 밀도 스윕). 스포너 수 · 위치 · 판정은 그대로. 실행 인자 -density가 우선.")]
+    [SerializeField, Range(1, HarnessArgs.MaxDensity)] private int _density = 1;
+    [Tooltip("끄기 실험 — 몬스터 비용 항목을 통째로 끈다(측정 전용, 갱신 LOD 0단계). 필드 스포너 몹에만. 실행 인자 -off가 우선.")]
+    [SerializeField] private MonsterCostOff _costOff = MonsterCostOff.None;
+    [Tooltip("갱신 LOD — 화면 밖이면서 교전 중이 아닌 몹은 HP바 끔 · 행동 트리 8프레임에 한 번 · Animator 끔. 실행 인자 -lod가 우선.")]
+    [SerializeField] private bool _updateLod = true;
 
     // 초기화가 끝났는가 — 측정 하네스(-harness)가 이 뒤에 자동 시작한다.
     public bool IsReady { get; private set; }
@@ -23,6 +29,12 @@ public class GameScene : BaseScene
     private GameObject _loadingCoverInstance;
     private GameObject _map;
     private AudioClip _mainBGM;
+
+    // 밀도 배율에 맞춘 풀 크기 — 시작 크기(200)는 ×1 기준. 몹 종류별 '슬롯 수 × 밀도 × 이 비율'까지 채운다.
+    //  ×1 실측 최대 생존: ⑤ 102 / 363 = 28% · ① 187 = 52% → 50%면 ⑤는 약 1.8배 여유. ×1은 전부 200 이하라 기존과 같다.
+    private const float PoolPeakAliveRatio = 0.5f;
+    private List<SpawnerRecord> _spawnerRecords;
+    private int _appliedDensity = 1;
 
     // [핵심 변경 1] async void 사용
     protected override async void Init()
@@ -47,6 +59,7 @@ public class GameScene : BaseScene
         var bgmTask = LoadMainBGM();
 
         await UniTask.WhenAll(poolTask, mapTask, bgmTask);
+        ReserveFieldPools();   // 풀과 맵을 동시에 로드하므로 둘 다 끝난 뒤에 — 스폰 가동(Run) 전
 
         await CreateCharacters();
         Managers.Spawner.Run();   // 파티 준비 완료 → 스폰 가동 (몬스터 OnSpawn이 파티를 읽는다)
@@ -152,6 +165,38 @@ public class GameScene : BaseScene
         }
     }
 
+    // 밀도 배율이 1보다 크면 몹 종류별 풀 · HP바 풀을 미리 늘린다 — 측정 중 [PoolGrow](런타임 Instantiate)가 프레임 시간에 섞이지 않게.
+    private void ReserveFieldPools()
+    {
+        if (_appliedDensity <= 1 || _spawnerRecords == null) return;
+
+        Dictionary<string, int> slotsByKey = new Dictionary<string, int>();
+        int totalSlots = 0;
+        foreach (SpawnerRecord record in _spawnerRecords)
+        {
+            foreach (SpawnSlot slot in record._slots)
+            {
+                string key = Managers.Data.GetData<int, MonsterBaseData>(slot._monsterId)?.AddressableKey;
+                if (key == null) continue;
+                slotsByKey.TryGetValue(key, out int n);
+                slotsByKey[key] = n + 1;
+                totalSlots++;
+            }
+        }
+
+        // 슬롯은 이미 밀도만큼 복제돼 있다 → 슬롯 수 × 비율
+        foreach (KeyValuePair<string, int> kv in slotsByKey)
+            ReservePool(kv.Key, Mathf.CeilToInt(kv.Value * PoolPeakAliveRatio));
+        ReservePool("MonsterHPBar", Mathf.CeilToInt(totalSlots * PoolPeakAliveRatio));
+    }
+
+    private void ReservePool(string key, int count)
+    {
+        GameObject prefab = Managers.Resource.GetLoaded<GameObject>(key);
+        if (prefab == null) return;   // GetLoaded가 이미 오류를 남긴다
+        Managers.Pool.Reserve(prefab.name, count);   // 풀 이름 = 프리팹 이름 (PoolManager 키)
+    }
+
     private async UniTask CreateMainVillage()
     {
         _map = await LoadAndSpawnAsync(_preloadData.mainVillage);
@@ -166,18 +211,25 @@ public class GameScene : BaseScene
 
         BaseMap map = _map.GetComponent<BaseMap>();
         List<SpawnerRecord> records = new List<SpawnerRecord>();
-         
+        _appliedDensity = HarnessArgs.Density ?? _density;
+        MonsterCostOff costOff = HarnessArgs.CostOff ?? _costOff;
+        bool updateLod = HarnessArgs.UpdateLod ?? _updateLod;
+
         foreach(MonsterSpawner spawner in map.GetSpawners())
         {
             SpawnerData data = Managers.Data.GetData<int, SpawnerData>(spawner.SpawnerID);
-            SpawnerRecord record = spawner.Build(data);
+            SpawnerRecord record = spawner.Build(data, _appliedDensity);
             if(record != null) records.Add(record);
         }
+        _spawnerRecords = records;
 
         //record 들을 매니저한테 넘겨줘야됨
         Managers.Spawner.Init(map.MapID, records);
+        Managers.Spawner._costOff = costOff;
+        Managers.Spawner._updateLod = updateLod;
         // 실행 인자(-policy · -shadows)가 있으면 인스펙터 값 대신 — 빌드 하나로 정책을 바꿔 측정 (HarnessArgs)
-        Managers.Activation.Init(new ActivationLayout { _sectors = map.GetSectors(), _records = records.ToArray() },
+        Managers.Activation.Init(new ActivationLayout { _sectors = map.GetSectors(), _records = records.ToArray(),
+                                                         _conditions = new RunConditions { Density = _appliedDensity, CostOff = costOff, UpdateLod = updateLod } },
                                  HarnessArgs.Policy ?? _activationPolicy, HarnessArgs.Shadows ?? _activationShadows);
     }
 

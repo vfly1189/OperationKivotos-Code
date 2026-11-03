@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>보스 전투 구조의 세 단계</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+    --red:#c92a2a; --red-soft:#fff5f5;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; font-size:10.4pt; line-height:1.6; background:#fff; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:13pt; margin:4px 0 6px; font-weight:800; break-after:avoid; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  h2 .chip{ display:inline-block; font-size:9pt; padding:1px 9px; border-radius:7px; color:#fff; margin-right:6px; vertical-align:2px; }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  .lead{ font-size:10.4pt; margin:4px 0 8px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 6px; margin:9px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:10pt; font-weight:800; margin:0 0 4px; }
+  svg{ display:block; margin:2px 0; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:11px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:12.5px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:9.8px; } .s:not([fill]){ fill:#3a3f4a; }
+  .xs{ font-size:8.6px; } .xs:not([fill]){ fill:#5b6270; }
+  .c{ text-anchor:middle; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; break-inside:avoid; }
+  th{ text-align:left; padding:5px 8px; background:var(--ink); color:#fff; font-weight:700; font-size:8.8pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:6px 8px; border-bottom:1px solid var(--line2); vertical-align:top; font-size:9.2pt; line-height:1.45; }
+  tbody tr:last-child td{ border-bottom:none; }
+  td.k{ font-weight:800; white-space:nowrap; }
+  th.e1{ background:var(--amber); } th.e2{ background:var(--violet); } th.e3{ background:var(--blue); }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9.4pt; line-height:1.55; break-inside:avoid; }
+  .callout .lbl{ font-weight:800; font-size:9.6pt; display:block; margin-bottom:4px; }
+  .callout ul{ margin:2px 0 0; padding-left:16px; } .callout li{ margin:2px 0; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .three{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:9px 0; }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--red); font-weight:800; } .mid{ color:var(--amber-ink); font-weight:800; }
+  .pb{ break-before:page; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.4pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+
+  /* 번호 목록 — 숫자만 색 */
+  .nl{ list-style:none; counter-reset:n; padding:0; margin:4px 0 2px; }
+  .nl li{ counter-increment:n; position:relative; padding:5px 2px 5px 30px; border-bottom:1px solid var(--line2); font-size:9.4pt; line-height:1.5; }
+  .nl li:last-child{ border-bottom:none; }
+  .nl li::before{ content:counter(n); position:absolute; left:3px; top:6px; width:19px; height:19px; border-radius:50%; background:var(--red); color:#fff; font-weight:800; font-size:8.6pt; text-align:center; line-height:19px; }
+  .nl.v li::before{ background:var(--violet); }
+  .nl.b li::before{ background:var(--blue); }
+  .nl.k li::before{ background:var(--ink); }
+  .nl li b{ font-weight:800; }
+  .nl .to{ color:var(--green-ink); font-weight:800; }
+
+  /* 단계별 장단점 상자 */
+  .era{ border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; break-inside:avoid; }
+  .era h3{ margin:0 0 5px; font-size:10.4pt; font-weight:800; text-align:center; }
+  .era.e1{ border-color:var(--amber); } .era.e1 h3{ color:var(--amber); }
+  .era.e2{ border-color:var(--violet); } .era.e2 h3{ color:var(--violet); }
+  .era.e3{ border-color:var(--blue); } .era.e3 h3{ color:var(--blue); }
+  .era ul{ list-style:none; padding:0; margin:0; }
+  .era li{ font-size:8.9pt; line-height:1.45; padding:3px 0 3px 16px; position:relative; }
+  .era li.p::before{ content:"＋"; position:absolute; left:0; color:var(--green); font-weight:800; }
+  .era li.m::before{ content:"－"; position:absolute; left:0; color:var(--red); font-weight:800; }
+  .era .sep{ border-top:1px dashed var(--line); margin:4px 0; }
+
+  /* 매트릭스 점 */
+  .d{ font-weight:800; margin-right:3px; }
+  .d.f{ color:var(--green); } .d.h{ color:var(--amber); } .d.n{ color:var(--red); }
+  td.mx{ font-size:8.9pt; }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a91a0"/></marker>
+    <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e8590c"/></marker>
+    <marker id="arV" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7048e8"/></marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker>
+  </defs>
+</svg>
+
+<!-- ============================== 1쪽: 한눈에 ============================== -->
+<div class="kicker">Boss · Structure Evolution</div>
+<h1>보스 전투 구조, 세 번의 모양</h1>
+<p class="lead">하드코딩 스킬 → AbilitySystem → Pattern. 같은 보스(예로니무스)의 같은 스킬들을 세 구조로 만들어 봤습니다. 단계마다 <strong>무엇을 풀었고 무엇을 남겼는지</strong>를 같은 기준으로 비교합니다.</p>
+
+<div class="fig">
+  <div class="figt">흐름 — 세 단계와 바꾼 이유</div>
+  <svg viewBox="0 0 700 190" width="100%">
+    <!-- 단계 띠 -->
+    <rect x="10" y="22" width="220" height="62" rx="12" fill="#fff4ec" stroke="#e8590c" stroke-width="1.6"/>
+    <text x="120" y="49" class="tb c" fill="#8a3708">① 하드코딩 스킬</text>
+    <text x="120" y="69" class="xs c">2026-02 ~ 07-06</text>
+    <rect x="240" y="22" width="220" height="62" rx="12" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+    <text x="350" y="49" class="tb c" fill="#5028c0">② AbilitySystem</text>
+    <text x="350" y="69" class="xs c">07-06 이관 (16db1f52) ~ 10-21</text>
+    <rect x="470" y="22" width="220" height="62" rx="12" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/>
+    <text x="580" y="49" class="tb c" fill="#2b3a8f">③ Pattern</text>
+    <text x="580" y="69" class="xs c">10-22 ~ 지금 (작업 중)</text>
+    <path d="M231,46 l7,7 l-7,7" fill="none" stroke="#1a1c22" stroke-width="1.6"/>
+    <path d="M461,46 l7,7 l-7,7" fill="none" stroke="#1a1c22" stroke-width="1.6"/>
+    <!-- 한 줄 정의 -->
+    <rect x="10" y="94" width="220" height="28" rx="8" fill="#fff" stroke="#e8590c" stroke-dasharray="4 3"/>
+    <text x="120" y="112" class="t c">스킬 = 클래스 · 이름 = 문자열</text>
+    <rect x="240" y="94" width="220" height="28" rx="8" fill="#fff" stroke="#7048e8" stroke-dasharray="4 3"/>
+    <text x="350" y="112" class="t c">스킬 = Effect 에셋 조합</text>
+    <rect x="470" y="94" width="220" height="28" rx="8" fill="#fff" stroke="#3b5bdb" stroke-dasharray="4 3"/>
+    <text x="580" y="112" class="t c">패턴 = 동작 순서 + 순간 이벤트</text>
+    <!-- 바꾼 이유 -->
+    <line x1="235" y1="86" x2="235" y2="140" stroke="#8a91a0" stroke-dasharray="3 3"/>
+    <line x1="465" y1="86" x2="465" y2="140" stroke="#8a91a0" stroke-dasharray="3 3"/>
+    <rect x="70" y="140" width="290" height="44" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="215" y="158" class="t c" fill="#c92a2a">①→② 바꾼 이유</text>
+    <text x="215" y="175" class="s c">문자열 DB · 데미지 하드코딩 · 스킬마다 클래스</text>
+    <rect x="370" y="140" width="290" height="44" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="515" y="158" class="t c" fill="#c92a2a">②→③ 바꾼 이유</text>
+    <text x="515" y="175" class="s c">고르는 규칙 없음 · 흐름·동작·결과가 한 목록에</text>
+  </svg>
+</div>
+
+<div class="fig">
+  <div class="figt">세 질문이 단계마다 어디에 있었나 — 진하게 칠한 칸이 그 단계에서 바뀐 곳</div>
+  <svg viewBox="0 0 700 262" width="100%">
+    <!-- 머리 -->
+    <rect x="116" y="6" width="190" height="30" rx="8" fill="#e8590c"/>
+    <text x="211" y="26" class="t c" fill="#fff">① 하드코딩</text>
+    <rect x="312" y="6" width="190" height="30" rx="8" fill="#7048e8"/>
+    <text x="407" y="26" class="t c" fill="#fff">② AbilitySystem</text>
+    <rect x="508" y="6" width="186" height="30" rx="8" fill="#3b5bdb"/>
+    <text x="601" y="26" class="t c" fill="#fff">③ Pattern</text>
+
+    <!-- 행 머리 -->
+    <rect x="6" y="42" width="104" height="68" rx="9" fill="#1a1c22"/>
+    <text x="58" y="72" class="tb c" fill="#fff">언제</text>
+    <text x="58" y="90" class="xs c" fill="#cfd3dc">어떤 패턴을 언제</text>
+    <rect x="6" y="116" width="104" height="68" rx="9" fill="#1a1c22"/>
+    <text x="58" y="146" class="tb c" fill="#fff">무엇을</text>
+    <text x="58" y="164" class="xs c" fill="#cfd3dc">무엇을 실행하나</text>
+    <rect x="6" y="190" width="104" height="68" rx="9" fill="#1a1c22"/>
+    <text x="58" y="220" class="tb c" fill="#fff">어떻게</text>
+    <text x="58" y="238" class="xs c" fill="#cfd3dc">피해를 어떻게 넣나</text>
+
+    <!-- ① 열 (출발점) -->
+    <rect x="116" y="42" width="190" height="68" rx="9" fill="#fff4ec" stroke="#f3c5a8"/>
+    <text x="211" y="71" class="t c">BT RandomNode 균등 추첨</text>
+    <text x="211" y="89" class="s c">플래그 2개 + 타임라인 종료 콜백</text>
+    <rect x="116" y="116" width="190" height="68" rx="9" fill="#fff4ec" stroke="#f3c5a8"/>
+    <text x="211" y="145" class="t c">시그널 문자열 → 스킬 클래스</text>
+    <text x="211" y="163" class="s c">BossSkillBase 파생 6종</text>
+    <rect x="116" y="190" width="190" height="68" rx="9" fill="#fff4ec" stroke="#f3c5a8"/>
+    <text x="211" y="219" class="t c">씬 프리팹에 하드코딩</text>
+    <text x="211" y="237" class="s c">번개 10 · 장판 500 고정</text>
+
+    <!-- ② 열 -->
+    <rect x="312" y="42" width="190" height="68" rx="9" fill="#f7f8fa" stroke="#e3e6ec"/>
+    <text x="407" y="71" class="t c" fill="#8a91a0">그대로 (안 바뀜)</text>
+    <text x="407" y="89" class="s c" fill="#8a91a0">균등 추첨 · 플래그 2개</text>
+    <rect x="312" y="116" width="190" height="68" rx="9" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.8"/>
+    <text x="407" y="145" class="t c" fill="#5028c0">시그널 → AbilityData</text>
+    <text x="407" y="163" class="s c">Effect 에셋을 중첩해 조합</text>
+    <rect x="312" y="190" width="190" height="68" rx="9" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.8"/>
+    <text x="407" y="219" class="t c" fill="#5028c0">Effect가 보스 Stat을 읽음</text>
+    <text x="407" y="237" class="s c">AreaStrike · DealDamage</text>
+
+    <!-- ③ 열 -->
+    <rect x="508" y="42" width="186" height="68" rx="9" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.8"/>
+    <text x="601" y="71" class="t c" fill="#2b3a8f">BT 우선순위 + 패턴 표</text>
+    <text x="601" y="89" class="s c">가중치 · 쿨 · 직전 제외 · HP 줄</text>
+    <rect x="508" y="116" width="186" height="68" rx="9" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.8"/>
+    <text x="601" y="145" class="t c" fill="#2b3a8f">Pattern = Action 순서</text>
+    <text x="601" y="163" class="s c">순간은 시그널 → PatternEvent</text>
+    <rect x="508" y="190" width="186" height="68" rx="9" fill="#f7f8fa" stroke="#8a91a0" stroke-dasharray="4 3"/>
+    <text x="601" y="219" class="t c" fill="#8a91a0">아직 ②의 Effect 사용</text>
+    <text x="601" y="237" class="s c" fill="#8a91a0">→ 데미지 파이프라인 예정</text>
+  </svg>
+</div>
+
+<div class="callout c-blue">
+  <span class="lbl">이 표를 읽는 법</span>
+  ②는 ①의 <strong>‘무엇을·어떻게’</strong>를 데이터로 옮겼지만 <strong>‘언제’</strong>는 건드리지 않았습니다. ③은 ②가 남긴 ‘언제’를 표로 풀고, 한 목록에 섞여 있던 흐름·동작을 층으로 나눴습니다. ‘어떻게’(데미지 파이프라인)는 다음 차례입니다.
+</div>
+
+<!-- ============================== ① ============================== -->
+<h2 class="pb"><span class="chip" style="background:#e8590c">①</span>하드코딩 스킬 — 2026-02 ~ 07-06</h2>
+<p>BT가 타임라인을 고르고, 타임라인 시그널이 <strong>문자열</strong>로 스킬 프리팹을 찾아 실행했습니다. 스킬 하나가 클래스 하나였고, 데미지는 씬 프리팹에 숫자로 박혀 있었습니다.</p>
+
+<div class="fig">
+  <div class="figt">구조 — 빨간 번호는 아래 문제 목록의 번호</div>
+  <svg viewBox="0 0 700 318" width="100%">
+    <!-- 왼쪽 사슬 -->
+    <rect x="20" y="8" width="300" height="46" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+    <text x="170" y="28" class="t c">BT · RandomNode</text>
+    <text x="170" y="44" class="s c">UseSkill(0~4) 중 균등 추첨</text>
+    <line x1="170" y1="54" x2="170" y2="68" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="20" y="70" width="300" height="46" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+    <text x="170" y="90" class="t c">PlayableDirector</text>
+    <text x="170" y="106" class="s c">_skills[i] 타임라인 재생</text>
+    <line x1="170" y1="116" x2="170" y2="130" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="20" y="132" width="300" height="46" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+    <text x="170" y="152" class="t c">Signal → SignalReceiver</text>
+    <text x="170" y="168" class="s c">CastSkill("NormalAttack")  ← 문자열</text>
+    <line x1="170" y1="178" x2="170" y2="192" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="20" y="194" width="300" height="46" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+    <text x="170" y="214" class="t c">BossSkillController</text>
+    <text x="170" y="230" class="s c">_skillDatabase[문자열] → 프리팹 Instantiate</text>
+    <line x1="170" y1="240" x2="170" y2="254" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="20" y="256" width="300" height="46" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+    <text x="170" y="276" class="t c">BossSkillBase.Cast(context)</text>
+    <text x="170" y="292" class="s c">스킬 클래스 6종 · 데미지 하드코딩</text>
+
+    <!-- 오른쪽: 플래그 되먹임 -->
+    <rect x="400" y="66" width="285" height="54" rx="10" fill="#f7f8fa" stroke="#8a91a0" stroke-dasharray="4 3"/>
+    <text x="542" y="88" class="t c">director.stopped → OnTimelineStopped</text>
+    <text x="542" y="106" class="s c">_isActionRunning · _isSkillFiring 갱신</text>
+    <line x1="320" y1="93" x2="398" y2="93" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#arG)"/>
+    <path d="M542,66 L542,31 L323,31" fill="none" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#arG)"/>
+    <text x="440" y="24" class="xs">다음 틱에 BT가 플래그로 판단</text>
+
+    <!-- 오른쪽: 만능 컨텍스트 -->
+    <rect x="400" y="168" width="285" height="138" rx="10" fill="#fff" stroke="#c92a2a" stroke-width="1.4"/>
+    <text x="542" y="188" class="t c" fill="#c92a2a">BossSkillContext (만능 컨텍스트)</text>
+    <text x="418" y="208" class="s mono">_targetPosition</text>
+    <text x="418" y="224" class="s mono">_spawnPoints</text>
+    <text x="418" y="240" class="s mono">_lightningPoints</text>
+    <text x="555" y="208" class="s mono">_boss</text>
+    <text x="555" y="224" class="s mono">_bossController</text>
+    <text x="555" y="240" class="s mono">_bossRelicController</text>
+    <line x1="412" y1="254" x2="673" y2="254" stroke="#eef0f4"/>
+    <text x="542" y="272" class="s c">스킬이 하나 늘 때마다 칸이 늘어남</text>
+    <text x="542" y="290" class="xs c">모든 스킬이 모든 칸을 받음</text>
+    <line x1="320" y1="279" x2="398" y2="279" stroke="#c92a2a" stroke-width="1.3"/>
+
+    <!-- 번호 배지 -->
+    <circle cx="20" cy="10" r="9" fill="#c92a2a"/><text x="20" y="14" class="t c" fill="#fff">6</text>
+    <circle cx="20" cy="134" r="9" fill="#c92a2a"/><text x="20" y="138" class="t c" fill="#fff">1</text>
+    <circle cx="42" cy="134" r="9" fill="#c92a2a"/><text x="42" y="138" class="t c" fill="#fff">2</text>
+    <circle cx="20" cy="258" r="9" fill="#c92a2a"/><text x="20" y="262" class="t c" fill="#fff">4</text>
+    <circle cx="42" cy="258" r="9" fill="#c92a2a"/><text x="42" y="262" class="t c" fill="#fff">5</text>
+    <circle cx="400" cy="170" r="9" fill="#c92a2a"/><text x="400" y="174" class="t c" fill="#fff">3</text>
+  </svg>
+</div>
+
+<div class="fig">
+  <div class="figt">①이 가진 문제 6가지</div>
+  <ol class="nl">
+    <li><b>이중 결정</b> — “무슨 스킬인가”를 BT 번호(어느 타임라인)와 시그널 문자열(어느 프리팹)이 따로 정함</li>
+    <li><b>문자열 DB</b> — 이름 오타는 실행 중에야 에러, 코드에서 정의로 이동할 수 없음</li>
+    <li><b>만능 컨텍스트</b> — 스킬이 늘 때마다 <code>BossSkillContext</code>에 칸 추가 (6칸)</li>
+    <li><b>데미지 하드코딩</b> — 씬 프리팹 숫자(번개 10 · 장판 500), 보스 Stat·크리와 단절, 공격자가 이펙트 오브젝트</li>
+    <li><b>스킬 = 클래스 1개</b> — 조합 불가, 번개를 쓰는 스킬도 매번 새 클래스</li>
+    <li><b>고르는 규칙 없음</b> — 5개 균등 추첨, 같은 패턴 연속, HP 기믹 불가, 플래그 2개로 진행 상태 관리</li>
+  </ol>
+</div>
+
+<div class="callout c-amber">
+  <span class="lbl">그래도 옳았던 것</span>
+  연출(타임라인)과 기계(스킬 코드)를 나눈 것. ②는 이 분리를 그대로 두고 <strong>기계를 담는 그릇만</strong> 바꿨습니다.
+</div>
+
+<!-- ============================== ② ============================== -->
+<h2 class="pb"><span class="chip" style="background:#7048e8">②</span>AbilitySystem — 07-06 이관 ~ 10-21</h2>
+<p>시그널이 문자열 대신 <strong>AbilityData 에셋</strong>을 직접 넘기고, 스킬은 Effect 에셋의 조합이 됐습니다. 플레이어·일반 몹과 같은 <code>TryCast</code> 경로를 탑니다. 다만 BT 쪽은 그대로였습니다.</p>
+
+<div class="fig">
+  <div class="figt">구조 — 회색은 ①에서 바뀌지 않은 부분</div>
+  <svg viewBox="0 0 700 352" width="100%">
+    <!-- 왼쪽 사슬 -->
+    <rect x="10" y="8" width="300" height="46" rx="10" fill="#f7f8fa" stroke="#8a91a0" stroke-dasharray="4 3"/>
+    <text x="160" y="28" class="t c" fill="#5b6270">BT · RandomNode</text>
+    <text x="160" y="44" class="s c" fill="#8a91a0">그대로 — 균등 추첨 · 플래그 2개</text>
+    <line x1="160" y1="54" x2="160" y2="68" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#arG)"/>
+    <rect x="10" y="70" width="300" height="46" rx="10" fill="#f7f8fa" stroke="#8a91a0" stroke-dasharray="4 3"/>
+    <text x="160" y="90" class="t c" fill="#5b6270">PlayableDirector</text>
+    <text x="160" y="106" class="s c" fill="#8a91a0">타임라인 재생 (그대로)</text>
+    <line x1="160" y1="116" x2="160" y2="130" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="10" y="132" width="300" height="46" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+    <text x="160" y="152" class="t c" fill="#5028c0">Signal → CastAbility(AbilityData)</text>
+    <text x="160" y="168" class="s c">에셋을 인스펙터에서 드래그 (문자열 없음)</text>
+    <line x1="160" y1="178" x2="160" y2="192" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="10" y="194" width="300" height="46" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+    <text x="160" y="214" class="t c" fill="#5028c0">AbilityRunner.TryCast</text>
+    <text x="160" y="230" class="s c">쿨 · 코스트 · 캐스트타임 게이트</text>
+    <line x1="160" y1="240" x2="160" y2="254" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="10" y="256" width="300" height="46" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+    <text x="160" y="276" class="t c" fill="#5028c0">Effect[] 실행</text>
+    <text x="160" y="292" class="s c">Stat으로 피해 · 씬은 인터페이스로 조회</text>
+    <rect x="10" y="314" width="300" height="30" rx="15" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="160" y="333" class="t c" fill="#8a3708">※ 보스 AbilityData 6개 — 쿨·코스트·캐스트타임 전부 0</text>
+
+    <!-- 오른쪽: Skill03 에셋 트리 -->
+    <text x="335" y="20" class="t">예: Skill03 (유물 포격) — 시그널 2개가 넘기는 에셋</text>
+    <line x1="352" y1="46" x2="352" y2="98" stroke="#c9ced8"/>
+    <line x1="352" y1="72" x2="366" y2="72" stroke="#c9ced8"/><line x1="352" y1="98" x2="366" y2="98" stroke="#c9ced8"/>
+    <rect x="335" y="30" width="200" height="22" rx="6" fill="#1a1c22"/>
+    <text x="345" y="45" class="t" fill="#fff">AbilityData · Warning_Ability</text>
+    <rect x="366" y="61" width="250" height="22" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="376" y="76" class="s"><tspan font-weight="700">SpawnVFX</tspan> — 경고 원</text>
+    <rect x="366" y="87" width="250" height="22" rx="6" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="376" y="102" class="s"><tspan font-weight="700">SelectRandomChoice</tspan> — 유물 색 고르기</text>
+
+    <rect x="335" y="122" width="200" height="22" rx="6" fill="#1a1c22"/>
+    <text x="345" y="137" class="t" fill="#fff">AbilityData · Attack_Ability</text>
+    <line x1="352" y1="144" x2="352" y2="164" stroke="#c9ced8"/><line x1="352" y1="164" x2="366" y2="164" stroke="#c9ced8"/>
+    <rect x="366" y="153" width="250" height="22" rx="6" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="376" y="168" class="s"><tspan font-weight="700">BranchByChoice</tspan> — 고른 색으로 분기</text>
+    <line x1="383" y1="175" x2="383" y2="272" stroke="#c9ced8"/>
+    <line x1="383" y1="194" x2="397" y2="194" stroke="#c9ced8"/><line x1="383" y1="272" x2="397" y2="272" stroke="#c9ced8"/>
+    <rect x="397" y="183" width="250" height="22" rx="6" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="407" y="198" class="s"><tspan font-weight="700">ScatterPattern</tspan> — 빨강: 중앙 집중</text>
+    <line x1="414" y1="205" x2="414" y2="246" stroke="#c9ced8"/>
+    <line x1="414" y1="220" x2="428" y2="220" stroke="#c9ced8"/><line x1="414" y1="246" x2="428" y2="246" stroke="#c9ced8"/>
+    <rect x="428" y="209" width="200" height="22" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="438" y="224" class="s"><tspan font-weight="700">SpawnVFX</tspan> — 번개</text>
+    <rect x="428" y="235" width="200" height="22" rx="6" fill="#fff5f5" stroke="#c92a2a"/>
+    <text x="438" y="250" class="s"><tspan font-weight="700">AreaStrike</tspan> — 범위 피해</text>
+    <rect x="397" y="261" width="250" height="22" rx="6" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="407" y="276" class="s"><tspan font-weight="700">ScatterPattern</tspan> — 초록: 외곽 70발</text>
+    <line x1="414" y1="283" x2="414" y2="298" stroke="#c9ced8"/><line x1="414" y1="298" x2="428" y2="298" stroke="#c9ced8"/>
+    <rect x="428" y="287" width="200" height="22" rx="6" fill="#f7f8fa" stroke="#c9ced8" stroke-dasharray="3 2"/>
+    <text x="438" y="302" class="s" fill="#5b6270">SpawnVFX + AreaStrike (위와 같은 에셋)</text>
+
+    <!-- 범례 -->
+    <rect x="335" y="324" width="12" height="12" rx="3" fill="#f3f0ff" stroke="#7048e8"/><text x="352" y="334" class="xs">흐름 (분기·배치)</text>
+    <rect x="440" y="324" width="12" height="12" rx="3" fill="#eef2ff" stroke="#3b5bdb"/><text x="457" y="334" class="xs">동작 (생성)</text>
+    <rect x="525" y="324" width="12" height="12" rx="3" fill="#fff5f5" stroke="#c92a2a"/><text x="542" y="334" class="xs">결과 (피해)</text>
+    <text x="610" y="334" class="xs" fill="#c92a2a" font-weight="700">최대 4단 중첩</text>
+  </svg>
+</div>
+
+<table>
+  <thead><tr><th style="width:22%">①의 문제</th><th style="width:9%">②에서</th><th>어떻게</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1 이중 결정</td><td class="ok">풀림</td><td>BT는 타임라인만, 무슨 스킬인지는 시그널의 에셋 참조가 정함</td></tr>
+    <tr><td class="k">2 문자열 DB</td><td class="ok">풀림</td><td><code>BossSkillController</code> 제거, 에셋을 드래그로 연결</td></tr>
+    <tr><td class="k">3 만능 컨텍스트</td><td class="ok">풀림</td><td><code>AbilityContext</code>는 누가·어디·대상만, 씬 참조는 인터페이스로 조회</td></tr>
+    <tr><td class="k">4 데미지 하드코딩</td><td class="ok">풀림</td><td>Effect가 <code>ctx.CasterStat</code>을 읽음, 공격자 = 보스</td></tr>
+    <tr><td class="k">5 스킬 = 클래스</td><td class="ok">풀림</td><td>payload 재사용 — 평타·Skill2는 새 코드 0줄 (번개 + AreaStrike)</td></tr>
+    <tr><td class="k">6 고르는 규칙 없음</td><td class="ng">그대로</td><td>BT를 건드리지 않음 — 균등 추첨 · 연속 중복 · HP 기믹 불가</td></tr>
+  </tbody>
+</table>
+
+<div class="fig">
+  <div class="figt">②가 남긴 문제 4가지</div>
+  <ol class="nl v">
+    <li><b>보스에겐 빈 게이트</b> — “쓸 수 있나” 판정이 핵심인데 보스는 6개 모두 0. 패턴 쿨은 둘 곳이 없음</li>
+    <li><b>흐름·동작·결과가 한 목록</b> — 분기·생성·피해가 한 목록에 섞여 인스펙터에서 SO 4단 중첩</li>
+    <li><b>시작·끝 신호가 클립 이벤트</b> — 클립 7개에 문자열로 박힌 이벤트 + <code>director.stopped</code> 콜백</li>
+    <li><b>사망 취소가 늦음</b> — <code>_monsterCts</code>가 디스폰 대기 겸용 → 쓰러지는 5초 동안 소환 진행</li>
+  </ol>
+</div>
+
+<div class="callout c-violet">
+  <span class="lbl">②의 진짜 성과는 남는다</span>
+  플레이어·몹·보스가 <code>TryCast</code> 하나로 모인 것은 그대로입니다. ③은 <strong>보스 쪽만</strong> Pattern으로 옮겼고, 플레이어의 AbilitySystem(게이팅 단일화·쿨 절대시각)은 건드리지 않습니다.
+</div>
+
+<!-- ============================== ③ ============================== -->
+<h2 class="pb"><span class="chip" style="background:#3b5bdb">③</span>Pattern — 10-22 ~ 지금</h2>
+<p>BT는 <strong>무엇을 시작할지</strong>만 정하고, 시작한 패턴의 수명은 <strong>PatternRunner</strong>가 끝까지 책임집니다. 패턴은 시간이 걸리는 <strong>Action</strong>의 순서이고, 그 사이의 한순간에 터지는 것은 <strong>Event</strong>입니다.</p>
+
+<div class="fig">
+  <div class="figt">구조</div>
+  <svg viewBox="0 0 700 402" width="100%">
+    <!-- BT Selector -->
+    <rect x="8" y="8" width="222" height="236" rx="12" fill="#fff" stroke="#1a1c22" stroke-width="1.4"/>
+    <text x="119" y="28" class="t c">BT Selector — 위에서부터</text>
+    <rect x="18" y="40" width="202" height="34" rx="7" fill="#fff5f5" stroke="#c92a2a"/>
+    <circle cx="33" cy="57" r="8" fill="#c92a2a"/><text x="33" y="61" class="xs c" fill="#fff" font-weight="700">1</text>
+    <text x="48" y="54" class="t">사망</text><text x="48" y="68" class="xs">Runner.Cancel · 전투 토큰 취소</text>
+    <rect x="18" y="78" width="202" height="34" rx="7" fill="#eef2ff" stroke="#3b5bdb"/>
+    <circle cx="33" cy="95" r="8" fill="#3b5bdb"/><text x="33" y="99" class="xs c" fill="#fff" font-weight="700">2</text>
+    <text x="48" y="92" class="t">실행 중이면 계속</text><text x="48" y="106" class="xs">끝나면 Idle + 다음 시각 기록</text>
+    <rect x="18" y="116" width="202" height="34" rx="7" fill="#f7f8fa" stroke="#c9ced8"/>
+    <circle cx="33" cy="133" r="8" fill="#5b6270"/><text x="33" y="137" class="xs c" fill="#fff" font-weight="700">3</text>
+    <text x="48" y="130" class="t">간격 대기</text><text x="48" y="144" class="xs">_patternInterval</text>
+    <rect x="18" y="154" width="202" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+    <circle cx="33" cy="171" r="8" fill="#e8590c"/><text x="33" y="175" class="xs c" fill="#fff" font-weight="700">4</text>
+    <text x="48" y="168" class="t">기믹 표</text><text x="48" y="182" class="xs">HP 줄 도달 · 위에서부터 · 1회씩</text>
+    <rect x="18" y="192" width="202" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/>
+    <circle cx="33" cy="209" r="8" fill="#2b8a3e"/><text x="33" y="213" class="xs c" fill="#fff" font-weight="700">5</text>
+    <text x="48" y="206" class="t">일반 표</text><text x="48" y="220" class="xs">가중치 · 쿨 · 직전 패턴 제외</text>
+
+    <!-- Runner -->
+    <rect x="262" y="8" width="196" height="146" rx="12" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/>
+    <text x="360" y="28" class="t c" fill="#2b3a8f">PatternRunner</text>
+    <text x="274" y="50" class="s">Start(pattern, ctx)</text>
+    <text x="274" y="64" class="xs">— 돌던 패턴은 먼저 Cancel</text>
+    <text x="274" y="84" class="s">Tick: 첫 Tick에 Begin</text>
+    <text x="274" y="98" class="xs">— Success면 다음 스텝으로</text>
+    <text x="274" y="118" class="s">Cancel: 돌던 스텝만 정리</text>
+    <text x="274" y="138" class="s mono">IsBusy => _pattern != null</text>
+    <line x1="220" y1="95" x2="260" y2="95" stroke="#3b5bdb" stroke-width="1.3" marker-end="url(#arB)"/>
+    <text x="240" y="89" class="xs c">Tick</text>
+    <path d="M220,171 L242,171 L242,130 L260,130" fill="none" stroke="#3b5bdb" stroke-width="1.3" marker-end="url(#arB)"/>
+    <path d="M220,209 L242,209 L242,171" fill="none" stroke="#3b5bdb" stroke-width="1.3"/>
+    <text x="250" y="125" class="xs c">Start</text>
+
+    <!-- Context -->
+    <rect x="262" y="168" width="196" height="76" rx="12" fill="#fff" stroke="#3b5bdb" stroke-dasharray="4 3"/>
+    <text x="360" y="187" class="t c" fill="#2b3a8f">PatternContext</text>
+    <text x="360" y="205" class="xs c">animator · director · self · target</text>
+    <text x="360" y="220" class="xs c">spawnPoints · cToken</text>
+    <text x="360" y="235" class="xs c">summonedRegistry</text>
+
+    <!-- Pattern 트리 -->
+    <rect x="484" y="8" width="208" height="236" rx="12" fill="#fff" stroke="#1a1c22" stroke-width="1.4"/>
+    <text x="588" y="28" class="t c">보스 프리팹 / Patterns</text>
+    <rect x="494" y="40" width="188" height="24" rx="6" fill="#3b5bdb"/>
+    <text x="504" y="56" class="t" fill="#fff">Pattern_Entrance</text>
+    <rect x="510" y="68" width="172" height="22" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="518" y="83" class="s">AnimationAction("OP")</text>
+    <rect x="494" y="100" width="188" height="24" rx="6" fill="#3b5bdb"/>
+    <text x="504" y="116" class="t" fill="#fff">Pattern_Skill0 ~ 3</text>
+    <rect x="510" y="128" width="172" height="22" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="518" y="143" class="s">TimelineAction</text>
+    <rect x="494" y="160" width="188" height="24" rx="6" fill="#3b5bdb"/>
+    <text x="504" y="176" class="t" fill="#fff">Pattern_Skill4</text>
+    <rect x="510" y="188" width="172" height="22" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="518" y="203" class="s">TimelineAction</text>
+    <rect x="510" y="214" width="172" height="22" rx="6" fill="#ebfbee" stroke="#2b8a3e"/>
+    <text x="518" y="229" class="s">SummonEvent (컴포넌트)</text>
+    <line x1="458" y1="60" x2="482" y2="60" stroke="#3b5bdb" stroke-width="1.3" marker-end="url(#arB)"/>
+
+    <!-- 아래: 순간 이벤트 흐름 -->
+    <line x1="8" y1="262" x2="692" y2="262" stroke="#e3e6ec"/>
+    <text x="8" y="282" class="t">순간 이벤트가 터지는 두 길</text>
+    <rect x="18" y="294" width="380" height="28" rx="7" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="28" y="312" class="s">TimelineAction이 트는 Boss_Skill_04 타임라인</text>
+    <path d="M304,323 l12,0 l-6,9 z" fill="#2b8a3e"/>
+    <text x="326" y="333" class="xs" fill="#1f6b2e" font-weight="700">Signal</text>
+    <line x1="310" y1="334" x2="310" y2="350" stroke="#2b8a3e" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="160" y="352" width="300" height="30" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.4"/>
+    <text x="310" y="371" class="t c">SignalReceiver → FireEvent(PatternEvent)</text>
+    <rect x="490" y="294" width="200" height="28" rx="7" fill="#f7f8fa" stroke="#8a91a0" stroke-dasharray="4 3"/>
+    <text x="590" y="312" class="s c">EventAction — 스텝 사이 (예정)</text>
+    <line x1="590" y1="322" x2="590" y2="350" stroke="#8a91a0" stroke-width="1.3" marker-end="url(#arG)"/>
+    <line x1="460" y1="367" x2="488" y2="367" stroke="#2b8a3e" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="490" y="352" width="200" height="30" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.4"/>
+    <text x="590" y="371" class="t c" fill="#1f6b2e">Fire → FireAsync(ctx, token)</text>
+    <text x="18" y="371" class="xs">동작 <tspan font-weight="700">안의</tspan> 순간 →</text>
+    <text x="590" y="397" class="xs c">동작 <tspan font-weight="700">사이의</tspan> 순간도 같은 이벤트를 씀</text>
+  </svg>
+</div>
+
+<table>
+  <thead><tr><th style="width:27%">클래스</th><th style="width:46%">맡는 일</th><th>지금 있는 것</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Pattern</td><td>고르는 공격 단위 = Action 목록 + 사거리</td><td>입장 1 · 일반 5</td></tr>
+    <tr><td class="k">PatternAction</td><td>시간 걸리는 동작 — <code>Begin/Tick/Cancel</code></td><td>Animation · TimelineAction</td></tr>
+    <tr><td class="k">PatternEvent</td><td>한순간 실행하고 끝 — <code>Fire</code> → <code>FireAsync</code></td><td>SummonEvent</td></tr>
+    <tr><td class="k">PatternRunner</td><td>패턴 하나의 수명 — 순서 진행·취소</td><td>보스가 하나 소유</td></tr>
+    <tr><td class="k">Normal·GimmickPatternSlot</td><td>표의 한 칸 — 가중치·쿨 / HP 줄</td><td>보스 인스펙터의 두 표</td></tr>
+  </tbody>
+</table>
+
+<div class="two">
+  <div class="callout c-blue" style="margin:0">
+    <span class="lbl">Action — 기다려야 하면</span>
+    끝날 때까지 다음으로 안 넘어감<br>예: 애니 · 타임라인 · 대기 · 이동
+  </div>
+  <div class="callout c-green" style="margin:0">
+    <span class="lbl">Event — 쏘고 잊으면</span>
+    부르는 쪽은 기다리지 않음 (비동기는 내부 사정)<br>예: 소환 · 이펙트 · 사운드 · 범위 타격
+  </div>
+</div>
+
+<div class="fig">
+  <div class="figt">③이 푼 것</div>
+  <ol class="nl b">
+    <li><b>고르는 규칙</b> (①-6) <span class="to">→</span> 일반 표(가중치·쿨·직전 제외) + 기믹 표(HP 줄) + BT 우선순위</li>
+    <li><b>빈 게이트</b> (②-1) <span class="to">→</span> 쿨은 표의 칸으로. 보스는 TryCast 게이트를 거치지 않음</li>
+    <li><b>섞인 목록</b> (②-2) <span class="to">→</span> 흐름 = Pattern·Runner(코드), 동작 = Action, 순간 = Event — 종류마다 클래스 하나</li>
+    <li><b>클립 이벤트</b> (②-3) <span class="to">→</span> 끝은 Tick이 직접 확인(Animator 상태 · <code>director.state</code>), 클립 이벤트 삭제</li>
+    <li><b>늦은 취소</b> (②-4) <span class="to">→</span> 전투 토큰 분리 — 사망 즉시 취소, 디스폰 타이머는 그대로</li>
+  </ol>
+</div>
+
+<!-- ============================== 같은 스킬 ============================== -->
+<h2 class="pb"><span class="chip" style="background:#1a1c22">비교</span>같은 스킬, 세 번 — Skill4 몬스터 소환</h2>
+<p>세 단계 모두 “타임라인의 특정 순간에 맵 지점마다 몹을 소환하고 보스에 등록한다”는 같은 일을 합니다. 달라진 것은 <strong>시그널이 무엇을 넘기는지</strong>와 <strong>사망했을 때 어떻게 되는지</strong>입니다.</p>
+
+<div class="fig">
+  <svg viewBox="0 0 700 300" width="100%">
+    <!-- ① -->
+    <rect x="6" y="8" width="72" height="84" rx="10" fill="#e8590c"/>
+    <text x="42" y="46" class="tb c" fill="#fff">①</text><text x="42" y="64" class="xs c" fill="#fff">하드코딩</text>
+    <rect x="90" y="14" width="135" height="46" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="157" y="34" class="t c">Signal</text><text x="157" y="50" class="xs c">문자열 이름</text>
+    <rect x="240" y="14" width="135" height="46" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="307" y="34" class="t c">CastSkill(이름)</text><text x="307" y="50" class="xs c">DB 조회 · Instantiate</text>
+    <rect x="390" y="14" width="135" height="46" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="457" y="34" class="t c">SummonMonsterSkill</text><text x="457" y="50" class="xs c">.Cast(BossSkillContext)</text>
+    <rect x="540" y="14" width="150" height="46" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+    <text x="615" y="34" class="t c">지점마다 소환</text><text x="615" y="50" class="xs c">몹 키가 코드에 박힘</text>
+    <line x1="225" y1="37" x2="238" y2="37" stroke="#e8590c" stroke-width="1.3" marker-end="url(#arA)"/>
+    <line x1="375" y1="37" x2="388" y2="37" stroke="#e8590c" stroke-width="1.3" marker-end="url(#arA)"/>
+    <line x1="525" y1="37" x2="538" y2="37" stroke="#e8590c" stroke-width="1.3" marker-end="url(#arA)"/>
+    <text x="90" y="82" class="s" fill="#c92a2a">사망 시: 취소 토큰 없음 — 보스가 죽어도 소환이 끝까지 진행</text>
+
+    <!-- ② -->
+    <rect x="6" y="106" width="72" height="84" rx="10" fill="#7048e8"/>
+    <text x="42" y="144" class="tb c" fill="#fff">②</text><text x="42" y="162" class="xs c" fill="#fff">Ability</text>
+    <rect x="90" y="112" width="135" height="46" rx="9" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="157" y="132" class="t c">Signal</text><text x="157" y="148" class="xs c">Skill04_Ability 에셋</text>
+    <rect x="240" y="112" width="135" height="46" rx="9" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="307" y="132" class="t c">AbilityRunner</text><text x="307" y="148" class="xs c">TryCast · 게이트(쿨 0)</text>
+    <rect x="390" y="112" width="135" height="46" rx="9" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="457" y="132" class="t c">SummonMonsters</text><text x="457" y="148" class="xs c">Effect 에셋 · 무상태</text>
+    <rect x="540" y="112" width="150" height="46" rx="9" fill="#f3f0ff" stroke="#7048e8"/>
+    <text x="615" y="132" class="t c">지점마다 소환</text><text x="615" y="148" class="xs c">ISpawnPointProvider 조회</text>
+    <line x1="225" y1="135" x2="238" y2="135" stroke="#7048e8" stroke-width="1.3" marker-end="url(#arV)"/>
+    <line x1="375" y1="135" x2="388" y2="135" stroke="#7048e8" stroke-width="1.3" marker-end="url(#arV)"/>
+    <line x1="525" y1="135" x2="538" y2="135" stroke="#7048e8" stroke-width="1.3" marker-end="url(#arV)"/>
+    <text x="90" y="180" class="s" fill="#8a3708">사망 시: _monsterCts가 디스폰 대기 겸용 — 쓰러지는 5초 동안 계속</text>
+
+    <!-- ③ -->
+    <rect x="6" y="204" width="72" height="84" rx="10" fill="#3b5bdb"/>
+    <text x="42" y="242" class="tb c" fill="#fff">③</text><text x="42" y="260" class="xs c" fill="#fff">Pattern</text>
+    <rect x="90" y="210" width="135" height="46" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="157" y="230" class="t c">Signal</text><text x="157" y="246" class="xs c">SummonEvent 컴포넌트</text>
+    <rect x="240" y="210" width="135" height="46" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="307" y="230" class="t c">FireEvent</text><text x="307" y="246" class="xs c">BuildContext()</text>
+    <rect x="390" y="210" width="135" height="46" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="457" y="230" class="t c">SummonEvent</text><text x="457" y="246" class="xs c">FireAsync(ctx, token)</text>
+    <rect x="540" y="210" width="150" height="46" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+    <text x="615" y="230" class="t c">지점마다 소환</text><text x="615" y="246" class="xs c">ctx.spawnPoints · 0.2초 간격</text>
+    <line x1="225" y1="233" x2="238" y2="233" stroke="#3b5bdb" stroke-width="1.3" marker-end="url(#arB)"/>
+    <line x1="375" y1="233" x2="388" y2="233" stroke="#3b5bdb" stroke-width="1.3" marker-end="url(#arB)"/>
+    <line x1="525" y1="233" x2="538" y2="233" stroke="#3b5bdb" stroke-width="1.3" marker-end="url(#arB)"/>
+    <text x="90" y="278" class="s" fill="#1f6b2e">사망 시: 전투 토큰 즉시 취소 — 그사이 생성된 몹은 등록하지 않고 회수</text>
+  </svg>
+</div>
+
+<table>
+  <thead><tr><th style="width:19%">항목</th><th class="e1" style="width:24%">① 하드코딩</th><th class="e2" style="width:28%">② AbilitySystem</th><th class="e3">③ Pattern</th></tr></thead>
+  <tbody>
+    <tr><td class="k">시그널이 넘기는 것</td><td>문자열</td><td>AbilityData 에셋</td><td>SummonEvent 컴포넌트</td></tr>
+    <tr><td class="k">소환 지점</td><td>BossSkillContext의 칸</td><td>캐스터에서 인터페이스로 조회</td><td><code>ctx.spawnPoints</code> (provider에서 매번)</td></tr>
+    <tr><td class="k">몹 종류</td><td>코드 안 문자열</td><td>에셋 값</td><td>컴포넌트 값</td></tr>
+    <tr><td class="k">보스 등록</td><td><code>_bossController</code> 직접 호출</td><td><code>ISummonRegistry</code></td><td><code>ctx.summonedRegistry</code></td></tr>
+    <tr><td class="k">사망 시</td><td class="ng">끝까지 진행</td><td class="mid">5초간 진행</td><td class="ok">즉시 멈춤 + 늦게 온 몹 회수</td></tr>
+    <tr><td class="k">다른 캐스터가 쓰기</td><td class="ng">불가</td><td class="ok">가능 (몹·플레이어)</td><td class="mid">보스 프리팹 안에서</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================== 종합 ============================== -->
+<h2 class="pb"><span class="chip" style="background:#1a1c22">종합</span>장단점 한눈에</h2>
+
+<table>
+  <thead><tr><th style="width:22%">기준</th><th class="e1" style="width:24%">① 하드코딩</th><th class="e2" style="width:27%">② AbilitySystem</th><th class="e3">③ Pattern</th></tr></thead>
+  <tbody>
+    <tr><td class="k">패턴을 고르는 규칙</td><td class="mx"><span class="d n">○</span>균등 추첨</td><td class="mx"><span class="d n">○</span>그대로</td><td class="mx"><span class="d f">●</span>가중치·쿨·HP 줄</td></tr>
+    <tr><td class="k">실행 수명 (시작·끝·취소)</td><td class="mx"><span class="d n">○</span>플래그 + 콜백</td><td class="mx"><span class="d h">◐</span>Effect 실행만 관리</td><td class="mx"><span class="d f">●</span>Runner 한 곳</td></tr>
+    <tr><td class="k">순간 타이밍 연결</td><td class="mx"><span class="d h">◐</span>시그널 + 문자열</td><td class="mx"><span class="d f">●</span>에셋 참조</td><td class="mx"><span class="d f">●</span>컴포넌트 참조</td></tr>
+    <tr><td class="k">피해와 Stat 연결</td><td class="mx"><span class="d n">○</span>하드코딩</td><td class="mx"><span class="d f">●</span>Stat 주입</td><td class="mx"><span class="d h">◐</span>아직 ② 경유</td></tr>
+    <tr><td class="k">재사용 범위</td><td class="mx"><span class="d n">○</span>스킬마다 클래스</td><td class="mx"><span class="d f">●</span>플레이어·몹·보스</td><td class="mx"><span class="d h">◐</span>보스 프리팹 안</td></tr>
+    <tr><td class="k">흐름이 한눈에 보이나</td><td class="mx"><span class="d h">◐</span>클래스마다 흩어짐</td><td class="mx"><span class="d n">○</span>SO 4단 중첩</td><td class="mx"><span class="d f">●</span>하이어라키 = 순서</td></tr>
+    <tr><td class="k">새 동작 추가</td><td class="mx">클래스 + 문자열 등록</td><td class="mx">에셋 조합 (코드 0줄도 가능)</td><td class="mx">컴포넌트 클래스 1 + 연결</td></tr>
+    <tr><td class="k">씬 참조</td><td class="mx">만능 컨텍스트</td><td class="mx">인터페이스 조회</td><td class="mx">프리팹 직접 참조 + ctx</td></tr>
+  </tbody>
+</table>
+<p style="font-size:8.6pt; color:var(--muted); margin-top:-3px;"><span class="d f">●</span>충족 · <span class="d h">◐</span>부분 · <span class="d n">○</span>못 함</p>
+
+<div class="three">
+  <div class="era e1">
+    <h3>① 하드코딩</h3>
+    <ul>
+      <li class="p">연출(타임라인)과 기계(코드) 분리</li>
+      <li class="p">구조가 단순해 빨리 만듦</li>
+    </ul>
+    <div class="sep"></div>
+    <ul>
+      <li class="m">문자열 · 숫자 하드코딩</li>
+      <li class="m">만능 컨텍스트</li>
+      <li class="m">고르는 규칙 · 취소 없음</li>
+    </ul>
+  </div>
+  <div class="era e2">
+    <h3>② AbilitySystem</h3>
+    <ul>
+      <li class="p">문자열 제거 · Stat 연결</li>
+      <li class="p">payload 재사용 (코드 0줄 스킬)</li>
+      <li class="p">플레이어·몹·보스 한 경로</li>
+    </ul>
+    <div class="sep"></div>
+    <ul>
+      <li class="m">보스에겐 빈 게이트</li>
+      <li class="m">흐름·동작·결과 섞인 중첩</li>
+      <li class="m">‘언제’는 그대로</li>
+    </ul>
+  </div>
+  <div class="era e3">
+    <h3>③ Pattern</h3>
+    <ul>
+      <li class="p">표로 고르는 규칙</li>
+      <li class="p">Runner가 수명 단일 책임</li>
+      <li class="p">Action / Event 구분 · 전투 토큰</li>
+    </ul>
+    <div class="sep"></div>
+    <ul>
+      <li class="m">패턴을 보스끼리 공유 못 함</li>
+      <li class="m">연결은 여전히 인스펙터 UnityEvent</li>
+      <li class="m">피해 층은 아직 ②</li>
+    </ul>
+  </div>
+</div>
+
+<div class="fig">
+  <div class="figt">③에서 남은 일 · 조심할 것</div>
+  <ol class="nl k">
+    <li><b>PatternContext 비대화 주의</b> — 벌써 7칸. ①의 <code>BossSkillContext</code>가 걸은 길과 같음. 보편(누가·대상·토큰)만 두고 나머지는 보스 참조를 통해 꺼내게</li>
+    <li><b>남은 시그널 5개 이관</b> — 평타·Skill1~3은 아직 <code>CastAbility</code>. 피해를 주는 동작은 데미지 파이프라인과 함께 옮김</li>
+    <li><b>옛 코드 삭제</b> — <code>UseSkill</code> · <code>UseAttack</code> · <code>_skills</code> · 플래그 2개 · <code>CastAbility</code></li>
+    <li><b>패턴 공유가 필요해지면</b> — 스텝을 SO + <code>SerializeReference</code> 데이터로, 런타임 상태는 러너로 옮김</li>
+    <li><b>소환 목록 정리</b> — 먼저 죽은 소환몹이 목록에 남아, 풀 재사용 시 다른 몹을 같이 죽일 위험</li>
+  </ol>
+</div>
+
+<div class="callout c-blue">
+  <span class="lbl">한 줄 정리</span>
+  ①→② = <strong>‘무엇을’을 데이터로</strong> (문자열 → 타입 있는 참조) · ②→③ = <strong>‘언제’를 표로, 섞인 목록을 층으로</strong> · 다음 = <strong>‘어떻게’</strong> (데미지 파이프라인).
+</div>
+
+</body></html>

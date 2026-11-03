@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class MonsterSpawner : MonoBehaviour
 {
@@ -181,7 +182,15 @@ public class MonsterSpawner : MonoBehaviour
 
     #endregion
 
-    public SpawnerRecord Build(SpawnerData data)
+    // 밀도 배율 복제본 배치 — 원래 포인트 둘레 해바라기 나선(황금각). 결정적이라 매 실행 같은 자리.
+    //  간격 1.1m = 몬스터 NavMeshAgent 지름(0.5×2) + 여유. ×8이면 원래 포인트에서 최대 약 2.9m.
+    const float CopySpacing = 1.1f;
+    const float GoldenAngleDeg = 137.508f;
+    const float CopySampleRadius = 1f;
+
+    // density — 측정 전용(하네스 -density). 포인트마다 슬롯을 density개로 늘린다. 스포너 수 · 중심 · 정책 판정은 그대로라
+    //  존재 층 결과(어느 스포너가 켜지나)는 ×1과 같고, 마릿수만 배가 된다. 1이면 기존과 완전히 같다.
+    public SpawnerRecord Build(SpawnerData data, int density = 1)
     {
         if (data == null)
         {
@@ -192,7 +201,8 @@ public class MonsterSpawner : MonoBehaviour
         // 데이터 오류 하나로 씬 로딩 전체가 멈추지 않게, 잘못된 항목은 경고 후 건너뛴다 (S5).
         int childCount = transform.childCount;
         HashSet<int> usedPoints = new HashSet<int>();
-        List<SpawnSlot> slots = new List<SpawnSlot>(data.spawnList.Count);
+        List<SpawnSlot> slots = new List<SpawnSlot>(data.spawnList.Count * density);
+        int offMesh = 0;
         foreach(SpawnInfo info in data.spawnList)
         {
             if (info.pointIndex < 0 || info.pointIndex >= childCount)
@@ -208,12 +218,32 @@ public class MonsterSpawner : MonoBehaviour
 
             Transform p = transform.GetChild(info.pointIndex);
             slots.Add(new SpawnSlot(_spawnerId, info.monsterId, info.delay, p.position, p.rotation));
+
+            for (int copy = 1; copy < density; copy++)
+            {
+                if (!TryCopyPosition(p.position, copy, out Vector3 pos)) offMesh++;
+                slots.Add(new SpawnSlot(_spawnerId, info.monsterId, info.delay, pos, p.rotation));
+            }
         }
+
+        if (offMesh > 0)
+            GameLog.LogWarning($"[Spawner] {_spawnerId} ({name}) 밀도 ×{density} 복제 {offMesh}개가 NavMesh 밖 — 원래 포인트에 겹쳐 둠");
 
         if (usedPoints.Count < childCount)
             GameLog.LogWarning($"[Spawner] {_spawnerId} ({name}) 자식 포인트 {childCount - usedPoints.Count}개가 표에서 쓰이지 않음");
 
         return new SpawnerRecord(_spawnerId, transform.position, slots.ToArray());
+    }
+
+    static bool TryCopyPosition(Vector3 origin, int copy, out Vector3 pos)
+    {
+        float r = CopySpacing * Mathf.Sqrt(copy);
+        float a = copy * GoldenAngleDeg * Mathf.Deg2Rad;
+        Vector3 candidate = origin + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r);
+
+        bool found = NavMesh.SamplePosition(candidate, out NavMeshHit hit, CopySampleRadius, NavMesh.AllAreas);
+        pos = found ? hit.position : origin;
+        return found;
     }
 
 

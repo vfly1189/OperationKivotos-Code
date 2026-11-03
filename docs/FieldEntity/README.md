@@ -61,6 +61,10 @@
 | **[Harness_Result.pdf](Harness_Result.pdf)** ([HTML](Harness_Result.html)) | **측정 기록(0-4 · 0-5)** — 하네스 3회 재현(이벤트 수 동일 · p50 2.6%) · 경로 ⓐ 7개 정책 실측 = 예측 ±1 · ① 기준선(119마리 스폰 66.8ms · 경계 왕복 680마리 · 화면 안 등장 9) · 스폰 1마리 +0.53ms · 풀 꺼내기 63% |
 | [Worklog_2026-10-09.md](Worklog_2026-10-09.md) | 2026-10-09 작업 기록 — SectorManager 정리 · 교전 유지 · 계측 · 하네스 · 측정 결과 · **다음에 할 일** |
 | **[Shadow_Result.pdf](Shadow_Result.pdf)** ([HTML](Shadow_Result.html) · [MD](Shadow_Result.md)) | **그림자 측정 결과(2-5)** — 실제 1 + 그림자 6으로 7개 정책을 한 플레이에서 비교 · 원본 · 변형 두 맵. 동등성 불일치 0 · 히스테리시스 위반 0 · 순위 예측과 같음 · 순간 비용 격차는 예측보다 큼(③ 68 vs ⑤ 17) · 떨림은 ③④ 칸 경계에서만 · P1~P14 대조 |
+| [UpdateLOD_Predictions.pdf](UpdateLOD_Predictions.pdf) ([HTML](UpdateLOD_Predictions.html)) | 갱신 LOD 측정 전 예측 |
+| [UpdateLOD_Explained.pdf](UpdateLOD_Explained.pdf) ([HTML](UpdateLOD_Explained.html)) | 갱신 LOD 개념 설명 — 비용 식 헤드라인 · 무엇을 줄이나 |
+| [CostOff_Result.pdf](CostOff_Result.pdf) ([HTML](CostOff_Result.html)) | 끄기 실험(0단계) — BT −35 · Animator −27 · HP바 −15 · 회피 −1 (%) |
+| **[LOD_Result.pdf](LOD_Result.pdf)** ([HTML](LOD_Result.html)) | **갱신 LOD 결과** — 밀도 ×1~×8 · LOD 끔/켬 · ×8 p50 −17% · 예산 430 → 514 |
 | [tools/](tools/README.md) | 분석 스크립트 — 맵 프리팹 → JSON(`parse_map.py`) · 그림자 로그 분석(`analyze_shadow.py`) |
 
 ## 현재 상태
@@ -89,7 +93,13 @@
 - [x] 정책 7개 × 3회 측정 (2026-10-09 ~ 10, 무인 하네스 `58f32b83`) → **[Policy_Result.pdf](Policy_Result.pdf)** ([HTML](Policy_Result.html)) — dt p50 = 1.307ms + 7.57μs × 살아 있는 몹, ⑤⑥⑦ 동률
 - [x] 계측 기록 목록 묶음 저장 (2026-10-10) — 계측 자체 최대 4.7 → 0.16ms
 - [x] **결정 (2026-10-10) — ⑤ Distance 채택** · Phase 4 · 반경 스윕 · 프레임 스폰 예산 생략 → [03_Comparison_Plan.md](03_Comparison_Plan.md) 8절
-- [ ] **다음** — ⑤를 기본 정책으로 · 교체 조건 주석(5-2) → Sector 볼륨의 운명(5-3) → After 측정 · 예측 대조 · 영상(5-4 · 5-5) → 결과 문서 · 포트폴리오. 곁가지: Before 영상
+- [x] 5-2 · 5-3 (2026-10-10, `5f39c27e`) — 기본 판정 = ⑤ Distance · 그림자 끔, 나머지 정책 · Sector 볼륨은 그대로
+- [x] **After 측정** (2026-10-10, 같은 빌드 ① × 3 vs ⑤ × 3) → **[After_Result.pdf](After_Result.pdf)** (쉬운 요약판, [HTML](After_Result.html)) — p99 4.68 → 2.50ms · 6.94ms 초과 233 → 14 · 화면 안 등장 · 깜빡임 145 → 0
+- [x] 결정 (2026-10-10) — Before / After 영상(0-7 · 5-5) **생략**(포트폴리오 이미지는 스크린샷 + 직접 그린 설명으로) · ⑥ 격자+거리는 채택하지 않고 교체안으로 유지(로드 스포너 수천 개 이상 또는 격자를 스트리밍 · 광역 판정에 도입할 때)
+- [x] 포트폴리오 v8 (2026-10-10, 저장소 밖) — 유니티 파트 Sector 3쪽 → "필드 몬스터 관리" 5쪽으로 교체
+- [x] 갱신 LOD (2026-10-13) — 밀도 배율(`e6f1f14c`) → 끄기 실험 → 화면 밖 · 비교전 몹 갱신 줄이기(`09582845`) → 밀도 스윕 → [LOD_Result.pdf](LOD_Result.pdf)(`86ffc515`). **필드 측정은 여기서 마감**
+- [x] 포트폴리오 v10~v12 (2026-10-13~16, 저장소 밖) — 필드 5쪽 "누구를, 얼마나 돌릴 것인가" 실측 반영 · 숫자 검수
+- [ ] ~~다음 ([Worklog_2026-10-09.md](Worklog_2026-10-09.md) 12절) — 예측 대조(5-4) · 결과 문서(Phase 6)~~ — 덱 반영으로 대신함, 필요하면 면접 전에
 - [x] 결정 (2026-10-07) — 켜기 반경 **20m 유지** · **⑦ CullingGroup 거리 밴드를 후보에 추가**(⑦′ 가시성은 시뮬레이션으로 탈락) → [03_Comparison_Plan.md](03_Comparison_Plan.md) 갱신
 
 ## 이전 기록에서 가져온 것 / 버린 것

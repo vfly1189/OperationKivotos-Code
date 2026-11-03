@@ -83,6 +83,14 @@ public class PoolManager
             _poolStack.Push(poolable);
         }
 
+        // 총량(대기 + 사용 중)이 count가 될 때까지 미리 채운다. 시작 크기도 같이 올려 확장 판정 기준을 맞춘다.
+        public void Reserve(int count)
+        {
+            while (_poolStack.Count + _active.Count < count)
+                Push(Create());
+            if (count > _initialCount) _initialCount = count;
+        }
+
         public Poolable Pop(Transform parent)
         {
             Poolable poolable;
@@ -177,6 +185,18 @@ public class PoolManager
         pool.Root.SetParent(_root);
 
         _pool.Add(original.name, pool);
+    }
+
+    // 이미 만든 풀을 count까지 미리 채운다(줄이지는 않음). 크기가 로드 뒤에야 정해질 때 — 예: 밀도 배율(GameScene).
+    //  풀이 없으면 만들지 않는다 — 원본 키(refCount 티켓) 없이 풀이 생기지 않게.
+    public void Reserve(string prefabName, int count)
+    {
+        if (!_pool.TryGetValue(prefabName, out Pool pool))
+        {
+            GameLog.LogWarning($"[Pool] Reserve: '{prefabName}' 풀이 없음 — 건너뜀");
+            return;
+        }
+        pool.Reserve(count);
     }
 
     // 가져오기 (Instantiate 대체)

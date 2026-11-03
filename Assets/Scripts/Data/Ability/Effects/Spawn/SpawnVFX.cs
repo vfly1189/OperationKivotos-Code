@@ -14,7 +14,7 @@ public class SpawnVFX : EffectData, IEffect
     [SerializeField] private GameObject _vfxPrefab;
 
     [Header("Placement")]
-    [SerializeField] private Anchor _placement = new();
+    [SerializeField] private DAnchor _placement = new();
     [Tooltip("앵커에 parent 로 붙여 따라다니게 한다(예: 연사 중 총구 추적)")]
     [SerializeField] private bool _attach = false;
 

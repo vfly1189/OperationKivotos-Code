@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>SkillSystem 구조 점검</title>
+<style>
+  :root{
+    --ink:#1a1c22; --line:#e3e6ec; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+    --red:#c00000; --box:#8c9bb5;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; font-size:10.4pt; line-height:1.55; background:#fff; }
+  h1{ font-size:18pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  h2{ font-size:13.5pt; margin:4px 0 6px; font-weight:800; color:var(--red); }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:6px; }
+  .lead{ font-size:10.6pt; margin:2px 0 8px; }
+  strong{ font-weight:800; }
+  svg{ display:block; margin:4px 0 6px; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:11px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:13px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:10px; } .s:not([fill]){ fill:#1a1c22; }
+  .xs{ font-size:9px; } .xs:not([fill]){ fill:#1a1c22; }
+  .c{ text-anchor:middle; } .e{ text-anchor:end; }
+  .pb{ break-before:page; }
+
+  .lbox{ border:1.6px solid var(--box); border-radius:14px; padding:10px 18px 10px; margin:10px 0; break-inside:avoid; }
+  .lbox h3{ text-align:center; color:var(--red); font-size:12.5pt; font-weight:800; margin:0 0 6px; }
+  .lbox h3 .n{ display:inline-block; background:var(--red); color:#fff; border-radius:7px; padding:0 8px; margin-right:6px; font-size:10.5pt; }
+  .lbox ol{ list-style:none; counter-reset:n; padding:0; margin:2px 0 0; }
+  .lbox ol>li{ counter-increment:n; margin:5px 0 6px; font-size:10.2pt; }
+  .lbox ol>li>b::before{ content:counter(n) ". "; color:var(--red); }
+  .lbox ol>li>b{ font-weight:800; }
+  .lbox ol>li>div{ margin:1px 0 0 16px; font-size:9.6pt; }
+  .lbox ol>li>div::before{ content:"• "; }
+  .concl{ text-align:center; font-weight:800; color:var(--red); font-size:10.6pt; margin:8px 0 2px; padding-top:7px; border-top:1px dashed var(--line); }
+  pre.code{ font-family:Consolas,"D2Coding",monospace; font-size:8.6pt; line-height:1.45; background:#1a1c22; color:#e9ecf3; border-radius:9px; padding:8px 12px; margin:6px 0 4px 16px; white-space:pre; }
+  pre.code .k{ color:#8fb4ff; } pre.code .m{ color:#9be3a7; }
+  .ref{ font-family:Consolas,monospace; font-size:8.6pt; color:var(--blue-ink); font-weight:700; }
+
+  table.m{ width:100%; border-collapse:collapse; font-size:9.4pt; margin:6px 0; }
+  table.m th{ background:#4F81BD; color:#fff; font-weight:800; padding:5px 7px; text-align:left; }
+  table.m td{ padding:4px 7px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.m tr:nth-child(even) td{ background:#f4f6fa; }
+  .b{ display:inline-block; border-radius:6px; padding:0 6px; font-size:8.4pt; font-weight:800; color:#fff; white-space:nowrap; }
+  .b.same{ background:var(--green); } .b.diff{ background:var(--amber); } .b.none{ background:#868e96; } .b.todo{ background:var(--red); }
+  .two{ display:flex; gap:12px; } .two>.lbox{ flex:1; margin-top:4px; }
+</style></head><body>
+
+<!-- ===================== 1쪽 : 한눈에 ===================== -->
+<div class="kicker">CombatAbility · 03 · 2026-10-27</div>
+<h1>SkillSystem 구조 점검 — 지금 구조 · 평가 · 할 일 · GAS 비교</h1>
+<p class="lead">보스 프리팹 하나에 <strong>네 개의 역할</strong>이 나뉘어 있다.
+<strong>언제</strong>(BMC) · <strong>무엇을</strong>(MPS) · <strong>할 수 있나 + 실행</strong>(SS) · <strong>어떻게</strong>(Pattern 데이터).
+패턴 안에서는 애니메이션/타임라인이 <strong>신호(태그)</strong>만 보내고, <strong>반응(Event)</strong>은 데이터로 붙인다.</p>
+
+<h2>1. 구조도</h2>
+<svg viewBox="0 0 700 350" width="100%">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker>
+  </defs>
+  <rect x="4" y="4" width="692" height="342" rx="14" fill="none" stroke="#8c9bb5" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="16" y="20" class="xs" fill="#5a6476">보스 프리팹</text>
+
+  <!-- 위 줄: 세 컴포넌트 -->
+  <rect x="20" y="40" width="180" height="70" rx="10" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/>
+  <text x="110" y="62" class="t c" fill="#2b3a8f">BossMonsterController</text>
+  <text x="110" y="80" class="tb c" fill="#c00000">언제</text>
+  <text x="110" y="98" class="xs c">BT : 사망 → 진행 중 → 딜레이 → 사용</text>
+
+  <rect x="260" y="40" width="180" height="70" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="1.6"/>
+  <text x="350" y="62" class="t c" fill="#8a3708">MonsterPatternSelector</text>
+  <text x="350" y="80" class="tb c" fill="#c00000">무엇을</text>
+  <text x="350" y="98" class="xs c">원본 슬롯 : 기믹(체력선) · 일반(가중치)</text>
+
+  <rect x="500" y="40" width="180" height="70" rx="10" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/>
+  <text x="590" y="62" class="t c" fill="#1f6b2e">SkillSystem (+Runner)</text>
+  <text x="590" y="80" class="tb c" fill="#c00000">할 수 있나 · 실행</text>
+  <text x="590" y="98" class="xs c">부여 목록 · 쿨 · 태그 · 신호 창구</text>
+
+  <!-- 화살표 위 줄 -->
+  <line x1="200" y1="62" x2="258" y2="62" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#a)"/>
+  <text x="229" y="56" class="xs c">① TryPick</text>
+  <line x1="258" y1="90" x2="202" y2="90" stroke="#1a1c22" stroke-width="1.1" stroke-dasharray="4 3" marker-end="url(#a)"/>
+  <text x="229" y="103" class="xs c">Pattern</text>
+  <line x1="440" y1="75" x2="498" y2="75" stroke="#e8590c" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#a)"/>
+  <text x="469" y="69" class="xs c" fill="#8a3708">Awake</text>
+  <text x="469" y="90" class="xs c" fill="#8a3708">Grant</text>
+  <path d="M110,40 L110,28 L590,28 L590,38" fill="none" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#a)"/>
+  <text x="350" y="24" class="xs c">② TryUseSkill(p)</text>
+  <path d="M560,110 L560,128 L140,128 L140,112" fill="none" stroke="#1a1c22" stroke-width="1.1" stroke-dasharray="4 3" marker-end="url(#a)"/>
+  <text x="350" y="141" class="xs c">④ PatternEnded (이벤트) → 딜레이 · Idle</text>
+
+  <!-- SS → 현재 Action -->
+  <path d="M620,110 L620,165 L260,165 L260,198" fill="none" stroke="#2b8a3e" stroke-width="1.3" marker-end="url(#a)"/>
+  <text x="440" y="160" class="xs c" fill="#1f6b2e">③ Update → Tick : 현재 Action Begin / Tick</text>
+
+  <!-- 아래 줄: 패턴 데이터 -->
+  <rect x="20" y="200" width="140" height="60" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+  <text x="90" y="222" class="t c" fill="#5028c0">Pattern</text>
+  <text x="90" y="239" class="xs c">쿨 · Action 목록</text>
+  <text x="90" y="252" class="xs c" fill="#5a6476">≈ GameplayAbility</text>
+
+  <rect x="190" y="200" width="140" height="60" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+  <text x="260" y="222" class="t c" fill="#5028c0">PatternAction</text>
+  <text x="260" y="239" class="xs c">Anim · Timeline (막음)</text>
+  <text x="260" y="252" class="xs c" fill="#5a6476">순서대로 하나씩</text>
+
+  <rect x="360" y="200" width="140" height="60" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+  <text x="430" y="222" class="t c" fill="#5028c0">PatternTask</text>
+  <text x="430" y="239" class="xs c">태그 + Event 목록</text>
+  <text x="430" y="252" class="xs c" fill="#5a6476">조건 (데이터)</text>
+
+  <rect x="530" y="200" width="140" height="60" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+  <text x="600" y="222" class="t c" fill="#5028c0">PatternEvent</text>
+  <text x="600" y="239" class="xs c">Strike · Summon · Vfx · Sfx</text>
+  <text x="600" y="252" class="xs c" fill="#5a6476">반응 · 데미지는 각자</text>
+
+  <line x1="160" y1="230" x2="188" y2="230" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a)"/>
+  <text x="174" y="224" class="xs c">1:N</text>
+  <line x1="330" y1="230" x2="358" y2="230" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a)"/>
+  <text x="344" y="224" class="xs c">1:N</text>
+  <line x1="500" y1="230" x2="528" y2="230" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a)"/>
+  <text x="514" y="224" class="xs c">Fire</text>
+
+  <!-- 신호 -->
+  <line x1="260" y1="260" x2="260" y2="288" stroke="#c00000" stroke-width="1.2" marker-end="url(#ar)"/>
+  <text x="268" y="278" class="xs" fill="#c00000">재생 중 발생</text>
+  <rect x="160" y="290" width="200" height="40" rx="10" fill="#fff" stroke="#c00000" stroke-width="1.6"/>
+  <text x="260" y="307" class="t c" fill="#c00000">Animation Event / Signal</text>
+  <text x="260" y="321" class="xs c">신호 = GameplayTagSO 하나</text>
+  <path d="M360,310 L686,310 L686,75 L682,75" fill="none" stroke="#c00000" stroke-width="1.3" marker-end="url(#ar)"/>
+  <text x="520" y="304" class="xs c" fill="#c00000">SendTag(tag) → 현재 Action의 Task와 비교 → 일치하면 Fire</text>
+</svg>
+
+<table class="m">
+  <tr><th style="width:22%">부품</th><th style="width:22%">책임</th><th>아는 것 / 모르는 것</th></tr>
+  <tr><td><b>BossMonsterController</b></td><td>언제 쓸지</td><td>BT 타이밍만 안다. 어떤 패턴이 있는지는 모른다.</td></tr>
+  <tr><td><b>MonsterPatternSelector</b></td><td>무엇을 쓸지</td><td>슬롯의 원본(가중치·체력선). Awake에 SS로 Grant. 실행은 모른다.</td></tr>
+  <tr><td><b>SkillSystem</b></td><td>쓸 수 있나 + 실행</td><td>부여 목록·쿨·태그·Runner. <b>왜</b> 이 패턴이 골라졌는지는 모른다. 플레이어와 공용.</td></tr>
+  <tr><td><b>Pattern → Action → Task → Event</b></td><td>어떻게</td><td>전부 프리팹 위 데이터. 애니메이션은 태그만 보내고, 반응은 Task에 적힌 Event가 정한다.</td></tr>
+</table>
+
+<!-- ===================== 2쪽 : 실행 흐름 ===================== -->
+<div class="pb"></div>
+<h2>2. 한 번의 패턴이 도는 순서</h2>
+<svg viewBox="0 0 700 440" width="100%">
+  <defs>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker>
+    <marker id="br" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker>
+  </defs>
+  <!-- 레인 머리 -->
+  <g>
+    <rect x="20"  y="8" width="100" height="32" rx="8" fill="#eef2ff" stroke="#3b5bdb"/><text x="70"  y="28" class="t c" fill="#2b3a8f">BMC (BT)</text>
+    <rect x="135" y="8" width="90"  height="32" rx="8" fill="#fff4ec" stroke="#e8590c"/><text x="180" y="28" class="t c" fill="#8a3708">MPS</text>
+    <rect x="240" y="8" width="120" height="32" rx="8" fill="#ebfbee" stroke="#2b8a3e"/><text x="300" y="28" class="t c" fill="#1f6b2e">SS · Runner</text>
+    <rect x="375" y="8" width="90"  height="32" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="420" y="28" class="t c" fill="#5028c0">Action</text>
+    <rect x="480" y="8" width="110" height="32" rx="8" fill="#fff" stroke="#c00000"/><text x="535" y="28" class="t c" fill="#c00000">Animator/Timeline</text>
+    <rect x="600" y="8" width="90"  height="32" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="645" y="28" class="t c" fill="#5028c0">Task → Event</text>
+  </g>
+  <g stroke="#b8c0cc" stroke-dasharray="3 4" stroke-width="1">
+    <line x1="70" y1="40" x2="70" y2="432"/><line x1="180" y1="40" x2="180" y2="432"/><line x1="300" y1="40" x2="300" y2="432"/>
+    <line x1="420" y1="40" x2="420" y2="432"/><line x1="535" y1="40" x2="535" y2="432"/><line x1="645" y1="40" x2="645" y2="432"/>
+  </g>
+
+  <line x1="70" y1="62" x2="178" y2="62" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#b)"/><text x="124" y="57" class="xs c">TryPick</text>
+  <line x1="180" y1="84" x2="72" y2="84" stroke="#1a1c22" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#b)"/><text x="124" y="79" class="xs c">Pattern (기믹 우선)</text>
+  <line x1="70" y1="108" x2="298" y2="108" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#b)"/><text x="185" y="103" class="xs c">TryUseSkill(p)</text>
+  <rect x="306" y="116" width="226" height="22" rx="6" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="419" y="131" class="xs c" fill="#1f6b2e">부여? · 바쁨? · 쿨 · 태그 → Start · 쿨 기록</text>
+  <text x="76" y="131" class="xs" fill="#2b3a8f">true → Running</text>
+
+  <line x1="300" y1="160" x2="418" y2="160" stroke="#2b8a3e" stroke-width="1.2" marker-end="url(#b)"/><text x="360" y="155" class="xs c" fill="#1f6b2e">Update: Tick → Begin</text>
+  <line x1="420" y1="182" x2="533" y2="182" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#b)"/><text x="477" y="177" class="xs c">CrossFade / Play</text>
+
+  <line x1="535" y1="208" x2="302" y2="208" stroke="#c00000" stroke-width="1.4" marker-end="url(#br)"/><text x="418" y="203" class="xs c" fill="#c00000">신호 Impact → SendTag</text>
+  <line x1="300" y1="232" x2="418" y2="232" stroke="#1a1c22" stroke-width="1.1" marker-end="url(#b)"/><text x="360" y="227" class="xs c">현재 Action의 Task</text>
+  <line x1="420" y1="256" x2="643" y2="256" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#b)"/><text x="590" y="251" class="xs c">태그 일치 → Fire</text>
+  <rect x="560" y="264" width="130" height="34" rx="6" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="625" y="279" class="xs c">Strike · Vfx · Sfx</text><text x="625" y="292" class="xs c">데미지는 Strike 안에서</text>
+
+  <line x1="535" y1="318" x2="422" y2="318" stroke="#1a1c22" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#b)"/><text x="477" y="313" class="xs c">클립 끝</text>
+  <line x1="420" y1="340" x2="302" y2="340" stroke="#1a1c22" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#b)"/><text x="360" y="335" class="xs c">Success → 다음 Action</text>
+  <rect x="240" y="350" width="290" height="22" rx="6" fill="#f7f8fa" stroke="#b8c0cc"/>
+  <text x="385" y="365" class="xs c">… Action 2 · 3도 같은 과정 (신호는 그때의 Action만 받음)</text>
+
+  <line x1="300" y1="394" x2="72" y2="394" stroke="#1a1c22" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#b)"/><text x="185" y="389" class="xs c">PatternEnded</text>
+  <rect x="20" y="404" width="150" height="24" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="95" y="420" class="xs c" fill="#2b3a8f">딜레이 설정 · Idle CrossFade</text>
+</svg>
+
+<h2>3. BT — Failure일 때만 다음 칸으로</h2>
+<svg viewBox="0 0 700 150" width="100%">
+  <defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker></defs>
+  <rect x="295" y="6" width="110" height="28" rx="8" fill="#1c334e"/><text x="350" y="25" class="t c" fill="#fff">Selector</text>
+  <g stroke="#8c9bb5" stroke-width="1.2">
+    <line x1="350" y1="34" x2="90" y2="56"/><line x1="350" y1="34" x2="260" y2="56"/><line x1="350" y1="34" x2="440" y2="56"/><line x1="350" y1="34" x2="610" y2="56"/>
+  </g>
+  <rect x="20"  y="56" width="140" height="44" rx="9" fill="#fff" stroke="#8c9bb5" stroke-width="1.4"/><text x="90"  y="74" class="t c">죽었나?</text><text x="90"  y="90" class="xs c">예 → 사망 처리</text>
+  <rect x="190" y="56" width="140" height="44" rx="9" fill="#fff" stroke="#8c9bb5" stroke-width="1.4"/><text x="260" y="74" class="t c">진행 중?</text><text x="260" y="90" class="xs c">ss.IsBusy → Running</text>
+  <rect x="370" y="56" width="140" height="44" rx="9" fill="#fff" stroke="#8c9bb5" stroke-width="1.4"/><text x="440" y="74" class="t c">딜레이 중?</text><text x="440" y="90" class="xs c">now &lt; next → Running</text>
+  <rect x="540" y="56" width="140" height="44" rx="9" fill="#fff" stroke="#8c9bb5" stroke-width="1.4"/><text x="610" y="74" class="t c">고르고 쓰기</text><text x="610" y="90" class="xs c">TryPick → TryUseSkill</text>
+  <g stroke="#c00000" stroke-width="1.3" fill="none">
+    <path d="M160,78 L188,78" marker-end="url(#c)"/><path d="M330,78 L368,78" marker-end="url(#c)"/><path d="M510,78 L538,78" marker-end="url(#c)"/>
+  </g>
+  <text x="174" y="118" class="xs c" fill="#c00000">아니오 = Failure</text>
+  <text x="349" y="118" class="xs c" fill="#c00000">Failure</text>
+  <text x="524" y="118" class="xs c" fill="#c00000">Failure</text>
+  <text x="350" y="141" class="s c">Running 또는 Success가 나오면 그 프레임은 거기서 끝. "끝났다"는 상태가 아니라 <tspan font-weight="800">PatternEnded 이벤트</tspan>로만 전달.</text>
+</svg>
+
+<!-- ===================== 3쪽 : 데이터 예시 ===================== -->
+<div class="pb"></div>
+<h2>4. 예시 — 망치 3연타 한 패턴이 데이터로 어떻게 생겼나</h2>
+<svg viewBox="0 0 700 300" width="100%">
+  <rect x="10" y="110" width="130" height="64" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.6"/>
+  <text x="75" y="134" class="t c" fill="#5028c0">Pattern</text>
+  <text x="75" y="151" class="s c">망치 3연타</text>
+  <text x="75" y="165" class="xs c" fill="#5a6476">쿨 8s</text>
+
+  <g stroke="#8c9bb5" stroke-width="1.2" fill="none">
+    <path d="M140,142 C160,142 160,60 178,60"/><path d="M140,142 L178,170"/><path d="M140,142 C160,142 160,240 178,240"/>
+  </g>
+  <!-- Actions -->
+  <rect x="178" y="38" width="140" height="44" rx="9" fill="#fff" stroke="#7048e8" stroke-width="1.4"/><text x="248" y="56" class="t c">① 내려찍기</text><text x="248" y="72" class="xs c">AnimationAction</text>
+  <rect x="178" y="148" width="140" height="44" rx="9" fill="#fff" stroke="#7048e8" stroke-width="1.4"/><text x="248" y="166" class="t c">② 휘두르기</text><text x="248" y="182" class="xs c">AnimationAction</text>
+  <rect x="178" y="218" width="140" height="44" rx="9" fill="#fff" stroke="#7048e8" stroke-width="1.4"/><text x="248" y="236" class="t c">③ 내려찍기 + 소환</text><text x="248" y="252" class="xs c">TimelineAction</text>
+
+  <g stroke="#8c9bb5" stroke-width="1.1" fill="none">
+    <path d="M318,60 L340,60 L340,30 L356,30"/><path d="M318,60 L340,60 L340,88 L356,88"/>
+    <path d="M318,170 L356,170"/><path d="M318,240 L356,240"/>
+  </g>
+  <!-- Tasks (태그 알약) -->
+  <g>
+    <rect x="356" y="18" width="96" height="24" rx="12" fill="#c00000"/><text x="404" y="34" class="xs c" fill="#fff">Windup</text>
+    <rect x="356" y="76" width="96" height="24" rx="12" fill="#c00000"/><text x="404" y="92" class="xs c" fill="#fff">Impact</text>
+    <rect x="356" y="158" width="96" height="24" rx="12" fill="#c00000"/><text x="404" y="174" class="xs c" fill="#fff">Impact</text>
+    <rect x="356" y="228" width="96" height="24" rx="12" fill="#c00000"/><text x="404" y="244" class="xs c" fill="#fff">Impact</text>
+  </g>
+  <g stroke="#1a1c22" stroke-width="1"><line x1="452" y1="30" x2="470" y2="30"/><line x1="452" y1="88" x2="470" y2="88"/><line x1="452" y1="170" x2="470" y2="170"/><line x1="452" y1="240" x2="470" y2="240"/></g>
+  <!-- Events chips -->
+  <g>
+    <rect x="470" y="18" width="70" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="505" y="34" class="xs c">Vfx 기 모으기</text>
+    <rect x="546" y="18" width="50" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="571" y="34" class="xs c">Sfx</text>
+
+    <rect x="470" y="76" width="56" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text x="498" y="92" class="xs c">Strike</text>
+    <rect x="532" y="76" width="70" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="567" y="92" class="xs c">Vfx 충격파</text>
+    <rect x="608" y="76" width="50" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="633" y="92" class="xs c">Sfx</text>
+
+    <rect x="470" y="158" width="56" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text x="498" y="174" class="xs c">Strike</text>
+    <rect x="532" y="158" width="50" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="557" y="174" class="xs c">Sfx</text>
+
+    <rect x="470" y="228" width="56" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text x="498" y="244" class="xs c">Strike</text>
+    <rect x="532" y="228" width="50" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/><text x="557" y="244" class="xs c">Vfx</text>
+    <rect x="588" y="228" width="62" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/><text x="619" y="244" class="xs c">Summon</text>
+  </g>
+  <text x="404" y="128" class="xs c" fill="#c00000">Task = 태그 + Event 목록</text>
+  <text x="560" y="128" class="xs c" fill="#5a6476">주황 = 게임플레이 · 보라 = 연출</text>
+  <text x="350" y="290" class="s c"><tspan font-weight="800" fill="#c00000">같은 Impact 태그, 다른 반응</tspan> — 애니메이션은 "찍었다"만 알리고, 무엇을 할지는 Action마다 붙은 데이터가 정한다.</text>
+</svg>
+
+<div class="lbox">
+  <h3>신호와 반응을 나눈 덕분에 생기는 것</h3>
+  <ol>
+    <li><b>같은 클립, 다른 보스</b><div>클립에는 태그만 박혀 있다. 두 번째 보스는 Task의 Event만 바꿔 같은 클립을 쓴다 (코드 0줄).</div></li>
+    <li><b>구독 · 해제가 없다</b><div>신호는 <b>그때 돌고 있는 Action</b>에만 간다. Action이 끝나면 그 Task들은 자동으로 반응을 멈춘다.</div></li>
+    <li><b>Context가 커지지 않는다</b><div>고정 정보(소켓 · VFX · 반경)는 Event의 필드, 매번 바뀌는 것(시전자 · 대상 · 토큰)만 Context.</div></li>
+  </ol>
+</div>
+
+<!-- ===================== 4쪽 : 평가 ===================== -->
+<div class="pb"></div>
+<h2>5. 평가</h2>
+<div class="lbox">
+  <h3>잘 잡힌 것</h3>
+  <ol>
+    <li><b>역할이 질문 하나씩</b><div>언제(BMC) · 무엇을(MPS) · 할 수 있나(SS) · 어떻게(Pattern). 각 부품이 다른 부품의 질문을 대신 답하지 않는다.</div></li>
+    <li><b>공용 부분과 대상별 부분의 경계가 맞다</b><div>SS · Runner · Action · Event는 플레이어도 그대로 쓴다. 바뀌는 건 "고르는 쪽"(MPS ↔ 입력 매핑)뿐.</div></li>
+    <li><b>막는 것과 기다리는 것을 나눴다</b><div>GAS에선 둘 다 AbilityTask. 여기선 Action(순서) / Task(조건)로 갈라 Task 수명 문제가 사라졌다.</div></li>
+    <li><b>끝남을 이벤트로</b><div>"끝났다"를 상태로 들고 있지 않아 BT 실행 순서와 무관. BT 용어(NodeState)가 공용 부품 밖으로 새지 않는다.</div></li>
+    <li><b>재사용 기준이 서사와 일치</b><div>"같은 코드, 다른 에셋" — 두 번째 보스는 MPS 슬롯 + Task 데이터만 바꾼다.</div></li>
+  </ol>
+</div>
+<div class="lbox">
+  <h3>위험 · 아직 비어 있는 곳</h3>
+  <ol>
+    <li><b>SS가 슬롯을 받고 있다</b><div>지금 코드는 <span class="ref">GrantNormalPattern(NormalPatternSlot)</span> — 가중치 · 체력선(선택 정책)이 공용 부품 안으로 들어온다. SS는 <b>Pattern만</b> 받아야 한다.</div></li>
+    <li><b>같은 값이 두 군데</b><div>쿨 = <span class="ref">Pattern._coolDown</span> + <span class="ref">NormalPatternSlot._cooldown</span>, 가중치 = <span class="ref">Pattern._weight</span> + <span class="ref">slot._weight</span>. 원천 하나로: 쿨 → Pattern, 가중치 → 슬롯.</div></li>
+    <li><b>취소 경로가 없다</b><div>사망 · 기믹 끼어들기 때 Action.Cancel, 비동기 Event 정지(토큰), "정상 끝 vs 취소" 구분이 전부 미정.</div></li>
+    <li><b>신호가 엉뚱한 Action에 갈 수 있다</b><div>Action 사이 프레임(<span class="ref">_begun == false</span>)과 크로스페이드 중 이전 클립 이벤트.</div></li>
+    <li><b>소환물 · VFX의 주인이 없다</b><div>Event는 쏘고 잊는다. 패턴이 끊겼을 때 남은 소환몹 · VFX를 누가 회수하는지 정해야 한다.</div></li>
+    <li><b>신호 입구가 아직 옛 길</b><div>프리팹의 Signal은 여전히 <span class="ref">BMC.FireEvent(PatternEvent)</span>를 직접 부른다 — 태그 경로를 우회.</div></li>
+  </ol>
+  <div class="concl">구조 판단은 맞다. 남은 건 "경계를 코드가 지키게 하는 일"(1·2) + "끝나는 경로를 닫는 일"(3~5) + 입구 교체(6).</div>
+</div>
+
+<!-- ===================== 5쪽 : 구현 목록 ===================== -->
+<div class="pb"></div>
+<h2>6. 지금 코드와 비교한 구현 목록</h2>
+<div class="lbox">
+  <h3><span class="n">P0</span>이게 없으면 패턴이 안 돈다</h3>
+  <ol>
+    <li><b>MPS.TryPick 구현</b><div>기믹(체력선 넘고 미사용) 우선 → 아니면 일반 슬롯 중 <span class="ref">ss.CanUse(p)</span>만 모아 가중치 뽑기 · 직전 패턴 제외. <span class="ref">MonsterPatternSelector.cs</span></div></li>
+    <li><b>신호 수신기 → SS.SendTag</b><div><span class="ref">PatternSignal.cs</span>가 빈 껍데기. Animation Event(Object 인자 → GameplayTagSO) / Signal Receiver가 <span class="ref">SendTag(tag)</span>를 부르게 하고, 프리팹의 <span class="ref">FireEvent</span> 연결 교체.</div></li>
+    <li><b>PatternTask에 [Serializable]</b><div>없으면 Action의 <span class="ref">_tasks</span>가 인스펙터에 안 뜬다. <span class="ref">PatternTask.cs</span> (+ 불필요한 <span class="ref">using Unity.VisualScripting</span> 제거)</div></li>
+    <li><b>SS.BuildContext의 대상 null 체크</b><div><span class="ref">Managers.Party.GetCurrentCharacter().transform</span> — 파티가 없으면 NRE. <span class="ref">SkillSystem.cs</span></div></li>
+    <li><b>취소 토큰</b><div><span class="ref">cToken</span>이 비어 있어 Summon 같은 비동기 Event가 사망 후에도 돈다. SS가 패턴마다 CTS를 만들고 Cancel 때 끊기.</div></li>
+  </ol>
+</div>
+<div class="lbox">
+  <h3><span class="n">P1</span>돌기 시작하면 바로 드러날 것</h3>
+  <ol>
+    <li><b>첫 사용 쿨 막힘</b><div>기록이 없으면 <span class="ref">lastUsedTime = 0</span> → 시작 후 쿨 길이만큼 못 씀. 기록 없음 = 사용 가능.</div></li>
+    <li><b>TryUseSkill 게이트 보강</b><div><span class="ref">IsBusy</span> · 부여 여부 검사. 지금은 <span class="ref">Runner.Start</span>가 먼저 Cancel해서 조용히 끊는다. 기믹용 끼어들기는 <span class="ref">interrupt</span> 옵션으로 따로.</div></li>
+    <li><b>OnEvent 가드</b><div><span class="ref">if (_pattern == null || !_begun) return;</span> · 안 쓰는 <span class="ref">ctx</span> 인자 제거. <span class="ref">PatternRunner.cs</span></div></li>
+    <li><b>SS.Cancel + 사망 연결</b><div><span class="ref">HandleDeadState</span>의 <span class="ref">_runner.Cancel()</span>이 주석. SS.Cancel → Action.Cancel + CTS 취소. PatternEnded에 정상/취소 구분.</div></li>
+    <li><b>OnSpawn 초기화</b><div>쿨 기록 · 기믹 사용 표시 비우기, 등장 패턴(<span class="ref">_entrancePattern</span>) 시작. 풀 재사용 대비.</div></li>
+  </ol>
+</div>
+<div class="lbox">
+  <h3><span class="n">P2</span>경계 정리 · 잔재</h3>
+  <ol>
+    <li><b>SS는 Pattern만 Grant</b><div>슬롯 리스트 2개 → <span class="ref">HashSet&lt;Pattern&gt;</span> 하나. 쿨 → Pattern, 가중치 → 슬롯으로 중복 제거.</div></li>
+    <li><b>SS의 _state / NodeState 프로퍼티 삭제</b><div>이벤트 방식으로 바꾼 뒤 남은 잔재.</div></li>
+    <li><b>BMC 잔재 정리</b><div><span class="ref">_skills</span>(TimelineAsset 목록) · <span class="ref">FireEvent</span> · <span class="ref">BuildContext</span>(SS와 중복) · <span class="ref">CastAbility</span>(② 첫 시도 경로).</div></li>
+    <li><b>Director 위치 확인</b><div><span class="ref">TimelineAction</span>은 <span class="ref">owner.GetComponent&lt;PlayableDirector&gt;()</span> — BMC의 <span class="ref">_director</span>가 다른 오브젝트에 있으면 null.</div></li>
+    <li><b>파일 인코딩 통일</b><div>SkillSystem/ 7개 + SummonEvent가 CP949, 나머지는 UTF-8. 공개 저장소에서 한글 주석이 깨진다 → UTF-8로.</div></li>
+  </ol>
+</div>
+
+<div class="lbox">
+  <h3>진행 순서 제안</h3>
+  <ol>
+    <li><b>P0 다섯 개 → 첫 보스 패턴 한 개를 끝까지</b><div>TryPick · 신호 입구 · Serializable · null 체크 · 토큰. 망치 3연타 하나로 신호 → 반응까지 플레이 확인.</div></li>
+    <li><b>P1 — 끝나는 경로 닫기</b><div>쿨 첫 사용 · 게이트 · OnEvent 가드 · Cancel/사망 · OnSpawn. 기믹 끼어들기 확인.</div></li>
+    <li><b>P2 — 경계 정리</b><div>SS는 Pattern만, 값 중복 제거, 잔재 삭제, 인코딩.</div></li>
+    <li><b>증명</b><div>두 번째 보스(텍스처 반전) = MPS 슬롯 + Task 데이터만 → 새 코드 0줄 확인.</div></li>
+  </ol>
+</div>
+
+<!-- ===================== 6쪽 : GAS 비교 ===================== -->
+<div class="pb"></div>
+<h2>7. GAS와 층별로 맞대 보기</h2>
+<svg viewBox="0 0 700 400" width="100%">
+  <text x="140" y="16" class="tb c">Unreal GAS</text>
+  <text x="560" y="16" class="tb c">이 구조</text>
+  <g id="rows">
+    <!-- row helper: left box x=20..260, right x=440..680, y step 44 -->
+    <rect x="20" y="28"  width="240" height="34" rx="8" fill="#eef2ff" stroke="#3b5bdb"/><text x="140" y="50"  class="t c">AI (BT Task : TryActivate…)</text>
+    <rect x="440" y="28" width="240" height="34" rx="8" fill="#eef2ff" stroke="#3b5bdb"/><text x="560" y="50" class="t c">BMC (언제) + MPS (무엇을)</text>
+
+    <rect x="20" y="72"  width="240" height="34" rx="8" fill="#ebfbee" stroke="#2b8a3e"/><text x="140" y="94"  class="t c">AbilitySystemComponent</text>
+    <rect x="440" y="72" width="240" height="34" rx="8" fill="#ebfbee" stroke="#2b8a3e"/><text x="560" y="94" class="t c">SkillSystem</text>
+
+    <rect x="20" y="116" width="240" height="34" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="140" y="138" class="t c">GameplayAbility (흐름 = 코드)</text>
+    <rect x="440" y="116" width="240" height="34" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="560" y="138" class="t c">Pattern + Runner (흐름 = 순서 목록)</text>
+
+    <rect x="20" y="160" width="240" height="34" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="140" y="182" class="t c">AbilityTask : PlayMontageAndWait</text>
+    <rect x="440" y="160" width="240" height="34" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="560" y="182" class="t c">PatternAction (막음)</text>
+
+    <rect x="20" y="204" width="240" height="34" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="140" y="226" class="t c">AbilityTask : WaitGameplayEvent</text>
+    <rect x="440" y="204" width="240" height="34" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="560" y="226" class="t c">PatternTask (Action 범위)</text>
+
+    <rect x="20" y="248" width="240" height="34" rx="8" fill="#fff" stroke="#c00000"/><text x="140" y="270" class="t c">AnimNotify → GameplayEvent(+Payload)</text>
+    <rect x="440" y="248" width="240" height="34" rx="8" fill="#fff" stroke="#c00000"/><text x="560" y="270" class="t c">AnimEvent/Signal → SendTag (태그만)</text>
+
+    <rect x="20" y="292" width="240" height="34" rx="8" fill="#fff4ec" stroke="#e8590c"/><text x="140" y="314" class="t c">GameplayEffect (수치 변경)</text>
+    <rect x="440" y="292" width="240" height="34" rx="8" fill="#f7f8fa" stroke="#adb5bd" stroke-dasharray="4 3"/><text x="560" y="314" class="t c" fill="#5a6476">없음 — Strike 안에서 직접 데미지</text>
+
+    <rect x="20" y="336" width="240" height="34" rx="8" fill="#fff4ec" stroke="#e8590c"/><text x="140" y="358" class="t c">GameplayCue (연출, 별도 층)</text>
+    <rect x="440" y="336" width="240" height="34" rx="8" fill="#f3f0ff" stroke="#7048e8"/><text x="560" y="358" class="t c">Vfx/Sfx Event (Strike와 같은 층)</text>
+  </g>
+  <g stroke-width="2.2">
+    <line x1="260" y1="45"  x2="440" y2="45"  stroke="#2b8a3e"/>
+    <line x1="260" y1="89"  x2="440" y2="89"  stroke="#2b8a3e"/>
+    <line x1="260" y1="133" x2="440" y2="133" stroke="#e8590c"/>
+    <line x1="260" y1="177" x2="440" y2="177" stroke="#2b8a3e"/>
+    <line x1="260" y1="221" x2="440" y2="221" stroke="#e8590c"/>
+    <line x1="260" y1="265" x2="440" y2="265" stroke="#e8590c"/>
+    <line x1="260" y1="309" x2="440" y2="309" stroke="#868e96" stroke-dasharray="5 4"/>
+    <line x1="260" y1="353" x2="440" y2="353" stroke="#e8590c"/>
+  </g>
+  <g>
+    <rect x="318" y="36"  width="64" height="18" rx="6" fill="#2b8a3e"/><text x="350" y="49"  class="xs c" fill="#fff">같음</text>
+    <rect x="318" y="80"  width="64" height="18" rx="6" fill="#2b8a3e"/><text x="350" y="93"  class="xs c" fill="#fff">같음</text>
+    <rect x="318" y="124" width="64" height="18" rx="6" fill="#e8590c"/><text x="350" y="137" class="xs c" fill="#fff">단순화</text>
+    <rect x="318" y="168" width="64" height="18" rx="6" fill="#2b8a3e"/><text x="350" y="181" class="xs c" fill="#fff">같음</text>
+    <rect x="318" y="212" width="64" height="18" rx="6" fill="#e8590c"/><text x="350" y="225" class="xs c" fill="#fff">범위 좁힘</text>
+    <rect x="318" y="256" width="64" height="18" rx="6" fill="#e8590c"/><text x="350" y="269" class="xs c" fill="#fff">Payload ✕</text>
+    <rect x="318" y="300" width="64" height="18" rx="6" fill="#868e96"/><text x="350" y="313" class="xs c" fill="#fff">없음</text>
+    <rect x="318" y="344" width="64" height="18" rx="6" fill="#e8590c"/><text x="350" y="357" class="xs c" fill="#fff">층 합침</text>
+  </g>
+  <text x="350" y="392" class="s c">위 4칸(선택 · 창구 · 흐름 · 동작)은 GAS와 같은 경계, 아래 4칸(신호 · 결과 · 연출)은 의도적으로 줄였다.</text>
+</svg>
+
+<table class="m">
+  <tr><th style="width:24%">GAS</th><th style="width:26%">이 구조</th><th style="width:11%">관계</th><th>메모</th></tr>
+  <tr><td>GiveAbility</td><td>MPS.Awake → SS.Grant</td><td><span class="b same">같음</span></td><td>무엇을 줄지는 바깥 데이터가 정한다 — ASC는 목록만.</td></tr>
+  <tr><td>CanActivateAbility<br>(Cooldown GE · Tag 요구)</td><td>CheckIsCoolDown · CheckCurrentTag</td><td><span class="b diff">단순화</span></td><td>GAS 쿨 = 지속시간 GE가 거는 태그. 여기 = 마지막 사용 시각. 태그 검사는 아직 항상 true.</td></tr>
+  <tr><td>CommitAbility</td><td>Start 직후 쿨 기록</td><td><span class="b same">같음</span></td><td>"실행이 확정된 순간에 비용을 낸다" — 플레이어 Phase 1의 Commit과 같은 원칙.</td></tr>
+  <tr><td>ActivateAbility (그래프/코드)</td><td>List&lt;PatternAction&gt; 순차</td><td><span class="b diff">단순화</span></td><td>분기 · 병렬이 없다. 보스 패턴엔 충분, 분기가 필요해지면 Action 하나로 감싼다.</td></tr>
+  <tr><td>WaitGameplayEvent</td><td>PatternTask</td><td><span class="b diff">범위 좁힘</span></td><td>GAS Task는 어빌리티 전체에서 살아 있다. 여기선 그 Action 동안만 → 구독/해제 불필요.</td></tr>
+  <tr><td>GameplayEventData (Payload)</td><td>태그만</td><td><span class="b diff">줄임</span></td><td>위치 · 대상은 Event가 Placement와 Context에서 직접 읽는다.</td></tr>
+  <tr><td>EndAbility / OnAbilityEnded</td><td>PatternEnded</td><td><span class="b same">같음</span></td><td>정상 / 취소 구분은 <span class="b todo">미구현</span></td></tr>
+  <tr><td>CancelAbility</td><td>—</td><td><span class="b todo">미구현</span></td><td>사망 · 기믹 끼어들기에 필요 (P1-4).</td></tr>
+  <tr><td>Instancing Policy</td><td>프리팹 위 컴포넌트</td><td><span class="b diff">고정</span></td><td>시전자마다 1개, 동시 1개 실행. 같은 패턴 중첩 실행은 불가(필요 없음).</td></tr>
+  <tr><td>Prediction · Replication</td><td>—</td><td><span class="b none">안 씀</span></td><td>완전 싱글(네트워크 코드 0).</td></tr>
+</table>
+
+<!-- ===================== 7쪽 : 가져오지 않은 것 ===================== -->
+<div class="pb"></div>
+<h2>8. GAS에서 가져오지 않은 것과 그 이유</h2>
+<div class="lbox">
+  <h3>지금 안 가져온 것</h3>
+  <ol>
+    <li><b>GameplayEffect 층</b><div>데미지가 Strike 안에 있다. 지금은 보스만 쓰니 문제없지만, <b>플레이어 · 몹 · 보스가 같은 피격 규칙을 공유</b>하는 순간(서사의 증명 항목) 수치 변경을 한 곳으로 모아야 한다 → 다음 후보 1순위.</div></li>
+    <li><b>GameplayCue 별도 층</b><div>Vfx/Sfx를 Event로 같은 층에 둔 것은 "연출도 데이터로 붙인다"는 점에선 충분. 다만 <b>정리 책임</b>(끊겼을 때 VFX 회수) 때문에 소유자는 Pattern/SS로 둔다.</div></li>
+    <li><b>Event Payload</b><div>신호에 데이터를 실으면 애니메이션이 "무엇을 할지"를 알게 된다. 신호는 사실만, 데이터는 Event 쪽 — 의도적으로 뺐다.</div></li>
+    <li><b>Prediction · Replication · Attribute Set</b><div>싱글 게임, 스탯은 기존 MonsterStat이 이미 담당.</div></li>
+  </ol>
+  <div class="concl">GAS를 두 번 — 이번엔 이름이 아니라 경계(선택 · 창구 · 흐름 · 동작)를 가져왔다.</div>
+</div>
+
+
+
+</body></html>

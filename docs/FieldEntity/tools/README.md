@@ -8,7 +8,8 @@
 | `analyze_field.py` | 계측(0-4) 분석. `python analyze_field.py <MetricsLogs/field_*_frames.csv> [--skip 초]` — 같은 시각의 `_events.csv` · `activation_*.csv`를 자동으로 찾는다. 하네스 기록이면 a_sweep ~ end만 보고 구간별 표를 더한다. 파일을 여러 개 주면 실행 비교(3회 편차) |
 | `harness_report/` | 측정 기록 문서(Harness_Result.html) 생성 — `cd harness_report && python -B gen.py`. 쓰는 로그는 `data.py`의 `DEV` · `RUNS` |
 | `policy_report/` | 정책 7개 × 3회 결과 문서(Policy_Result.html) 생성 — `cd policy_report && python -B gen.py`. 쓰는 로그는 `data.py`의 `DEV` · `RUN_FROM` · `BEFORE_*` |
-| `run_harness.ps1` | 개발 빌드를 정책 × 회차로 반복 실행(0-5). `powershell -ExecutionPolicy Bypass -File run_harness.ps1 -Exe <빌드\OperationKivotos.exe> [-Policies Sector,Distance] [-Runs 3]` |
+| `after_report/` | Before / After 쉬운 요약판(After_Result.html) 생성 — `cd after_report && python -B gen.py`. 쓰는 로그는 `gen.py`의 `BEFORE` · `AFTER` (policy_report/data.py 재사용) |
+| `run_harness.ps1` | 개발 빌드를 정책 × 회차로 반복 실행(0-5). `powershell -ExecutionPolicy Bypass -File run_harness.ps1 -Exe <빌드\OperationKivotos.exe> [-Policies Sector,Distance] [-Runs 3] [-Densities 1,2,4,8]` — `-Densities`는 스포너당 마릿수 배율(갱신 LOD 밀도 스윕), 파일 이름에 `_x2`·`_x4`…(×1은 없음). `-Offs none,bt,anim,hpbar,avoid`는 끄기 실험(갱신 LOD 0단계, 실행마다 하나씩·한 실행에 여럿은 `bt+anim`), 파일 이름에 `_off-bt`…. `-Lods 0,1`은 갱신 LOD 끔·켬(생략하면 1), 파일 이름에 `_lod`(켬만) |
 
 그림자 측정: GameScene 인스펙터 `Activation Shadows` 켜고 플레이 → 종료 시 `MetricsLogs/activation_{실제 정책}_shadow_{시각}.csv`.
 한 파일에 7개 정책의 켜고 끈 기록이 같은 프레임 번호로 쌓이고, 머리 `#` 줄에 동등성 검사(⑤=⑥ · ⑦=⑤ 1프레임 전) 요약이 들어간다.

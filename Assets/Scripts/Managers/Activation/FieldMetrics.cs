@@ -7,7 +7,7 @@ using UnityEngine.Profiling;
 
 // 존재 판정 비교 계측 (계획서 0-4) — 3절 측정 항목을 한 세션(씬 진입 ~ Clear)마다 CSV 두 개로 쓴다.
 //  ActivationLog와 같은 원칙: 프레임 중엔 메모리 목록에 쌓기만 하고(로그 · 파일 쓰기 없음) 씬 Clear · 종료 때 쓴다.
-//  출력: MetricsLogs/field_{실제 정책}[_shadow]_{시각}_frames.csv · _events.csv (켜고 끈 로그 activation_*.csv와 같은 시각)
+//  출력: MetricsLogs/field_{실제 정책}[_shadow][_x밀도][_off-항목][_lod]_{시각}_frames.csv · _events.csv (켜고 끈 로그 activation_*.csv와 같은 시각)
 //
 //  frames — 프레임마다 한 줄. 시간 열은 ProfilerRecorder가 모은 그 프레임의 마커 합계(같은 마커 여러 번 = 합).
 //    frame, dtMs(그 프레임 길이), mainMs(메인 스레드), selectUs(실제 정책 선택), shadowUs(그림자 선택),
@@ -37,6 +37,7 @@ public static class FieldMetrics
     public static readonly ProfilerMarker SpawnActivate = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Spawn.SetActive");
     public static readonly ProfilerMarker Recall = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Recall");
     public static readonly ProfilerMarker Sample = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Metrics");
+    public static readonly ProfilerMarker Lod = new ProfilerMarker(ProfilerCategory.Scripts, "Field.Lod");
 
     private static bool _inMonsterPop;
 
@@ -59,16 +60,16 @@ public static class FieldMetrics
         public void Dispose() { if (_on) _marker.End(); }
     }
 
-    public enum EventKind { Spawn, Recall, Defer, Segment }
+    public enum EventKind { Spawn, Recall, Defer, Segment, LodLate }
 
     private struct FrameRow
     {
         public int Frame;
         public float DtMs, MainMs;
         public float SelectUs, ShadowUs, TickUs, PopUs, StatUs, OnSpawnUs, ActivateUs, RecallUs, MetricsUs;
-        public float PopFindUs, PopParentUs, PopPoseUs;
+        public float PopFindUs, PopParentUs, PopPoseUs, LodUs;
         public int Spawns, Recalls, Defers;
-        public int Live, OnScreen, Deferred, ActiveSpawners;
+        public int Live, OnScreen, Deferred, ActiveSpawners, Reduced;
         public float MemMB;
     }
 
@@ -95,7 +96,8 @@ public static class FieldMetrics
     private const int PreallocChunks = 32;   // 262,144프레임 — 상한 없는 하네스 1회(약 20만) + 여유. 한 줄 92B라 약 24MB
     private static readonly List<FrameRow[]> _chunks = new List<FrameRow[]>(PreallocChunks);
     private static int _frameCount;
-    private static readonly List<EventRow> _events = new List<EventRow>(16384);   // 하네스 1회 최대 약 6천 줄(①) — 확장 없음
+    private const int EventCapacity = 16384;   // ×1 하네스 1회 최대 약 6천 줄(①) — 밀도 배율만큼 Begin에서 늘린다
+    private static readonly List<EventRow> _events = new List<EventRow>(EventCapacity);
     private static readonly Dictionary<string, PoolStat> _pools = new Dictionary<string, PoolStat>();
 
     // 그 프레임에 일어난 수 — 프레임 번호 홀짝으로 두 칸. 표본은 다음 프레임에 뜨므로 현재 프레임 칸을 건드리지 않는다.
@@ -105,23 +107,39 @@ public static class FieldMetrics
 
     private static bool _active;
     private static string _name;
+    private static RunConditions _conditions;
     private static System.DateTime _startedAt;
     private static int _startFrame;
     private static int _lastSampledFrame;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     private static ProfilerRecorder _main, _select, _shadow, _tick, _pop, _stat, _onSpawn, _activate, _recall, _sample;
-    private static ProfilerRecorder _popFind, _popParent, _popPose;
+    private static ProfilerRecorder _popFind, _popParent, _popPose, _lod;
 #endif
+
+    // 측정 조건 파일 이름 꼬리표 — 기본값(×1 · 끄기 없음 · LOD 끔)은 비워 둔다(기존 파일 이름 · 분석 스크립트 그대로). ActivationLog와 공유.
+    //  예: _x4 · _x4_off-bt · _x4_lod. LOD 이전 기록은 전부 꼬리표 없음 = LOD 끔이라 이름만으로 구분된다.
+    public static string RunTag(RunConditions c)
+    {
+        string tag = c.Density > 1 ? $"_x{c.Density}" : "";
+        if (c.CostOff != MonsterCostOff.None) tag += $"_off-{HarnessArgs.CostOffTag(c.CostOff)}";
+        if (c.UpdateLod) tag += "_lod";
+        return tag;
+    }
+
+    public static string ConditionsText(RunConditions c) =>
+        $"density: {c.Density} · off: {(c.CostOff == MonsterCostOff.None ? "none" : HarnessArgs.CostOffTag(c.CostOff))} · lod: {(c.UpdateLod ? "on" : "off")}";
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-    public static void Begin(ActivationPolicyType real, bool shadows, System.DateTime startedAt)
+    public static void Begin(ActivationPolicyType real, bool shadows, System.DateTime startedAt, RunConditions conditions)
     {
         Save();   // 이전 세션이 안 닫혔으면 먼저 쓴다
 
         _active = true;
-        _name = $"{real}{(shadows ? "_shadow" : "")}";
+        _conditions = conditions;
+        int density = conditions.Density;
+        _name = $"{real}{(shadows ? "_shadow" : "")}{RunTag(conditions)}";
         _startedAt = startedAt;
         _startFrame = Time.frameCount;
         _lastSampledFrame = Time.frameCount - 1;
@@ -132,6 +150,8 @@ public static class FieldMetrics
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         _frameCount = 0;
         while (_chunks.Count < PreallocChunks) _chunks.Add(new FrameRow[ChunkSize]);
+        // 이벤트는 마릿수에 비례 — 밀도만큼 미리 늘려 측정 중 List 확장(전체 복사)이 없게
+        if (_events.Capacity < EventCapacity * density) _events.Capacity = EventCapacity * density;
 #endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -148,6 +168,7 @@ public static class FieldMetrics
         _popFind = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.FindScene");
         _popParent = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.SetParent");
         _popPose = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Spawn.PoolPop.SetPose");
+        _lod = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Field.Lod");
 #endif
     }
 
@@ -157,7 +178,7 @@ public static class FieldMetrics
     //  ProfilerRecorder.LastValue가 직전 프레임 값이고, unscaledDeltaTime이 직전 프레임 길이라 같은 프레임으로 맞는다.
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-    public static void SampleFrame(int live, int onScreen, int deferred, int activeSpawners)
+    public static void SampleFrame(int live, int onScreen, int deferred, int activeSpawners, int reduced)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (!_active) return;
@@ -183,6 +204,7 @@ public static class FieldMetrics
             PopFindUs = _popFind.LastValue * 1e-3f,
             PopParentUs = _popParent.LastValue * 1e-3f,
             PopPoseUs = _popPose.LastValue * 1e-3f,
+            LodUs = _lod.LastValue * 1e-3f,
             MetricsUs = _sample.LastValue * 1e-3f,
             Spawns = _spawns[p],
             Recalls = _recalls[p],
@@ -191,6 +213,7 @@ public static class FieldMetrics
             OnScreen = onScreen,
             Deferred = deferred,
             ActiveSpawners = activeSpawners,
+            Reduced = reduced,
             MemMB = Profiler.GetTotalAllocatedMemoryLong() / (1024f * 1024f),
         });
         _spawns[p] = _recalls[p] = _defers[p] = 0;
@@ -295,7 +318,7 @@ public static class FieldMetrics
         string stem = Path.Combine(dir, $"field_{_name}_{_startedAt:yyyyMMdd_HHmmss}");
         CultureInfo inv = CultureInfo.InvariantCulture;
 
-        string header = $"# started: {_startedAt:yyyy-MM-dd HH:mm:ss} · policy: {_name} · frames: {_startFrame}~{Time.frameCount}" +
+        string header = $"# started: {_startedAt:yyyy-MM-dd HH:mm:ss} · policy: {_name} · {ConditionsText(_conditions)} · frames: {_startFrame}~{Time.frameCount}" +
                         $" · targetFrameRate: {Application.targetFrameRate} · vSyncCount: {QualitySettings.vSyncCount}" +
                         $" · build: {(Application.isEditor ? "editor" : Debug.isDebugBuild ? "development" : "release")}";
 
@@ -305,7 +328,7 @@ public static class FieldMetrics
             foreach (KeyValuePair<string, PoolStat> kv in _pools)
                 w.WriteLine($"# pool {kv.Key}: 시작 {kv.Value.Initial} · 최대 사용 {kv.Value.Peak} · 확장 {kv.Value.Grows}");
             w.WriteLine("frame,dtMs,mainMs,selectUs,shadowUs,tickUs,popUs,statUs,onSpawnUs,activateUs,recallUs,metricsUs," +
-                        "spawns,recalls,defers,live,onScreen,deferred,activeSpawners,memMB,popFindUs,popParentUs,popPoseUs");
+                        "spawns,recalls,defers,live,onScreen,deferred,activeSpawners,memMB,popFindUs,popParentUs,popPoseUs,lodUs,reduced");
             for (int i = 0; i < _frameCount; i++)
             {
                 FrameRow r = _chunks[i / ChunkSize][i % ChunkSize];
@@ -318,7 +341,8 @@ public static class FieldMetrics
                     r.Spawns.ToString(inv), r.Recalls.ToString(inv), r.Defers.ToString(inv),
                     r.Live.ToString(inv), r.OnScreen.ToString(inv), r.Deferred.ToString(inv), r.ActiveSpawners.ToString(inv),
                     r.MemMB.ToString("F1", inv),
-                    r.PopFindUs.ToString("F1", inv), r.PopParentUs.ToString("F1", inv), r.PopPoseUs.ToString("F1", inv)));
+                    r.PopFindUs.ToString("F1", inv), r.PopParentUs.ToString("F1", inv), r.PopPoseUs.ToString("F1", inv),
+                    r.LodUs.ToString("F1", inv), r.Reduced.ToString(inv)));
             }
         }
 
@@ -344,7 +368,7 @@ public static class FieldMetrics
 
         _main.Dispose(); _select.Dispose(); _shadow.Dispose(); _tick.Dispose(); _pop.Dispose();
         _stat.Dispose(); _onSpawn.Dispose(); _activate.Dispose(); _recall.Dispose(); _sample.Dispose();
-        _popFind.Dispose(); _popParent.Dispose(); _popPose.Dispose();
+        _popFind.Dispose(); _popParent.Dispose(); _popPose.Dispose(); _lod.Dispose();
 
         _frameCount = 0;   // 묶음은 남겨 다음 세션이 재사용
         _events.Clear();

@@ -13,7 +13,8 @@ FLICKER_SEC = 2.0   # 경계 떨림 = 끈 뒤 2초 안에 다시 켬 (계획서 
 #  (첫 하네스 실행: ⑦이 25.02m에서 끄고 팔 끝에서 되돌아와 19.99m에서 1.3초 뒤 다시 켬 — 경로 탓이지 경계 떨림이 아님)
 MARKERS = [('selectUs', '정책 선택(실제)'), ('shadowUs', '정책 선택(그림자)'), ('tickUs', '스포너 틱'),
            ('popUs', '스폰: 풀 꺼내기'), ('statUs', '스폰: SetStat'), ('onSpawnUs', '스폰: OnSpawn'),
-           ('activateUs', '스폰: SetActive'), ('recallUs', '정책 회수'), ('metricsUs', '계측 자체')]
+           ('activateUs', '스폰: SetActive'), ('recallUs', '정책 회수'), ('metricsUs', '계측 자체'),
+           ('lodUs', '갱신 LOD 판정')]   # lodUs · reduced 열은 갱신 LOD 이후 로그에만 있다
 SPAWN_STEPS = ['popUs', 'statUs', 'onSpawnUs', 'activateUs']
 # 풀 확장 탈락 판정 대상 = 스폰 경로의 풀(스포너 몹 · HP바)만 — 목적이 "스폰 비용에 런타임 Instantiate가 섞이지 않음"이라서.
 #  데미지 토스트 · 총알 궤적처럼 교전량에 따라 쓰이는 풀은 정책과 무관해 참고로만 출력한다.
@@ -109,6 +110,7 @@ def summarize(d):
         s['on_spawn'] = sum(e['kind'] == 'spawn' and e['cause'] == 'activate' and e['onScreen'] == '1' for e in ev)
         s['on_recall'] = sum(e['kind'] == 'recall' and e['onScreen'] == '1' for e in ev)
         s['engaged_recall'] = sum(e['kind'] == 'recall' and e['engaged'] == '1' for e in ev)
+        s['lod_late'] = sum(e['kind'] == 'lodlate' for e in ev)
     if d['flicker'] is not None:
         s['flicker'] = len(d['flicker'][1])
         if d['segments']:
@@ -145,6 +147,7 @@ def report(d):
 
     print('\n[비용] 마커 (μs/프레임)         평균      p99      최대')
     for k, label in MARKERS:
+        if k not in fr[0]: continue
         v = f(k)
         print(f'  {label:18} {sum(v) / n:9.1f} {pct(v, 99):8.1f} {max(v):8.1f}')
 
@@ -230,6 +233,11 @@ def report(d):
     print('\n[참고]')
     print(f'  스포너 몹 평균 {sum_live / n:.1f} · 최대 {int(max(live))} · 화면 밖 비율 {(1 - sum(onscr) / sum_live) * 100 if sum_live else math.nan:.1f}%'
           f' · 켜진 스포너 평균 {sum(f("activeSpawners")) / n:.1f}')
+    lod_on = 'lod: on' in head
+    if 'reduced' in fr[0] and lod_on:
+        red = f('reduced')
+        print(f'  갱신 LOD 줄임 상태 평균 {sum(red) / n:.1f}마리 ({sum(red) / sum_live * 100 if sum_live else math.nan:.1f}% of 생존)'
+              f' · 늦은 복원(화면 안에서 원래대로) {s.get("lod_late", 0)}')
 
     # ---- 탈락 조건 (계획서 2절)
     print('\n[탈락 조건]')
@@ -244,6 +252,8 @@ def report(d):
         else:
             verdict('경계 떨림 0회 (하네스가 아님 — 참고)', s['flicker'], s['flicker'] == 0)
     verdict('풀 확장 0회 (스폰 경로: 몹 · HP바)', s['pool_grows'], s['pool_grows'] == 0)
+    if lod_on and ev is not None:
+        verdict('갱신 LOD 늦은 복원 0회 (화면 진입 튐)', s['lod_late'], s['lod_late'] == 0)
     if s['pool_grows_other']:
         print('        참고 — 교전 풀 확장: ' + ' · '.join(f'{k} {v}회' for k, v in s['pool_grows_other'].items()))
     print('  (p99 기준은 ① 기준선 측정 후 확정)')

@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>몬스터 · 스포너 구조 도식</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:18px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.4pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:10px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figt .tag{ font-size:7.2pt; font-weight:800; color:#fff; background:var(--blue); border-radius:20px; padding:1px 7px; vertical-align:middle; margin-left:6px; letter-spacing:.03em; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; fill:#1a1c22; }
+  .s{ font-size:8.2px; fill:#5b6270; }
+  .xs{ font-size:7.2px; fill:#8a91a0; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.8px; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:9pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 8px; background:var(--ink); color:#fff; font-weight:700; font-size:8.4pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:5px 8px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  .callout{ border-radius:11px; padding:10px 14px; margin:10px 0; font-size:9.2pt; line-height:1.48; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  .footer{ margin-top:14px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+  .pb{ break-before:page; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · Sector 작업 사전점검 · 구조 도식</div>
+<h1>몬스터 · 스포너 — 지금 있는 구조 그대로</h1>
+<p class="lead">Sector를 손대기 전에, 그 아래에서 실제로 돌아가고 있는 것을 그림으로 고정한다. <strong>결함·개선안은 이 문서에 없다</strong> — 별도 문서(Issues.md)로 분리했다.</p>
+
+<div class="callout c-blue">
+  <span class="lbl">읽는 법</span>
+  파란색 = 매 프레임 도는 것(Update·BT) · 보라색 = 비동기(UniTask·Addressables) · 초록색 = 데이터/에셋 · 주황색 = 몬스터 바깥의 구독자.
+  실선 화살표는 <strong>직접 호출</strong>, 점선 화살표는 <strong>이벤트 구독</strong>이다.
+</div>
+
+<h2>1. 타입 계보 — 층마다 무엇을 더하는가</h2>
+<p class="h2sub">컨트롤러는 4계층이고, 보스만 2계층에서 갈라져 완전히 다른 길을 간다.</p>
+
+<div class="fig">
+<p class="figt">① 상속 구조와 각 층의 추가분</p>
+<svg width="100%" viewBox="0 0 700 268" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#8a91a0"/></marker>
+  </defs>
+
+  <rect x="245" y="8" width="210" height="42" rx="9" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/>
+  <text x="350" y="27" class="tb" text-anchor="middle" fill="#2b3a8f">BaseMonsterController</text>
+  <text x="350" y="41" class="xs" text-anchor="middle">abstract · MonoBehaviour · IAbilityCaster</text>
+  <text x="466" y="20" class="s">+ 상태(MonsterState) · BT 실행(Update)</text>
+  <text x="466" y="32" class="s">+ 사망 연출 · 디스폰 타이머 · CTS 수명</text>
+  <text x="466" y="44" class="s">+ AbilityRunner · Reward/Toast 런타임 부착</text>
+
+  <path d="M350 50 L350 64" stroke="#8a91a0" stroke-width="1.2" fill="none"/>
+  <path d="M175 64 L525 64" stroke="#8a91a0" stroke-width="1.2" fill="none"/>
+  <path d="M175 64 L175 78" stroke="#8a91a0" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+  <path d="M525 64 L525 78" stroke="#8a91a0" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+
+  <rect x="62" y="80" width="226" height="40" rx="9" fill="#fff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="175" y="97" class="t" text-anchor="middle">NormalMonsterController</text>
+  <text x="175" y="110" class="xs" text-anchor="middle">abstract · 필드/던전 잡몹 (244줄)</text>
+  <text x="62" y="136" class="s">+ NavMeshAgent 추적 · 탐지/공격 사거리</text>
+  <text x="62" y="148" class="s">+ 월드 HP바 생성·파괴 · 파티 타겟 추종</text>
+  <text x="62" y="160" class="s">+ BT 조립 (Selector 4단)</text>
+
+  <rect x="412" y="80" width="226" height="40" rx="9" fill="#fff" stroke="#7048e8" stroke-width="1.2"/>
+  <text x="525" y="97" class="t" text-anchor="middle">BossMonsterController</text>
+  <text x="525" y="110" class="xs" text-anchor="middle">ISummonRegistry · 보스 던전 전용 (284줄)</text>
+  <text x="412" y="136" class="s">+ Timeline(PlayableDirector)로 스킬 재생</text>
+  <text x="412" y="148" class="s">+ BossSequence · RandomNode · WaitNode</text>
+  <text x="412" y="160" class="s">+ 소환 잡몹 등록/정리 · 입장 연출 게이트</text>
+  <text x="412" y="172" class="s">+ NavMeshAgent 없음 · 풀링 안 함(Destroy)</text>
+
+  <path d="M175 120 L175 178" stroke="#8a91a0" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+
+  <rect x="62" y="180" width="226" height="36" rx="9" fill="#fff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="175" y="196" class="t" text-anchor="middle">RangedMonsterController</text>
+  <text x="175" y="208" class="xs" text-anchor="middle">abstract · 탄창/장전 상태기계 (93줄)</text>
+  <text x="296" y="194" class="s">+ 탄약 소모 · Attack/Reload 상태 전이</text>
+  <text x="296" y="206" class="s">+ 스폰 1프레임 뒤 Agent 켜기</text>
+
+  <path d="M175 216 L175 226" stroke="#8a91a0" stroke-width="1.2" fill="none"/>
+  <path d="M108 226 L242 226" stroke="#8a91a0" stroke-width="1.2" fill="none"/>
+  <path d="M108 226 L108 234" stroke="#8a91a0" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+  <path d="M175 226 L175 234" stroke="#8a91a0" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+  <path d="M242 226 L242 234" stroke="#8a91a0" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+
+  <rect x="66" y="236" width="84" height="24" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="108" y="251" class="t" text-anchor="middle">AR · 29줄</text>
+  <rect x="133" y="236" width="84" height="24" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="175" y="251" class="t" text-anchor="middle">RL · 24줄</text>
+  <rect x="200" y="236" width="84" height="24" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="242" y="251" class="t" text-anchor="middle">Tank · 52줄</text>
+  <text x="296" y="245" class="s">이 셋이 하는 일은 하나 — 총구/착탄점을 정해 AbilityContext를 채우고</text>
+  <text x="296" y="256" class="s">_abilities[0] 발동. 투사체·데미지 판정은 Effect(어빌리티) 소유.</text>
+</svg>
+<p class="figcap">잎 클래스가 얇다 = 전투의 실체는 컨트롤러가 아니라 AbilitySystem에 있다. 보스만 이 원칙에서 벗어나 Timeline을 직접 조작한다.</p>
+</div>
+
+<h2>2. 몬스터 한 마리의 구성 — 누가 무엇을 소유하는가</h2>
+<p class="h2sub">프리팹에 박혀 있는 것 / 실행 중에 붙는 것 / 바깥에서 구독하는 것, 세 덩어리로 나뉜다.</p>
+
+<div class="fig">
+<p class="figt">② 컴포넌트 소유도 <span class="tag">GameObject 1기 기준</span></p>
+<svg width="100%" viewBox="0 0 700 266" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#8a91a0"/></marker>
+    <marker id="ar2v" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#7048e8"/></marker>
+  </defs>
+
+  <rect x="8" y="26" width="212" height="232" rx="11" fill="#f7f8fa" stroke="#cfd4de" stroke-dasharray="3 3"/>
+  <text x="114" y="18" class="t" text-anchor="middle">프리팹에 저장됨</text>
+  <text x="114" y="42" class="xs" text-anchor="middle">에디터 배선 · Addressable 로드 단위</text>
+
+  <rect x="22" y="50" width="184" height="30" rx="7" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="114" y="69" class="t" text-anchor="middle" fill="#2b3a8f">Monster***Controller</text>
+  <rect x="22" y="84" width="184" height="26" rx="7" fill="#fff" stroke="#cfd4de"/>
+  <text x="114" y="101" class="t" text-anchor="middle">MonsterStat</text>
+  <rect x="22" y="114" width="88" height="24" rx="7" fill="#fff" stroke="#cfd4de"/>
+  <text x="66" y="130" class="s" text-anchor="middle">Animator</text>
+  <rect x="118" y="114" width="88" height="24" rx="7" fill="#fff" stroke="#cfd4de"/>
+  <text x="162" y="130" class="s" text-anchor="middle">Collider</text>
+  <rect x="22" y="142" width="88" height="24" rx="7" fill="#fff" stroke="#cfd4de"/>
+  <text x="66" y="158" class="s" text-anchor="middle">NavMeshAgent</text>
+  <rect x="118" y="142" width="88" height="24" rx="7" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="162" y="158" class="s" text-anchor="middle" fill="#1f6b2e">Poolable</text>
+  <rect x="22" y="170" width="184" height="24" rx="7" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="114" y="186" class="s" text-anchor="middle" fill="#1f6b2e">List&lt;AbilityData&gt; _abilities</text>
+  <rect x="22" y="198" width="184" height="24" rx="7" fill="#fff" stroke="#cfd4de"/>
+  <text x="114" y="214" class="s" text-anchor="middle">HP바 앵커 · 총구 Transform</text>
+  <text x="114" y="238" class="xs" text-anchor="middle">AR/RL/Tank = Poolable 있음</text>
+  <text x="114" y="250" class="xs" text-anchor="middle">보스 = Poolable 없음 → Object.Destroy</text>
+
+  <rect x="244" y="26" width="212" height="232" rx="11" fill="#f3f0ff" stroke="#7048e8" stroke-dasharray="3 3"/>
+  <text x="350" y="18" class="t" text-anchor="middle">실행 중에 붙음</text>
+  <text x="350" y="42" class="xs" text-anchor="middle">AddComponent · 프리팹 무수정</text>
+
+  <rect x="258" y="50" width="184" height="34" rx="7" fill="#fff" stroke="#7048e8" stroke-width="1.4"/>
+  <text x="350" y="67" class="t" text-anchor="middle" fill="#5028c0">Health</text>
+  <text x="350" y="79" class="xs" text-anchor="middle">HP · 사망 · 무적 · IDamageable</text>
+
+  <rect x="258" y="90" width="184" height="30" rx="7" fill="#fff" stroke="#7048e8"/>
+  <text x="350" y="104" class="t" text-anchor="middle">MonsterReward</text>
+  <text x="350" y="115" class="xs" text-anchor="middle">경험치 · 크레딧 · 드랍</text>
+
+  <rect x="258" y="126" width="184" height="30" rx="7" fill="#fff" stroke="#7048e8"/>
+  <text x="350" y="140" class="t" text-anchor="middle">DamageNumberPresenter</text>
+  <text x="350" y="151" class="xs" text-anchor="middle">데미지 숫자 토스트</text>
+
+  <text x="258" y="176" class="s">부착 시점</text>
+  <text x="258" y="190" class="s">· Health — Stat.HealthComp 최초 접근 시 자기부트스트랩</text>
+  <text x="258" y="203" class="s">· Reward / Presenter — Controller.Awake의 EnsureOn</text>
+  <text x="258" y="223" class="s">셋 다 스탯이 아니라 이벤트로만 엮인다.</text>
+  <text x="258" y="236" class="s">→ 몬스터와 캐릭터가 같은 Health 구현을</text>
+  <text x="258" y="248" class="s">   공유할 수 있는 이유가 여기 있다.</text>
+
+  <rect x="480" y="26" width="212" height="232" rx="11" fill="#fff" stroke="#cfd4de" stroke-dasharray="3 3"/>
+  <text x="586" y="18" class="t" text-anchor="middle">몬스터 바깥에 사는 것</text>
+  <text x="586" y="42" class="xs" text-anchor="middle">월드 캔버스 · 매니저 · 씬</text>
+
+  <rect x="494" y="50" width="184" height="30" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="586" y="64" class="t" text-anchor="middle" fill="#8a3708">UI_MonsterHPBar</text>
+  <text x="586" y="75" class="xs" text-anchor="middle">CanvasWorld 자식 · 사망 시 파괴</text>
+
+  <rect x="494" y="86" width="184" height="30" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="586" y="100" class="t" text-anchor="middle" fill="#8a3708">MonsterSpawner</text>
+  <text x="586" y="111" class="xs" text-anchor="middle">사망 구독 → 리스폰 소유</text>
+
+  <rect x="494" y="122" width="184" height="30" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="586" y="136" class="t" text-anchor="middle" fill="#8a3708">PartyManager</text>
+  <text x="586" y="147" class="xs" text-anchor="middle">타겟 캐릭터 교체 통보</text>
+
+  <rect x="494" y="158" width="184" height="30" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="586" y="172" class="t" text-anchor="middle" fill="#8a3708">던전 클리어 조건</text>
+  <text x="586" y="183" class="xs" text-anchor="middle">KillAllMonster / KillBoss</text>
+
+  <text x="494" y="210" class="s">전부 몬스터의 이벤트를 구독하는 쪽이다.</text>
+  <text x="494" y="223" class="s">몬스터는 이들의 존재를 모른다.</text>
+  <text x="494" y="241" class="s">예외 — HP바만은 몬스터가 직접 생성하고</text>
+  <text x="494" y="253" class="s">직접 파괴한다(참조를 들고 있음).</text>
+
+  <path d="M220 100 L256 100" stroke="#7048e8" stroke-width="1.2" fill="none" marker-end="url(#ar2v)"/>
+  <text x="238" y="94" class="xs" text-anchor="middle">owns</text>
+  <path d="M456 100 L492 100" stroke="#8a91a0" stroke-width="1.2" stroke-dasharray="3 2" fill="none" marker-end="url(#ar2)"/>
+  <text x="474" y="94" class="xs" text-anchor="middle">event</text>
+</svg>
+<p class="figcap">HP·사망·무적은 Stat이 아니라 Health가 소유한다(StatRefactor 3단계). 보상·데미지 표시는 Health 이벤트의 구독자로 밀려나 있다.</p>
+</div>
+
+<h2 class="pb">3. 스폰 파이프라인 — 진입점 4개가 한 팩토리로 모인다</h2>
+<p class="h2sub">필드(스포너)·일반던전·보스던전·보스소환. 넷 다 MonsterFactory를 통과하지만, <strong>스폰 정책(딜레이·리스폰)은 스포너에만 있다.</strong></p>
+
+<div class="fig">
+<p class="figt">③ 생성 경로 <span class="tag">호출 → 팩토리 → 리소스</span></p>
+<svg width="100%" viewBox="0 0 700 336" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#5b6270"/></marker>
+    <marker id="a3v" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#7048e8"/></marker>
+  </defs>
+
+  <text x="79" y="13" class="xs" text-anchor="middle">진입점 (호출자)</text>
+  <text x="270" y="13" class="xs" text-anchor="middle">MonsterFactory</text>
+  <text x="440" y="13" class="xs" text-anchor="middle">ResourceManager</text>
+  <text x="615" y="13" class="xs" text-anchor="middle">인스턴스 출처</text>
+
+  <rect x="8" y="22" width="142" height="34" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="79" y="37" class="t" text-anchor="middle" fill="#8a3708">MonsterSpawner</text>
+  <text x="79" y="49" class="xs" text-anchor="middle">필드 · 포인트별 딜레이/리스폰</text>
+
+  <rect x="8" y="62" width="142" height="34" rx="8" fill="#fff" stroke="#cfd4de"/>
+  <text x="79" y="77" class="t" text-anchor="middle">NormalDungeonScene</text>
+  <text x="79" y="89" class="xs" text-anchor="middle">WhenAll로 일괄 · 리스폰 없음</text>
+
+  <rect x="8" y="102" width="142" height="34" rx="8" fill="#fff" stroke="#cfd4de"/>
+  <text x="79" y="117" class="t" text-anchor="middle">BossDungeonScene</text>
+  <text x="79" y="129" class="xs" text-anchor="middle">보스 1기 · 키 하드코딩</text>
+
+  <rect x="8" y="142" width="142" height="34" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="79" y="157" class="t" text-anchor="middle" fill="#5028c0">SummonMonsters (Effect)</text>
+  <text x="79" y="169" class="xs" text-anchor="middle">보스가 전투 중 소환</text>
+
+  <path d="M150 39 L176 39" stroke="#5b6270" stroke-width="1.1" fill="none" marker-end="url(#a3)"/>
+  <path d="M150 79 L176 79" stroke="#5b6270" stroke-width="1.1" fill="none" marker-end="url(#a3)"/>
+  <path d="M150 119 L176 119" stroke="#5b6270" stroke-width="1.1" fill="none" marker-end="url(#a3)"/>
+  <path d="M150 159 L176 159" stroke="#5b6270" stroke-width="1.1" fill="none" marker-end="url(#a3)"/>
+
+  <rect x="178" y="22" width="184" height="154" rx="10" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/>
+  <rect x="190" y="34" width="160" height="30" rx="7" fill="#fff" stroke="#3b5bdb"/>
+  <text x="270" y="47" class="s" text-anchor="middle" fill="#2b3a8f">CreateMonsterByMonsterIDAsync</text>
+  <text x="270" y="58" class="xs" text-anchor="middle">int monsterID</text>
+  <rect x="190" y="70" width="160" height="30" rx="7" fill="#fff" stroke="#3b5bdb"/>
+  <text x="270" y="83" class="s" text-anchor="middle" fill="#2b3a8f">CreateMonsterByAddressableKeyAsync</text>
+  <text x="270" y="94" class="xs" text-anchor="middle">string key</text>
+  <text x="270" y="116" class="xs" text-anchor="middle">두 오버로드의 차이는 조회 키 하나뿐</text>
+  <text x="270" y="128" class="xs" text-anchor="middle">이후 로직 40줄은 완전 동일</text>
+  <text x="270" y="150" class="s" text-anchor="middle" fill="#2b3a8f">등급 판정 → 레벨 결정 → 배율 적용</text>
+  <text x="270" y="164" class="xs" text-anchor="middle">Elite/Boss면 EliteMonsterLevel, 아니면 Normal</text>
+
+  <path d="M362 99 L392 99" stroke="#7048e8" stroke-width="1.3" fill="none" marker-end="url(#a3v)"/>
+
+  <rect x="394" y="22" width="152" height="154" rx="10" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.3"/>
+  <text x="470" y="40" class="t" text-anchor="middle" fill="#5028c0">InstantiateAsync</text>
+  <text x="470" y="53" class="xs" text-anchor="middle">key · pos · rot · token</text>
+  <rect x="404" y="62" width="132" height="26" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="470" y="78" class="s" text-anchor="middle">LoadAsync (Addressables)</text>
+  <text x="470" y="100" class="xs" text-anchor="middle">Scene 스코프 고정 (isGlobal:false)</text>
+  <text x="470" y="112" class="xs" text-anchor="middle">취소되면 예외 대신 null 반환</text>
+  <rect x="404" y="120" width="132" height="26" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="470" y="136" class="s" text-anchor="middle">Instantiate(prefab, ...)</text>
+  <text x="470" y="158" class="xs" text-anchor="middle">NavMeshAgent 있으면 Warp로 배치</text>
+  <text x="470" y="170" class="xs" text-anchor="middle">없으면 transform 직접 대입</text>
+
+  <path d="M546 99 L570 99" stroke="#7048e8" stroke-width="1.3" fill="none" marker-end="url(#a3v)"/>
+
+  <rect x="572" y="22" width="120" height="70" rx="9" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="632" y="40" class="t" text-anchor="middle" fill="#1f6b2e">Poolable 있음</text>
+  <text x="632" y="54" class="s" text-anchor="middle">Pool.Pop()</text>
+  <text x="632" y="68" class="xs" text-anchor="middle">AR · RL · Tank</text>
+  <text x="632" y="82" class="xs" text-anchor="middle">풀이 프리팹 refCount 티켓 보유</text>
+
+  <rect x="572" y="100" width="120" height="62" rx="9" fill="#fff" stroke="#cfd4de"/>
+  <text x="632" y="118" class="t" text-anchor="middle">Poolable 없음</text>
+  <text x="632" y="132" class="s" text-anchor="middle">Object.Instantiate()</text>
+  <text x="632" y="146" class="xs" text-anchor="middle">보스(Hieronymus)</text>
+  <text x="632" y="158" class="xs" text-anchor="middle">디스폰 = 진짜 파괴</text>
+
+  <line x1="8" y1="192" x2="692" y2="192" stroke="#e3e6ec"/>
+  <text x="8" y="209" class="t">인스턴스 1기가 완성되기까지 — 실제 실행 순서</text>
+
+  <rect x="8" y="218" width="126" height="52" rx="8" fill="#fff" stroke="#cfd4de"/>
+  <text x="71" y="236" class="s" text-anchor="middle" font-weight="700">① 원본 비활성화 후 복제</text>
+  <text x="71" y="249" class="xs" text-anchor="middle">Awake는 돌고</text>
+  <text x="71" y="260" class="xs" text-anchor="middle">OnEnable·물리는 아직</text>
+
+  <rect x="146" y="218" width="126" height="52" rx="8" fill="#fff" stroke="#cfd4de"/>
+  <text x="209" y="236" class="s" text-anchor="middle" font-weight="700">② 위치·회전 배치</text>
+  <text x="209" y="249" class="xs" text-anchor="middle">Agent.Warp 또는</text>
+  <text x="209" y="260" class="xs" text-anchor="middle">transform 대입</text>
+
+  <rect x="284" y="218" width="126" height="52" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/>
+  <text x="347" y="236" class="s" text-anchor="middle" font-weight="700" fill="#2b3a8f">③ SetActive(true)</text>
+  <text x="347" y="249" class="xs" text-anchor="middle">OnEnable 발화 · CTS 재생성</text>
+  <text x="347" y="260" class="xs" text-anchor="middle">HP 회복 · Appear 재생</text>
+
+  <rect x="422" y="218" width="126" height="52" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/>
+  <text x="485" y="236" class="s" text-anchor="middle" font-weight="700" fill="#2b3a8f">④ SetStat(...)</text>
+  <text x="485" y="249" class="xs" text-anchor="middle">HP/공/방 확정</text>
+  <text x="485" y="260" class="xs" text-anchor="middle">보상 캐싱 · 재회복</text>
+
+  <rect x="560" y="218" width="132" height="52" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="626" y="236" class="s" text-anchor="middle" font-weight="700" fill="#8a3708">⑤ 호출자에게 반환</text>
+  <text x="626" y="249" class="xs" text-anchor="middle">스포너가 사망 이벤트 구독</text>
+  <text x="626" y="260" class="xs" text-anchor="middle">슬롯/딕셔너리에 기록</text>
+
+  <path d="M134 244 L144 244" stroke="#5b6270" stroke-width="1.1" fill="none" marker-end="url(#a3)"/>
+  <path d="M272 244 L282 244" stroke="#5b6270" stroke-width="1.1" fill="none" marker-end="url(#a3)"/>
+  <path d="M410 244 L420 244" stroke="#5b6270" stroke-width="1.1" fill="none" marker-end="url(#a3)"/>
+  <path d="M548 244 L558 244" stroke="#5b6270" stroke-width="1.1" fill="none" marker-end="url(#a3)"/>
+
+  <text x="8" y="290" class="s">③과 ④의 순서에 주의 — 몬스터는 <tspan font-weight="700">스탯이 주입되기 전에 이미 활성화되어 있다.</tspan> OnEnable은 직전 생애의 MaxHp로 HP를 채우고,</text>
+  <text x="8" y="303" class="s">그 다음 SetStat이 값을 덮어쓴 뒤 다시 회복시킨다. 같은 프리팹 = 같은 종이라 현재는 값이 일치한다.</text>
+  <text x="8" y="322" class="s">④의 SetStat은 <tspan class="mono">OnMonsterDead = null</tspan> 로 이전 생애의 구독을 지우고 시작한다 → 그래서 ⑤에서 스포너가 다시 구독한다.</text>
+</svg>
+<p class="figcap">던전 두 곳은 팩토리를 직접 호출하고 끝난다. 딜레이·리스폰·취소 토큰은 스포너만 가진 개념이다.</p>
+</div>
+
+<h2>4. 스포너 내부 — 포인트 인덱스가 유일한 키</h2>
+<p class="h2sub">스포너는 자식 Transform을 그대로 스폰 포인트로 삼고, 모든 상태를 그 인덱스로 정렬한다.</p>
+
+<div class="fig">
+<p class="figt">④ 슬롯 자료구조와 슬롯 상태 전이</p>
+<svg width="100%" viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#5b6270"/></marker>
+  </defs>
+
+  <text x="8" y="14" class="t">Awake — 자식 Transform이 곧 스폰 포인트다</text>
+
+  <rect x="8" y="24" width="330" height="26" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="173" y="41" class="s" text-anchor="middle">MonsterSpawner (GameObject) — 자식 N개 = 스폰 포인트 N개</text>
+
+  <rect x="8" y="60" width="330" height="120" rx="9" fill="#fff" stroke="#cfd4de"/>
+  <text x="40" y="76" class="xs" text-anchor="middle">index</text>
+  <text x="110" y="76" class="xs" text-anchor="middle">_spawnPoints</text>
+  <text x="196" y="76" class="xs" text-anchor="middle">_respawnCts</text>
+  <text x="290" y="76" class="xs" text-anchor="middle">_spawnedMonsters</text>
+  <line x1="16" y1="82" x2="330" y2="82" stroke="#e3e6ec"/>
+
+  <text x="40" y="99" class="s" text-anchor="middle">0</text>
+  <text x="110" y="99" class="xs" text-anchor="middle">Transform</text>
+  <rect x="164" y="89" width="64" height="14" rx="4" fill="#f7f8fa" stroke="#cfd4de"/><text x="196" y="99" class="xs" text-anchor="middle">null</text>
+  <rect x="248" y="89" width="84" height="14" rx="4" fill="#ebfbee" stroke="#2b8a3e"/><text x="290" y="99" class="xs" text-anchor="middle" fill="#1f6b2e">살아있는 몬스터</text>
+
+  <text x="40" y="120" class="s" text-anchor="middle">1</text>
+  <text x="110" y="120" class="xs" text-anchor="middle">Transform</text>
+  <rect x="164" y="110" width="64" height="14" rx="4" fill="#f3f0ff" stroke="#7048e8"/><text x="196" y="120" class="xs" text-anchor="middle" fill="#5028c0">CTS (대기중)</text>
+  <rect x="248" y="110" width="84" height="14" rx="4" fill="#f7f8fa" stroke="#cfd4de"/><text x="290" y="120" class="xs" text-anchor="middle">null</text>
+
+  <text x="40" y="141" class="s" text-anchor="middle">2</text>
+  <text x="110" y="141" class="xs" text-anchor="middle">Transform</text>
+  <rect x="164" y="131" width="64" height="14" rx="4" fill="#f7f8fa" stroke="#cfd4de"/><text x="196" y="141" class="xs" text-anchor="middle">null</text>
+  <rect x="248" y="131" width="84" height="14" rx="4" fill="#f7f8fa" stroke="#cfd4de"/><text x="290" y="141" class="xs" text-anchor="middle">null (시체 연출 중)</text>
+
+  <text x="40" y="162" class="s" text-anchor="middle">…</text>
+  <text x="173" y="172" class="xs" text-anchor="middle">두 칸이 모두 null = "비었다"와 "시체 연출 중"이 구분되지 않는다</text>
+
+  <rect x="8" y="190" width="330" height="100" rx="9" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="18" y="207" class="t">같은 사실을 담는 그릇이 5개</text>
+  <text x="18" y="223" class="s">· _spawnPoints : List&lt;Transform&gt; — 위치</text>
+  <text x="18" y="236" class="s">· _respawnCts[] · _spawnedMonsters[] — 인덱스 기준</text>
+  <text x="18" y="249" class="s">· _activeMonsters : List — 디스폰 순회용</text>
+  <text x="18" y="262" class="s">· _monsterToPointIndex · _monsterToSpawnInfo : Dict — 몬스터 기준</text>
+  <text x="18" y="280" class="xs">사망 처리는 이 다섯 곳을 손으로 동기화한다 (Handle 한 함수에서 4번 갱신)</text>
+
+  <text x="360" y="14" class="t">슬롯 하나의 상태 전이</text>
+
+  <rect x="372" y="30" width="126" height="40" rx="9" fill="#fff" stroke="#cfd4de"/>
+  <text x="435" y="47" class="t" text-anchor="middle">① 빈 슬롯</text>
+  <text x="435" y="60" class="xs" text-anchor="middle">CTS·몬스터 둘 다 null</text>
+
+  <rect x="556" y="30" width="126" height="40" rx="9" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="619" y="47" class="t" text-anchor="middle" fill="#5028c0">② 스폰 대기</text>
+  <text x="619" y="60" class="xs" text-anchor="middle">CTS 有 · UniTask.Delay</text>
+
+  <rect x="556" y="132" width="126" height="40" rx="9" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="619" y="149" class="t" text-anchor="middle" fill="#1f6b2e">③ 살아있음</text>
+  <text x="619" y="162" class="xs" text-anchor="middle">몬스터 有 · 사망 구독됨</text>
+
+  <rect x="372" y="132" width="126" height="40" rx="9" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="435" y="149" class="t" text-anchor="middle" fill="#8a3708">④ 시체 연출</text>
+  <text x="435" y="162" class="xs" text-anchor="middle">슬롯은 비어 보임</text>
+
+  <path d="M498 50 L554 50" stroke="#5b6270" stroke-width="1.2" fill="none" marker-end="url(#a4)"/>
+  <text x="527" y="22" class="xs" text-anchor="middle">SpawnMonsters() → CTS 생성</text>
+
+  <path d="M619 70 L619 130" stroke="#5b6270" stroke-width="1.2" fill="none" marker-end="url(#a4)"/>
+  <text x="612" y="94" class="xs" text-anchor="end">delay 5s 경과</text>
+  <text x="612" y="106" class="xs" text-anchor="end">→ Factory 생성 완료</text>
+  <text x="612" y="118" class="xs" text-anchor="end">→ CTS 정리</text>
+
+  <path d="M554 152 L500 152" stroke="#5b6270" stroke-width="1.2" fill="none" marker-end="url(#a4)"/>
+  <text x="527" y="144" class="xs" text-anchor="middle">HP 0 → 사망</text>
+  <text x="527" y="168" class="xs" text-anchor="middle">슬롯 즉시 비움</text>
+
+  <path d="M400 132 L400 72" stroke="#5b6270" stroke-width="1.2" fill="none" marker-end="url(#a4)"/>
+  <text x="407" y="96" class="xs">디스폰 2s 대기</text>
+  <text x="407" y="108" class="xs">→ OnDespawned</text>
+  <text x="407" y="120" class="xs">→ StartRespawn</text>
+
+  <path d="M619 172 L619 200 L400 200 L400 186" stroke="#8a91a0" stroke-width="1.1" stroke-dasharray="4 3" fill="none" marker-end="url(#a4)"/>
+  <text x="510" y="213" class="xs" text-anchor="middle">DespawnMonsters() — ②③만 회수한다. ④(시체 연출 중)는 이 순회에 없다</text>
+
+  <rect x="360" y="228" width="332" height="62" rx="9" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="372" y="245" class="t" fill="#2b3a8f">한 바퀴에 걸리는 시간</text>
+  <text x="372" y="261" class="s">사망 → (디스폰 2s) → (리스폰 delay 5s) → 재등장 = 약 7초</text>
+  <text x="372" y="275" class="s">delay 값은 SpawnerData.json에 있고, 최초 스폰 지연과 리스폰</text>
+  <text x="372" y="286" class="s">간격을 같은 필드 하나가 겸한다 (현재 전 항목 5.0)</text>
+</svg>
+<p class="figcap">스포너는 "몬스터가 없어도 리스폰 타이머만 도는" 대표값 시뮬레이션 구조다. 몬스터 없이도 슬롯은 살아있다.</p>
+</div>
+
+<h2 class="pb">5. 사망에서 재등장까지 — 시간 축</h2>
+<p class="h2sub">사망 "통보"는 즉시, 사망 "연출"은 다음 프레임에 시작한다. 이 둘이 다른 시점이라는 게 이 구조의 핵심이다.</p>
+
+<div class="fig">
+<p class="figt">⑤ 죽음 → 리스폰 시퀀스 <span class="tag">약 7초</span></p>
+<svg width="100%" viewBox="0 0 700 268" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#5b6270"/></marker>
+  </defs>
+
+  <line x1="118" y1="34" x2="118" y2="232" stroke="#e3e6ec" stroke-dasharray="3 3"/>
+  <line x1="268" y1="34" x2="268" y2="232" stroke="#e3e6ec" stroke-dasharray="3 3"/>
+  <line x1="420" y1="34" x2="420" y2="232" stroke="#e3e6ec" stroke-dasharray="3 3"/>
+  <line x1="560" y1="34" x2="560" y2="232" stroke="#e3e6ec" stroke-dasharray="3 3"/>
+
+  <text x="118" y="18" class="xs" text-anchor="middle">t = 0 (피격 프레임)</text>
+  <text x="268" y="18" class="xs" text-anchor="middle">같은 프레임 · 동기 호출</text>
+  <text x="420" y="18" class="xs" text-anchor="middle">다음 프레임 (BT 평가)</text>
+  <text x="560" y="18" class="xs" text-anchor="middle">t + 2초</text>
+  <text x="668" y="18" class="xs" text-anchor="middle">t + 7초</text>
+
+  <text x="8" y="52" class="s" font-weight="700">Health</text>
+  <text x="8" y="92" class="s" font-weight="700">MonsterStat</text>
+  <text x="8" y="140" class="s" font-weight="700">Controller / BT</text>
+  <text x="8" y="196" class="s" font-weight="700">MonsterSpawner</text>
+
+  <line x1="8" y1="62" x2="692" y2="62" stroke="#f2f4f8"/>
+  <line x1="8" y1="106" x2="692" y2="106" stroke="#f2f4f8"/>
+  <line x1="8" y1="166" x2="692" y2="166" stroke="#f2f4f8"/>
+
+  <rect x="76" y="38" width="120" height="22" rx="6" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="136" y="52" class="xs" text-anchor="middle" fill="#5028c0">TakeDamage → HP 0 → Die()</text>
+  <rect x="206" y="38" width="120" height="22" rx="6" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="266" y="52" class="xs" text-anchor="middle" fill="#5028c0">OnDied(attacker) 발행</text>
+  <path d="M196 49 L204 49" stroke="#5b6270" stroke-width="1" marker-end="url(#a5)"/>
+
+  <rect x="206" y="70" width="120" height="30" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="266" y="82" class="xs" text-anchor="middle">OnHealthDied 재브로드캐스트</text>
+  <text x="266" y="94" class="xs" text-anchor="middle">보상 · 리스폰 두 갈래로</text>
+  <path d="M266 60 L266 68" stroke="#5b6270" stroke-width="1" marker-end="url(#a5)"/>
+
+  <rect x="336" y="70" width="104" height="30" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="388" y="82" class="xs" text-anchor="middle" fill="#8a3708">MonsterReward</text>
+  <text x="388" y="94" class="xs" text-anchor="middle">경험치·크레딧·드랍 즉시</text>
+  <path d="M326 85 L334 85" stroke="#5b6270" stroke-width="1" marker-end="url(#a5)"/>
+
+  <rect x="336" y="112" width="180" height="46" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="426" y="126" class="xs" text-anchor="middle" fill="#2b3a8f">BT가 사망을 "이제야" 인지</text>
+  <text x="426" y="138" class="xs" text-anchor="middle">CheckIsDead → HandleDeadState</text>
+  <text x="426" y="151" class="xs" text-anchor="middle">Agent off · Collider off · HP바 파괴 · Death 재생</text>
+
+  <rect x="526" y="112" width="110" height="46" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="581" y="128" class="xs" text-anchor="middle" fill="#2b3a8f">DespawnAsync 완료</text>
+  <text x="581" y="140" class="xs" text-anchor="middle">OnDespawned 발화 →</text>
+  <text x="581" y="152" class="xs" text-anchor="middle">Resource.Destroy (풀 반환)</text>
+  <path d="M516 135 L524 135" stroke="#5b6270" stroke-width="1" marker-end="url(#a5)"/>
+
+  <rect x="206" y="172" width="180" height="42" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="296" y="186" class="xs" text-anchor="middle" fill="#8a3708">HandleMonsterDead</text>
+  <text x="296" y="198" class="xs" text-anchor="middle">슬롯·딕셔너리 5곳에서 제거</text>
+  <text x="296" y="209" class="xs" text-anchor="middle">OnDespawned에 리스폰 예약(람다)</text>
+  <path d="M266 100 L266 170" stroke="#5b6270" stroke-width="1" marker-end="url(#a5)"/>
+
+  <rect x="526" y="172" width="110" height="42" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="581" y="188" class="xs" text-anchor="middle" fill="#8a3708">StartRespawn</text>
+  <text x="581" y="200" class="xs" text-anchor="middle">새 CTS + 루틴 시작</text>
+  <text x="581" y="211" class="xs" text-anchor="middle">→ Delay(5초)</text>
+  <path d="M581 158 L581 170" stroke="#5b6270" stroke-width="1" marker-end="url(#a5)"/>
+
+  <rect x="644" y="172" width="48" height="42" rx="6" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="668" y="190" class="xs" text-anchor="middle" fill="#1f6b2e">재등장</text>
+  <text x="668" y="202" class="xs" text-anchor="middle">풀에서 Pop</text>
+  <path d="M636 193 L642 193" stroke="#5b6270" stroke-width="1" marker-end="url(#a5)"/>
+
+  <text x="8" y="243" class="s">· 보상은 <tspan font-weight="700">피격 프레임에 즉시</tspan> 지급된다. 사망 연출과 무관하다.</text>
+  <text x="8" y="256" class="s">· 스포너는 사망 시점에 슬롯을 비우지만, 실제 몬스터는 2초 더 씬에 남아 있다 — 이 2초 동안 슬롯은 "빈 슬롯"과 구분되지 않는다.</text>
+</svg>
+<p class="figcap">HP 0 → 재등장까지 세 개의 서로 다른 시계가 붙어 있다: 즉시(이벤트) · 다음 프레임(BT) · 초 단위(UniTask.Delay).</p>
+</div>
+
+<h2>6. 이벤트 배선 — Health가 허브다</h2>
+<p class="h2sub">몬스터에서 밖으로 나가는 신호는 두 계열이다. Health 계열(피해·죽음)과 Controller 계열(연출 끝·클리어).</p>
+
+<div class="fig">
+<p class="figt">⑥ 누가 무엇을 구독하는가</p>
+<svg width="100%" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#8a91a0"/></marker>
+  </defs>
+
+  <text x="8" y="14" class="t">A. Health 계열 — 피해가 들어오는 단 하나의 문</text>
+
+  <rect x="8" y="22" width="128" height="40" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="72" y="38" class="s" text-anchor="middle" fill="#5028c0">투사체 · AreaStrike</text>
+  <text x="72" y="52" class="xs" text-anchor="middle">Effect가 IDamageable 조회</text>
+
+  <rect x="164" y="20" width="132" height="44" rx="9" fill="#fff" stroke="#7048e8" stroke-width="1.6"/>
+  <text x="230" y="38" class="tb" text-anchor="middle" fill="#5028c0">Health</text>
+  <text x="230" y="52" class="xs" text-anchor="middle">방어력 적용 · HP 갱신 · 사망 판정</text>
+  <path d="M136 42 L162 42" stroke="#5b6270" stroke-width="1.2" marker-end="url(#a6)"/>
+
+  <rect x="330" y="16" width="120" height="20" rx="5" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="390" y="30" class="xs" text-anchor="middle">OnDamageTaken</text>
+  <rect x="330" y="40" width="120" height="20" rx="5" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="390" y="54" class="xs" text-anchor="middle">OnHpChanged</text>
+  <rect x="330" y="64" width="120" height="20" rx="5" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="390" y="78" class="xs" text-anchor="middle">OnDied(attacker)</text>
+  <path d="M296 42 L328 26" stroke="#8a91a0" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#a6)"/>
+  <path d="M296 44 L328 50" stroke="#8a91a0" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#a6)"/>
+  <path d="M296 50 L328 72" stroke="#8a91a0" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#a6)"/>
+
+  <rect x="474" y="14" width="150" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="549" y="30" class="xs" text-anchor="middle" fill="#8a3708">DamageNumberPresenter</text>
+  <rect x="474" y="40" width="150" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="549" y="56" class="xs" text-anchor="middle" fill="#8a3708">UI_MonsterHPBar</text>
+  <rect x="474" y="66" width="150" height="24" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="549" y="82" class="xs" text-anchor="middle">MonsterStat (재브로드캐스트)</text>
+  <path d="M450 26 L472 26" stroke="#8a91a0" stroke-width="1" marker-end="url(#a6)"/>
+  <path d="M450 50 L472 52" stroke="#8a91a0" stroke-width="1" marker-end="url(#a6)"/>
+  <path d="M450 74 L472 78" stroke="#8a91a0" stroke-width="1" marker-end="url(#a6)"/>
+
+  <path d="M549 90 L549 104 L300 104 L300 116" stroke="#8a91a0" stroke-width="1" stroke-dasharray="3 2" fill="none" marker-end="url(#a6)"/>
+  <rect x="180" y="118" width="118" height="24" rx="6" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="239" y="134" class="xs" text-anchor="middle">OnKilledByAttacker</text>
+  <rect x="306" y="118" width="118" height="24" rx="6" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="365" y="134" class="xs" text-anchor="middle">OnMonsterDead</text>
+  <rect x="40" y="118" width="120" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="100" y="134" class="xs" text-anchor="middle" fill="#8a3708">MonsterReward</text>
+  <rect x="440" y="118" width="120" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="500" y="134" class="xs" text-anchor="middle" fill="#8a3708">MonsterSpawner</text>
+  <path d="M178 130 L162 130" stroke="#8a91a0" stroke-width="1" marker-end="url(#a6)"/>
+  <path d="M424 130 L438 130" stroke="#8a91a0" stroke-width="1" marker-end="url(#a6)"/>
+  <text x="580" y="134" class="xs">필드에서만 · 던전엔 구독자 없음</text>
+
+  <line x1="8" y1="154" x2="692" y2="154" stroke="#e3e6ec"/>
+  <text x="8" y="172" class="t">B. Controller 계열 — 연출이 끝났음을 알리는 신호</text>
+
+  <rect x="8" y="180" width="150" height="34" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="83" y="195" class="s" text-anchor="middle" fill="#2b3a8f">HandleDeadState (BT)</text>
+  <text x="83" y="207" class="xs" text-anchor="middle">사망 연출 시작 지점</text>
+
+  <rect x="190" y="176" width="110" height="20" rx="5" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="245" y="190" class="xs" text-anchor="middle">OnDead</text>
+  <rect x="190" y="200" width="110" height="20" rx="5" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="245" y="214" class="xs" text-anchor="middle">OnDespawned</text>
+  <path d="M158 192 L188 186" stroke="#8a91a0" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#a6)"/>
+  <path d="M158 200 L188 208" stroke="#8a91a0" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#a6)"/>
+
+  <rect x="330" y="174" width="180" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="420" y="190" class="xs" text-anchor="middle" fill="#8a3708">KillAllMonsterCondition / KillBossCondition</text>
+  <rect x="330" y="200" width="180" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="420" y="216" class="xs" text-anchor="middle" fill="#8a3708">MonsterSpawner.StartRespawn (람다)</text>
+  <path d="M300 186 L328 186" stroke="#8a91a0" stroke-width="1" marker-end="url(#a6)"/>
+  <path d="M300 210 L328 212" stroke="#8a91a0" stroke-width="1" marker-end="url(#a6)"/>
+  <text x="522" y="190" class="xs">던전 클리어 판정</text>
+  <text x="522" y="214" class="xs">필드 리스폰</text>
+
+  <text x="8" y="242" class="s">사망 신호가 두 계열로 갈라져 있는 이유 — 보상은 <tspan font-weight="700">죽는 순간</tspan>에, 리스폰은 <tspan font-weight="700">시체가 사라진 뒤</tspan>에 일어나야 하기 때문이다.</text>
+</svg>
+<p class="figcap">몬스터 자신은 보상·UI·리스폰을 전혀 모른다. 전부 이벤트 구독자 쪽에 있다.</p>
+</div>
+
+<h2 class="pb">7. 행동 트리 — 일반 몬스터와 보스는 다른 트리를 쓴다</h2>
+<p class="h2sub">노드 구현은 공용(BTNode.cs 214줄)이고, 조립만 컨트롤러가 다르게 한다. 평가는 매 프레임 <code>Update</code>에서 루트부터.</p>
+
+<div class="fig">
+<p class="figt">⑦ 트리 구조 비교</p>
+<svg width="100%" viewBox="0 0 700 236" xmlns="http://www.w3.org/2000/svg">
+  <text x="8" y="14" class="t">일반 몬스터 (NormalMonsterController)</text>
+  <rect x="8" y="22" width="330" height="24" rx="6" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="20" y="38" class="s" fill="#2b3a8f">Selector — 위에서부터 하나 성공할 때까지</text>
+
+  <path d="M24 46 L24 190" stroke="#cfd4de" stroke-width="1"/>
+  <path d="M24 62 L38 62 M24 100 L38 100 M24 138 L38 138 M24 176 L38 176" stroke="#cfd4de" stroke-width="1"/>
+
+  <rect x="40" y="52" width="296" height="34" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="52" y="66" class="s">① Sequence — 사망</text>
+  <text x="52" y="79" class="xs">CheckIsDead → HandleDeadState</text>
+
+  <rect x="40" y="90" width="296" height="34" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="52" y="104" class="s">② Sequence — 전투 <tspan class="xs">(RangedMonsterController가 제공)</tspan></text>
+  <text x="52" y="117" class="xs">CheckAttackRange → HandleCombat (탄약 있으면 공격, 없으면 장전)</text>
+
+  <rect x="40" y="128" width="296" height="34" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="52" y="142" class="s">③ Sequence — 추적</text>
+  <text x="52" y="155" class="xs">CheckDetectRange → TrackTarget (0.5m 이상 움직였을 때만 SetDestination)</text>
+
+  <rect x="40" y="166" width="296" height="24" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="52" y="182" class="s">④ ActionNode — Idle</text>
+
+  <text x="8" y="210" class="xs">노드는 전부 무상태(Selector·Sequence·ActionNode) → 풀에서 재사용해도 이전 생애가 남지 않는다.</text>
+  <text x="8" y="223" class="xs">상태를 들고 있는 노드(WaitNode·BossSequence·RandomNode)는 보스 트리에만 쓰인다.</text>
+
+  <text x="360" y="14" class="t">보스 (BossMonsterController)</text>
+  <rect x="360" y="22" width="332" height="24" rx="6" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="372" y="38" class="s" fill="#5028c0">Selector</text>
+
+  <path d="M376 46 L376 152" stroke="#cfd4de" stroke-width="1"/>
+  <path d="M376 62 L390 62 M376 100 L390 100" stroke="#cfd4de" stroke-width="1"/>
+
+  <rect x="392" y="52" width="298" height="34" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="404" y="66" class="s">① Sequence — 사망 (일반과 동일 + 소환수 정리)</text>
+  <text x="404" y="79" class="xs">CheckIsDead → HandleDeadState (Timeline 강제 정지 · 소환수 즉사)</text>
+
+  <rect x="392" y="90" width="298" height="100" rx="6" fill="#fff" stroke="#7048e8"/>
+  <text x="404" y="104" class="s" fill="#5028c0">② BossSequence — 진행 단계를 기억하는 시퀀스</text>
+  <rect x="404" y="110" width="274" height="22" rx="5" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="414" y="125" class="xs">CheckEntranceFinished — 입장 연출이 끝났는가</text>
+  <rect x="404" y="136" width="274" height="22" rx="5" fill="#f3f0ff" stroke="#7048e8"/>
+  <text x="414" y="151" class="xs" fill="#5028c0">RandomNode — 스킬 0~4 중 하나 추첨 → Timeline 재생</text>
+  <rect x="404" y="162" width="274" height="22" rx="5" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="414" y="177" class="xs">WaitNode(_patternInterval = 2초)</text>
+
+  <text x="360" y="210" class="xs">보스는 추적·사거리 개념이 없다. 스킬 재생이 끝났는지는 PlayableDirector.stopped 이벤트가 알려주고,</text>
+  <text x="360" y="223" class="xs">그 신호가 _isActionRunning 플래그를 내려 BT가 다음 단계로 넘어간다 (BT ↔ Timeline 이중 상태).</text>
+</svg>
+<p class="figcap">일반 몬스터는 "조건 → 행동"의 평평한 우선순위 트리, 보스는 "연출 재생 → 대기"의 진행형 트리다.</p>
+</div>
+
+<h2>8. Sector와 스포너의 관계</h2>
+<p class="h2sub">스포너는 씬 계층 구조상 Sector의 자식이고, Sector는 트리거 볼륨 하나다.</p>
+
+<div class="fig">
+<p class="figt">⑧ 계층 구조와 활성 전환</p>
+<svg width="100%" viewBox="0 0 700 208" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a8" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#5b6270"/></marker>
+  </defs>
+
+  <text x="8" y="14" class="t">씬 계층 (BackStreetMap.prefab)</text>
+  <rect x="8" y="22" width="290" height="24" rx="6" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="20" y="38" class="s">BackStreetMap — Sector 5개 · MonsterSpawner 23개</text>
+
+  <path d="M24 46 L24 70 L40 70" stroke="#cfd4de" fill="none"/>
+  <rect x="42" y="58" width="256" height="24" rx="6" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="54" y="74" class="s" fill="#1f6b2e">Sector (BoxCollider isTrigger · _sectorID)</text>
+
+  <path d="M58 82 L58 106 L74 106" stroke="#cfd4de" fill="none"/>
+  <rect x="76" y="94" width="222" height="24" rx="6" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="88" y="110" class="s" fill="#8a3708">MonsterSpawner (_spawnerId · _mapId)</text>
+
+  <path d="M92 118 L92 142 L108 142" stroke="#cfd4de" fill="none"/>
+  <rect x="110" y="130" width="188" height="24" rx="6" fill="#fff" stroke="#cfd4de"/>
+  <text x="122" y="146" class="s">스폰 포인트 (빈 Transform) × N</text>
+
+  <text x="8" y="176" class="xs">Sector는 Start에서 자식 스포너를 수집하고 매니저에 등록한다.</text>
+  <text x="8" y="190" class="xs">스포너 목록은 이때 한 번만 만들어진다 (_isInitialized).</text>
+
+  <text x="330" y="14" class="t">활성 전환 (한 번에 한 섹터)</text>
+
+  <rect x="330" y="22" width="150" height="26" rx="7" fill="#fff" stroke="#cfd4de"/>
+  <text x="405" y="39" class="s" text-anchor="middle">플레이어 트리거 진입</text>
+  <path d="M480 35 L502 35" stroke="#5b6270" stroke-width="1.1" marker-end="url(#a8)"/>
+  <rect x="504" y="22" width="188" height="26" rx="7" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text x="598" y="39" class="s" text-anchor="middle" fill="#2b3a8f">SectorManager.OnPlayerEnterSector</text>
+
+  <path d="M598 48 L598 62" stroke="#5b6270" stroke-width="1.1" marker-end="url(#a8)"/>
+  <rect x="504" y="64" width="188" height="34" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text x="598" y="79" class="xs" text-anchor="middle" fill="#8a3708">이전 활성 섹터 → DeactivateSector()</text>
+  <text x="598" y="91" class="xs" text-anchor="middle">스포너 전부 DespawnMonsters()</text>
+
+  <path d="M598 98 L598 110" stroke="#5b6270" stroke-width="1.1" marker-end="url(#a8)"/>
+  <rect x="504" y="112" width="188" height="34" rx="7" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text x="598" y="127" class="xs" text-anchor="middle" fill="#1f6b2e">새 섹터 → ActivateSector()</text>
+  <text x="598" y="139" class="xs" text-anchor="middle">스포너 전부 SpawnMonsters()</text>
+
+  <rect x="330" y="64" width="150" height="34" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="405" y="79" class="xs" text-anchor="middle">OnTriggerExit — 비어 있음</text>
+  <text x="405" y="91" class="xs" text-anchor="middle">이탈은 아무 일도 하지 않는다</text>
+
+  <rect x="330" y="112" width="150" height="34" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="405" y="127" class="xs" text-anchor="middle">BenchmarkTester F1 / F2</text>
+  <text x="405" y="139" class="xs" text-anchor="middle">전 섹터 일괄 켜기 / 끄기</text>
+
+  <text x="330" y="176" class="xs">DeactivateSector는 GameObject를 끄지 않는다 — 스포너에게 "몬스터를 회수하라"고 시킬 뿐이다.</text>
+  <text x="330" y="190" class="xs">즉 비활성 섹터의 스포너도 계속 살아있는 컴포넌트다.</text>
+</svg>
+<p class="figcap">활성 판정의 단위는 섹터(볼륨)이고, 실행의 단위는 스포너다. 이 두 단위가 지금 1:다 로 묶여 있다.</p>
+</div>
+
+<h2>9. 실물 인벤토리</h2>
+<table>
+  <thead><tr><th>구분</th><th>파일</th><th>줄수</th><th>역할 한 줄</th></tr></thead>
+  <tbody>
+    <tr><td class="who">컨트롤러</td><td>BaseMonsterController.cs</td><td>166</td><td>상태·BT 실행·사망 연출·디스폰·CTS</td></tr>
+    <tr><td class="who"></td><td>NormalMonsterController.cs</td><td>244</td><td>추적·HP바·BT 조립</td></tr>
+    <tr><td class="who"></td><td>RangedMonsterController.cs</td><td>93</td><td>탄창·장전 상태기계</td></tr>
+    <tr><td class="who"></td><td>AR / RL / Tank</td><td>29 / 24 / 52</td><td>총구·착탄점 정해 어빌리티 발동</td></tr>
+    <tr><td class="who"></td><td>BossMonsterController.cs</td><td>284</td><td>Timeline 스킬·소환·입장 연출</td></tr>
+    <tr><td class="who">행동</td><td>BTNode.cs</td><td>214</td><td>Selector·Sequence·Random·Wait·BossSequence</td></tr>
+    <tr><td class="who">스탯</td><td>BaseStat / MonsterStat / Health</td><td>94 / 91 / 84</td><td>속성 보관 / 몬스터 고유값·재브로드캐스트 / HP·사망·피격</td></tr>
+    <tr><td class="who">부가</td><td>MonsterReward / DamageNumberPresenter</td><td>56 / 51</td><td>보상 지급 / 데미지 숫자</td></tr>
+    <tr><td class="who">스폰</td><td>MonsterFactory.cs</td><td>97</td><td>데이터 조회 → 생성 → 스탯 주입</td></tr>
+    <tr><td class="who"></td><td>MonsterSpawner.cs</td><td>209</td><td>포인트별 스폰·리스폰·취소</td></tr>
+    <tr><td class="who"></td><td>Sector.cs / SectorManager.cs</td><td>81 / 70</td><td>트리거 볼륨 / 활성 섹터 1개 추적</td></tr>
+    <tr><td class="who">데이터</td><td>SpawnerData.json / MonsterDatabaseSO</td><td>—</td><td>스포너별 스폰 목록 / 몬스터·레벨·맵 테이블</td></tr>
+  </tbody>
+</table>
+
+<div class="callout c-amber">
+  <span class="lbl">이 문서에 없는 것</span>
+  결함·리스크·개선안은 전부 <strong>Issues.md</strong>에 있다. 이 문서는 "지금 이렇게 되어 있다"만 기술하며, 잘잘못을 판단하지 않는다.
+</div>
+
+<div class="footer">Operation Kivotos · docs/MonsterSimulation/Audit/MonsterStructure · 2026-08-20 기준 코드 실물</div>
+</body>
+</html>

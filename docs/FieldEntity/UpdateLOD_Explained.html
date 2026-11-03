@@ -1,0 +1,343 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>갱신 LOD 설명</title><style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; font-size:10.4pt; line-height:1.6; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:14px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:9px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; margin:2px 0; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.4pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:4px 7px; border-bottom:1px solid var(--line2); vertical-align:top; font-size:8.8pt; line-height:1.45; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.k{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9pt; line-height:1.55; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; display:block; margin-bottom:3px; }
+  .callout ul{ margin:2px 0 0; padding-left:16px; } .callout li{ margin:2px 0; }
+  .pb{ break-before:page; }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .three{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
+  .card{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:7px 11px 6px; margin:7px 0; break-inside:avoid; font-size:8.8pt; line-height:1.5; }
+  .card.a{ border-left-color:var(--amber); } .card.v{ border-left-color:var(--violet); } .card.g{ border-left-color:var(--green); } .card.k{ border-left-color:var(--ink); }
+  .card .hd{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; gap:8px; }
+  .card .hd b{ font-size:9.6pt; } .card .hd span{ font-size:7.8pt; color:var(--muted); white-space:nowrap; }
+  .card p{ margin:0 0 3px; }
+  .word{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 6px; }
+  .word div{ background:var(--shade); border-radius:10px; padding:8px 10px; font-size:8.8pt; line-height:1.45; }
+  .word b{ display:block; font-size:8pt; color:var(--blue); letter-spacing:.04em; margin-bottom:2px; }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--amber-ink); font-weight:800; }
+  .tag{ display:inline-block; font-size:7.4pt; font-weight:800; padding:0 6px; border-radius:6px; background:var(--shade); color:var(--muted); border:1px solid var(--line); }
+  .footer{ margin-top:6px; padding-top:5px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+</style></head><body>
+
+<div class="kicker">FIELD ENTITY · 개념 설명 · 2026-10-12</div>
+<h1>갱신 LOD — 안 보이는 몬스터는 덜 계산한다</h1>
+<p class="lead">몬스터를 <strong>없애지 않고</strong>, 화면 밖에서 아무도 보지 않는 동안 <strong>계산을 덜 자주, 덜 정교하게</strong> 하는 것.
+존재 층(누구를 켤까 = ⑤ 거리)이 정한 몬스터는 그대로 두고, 그 안에서 <strong>얼마나 공들여 돌릴지</strong>만 바꾼다.</p>
+
+<div class="word">
+  <div><b>무엇을</b>화면 밖에 있고 싸우지 않는 몬스터</div>
+  <div><b>어떻게</b>애니메이션 · 판단 · HP바 · 회피를 덜 자주, 덜 정교하게</div>
+  <div><b>왜</b>켜진 몬스터의 약 87%가 화면 밖인데 지금은 전부 매 프레임 계산한다</div>
+  <div><b>지킬 것</b>플레이어가 눈치채면 실패. 싸우는 몬스터는 절대 깎지 않는다</div>
+</div>
+
+<h2>1. LOD는 두 종류가 있다 — 우리가 하는 건 오른쪽</h2>
+<p class="h2sub">LOD = Level of Detail. "중요하지 않은 것에는 덜 공들인다"는 같은 생각을 <strong>그리기</strong>에 쓰느냐 <strong>계산</strong>에 쓰느냐의 차이.</p>
+<div class="fig"><div class="figt">렌더링 LOD vs 갱신 LOD</div>
+<svg viewBox="0 0 700 200" width="100%">
+  <rect x="8" y="8" width="334" height="184" rx="10" fill="#f7f8fa"/>
+  <text x="22" y="30" class="tb">렌더링 LOD — 멀수록 단순한 모델로 그린다</text>
+  <circle cx="75" cy="95" r="32" fill="#3b5bdb"/>
+  <polygon points="197,95 186,114 164,114 153,95 164,76 186,76" fill="#3b5bdb" opacity=".8"/>
+  <polygon points="270,81 282,102 258,102" fill="#3b5bdb" opacity=".6"/>
+  <text x="75" y="148" text-anchor="middle" class="s">삼각형 5,000개</text>
+  <text x="175" y="148" text-anchor="middle" class="s">1,200개</text>
+  <text x="270" y="148" text-anchor="middle" class="s">300개</text>
+  <text x="75" y="162" text-anchor="middle" class="xs">가까이</text>
+  <text x="175" y="162" text-anchor="middle" class="xs">중간</text>
+  <text x="270" y="162" text-anchor="middle" class="xs">멀리</text>
+  <text x="22" y="184" class="t" fill="#2b3a8f">줄이는 것 = 그리는 비용 (GPU)</text>
+
+  <rect x="358" y="8" width="334" height="184" rx="10" fill="#f7f8fa"/>
+  <text x="372" y="30" class="tb">갱신 LOD — 안 보이면 덜 자주 계산한다</text>
+  <text x="372" y="73" class="t">화면 안</text>
+  <text x="372" y="113" class="t">화면 밖</text>
+  <g>
+    <rect x="430" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="451" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="472" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="493" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="514" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="535" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="556" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="577" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="598" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="619" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="640" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/><rect x="661" y="60" width="18" height="18" rx="3" fill="#3b5bdb"/>
+  </g>
+  <g fill="#fff" stroke="#d5d9e0">
+    <rect x="430" y="100" width="18" height="18" rx="3" fill="#7048e8" stroke="none"/><rect x="451" y="100" width="18" height="18" rx="3"/><rect x="472" y="100" width="18" height="18" rx="3"/><rect x="493" y="100" width="18" height="18" rx="3"/><rect x="514" y="100" width="18" height="18" rx="3" fill="#7048e8" stroke="none"/><rect x="535" y="100" width="18" height="18" rx="3"/><rect x="556" y="100" width="18" height="18" rx="3"/><rect x="577" y="100" width="18" height="18" rx="3"/><rect x="598" y="100" width="18" height="18" rx="3" fill="#7048e8" stroke="none"/><rect x="619" y="100" width="18" height="18" rx="3"/><rect x="640" y="100" width="18" height="18" rx="3"/><rect x="661" y="100" width="18" height="18" rx="3"/>
+  </g>
+  <text x="430" y="136" class="xs">→ 한 칸 = 한 프레임 · 칠한 칸 = 그 프레임에 계산함</text>
+  <text x="372" y="160" class="s">모델은 그대로. 계산하는 횟수와 정밀도만 바꾼다</text>
+  <text x="372" y="184" class="t" fill="#5028c0">줄이는 것 = 계산 비용 (CPU)</text>
+</svg>
+<div class="figcap">렌더링 LOD의 숫자는 이해를 돕는 예시다.</div></div>
+
+<div class="callout c-blue"><span class="lbl">왜 오른쪽인가</span>
+<strong>그리기는 엔진이 이미 화면 밖을 건너뛴다</strong>(절두체 컬링 — 카메라에 안 잡히는 렌더러는 그리지 않음).
+그런데 <strong>계산은 안 건너뛴다.</strong> 화면 밖 몬스터도 애니메이션 뼈를 계산하고, 행동 트리를 돌고, HP바 위치를 구한다.
+쿼터뷰 근거리 카메라라 몬스터가 "멀리서 작게" 보일 일도 거의 없어서, 이 게임에서 줄일 몫은 <strong>계산 쪽</strong>이다.</div>
+
+<h2>2. 비용 식에서의 자리 — 존재 층은 가로를, 갱신 LOD는 세로를 줄인다</h2>
+<p class="h2sub">실측 모델: 프레임 시간 = <strong>1.307ms + 7.58μs × 살아 있는 몬스터</strong> (정책 7개 평균점, r = 0.9998)</p>
+<div class="fig"><div class="figt">몬스터가 쓰는 시간 = 가로(마리 수) × 세로(한 마리당 비용)</div>
+<svg viewBox="0 0 700 215" width="100%">
+  <text x="20" y="18" class="tb">프레임 = 1.307ms + (한 마리당 비용 × 살아 있는 몬스터 수)</text>
+  <text x="20" y="34" class="s">가로 = 몬스터 수 · 세로 = 한 마리당 비용 · 넓이 = 몬스터가 쓰는 시간</text>
+
+  <text x="30" y="60" class="t">처음 · Sector (실측)</text>
+  <rect x="30" y="70" width="186" height="100" fill="#e8590c" opacity=".88" rx="2"/>
+  <text x="123" y="116" text-anchor="middle" class="t" fill="#fff">62마리 × 7.58μs</text>
+  <text x="123" y="132" text-anchor="middle" class="t" fill="#fff">= 0.47ms</text>
+
+  <text x="260" y="60" class="t">존재 층 · ⑤ 거리 (실측)</text>
+  <rect x="260" y="70" width="186" height="100" fill="none" stroke="#8a91a0" stroke-dasharray="4 3" rx="2"/>
+  <rect x="260" y="70" width="75" height="100" fill="#3b5bdb" rx="2"/>
+  <text x="297.5" y="116" text-anchor="middle" class="t" fill="#fff">25마리</text>
+  <text x="297.5" y="132" text-anchor="middle" class="t" fill="#fff">0.19ms</text>
+  <text x="260" y="188" class="s" fill="#2b3a8f">가로(마리 수) −60%</text>
+
+  <text x="490" y="60" class="t">품질 층 · 갱신 LOD (이번)</text>
+  <rect x="490" y="70" width="75" height="100" fill="none" stroke="#8a91a0" stroke-dasharray="4 3" rx="2"/>
+  <rect x="490" y="128" width="75" height="42" fill="#7048e8" rx="2"/>
+  <text x="527.5" y="146" text-anchor="middle" class="xs" fill="#fff">25 × 3.19μs</text>
+  <text x="527.5" y="161" text-anchor="middle" class="t" fill="#fff">≈ 0.08ms</text>
+  <text x="575" y="100" class="xs">세로를 줄인다</text>
+  <text x="575" y="112" class="xs">(예측 · 미측정)</text>
+  <text x="490" y="188" class="s" fill="#5028c0">세로(마리당 비용) −58% 예측</text>
+
+  <line x1="20" y1="170" x2="690" y2="170" stroke="#1a1c22" stroke-width="1"/>
+  <text x="20" y="207" class="s">고정 비용 1.307ms(맵 · 카메라 · UI 등)는 세 그림 모두 같아서 뺐다. 점선 = 이전 단계의 넓이.</text>
+</svg></div>
+
+<div class="callout c-amber"><span class="lbl">솔직한 단서 — 지금 밀도에서는 이득이 작다</span>
+지금(⑤, 평균 25마리)은 몬스터 몫이 0.19ms뿐이다. LOD가 예측대로 돼도 <strong>0.1ms 정도</strong> 줄어서 측정 편차에 묻힌다.
+그래서 증명은 <strong>몬스터를 늘려서(밀도 ×1 → ×8)</strong> 한다. 헤드라인은 "빨라졌다"가 아니라 <strong>"같은 프레임 예산에 몬스터를 몇 배 돌릴 수 있나"</strong>다(7절).</div>
+
+<h2>3. 몬스터 한 마리가 매 프레임 하는 일 — 실제 코드 기준</h2>
+<p class="h2sub">필드 몬스터 3종(Droid_Helmet_AR · RL · Tank 프리팹)과 <code>BaseMonsterController</code> · <code>NormalMonsterController</code> · <code>UI_MonsterHPBar</code>를 확인한 결과.</p>
+<table>
+  <thead><tr><th style="width:14%">항목</th><th style="width:30%">어디서 · 지금 설정</th><th style="width:28%">하는 일</th><th>화면 밖이고 싸우지 않을 때 필요한가</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Animator</td><td>엔진 · 프리팹의 <code>cullingMode = AlwaysAnimate</code>(0) — 3종 모두</td><td>매 프레임 뼈 수십 개의 자세 계산</td><td><span class="ng">아무도 안 봄.</span> 단, 공격 판정이 애니메이션 이벤트라 시간은 흘러야 함</td></tr>
+    <tr><td class="k">행동 트리</td><td><code>BaseMonsterController.Update</code> → <code>_topNode.Evaluate()</code> 매 프레임</td><td>죽었나 · 귀환 · 감지 · 추적 · 공격 판단</td><td>필요하지만 <span class="ok">매 프레임일 필요는 없음</span></td></tr>
+    <tr><td class="k">HP바</td><td><code>UI_MonsterHPBar.LateUpdate</code> · 마리마다 <code>WorldToScreenPoint</code></td><td>머리 위 화면 좌표를 구해 바를 옮김</td><td><span class="ng">아무도 안 봄</span> (바도 화면 밖)</td></tr>
+    <tr><td class="k">회피</td><td>엔진 NavMeshAgent · <code>HighQualityObstacleAvoidance</code>(4) — 3종 모두</td><td>이웃 몬스터와 부딪히지 않게 속도 조정</td><td>이동은 필요, <span class="ok">정밀한 회피는 덜 중요</span></td></tr>
+    <tr><td class="k">고정 몫</td><td>엔진 · 트랜스폼 · 바운드 · 컬링 판정</td><td>존재하는 한 드는 비용</td><td>줄일 수 없음 — 이건 존재 층(가로)의 몫</td></tr>
+  </tbody>
+</table>
+<p style="font-size:8.6pt;color:var(--muted)">항목별로 몇 μs인지는 <strong>아직 재지 않았다</strong>. 7.58μs를 항목별로 나눠 재는 것이 첫 단계다(7절 0단계).</p>
+
+<h2>4. 등급 나누기 — 원 안(존재)은 그대로, 원 안에서 등급만</h2>
+<p class="h2sub">화면에 보이는 땅은 <strong>앞 6m · 뒤 3m · 좌우 최대 9m</strong>(Game.unity 카메라 실측). 켜기 20m 원 넓이의 약 10%다.</p>
+<div class="fig"><div class="figt">위에서 본 필드 — 축척 1m = 5px</div>
+<svg viewBox="0 0 700 280" width="100%">
+  <circle cx="230" cy="150" r="125" fill="none" stroke="#3b5bdb" stroke-dasharray="5 4" stroke-width="1.2"/>
+  <circle cx="230" cy="150" r="100" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+  <text x="234" y="20" class="s" fill="#3b5bdb">끄기 25m</text>
+  <text x="234" y="45" class="s" fill="#3b5bdb">켜기 20m</text>
+  <polygon points="185,120 275,120 255,165 205,165" fill="#fff" stroke="#1a1c22" stroke-width="1.6"/>
+  <line x1="276" y1="121" x2="358" y2="101" stroke="#8a91a0" stroke-width=".8"/>
+  <text x="362" y="99" class="s">화면에 보이는 땅</text>
+  <text x="362" y="111" class="xs">앞 6m · 뒤 3m · 좌우 최대 9m</text>
+
+  <g fill="#3b5bdb"><circle cx="238" cy="132" r="4"/><circle cx="249" cy="128" r="4"/><circle cx="256" cy="139" r="4"/><circle cx="242" cy="143" r="4"/></g>
+  <circle cx="230" cy="152" r="5" fill="#1a1c22"/>
+  <text x="222" y="178" text-anchor="end" class="xs" fill="#1a1c22">플레이어</text>
+
+  <g fill="#adb5bd">
+    <circle cx="165" cy="105" r="4"/><circle cx="176" cy="112" r="4"/><circle cx="162" cy="118" r="4"/><circle cx="172" cy="99" r="4"/>
+    <circle cx="225" cy="215" r="4"/><circle cx="237" cy="222" r="4"/><circle cx="231" cy="210" r="4"/>
+    <circle cx="300" cy="178" r="4"/><circle cx="311" cy="184" r="4"/><circle cx="304" cy="190" r="4"/>
+    <circle cx="252" cy="64" r="4"/><circle cx="262" cy="70" r="4"/><circle cx="246" cy="74" r="4"/><circle cx="258" cy="80" r="4"/>
+    <circle cx="150" cy="198" r="4"/><circle cx="160" cy="204" r="4"/><circle cx="146" cy="208" r="4"/>
+  </g>
+  <g fill="#adb5bd" stroke="#e8590c" stroke-width="2.2"><circle cx="284" cy="160" r="4"/><circle cx="291" cy="149" r="4"/></g>
+
+  <circle cx="470" cy="160" r="4" fill="#3b5bdb"/><text x="482" y="163" class="s"><tspan font-weight="800" fill="#1a1c22">L0</tspan> · 화면 안 → 전부 매 프레임</text>
+  <circle cx="470" cy="182" r="4" fill="#adb5bd" stroke="#e8590c" stroke-width="2.2"/><text x="482" y="185" class="s"><tspan font-weight="800" fill="#1a1c22">L0</tspan> · 교전 중 → 화면 밖이어도 안 깎음</text>
+  <circle cx="470" cy="204" r="4" fill="#adb5bd"/><text x="482" y="207" class="s"><tspan font-weight="800" fill="#1a1c22">L2</tspan> · 화면 밖 · 비교전 → 덜 계산</text>
+  <text x="462" y="232" class="s">켜기 원 안(존재 · ⑤)은 그대로 두고, 그 안에서 등급만 나눈다.</text>
+  <text x="462" y="246" class="s">화면 넓이 ≈ 원의 10% → 켜진 몬스터 대부분이 L2.</text>
+</svg>
+<div class="figcap">점 무리 = 스포너 하나의 몬스터들(실제로는 스포너당 최대 17마리). 주황 테두리 = 플레이어를 쫓는 중.</div></div>
+
+<div class="callout c-amber"><span class="lbl">예측 문서(UpdateLOD_Predictions)와 다른 점</span>
+예측 문서에는 <strong>L1(화면 안 · 12m 밖)</strong> 등급이 있었다. 그런데 실제 화면은 앞 6m · 좌우 최대 9m라 <strong>"화면 안인데 12m 밖"인 몬스터는 거의 없다.</strong>
+그래서 이 문서는 <strong>L0 / L2 두 등급</strong>으로 설명한다. 예측 문서도 실측 화면 크기로 고쳐야 한다.</div>
+
+<h2>5. 실제로 하는 조작 4가지 (A → D)</h2>
+<p class="h2sub">L2 몬스터에게만 적용한다. A는 엔진이 화면 판정을 직접 하고(렌더러 가시성), B · C · D는 우리가 매긴 등급으로 켠다.</p>
+
+<div class="two">
+<div class="card"><div class="hd"><b>A · Animator 컬링</b><span>프리팹 설정</span></div>
+<p><code>AlwaysAnimate</code> → <strong><code>CullUpdateTransforms</code></strong>. 화면 밖이면 뼈 자세를 계산해 쓰는 일을 건너뛰고, <strong>상태 머신과 시간은 계속 흐른다.</strong></p>
+<p class="ng" style="font-size:8.4pt">더 강한 <code>CullCompletely</code>(애니메이션 완전 정지)는 쓰지 않는다:</p>
+<ul style="margin:0;padding-left:16px;font-size:8.4pt">
+<li>공격 판정이 애니메이션 이벤트(<code>OnAttackEvent</code> → <code>PerformAttackAction</code>)라 화면 밖 원거리 몬스터가 <strong>쏘지 못한다</strong></li>
+<li>화면 밖에서 스폰된 몬스터의 <code>Appear</code>가 멈춰 있다가 <strong>화면에 들어올 때 재생된다</strong> → 눈앞에서 등장하는 것처럼 보임</li>
+</ul>
+<p style="font-size:8.2pt;color:var(--muted);margin-top:3px">CullUpdateTransforms에서 이벤트가 실제로 발생하는지는 0단계에서 확인한다.</p></div>
+
+<div class="card v"><div class="hd"><b>B · 행동 트리 분산</b><span>BaseMonsterController.Update</span></div>
+<p>L2는 행동 트리를 <strong>몇 프레임에 한 번</strong>만 돈다. 이때 <strong>몬스터마다 시작 프레임을 엇갈려</strong> 한 프레임에 몰리지 않게 한다(아래 그림).</p>
+<p style="font-size:8.4pt">반응 지연: 4프레임에 한 번이면 144fps에서 약 28ms. 게다가 화면 밖이라 보이지 않는다.</p></div>
+
+<div class="card g"><div class="hd"><b>C · HP바 정지</b><span>UI_MonsterHPBar.LateUpdate</span></div>
+<p>화면 밖이면 <code>WorldToScreenPoint</code>와 바 이동을 건너뛴다.</p>
+<p style="font-size:8.4pt">지킬 것: 화면에 들어오는 <strong>그 프레임에 바로 한 번 갱신</strong>해야 바가 엉뚱한 곳에서 튀어나오지 않는다.</p></div>
+
+<div class="card a"><div class="hd"><b>D · 회피 품질 낮추기</b><span>NavMeshAgent</span></div>
+<p><code>HighQuality</code> → 낮은 품질 또는 끔. <strong>이동과 길찾기는 그대로</strong>이고, 이웃과 비켜 가는 계산만 줄인다.</p>
+<p style="font-size:8.4pt">위험: 화면 밖에서 겹친 몬스터가 화면에 들어올 때 <strong>겹쳐 보일 수 있다</strong> → 측정 지표로 확인해야 한다.</p></div>
+</div>
+
+<div class="fig"><div class="figt">B · 덜 자주 계산할 때 "엇갈림"이 필요한 이유 (몬스터 8마리 예시)</div>
+<svg viewBox="0 0 700 178" width="100%">
+  <text x="10" y="30" class="tb">지금</text>
+  <text x="10" y="44" class="s">8마리 모두 매 프레임 판단</text>
+  <g fill="#3b5bdb">
+    <rect x="200" y="16" width="34" height="32" rx="2"/><rect x="240" y="16" width="34" height="32" rx="2"/><rect x="280" y="16" width="34" height="32" rx="2"/><rect x="320" y="16" width="34" height="32" rx="2"/><rect x="360" y="16" width="34" height="32" rx="2"/><rect x="400" y="16" width="34" height="32" rx="2"/><rect x="440" y="16" width="34" height="32" rx="2"/><rect x="480" y="16" width="34" height="32" rx="2"/><rect x="520" y="16" width="34" height="32" rx="2"/><rect x="560" y="16" width="34" height="32" rx="2"/><rect x="600" y="16" width="34" height="32" rx="2"/><rect x="640" y="16" width="34" height="32" rx="2"/>
+  </g>
+  <line x1="196" y1="48" x2="678" y2="48" stroke="#1a1c22" stroke-width=".8"/>
+
+  <text x="10" y="80" class="tb">덜 자주 · 한꺼번에</text>
+  <text x="10" y="94" class="s">평균은 ¼이지만 4프레임마다 튄다</text>
+  <g fill="#e8590c">
+    <rect x="200" y="66" width="34" height="32" rx="2"/><rect x="360" y="66" width="34" height="32" rx="2"/><rect x="520" y="66" width="34" height="32" rx="2"/>
+  </g>
+  <line x1="196" y1="98" x2="678" y2="98" stroke="#1a1c22" stroke-width=".8"/>
+
+  <text x="10" y="130" class="tb">덜 자주 · 엇갈려서</text>
+  <text x="10" y="144" class="s">평균 ¼ · 매 프레임 고르게</text>
+  <g fill="#2b8a3e">
+    <rect x="200" y="140" width="34" height="8" rx="1"/><rect x="240" y="140" width="34" height="8" rx="1"/><rect x="280" y="140" width="34" height="8" rx="1"/><rect x="320" y="140" width="34" height="8" rx="1"/><rect x="360" y="140" width="34" height="8" rx="1"/><rect x="400" y="140" width="34" height="8" rx="1"/><rect x="440" y="140" width="34" height="8" rx="1"/><rect x="480" y="140" width="34" height="8" rx="1"/><rect x="520" y="140" width="34" height="8" rx="1"/><rect x="560" y="140" width="34" height="8" rx="1"/><rect x="600" y="140" width="34" height="8" rx="1"/><rect x="640" y="140" width="34" height="8" rx="1"/>
+  </g>
+  <line x1="196" y1="148" x2="678" y2="148" stroke="#1a1c22" stroke-width=".8"/>
+  <text x="200" y="168" class="xs">막대 높이 = 그 프레임에 행동 트리를 돈 몬스터 수(8 또는 2) · 한 칸 = 한 프레임</text>
+</svg>
+<div class="figcap">존재 층에서 "섹터 하나 = 119마리가 한 프레임에"가 끊김을 만들었던 것과 같은 문제다. 덜 자주 하더라도 한 프레임에 몰리면 튄다.</div></div>
+
+<h2>6. 눈치채지 못하게 — 지킬 규칙 3개</h2>
+<div class="three">
+<div class="card k"><div class="hd"><b>① 싸우는 몬스터는 깎지 않는다</b></div>
+<p>교전 중이면 화면 밖이어도 L0. 존재 층의 "교전 유지" 규칙과 같은 논리 — <strong>게임플레이에 닿는 것은 품질도 지킨다.</strong></p></div>
+<div class="card k"><div class="hd"><b>② 화면에 들어오기 전에 L0</b></div>
+<p>가시성은 렌더링 뒤에 갱신돼 <strong>1프레임 늦다</strong>(⑦ CullingGroup에서 확인). 판정 영역을 화면보다 조금 넓게 잡아, 늦게 반영돼도 보이지 않게 한다.</p></div>
+<div class="card k"><div class="hd"><b>③ 등급이 떨려도 괜찮다</b></div>
+<p>L0 ↔ L2가 오가도 몬스터는 <strong>계속 존재</strong>하고 계산량만 바뀐다. 존재 층에서는 치명적이던 떨림이 여기서는 무해하다(아래 그림).</p></div>
+</div>
+
+<div class="fig"><div class="figt">같은 도구가 층에 따라 탈락도 되고 정답도 된다 — 가시성 판정(CullingGroup)</div>
+<svg viewBox="0 0 700 190" width="100%">
+  <text x="10" y="44" class="tb">화면 안인가?</text>
+  <polyline points="150,30 210,30 210,52 240,52 240,30 300,30 300,52 320,52 320,30 400,30 400,52 520,52" fill="none" stroke="#1a1c22" stroke-width="1.6"/>
+  <text x="140" y="34" text-anchor="end" class="xs">예</text>
+  <text x="140" y="55" text-anchor="end" class="xs">아니오</text>
+  <text x="534" y="36" class="s">경계 근처에서는</text>
+  <text x="534" y="50" class="s">짧게 여러 번 바뀐다</text>
+
+  <text x="10" y="96" class="tb">존재 층에 쓰면</text>
+  <rect x="150" y="82" width="60" height="20" rx="3" fill="#3b5bdb"/><rect x="210" y="82" width="30" height="20" rx="3" fill="none" stroke="#e8590c" stroke-dasharray="3 2"/>
+  <rect x="240" y="82" width="60" height="20" rx="3" fill="#3b5bdb"/><rect x="300" y="82" width="20" height="20" rx="3" fill="none" stroke="#e8590c" stroke-dasharray="3 2"/>
+  <rect x="320" y="82" width="80" height="20" rx="3" fill="#3b5bdb"/><rect x="400" y="82" width="120" height="20" rx="3" fill="none" stroke="#e8590c" stroke-dasharray="3 2"/>
+  <text x="180" y="96" text-anchor="middle" class="xs" fill="#fff">있음</text><text x="225" y="96" text-anchor="middle" class="xs" fill="#e8590c">없음</text>
+  <text x="534" y="88" class="s" fill="#8a3708">몬스터가 사라졌다 나타남</text>
+  <text x="534" y="102" class="t" fill="#8a3708">→ 탈락 (⑦ 떨림 23%)</text>
+
+  <text x="10" y="146" class="tb">틱 층에 쓰면</text>
+  <rect x="150" y="132" width="60" height="20" fill="#7048e8"/><rect x="210" y="132" width="30" height="20" fill="#d0c4fb"/>
+  <rect x="240" y="132" width="60" height="20" fill="#7048e8"/><rect x="300" y="132" width="20" height="20" fill="#d0c4fb"/>
+  <rect x="320" y="132" width="80" height="20" fill="#7048e8"/><rect x="400" y="132" width="120" height="20" fill="#d0c4fb"/>
+  <text x="180" y="146" text-anchor="middle" class="xs" fill="#fff">L0</text><text x="225" y="146" text-anchor="middle" class="xs" fill="#5028c0">L2</text>
+  <text x="534" y="138" class="s" fill="#1f6b2e">몬스터는 계속 있음</text>
+  <text x="534" y="152" class="t" fill="#1f6b2e">→ 계산량만 바뀜 · 무해</text>
+
+  <text x="10" y="180" class="s">존재 층은 "있다/없다"라 떨림이 곧 깜빡임이다. 틱 층은 "얼마나 계산하나"라 떨림이 보이지 않는다.</text>
+</svg></div>
+
+<h2>7. 어떻게 증명하나 — 3단계</h2>
+<p class="h2sub">존재 층과 같은 방식: 측정 전에 예측을 박제하고, 같은 하네스 · 같은 개발 빌드에서 잰다.</p>
+<div class="fig"><div class="figt">0단계 → 1단계 → 2단계</div>
+<svg viewBox="0 0 700 150" width="100%">
+  <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8a91a0"/></marker></defs>
+  <rect x="10" y="10" width="205" height="112" rx="10" fill="#eef2ff"/>
+  <text x="22" y="32" class="tb" fill="#2b3a8f">0단계 · 분해</text>
+  <text x="22" y="52" class="s">7.58μs를 항목별로 나눠 잰다</text>
+  <text x="22" y="68" class="s">Animator · 행동 트리 · HP바 ·</text>
+  <text x="22" y="82" class="s">회피 · 고정 몫</text>
+  <text x="22" y="104" class="xs">→ 큰 항목부터 A~D 순서를 다시 정한다</text>
+  <line x1="219" y1="66" x2="241" y2="66" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ar)"/>
+
+  <rect x="247" y="10" width="205" height="112" rx="10" fill="#f3f0ff"/>
+  <text x="259" y="32" class="tb" fill="#5028c0">1단계 · 계단</text>
+  <text x="259" y="52" class="s">A → B → C → D 하나씩 켠다</text>
+  <text x="259" y="68" class="s">켤 때마다 마리당 비용이</text>
+  <text x="259" y="82" class="s">얼마나 내려가나</text>
+  <text x="259" y="104" class="xs">→ 어떤 조작이 얼마짜리인지</text>
+  <line x1="456" y1="66" x2="478" y2="66" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ar)"/>
+
+  <rect x="484" y="10" width="205" height="112" rx="10" fill="#ebfbee"/>
+  <text x="496" y="32" class="tb" fill="#1f6b2e">2단계 · 밀도 스윕</text>
+  <text x="496" y="52" class="s">스포너당 마릿수 ×1 · ×2 · ×4 · ×8</text>
+  <text x="496" y="68" class="s">× LOD 끔 / 켬 × 3회 = 24회</text>
+  <text x="496" y="82" class="s">(무인 하네스 약 2시간)</text>
+  <text x="496" y="104" class="xs">→ 같은 예산에 몇 마리를 돌리나</text>
+  <text x="10" y="142" class="s">0단계 없이 바로 구현하면 "Animator가 제일 비쌀 것"이라는 가정 위에서 순서를 정하게 된다. 가정부터 잰다.</text>
+</svg></div>
+
+<table>
+  <thead><tr><th style="width:24%">판정 기준</th><th>통과 조건</th></tr></thead>
+  <tbody>
+    <tr><td class="k">비용 (헤드라인)</td><td><strong>같은 프레임 시간에 돌릴 수 있는 몬스터 수</strong>가 몇 배인가 (예측: 약 2배 · 미측정)</td></tr>
+    <tr><td class="k">교전 몬스터 무결성</td><td>화면 밖 교전 몬스터의 공격 누락 0 (공격 이벤트 수가 LOD 끔과 같음)</td></tr>
+    <tr><td class="k">화면 진입 품질</td><td>화면에 들어오는 프레임의 자세 튐 · HP바 튐 · 겹침 0 — 새로 만들 지표</td></tr>
+    <tr><td class="k">끊김</td><td>엇갈림 덕분에 6.94ms 초과 프레임 수가 LOD 끔보다 늘지 않음</td></tr>
+  </tbody>
+</table>
+
+<h2>8. 엔진들도 같은 개념을 기능으로 갖고 있다</h2>
+<table>
+  <thead><tr><th style="width:16%">엔진</th><th style="width:34%">기능</th><th>이 문서의 어디에 해당하나</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Unity</td><td><code>Animator.cullingMode</code></td><td>A · 화면 밖 애니메이션 계산 생략</td></tr>
+    <tr><td class="k">Unity</td><td><code>CullingGroup</code> API</td><td>등급 판정(화면 안인가, 거리 밴드) — ⑦에서 이미 써 봄</td></tr>
+    <tr><td class="k">Unity</td><td><code>NavMeshAgent.obstacleAvoidanceType</code></td><td>D · 회피 품질</td></tr>
+    <tr><td class="k">Unreal</td><td>Significance Manager</td><td>"중요도"를 매겨 품질을 나누는 틀 — 등급 나누기</td></tr>
+    <tr><td class="k">Unreal</td><td>URO(Update Rate Optimization) · Animation Budget Allocator</td><td>A + B · 애니메이션 갱신 빈도를 낮추고 예산 안에서 나눠 쓰기</td></tr>
+  </tbody>
+</table>
+
+<div class="callout c-green"><span class="lbl">한 줄로</span>
+존재 층이 <strong>"몇 마리를 살려 둘까"</strong>(가로)를 정했다면, 갱신 LOD는 <strong>"살려 둔 몬스터를 얼마나 공들여 돌릴까"</strong>(세로)를 정한다.
+기준은 하나 — <strong>플레이어가 보고 있거나 싸우고 있는가.</strong> 아니면 덜 계산하고, 맞으면 하나도 깎지 않는다.</div>
+
+<div class="footer">근거: 몬스터 프리팹 3종(Animator cullingMode 0 · 회피 4) · BaseMonsterController · NormalMonsterController(OnAttackEvent) · UI_MonsterHPBar · 비용 모델 = Policy_Result · 화면 = README · 예측 = UpdateLOD_Predictions(미측정)</div>
+</body></html>

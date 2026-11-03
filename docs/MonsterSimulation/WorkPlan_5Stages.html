@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>몬스터 스폰 파이프라인 — 5단계 작업 구조</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+    --red:#c92a2a; --red-soft:#fff0f0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:18px 0 3px; font-weight:800; break-after:avoid; }
+  h2 .num{ display:inline-block; background:var(--ink); color:#fff; width:19px; height:19px; line-height:19px; text-align:center; border-radius:50%; font-size:9pt; margin-right:6px; vertical-align:1px; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  h3{ font-size:10pt; margin:12px 0 3px; font-weight:800; break-after:avoid; }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.4pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:10px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figt .tag{ font-size:7.2pt; font-weight:800; color:#fff; background:var(--blue); border-radius:20px; padding:1px 7px; vertical-align:middle; margin-left:6px; letter-spacing:.03em; }
+  .figt .tag.bad{ background:var(--amber); }
+  .figt .tag.good{ background:var(--green); }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; fill:#1a1c22; }
+  .s{ font-size:8.2px; fill:#5b6270; }
+  .xs{ font-size:7.2px; fill:#8a91a0; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.8px; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:9pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 8px; background:var(--ink); color:#fff; font-weight:700; font-size:8.4pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:5px 8px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  .callout{ border-radius:11px; padding:10px 14px; margin:10px 0; font-size:9.2pt; line-height:1.48; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); } .c-violet .lbl{ color:var(--violet); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  .badge{ display:inline-block; font-size:7.4pt; font-weight:800; border-radius:20px; padding:1px 8px; letter-spacing:.02em; }
+  .b-have{ background:var(--green-soft); color:var(--green-ink); }
+  .b-bad{ background:var(--amber-soft); color:var(--amber-ink); }
+  .b-none{ background:var(--shade); color:var(--faint); }
+  .b-later{ background:var(--violet-soft); color:var(--violet-ink); }
+  .footer{ margin-top:14px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+  .pb{ break-before:page; }
+  ul{ margin:4px 0 6px; padding-left:17px; } li{ margin-bottom:2px; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · Sector 비교 트랙 · 작업 구조 개념도</div>
+<h1>몬스터 스폰 파이프라인 — 5단계, 지금 무엇을 해야 하는가</h1>
+<p class="lead">각 단계마다 <strong>지금 있는 것 · 무엇이 문제인가 · 무엇으로 바꾸는가</strong>를 그림으로 고정한다. 수치는 전부 <code>SpawnerData.json</code>과 <code>BackStreetMap.prefab</code>을 직접 파싱한 실측이다.</p>
+
+<div class="callout c-blue">
+  <span class="lbl">읽는 법</span>
+  <strong>파랑</strong> = 지금 정상 동작 중 · <strong>주황</strong> = 문제 지점 · <strong>초록</strong> = 목표 상태 · <strong>보라</strong> = 지금 하지 않고 미루는 것.
+  실선 화살표는 <strong>직접 호출</strong>, 점선은 <strong>이벤트·비동기</strong>다. ★ 표시는 <strong>측정 결과를 바꾸는 항목</strong>이다.
+</div>
+
+<h2><span class="num">0</span>전체 지도 — 5단계가 파이프라인 어디에 붙는가</h2>
+<p class="h2sub">단계 번호는 작업 순서가 아니라 <strong>관심사의 층</strong>이다. 실제 착수 순서는 마지막 쪽에 있다.</p>
+
+<div class="fig">
+<p class="figt">① 스폰 파이프라인 전체와 5단계의 담당 구역</p>
+<svg width="100%" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#8a91a0"/></marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="#2b8a3e"/></marker>
+  </defs>
+
+  <text x="0" y="11" class="xs">획득 축 — 스폰마다 (고빈도). 아래 체인이 그 경로다</text>
+  <text x="700" y="11" class="s" fill="#2b8a3e" text-anchor="end">용량 축 — 맵 진입·이탈에 1회 · 지금 없는 화살표</text>
+
+  <path d="M48 58 C 48 28, 591 26, 591 54" stroke="#2b8a3e" stroke-width="1.4" fill="none" stroke-dasharray="4 3" marker-end="url(#arG)"/>
+
+  <rect x="0" y="58" width="96" height="38" rx="8" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.2"/>
+  <text x="48" y="75" class="t" text-anchor="middle">MapManager</text>
+  <text x="48" y="88" class="xs" text-anchor="middle">아직 없음</text>
+
+  <path d="M96 77 L112 77" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="114" y="58" width="82" height="38" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="155" y="75" class="t" text-anchor="middle">Sector</text>
+  <text x="155" y="88" class="xs" text-anchor="middle">5개</text>
+
+  <path d="M196 77 L212 77" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="214" y="58" width="92" height="38" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="260" y="75" class="t" text-anchor="middle">Spawner</text>
+  <text x="260" y="88" class="xs" text-anchor="middle">23개 · 소유권 결함</text>
+
+  <path d="M306 77 L322 77" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="324" y="58" width="92" height="38" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="370" y="75" class="t" text-anchor="middle">MonsterFactory</text>
+  <text x="370" y="88" class="xs" text-anchor="middle">조립 순서 뒤집힘</text>
+
+  <path d="M416 77 L432 77" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="434" y="58" width="106" height="38" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="487" y="75" class="t" text-anchor="middle">ResourceManager</text>
+  <text x="487" y="88" class="xs" text-anchor="middle">activate 이음새 없음</text>
+
+  <path d="M540 77 L556 77" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="558" y="58" width="66" height="38" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="591" y="75" class="t" text-anchor="middle">Pool</text>
+  <text x="591" y="88" class="xs" text-anchor="middle">용량 30</text>
+
+  <path d="M624 77 L640 77" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="642" y="58" width="58" height="38" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="671" y="75" class="t" text-anchor="middle">Monster</text>
+  <text x="671" y="88" class="xs" text-anchor="middle">생명주기</text>
+
+  <rect x="642" y="114" width="58" height="34" rx="8" fill="#fff" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="671" y="128" class="t" text-anchor="middle">① 생명</text>
+  <text x="671" y="141" class="t" text-anchor="middle">주기</text>
+  <rect x="558" y="114" width="66" height="34" rx="8" fill="#fff" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="591" y="135" class="t" text-anchor="middle">② 풀링</text>
+  <rect x="214" y="114" width="92" height="34" rx="8" fill="#fff" stroke="#e8590c" stroke-width="1.3"/>
+  <text x="260" y="135" class="t" text-anchor="middle">③ 스폰/디스폰</text>
+  <rect x="0" y="114" width="96" height="34" rx="8" fill="#fff" stroke="#7048e8" stroke-width="1.3"/>
+  <text x="48" y="135" class="t" text-anchor="middle">④ 맵 전체</text>
+
+  <path d="M671 96 L671 112" stroke="#e8590c" stroke-width="1" stroke-dasharray="2 2"/>
+  <path d="M591 96 L591 112" stroke="#e8590c" stroke-width="1" stroke-dasharray="2 2"/>
+  <path d="M260 96 L260 112" stroke="#e8590c" stroke-width="1" stroke-dasharray="2 2"/>
+  <path d="M48 96 L48 112" stroke="#7048e8" stroke-width="1" stroke-dasharray="2 2"/>
+  <path d="M370 96 L370 106 L648 106 L660 112" stroke="#e8590c" stroke-width="1" stroke-dasharray="2 2" fill="none"/>
+  <path d="M487 96 L487 106 L570 106 L578 112" stroke="#e8590c" stroke-width="1" stroke-dasharray="2 2" fill="none"/>
+
+  <rect x="0" y="164" width="700" height="82" rx="9" fill="#f7f8fa" stroke="#cfd4de" stroke-dasharray="4 3"/>
+  <text x="12" y="182" class="t">⑤ 방법론 비교 — 위 파이프라인이 <tspan font-weight="800">전부 안정된 다음에야</tspan> 얹히는 층</text>
+  <text x="12" y="199" class="s">방법1 전부 켜기 · 방법2 구역(현재) · 방법3 구역+예외 · 방법4 거리 밴드 · 방법5 틱 강등</text>
+  <text x="12" y="215" class="s">다섯은 "누구를 스폰/디스폰할 것인가"를 정하는 <tspan font-weight="800" fill="#2b3a8f">정책</tspan>이고, ①~④는 그 정책이 호출하는 <tspan font-weight="800" fill="#2b3a8f">기계</tspan>다.</text>
+  <text x="12" y="234" class="s" fill="#8a3708">기계가 흔들리면 정책을 비교한 표가 기계의 결함을 재게 된다. ★ 이것이 ①~④를 먼저 하는 유일한 이유다.</text>
+</svg>
+<p class="figcap">파랑 = 정상 · 주황 = 손봐야 하는 지점 · 보라 = 아직 없는 것. 초록 점선(용량 축)이 지금 비어 있어서 그 책임이 GameScene 하드코딩과 Pool의 즉석 생성으로 흩어져 있다.</p>
+</div>
+
+<div class="fig">
+<p class="figt">② ③·④번은 두 갈래로 쪼개진다 <span class="tag">오늘의 결론</span></p>
+<svg width="100%" viewBox="0 0 700 196" xmlns="http://www.w3.org/2000/svg">
+  <rect x="180" y="4" width="340" height="44" rx="9" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+  <text x="350" y="22" class="tb" text-anchor="middle" fill="#2b3a8f">공통 — 어느 경로든 필요하다</text>
+  <text x="350" y="38" class="s" text-anchor="middle">① 생명주기 · ② 풀링 · ③의 소유권/리스폰 부분</text>
+
+  <path d="M300 48 L300 62 L150 62 L150 76" stroke="#8a91a0" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+  <path d="M400 48 L400 62 L550 62 L550 76" stroke="#8a91a0" stroke-width="1.2" fill="none" marker-end="url(#ar)"/>
+
+  <rect x="10" y="78" width="280" height="104" rx="9" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.3"/>
+  <text x="150" y="96" class="t" text-anchor="middle" fill="#1f6b2e">실험 경로 — 지금 가는 길</text>
+  <text x="22" y="114" class="s">· 스트레스 씬이 스포너를 <tspan font-weight="800">코드로 생성</tspan></text>
+  <text x="22" y="129" class="s">· 풀 용량 = 하네스 파라미터</text>
+  <text x="22" y="144" class="s">· 맵 프리팹 배치를 <tspan font-weight="800">우회한다</tspan></text>
+  <text x="22" y="162" class="s" fill="#1f6b2e">→ ③의 배치, ④의 프리워밍이 <tspan font-weight="800">불필요</tspan></text>
+  <text x="22" y="176" class="xs">밀도·총량을 자유롭게 흔들 수 있는 것이 실험의 전제</text>
+
+  <rect x="410" y="78" width="280" height="104" rx="9" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.3"/>
+  <text x="550" y="96" class="t" text-anchor="middle" fill="#5028c0">게임 경로 — 결론이 나온 뒤 (8단계)</text>
+  <text x="422" y="114" class="s">· ③ 배치를 앵커+패턴으로 (306개 정리)</text>
+  <text x="422" y="129" class="s">· ④ MapManager가 스포너 데이터를 집계</text>
+  <text x="422" y="144" class="s">· 결론(방법4+5)을 실제 맵에 적용</text>
+  <text x="422" y="162" class="s" fill="#5028c0">→ 지금 하면 <tspan font-weight="800">이전 측정치가 전부 무효</tspan></text>
+  <text x="422" y="176" class="xs">이득이 발생하지 않는 시점에 비용을 내는 셈</text>
+</svg>
+<p class="figcap">"게임을 제대로 만드는 순서"와 "실험을 제대로 하는 순서"는 겹치지만 같지 않다. 겹치는 부분만 지금 한다.</p>
+</div>
+
+<table>
+  <thead><tr><th style="width:15%">단계</th><th style="width:26%">지금</th><th style="width:34%">문제</th><th style="width:25%">언제</th></tr></thead>
+  <tbody>
+    <tr><td class="who">① 컴포넌트<br>· 생명주기</td><td>동작은 함</td><td>활성화 순서가 뒤집혀 <code>SetStat</code>이 <code>OnEnable</code> 뒤에 온다. <code>Awake</code> 1회 계약이 코드에 없다</td><td><span class="badge b-bad">지금 · 1단계</span></td></tr>
+    <tr><td class="who">② 풀링</td><td>동작은 함</td><td>용량이 하드코딩 30인데 실제 최대 119 ★<br>부족분을 조용히 즉석 생성해 <strong>히칭 지표를 오염</strong></td><td><span class="badge b-bad">지금 · 1단계</span></td></tr>
+    <tr><td class="who">③ 스폰<br>· 디스폰</td><td>스포너 23개 배치·동작</td><td>리스폰 상태가 몬스터 인스턴스에 얹혀 있어 <strong>방법4를 표현할 수 없다</strong> ★<br>사망~디스폰 2초간 소유가 끊긴다</td><td><span class="badge b-bad">소유권: 2단계</span><br><span class="badge b-later">배치: 8단계</span></td></tr>
+    <tr><td class="who">④ 맵 전체</td><td>없음. GameScene<br>하드코딩이 대신함</td><td>용량 축의 주인이 없어 책임이 씬 코드와 <code>Pool.Pop</code> 양쪽으로 샌다</td><td><span class="badge b-later">8단계</span><br><span class="badge b-none">실험은 하네스가 대체</span></td></tr>
+    <tr><td class="who">⑤ 방법론<br>비교</td><td>방법1·2만 존재</td><td>3·4·5 미구현. 하네스 없음</td><td><span class="badge b-have">3~6단계 · 본론</span></td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">1</span>몬스터 컴포넌트 — 무엇을 프리팹에, 무엇을 런타임에</h2>
+<p class="h2sub">판단 기준은 "핵심이냐 부수냐"가 아니라 <strong>인스펙터에서 조정할 데이터가 있는가</strong>다.</p>
+
+<div class="fig">
+<p class="figt">③ 컴포넌트 소유 — 두 층과 그 경계의 근거</p>
+<svg width="100%" viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="4" width="330" height="150" rx="10" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+  <text x="22" y="24" class="tb" fill="#2b3a8f">프리팹에 있는 것</text>
+  <text x="22" y="38" class="xs">인스펙터 데이터가 있거나, 구조를 판별하는 것</text>
+
+  <rect x="22" y="46" width="146" height="22" rx="6" fill="#fff" stroke="#3b5bdb" stroke-width="1"/>
+  <text x="95" y="61" class="t" text-anchor="middle">MonsterStat</text>
+  <rect x="176" y="46" width="146" height="22" rx="6" fill="#fff" stroke="#3b5bdb" stroke-width="1"/>
+  <text x="249" y="61" class="t" text-anchor="middle">NavMeshAgent</text>
+  <rect x="22" y="72" width="146" height="22" rx="6" fill="#fff" stroke="#3b5bdb" stroke-width="1"/>
+  <text x="95" y="87" class="t" text-anchor="middle">Animator</text>
+  <rect x="176" y="72" width="146" height="22" rx="6" fill="#fff" stroke="#3b5bdb" stroke-width="1"/>
+  <text x="249" y="87" class="t" text-anchor="middle">Collider</text>
+  <rect x="22" y="98" width="146" height="22" rx="6" fill="#fff" stroke="#3b5bdb" stroke-width="1"/>
+  <text x="95" y="113" class="t" text-anchor="middle">List&lt;AbilityData&gt;</text>
+  <rect x="176" y="98" width="146" height="22" rx="6" fill="#fff4ec" stroke="#e8590c" stroke-width="1.6"/>
+  <text x="249" y="113" class="t" text-anchor="middle" fill="#8a3708">Poolable ★</text>
+  <text x="22" y="137" class="s" fill="#8a3708">★ Poolable은 취향이 아니라 <tspan font-weight="800">구조적 강제</tspan>다.</text>
+  <text x="22" y="149" class="s" fill="#8a3708">ResourceManager가 원본 프리팹의 이 컴포넌트로 풀 경유 여부를 판정한다.</text>
+
+  <rect x="362" y="4" width="330" height="150" rx="10" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.4"/>
+  <text x="376" y="24" class="tb" fill="#1f6b2e">런타임에 붙는 것</text>
+  <text x="376" y="38" class="xs">SerializeField가 0개 — 인스펙터에 띄울 것이 없다</text>
+
+  <rect x="376" y="46" width="302" height="22" rx="6" fill="#fff" stroke="#2b8a3e" stroke-width="1"/>
+  <text x="527" y="61" class="t" text-anchor="middle">Health — HP·피격·사망·IDamageable</text>
+  <rect x="376" y="72" width="302" height="22" rx="6" fill="#fff" stroke="#2b8a3e" stroke-width="1"/>
+  <text x="527" y="87" class="t" text-anchor="middle">MonsterReward — 경험치·크레딧·드랍</text>
+  <rect x="376" y="98" width="302" height="22" rx="6" fill="#fff" stroke="#2b8a3e" stroke-width="1"/>
+  <text x="527" y="113" class="t" text-anchor="middle">DamageNumberPresenter — 데미지 토스트</text>
+  <text x="376" y="137" class="s" fill="#1f6b2e">셋 다 <tspan font-family="Consolas,monospace">EnsureOn</tspan> 멱등 패턴. 풀 재사용·중복 부착에 안전하고</text>
+  <text x="376" y="149" class="s" fill="#1f6b2e">신규 프리팹에서 빠뜨릴 수가 없다(자가 치유).</text>
+
+  <rect x="8" y="166" width="684" height="76" rx="10" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="22" y="184" class="t">경계를 어디에 그을 것인가 — 판단 기준</text>
+  <text x="22" y="202" class="s">프리팹에 두면 얻는 것: <tspan font-weight="800">AddComponent 1회 절약</tspan>. 그런데 풀링하면 그 비용은 <tspan font-weight="800">인스턴스당 1회(프리워밍 중)</tspan>로 상각된다.</text>
+  <text x="22" y="218" class="s">프리팹에 두면 잃는 것: 몬스터 프리팹 N개 수동 편집 + 신규 프리팹에서 빠뜨리면 <tspan font-weight="800" fill="#8a3708">사일런트 버그</tspan>(보상 안 나옴·데미지 안 뜸).</text>
+  <text x="22" y="234" class="s" fill="#2b3a8f">→ <tspan font-weight="800">현행 유지가 맞다.</tspan> 바꿀 것은 컴포넌트 배치가 아니라 그 아래의 생명주기 계약이다.</text>
+</svg>
+<p class="figcap">이 단계에서 코드 변경은 사실상 없다. "왜 이렇게 되어 있는가"를 문서로 고정하는 것이 산출물이다.</p>
+</div>
+
+<h3>생명주기 — 여기가 실제 작업</h3>
+
+<div class="fig">
+<p class="figt">④ 활성화 순서 <span class="tag bad">현재: 뒤집혀 있음</span></p>
+<svg width="100%" viewBox="0 0 700 132" xmlns="http://www.w3.org/2000/svg">
+  <line x1="14" y1="40" x2="686" y2="40" stroke="#e8590c" stroke-width="2"/>
+  <text x="14" y="16" class="t" fill="#8a3708">지금 — 팩토리가 활성화 타이밍을 통제하지 못한다</text>
+
+  <circle cx="60" cy="40" r="5" fill="#e8590c"/>
+  <text x="60" y="60" class="s" text-anchor="middle">Pool.Pop()</text>
+  <text x="60" y="72" class="xs" text-anchor="middle">비활성 인스턴스</text>
+
+  <circle cx="185" cy="40" r="5" fill="#e8590c"/>
+  <text x="185" y="60" class="s" text-anchor="middle">agent.Warp(pos)</text>
+  <text x="185" y="72" class="xs" text-anchor="middle" fill="#c92a2a">agent 꺼져 있음 → 무효 의심</text>
+
+  <circle cx="330" cy="40" r="6" fill="#c92a2a"/>
+  <text x="330" y="60" class="s" text-anchor="middle" fill="#c92a2a" font-weight="800">SetActive(true)</text>
+  <text x="330" y="72" class="xs" text-anchor="middle">ResourceManager.cs:406</text>
+
+  <circle cx="480" cy="40" r="5" fill="#e8590c"/>
+  <text x="480" y="60" class="s" text-anchor="middle">OnEnable</text>
+  <text x="480" y="72" class="xs" text-anchor="middle" fill="#c92a2a">Recover() — MaxHp가 이전 생애 값</text>
+  <text x="480" y="83" class="xs" text-anchor="middle" fill="#c92a2a">HP바 생성 시작 — 스탯 주입 전</text>
+
+  <circle cx="632" cy="40" r="5" fill="#e8590c"/>
+  <text x="632" y="60" class="s" text-anchor="middle">SetStat()</text>
+  <text x="632" y="72" class="xs" text-anchor="middle">뒤늦게 덧칠 → 다시 Recover</text>
+
+  <rect x="300" y="98" width="386" height="28" rx="7" fill="#fff0f0" stroke="#c92a2a" stroke-width="1.1"/>
+  <text x="312" y="116" class="s" fill="#c92a2a">같은 프레임이라 눈에 안 보이지만, 스폰마다 <tspan font-weight="800">헛일이 두 번</tspan> 돌고 순서가 취약하다.</text>
+</svg>
+<p class="figcap"><code>ResourceManager.Instantiate</code>가 마지막에 <code>SetActive(true)</code>를 해버려서 팩토리가 그 사이에 끼어들 자리가 없다.</p>
+</div>
+
+<div class="fig">
+<p class="figt">⑤ 활성화 순서 <span class="tag good">목표: 활성화를 마지막으로</span></p>
+<svg width="100%" viewBox="0 0 700 128" xmlns="http://www.w3.org/2000/svg">
+  <line x1="14" y1="40" x2="686" y2="40" stroke="#2b8a3e" stroke-width="2"/>
+  <text x="14" y="16" class="t" fill="#1f6b2e">목표 — 조립이 끝난 뒤에야 켠다</text>
+
+  <circle cx="60" cy="40" r="5" fill="#2b8a3e"/>
+  <text x="60" y="60" class="s" text-anchor="middle">Pool.Pop()</text>
+  <text x="60" y="72" class="xs" text-anchor="middle">activate:false</text>
+
+  <circle cx="196" cy="40" r="5" fill="#2b8a3e"/>
+  <text x="196" y="60" class="s" text-anchor="middle">transform.position</text>
+  <text x="196" y="72" class="xs" text-anchor="middle" fill="#1f6b2e">Warp 불필요 — agent가 켜질 때 스냅</text>
+
+  <circle cx="350" cy="40" r="5" fill="#2b8a3e"/>
+  <text x="350" y="60" class="s" text-anchor="middle">SetStat()</text>
+  <text x="350" y="72" class="xs" text-anchor="middle">데이터 주입</text>
+
+  <circle cx="492" cy="40" r="6" fill="#2b8a3e"/>
+  <text x="492" y="60" class="s" text-anchor="middle" font-weight="800">OnSpawn(ctx)</text>
+  <text x="492" y="72" class="xs" text-anchor="middle">상태·타겟·쿨·BT 리셋 · HP 회복</text>
+
+  <circle cx="634" cy="40" r="5" fill="#2b8a3e"/>
+  <text x="634" y="60" class="s" text-anchor="middle">SetActive(true)</text>
+  <text x="634" y="72" class="xs" text-anchor="middle">OnEnable — Animator만</text>
+
+  <rect x="14" y="94" width="672" height="28" rx="7" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.1"/>
+  <text x="26" y="112" class="s" fill="#1f6b2e">필요한 이음새는 하나 — <tspan font-family="Consolas,monospace" font-weight="800">InstantiateAsync(..., activate:false)</tspan>. 기본값이 true라 기존 호출부(총알·이펙트)는 회귀 없음.</text>
+</svg>
+</div>
+
+<div class="fig">
+<p class="figt">⑥ <code>Awake</code> 1회 계약 — 풀링이 만드는 진짜 함정</p>
+<svg width="100%" viewBox="0 0 700 208" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="12" class="t">첫 생성 (프리워밍 중)</text>
+  <rect x="0" y="20" width="120" height="30" rx="7" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/>
+  <text x="60" y="39" class="t" text-anchor="middle">Awake</text>
+  <path d="M120 35 L138 35" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="140" y="20" width="120" height="30" rx="7" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.3"/>
+  <text x="200" y="39" class="t" text-anchor="middle">OnSpawn</text>
+  <path d="M260 35 L278 35" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="280" y="20" width="120" height="30" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="340" y="39" class="t" text-anchor="middle">플레이</text>
+  <path d="M400 35 L418 35" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="420" y="20" width="120" height="30" rx="7" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.3"/>
+  <text x="480" y="39" class="t" text-anchor="middle">OnDespawn</text>
+  <path d="M540 35 L560 35" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <text x="566" y="39" class="s">풀로 반환</text>
+
+  <text x="0" y="76" class="t">재사용 (2회차부터 — 스폰의 대부분)</text>
+  <rect x="0" y="84" width="120" height="30" rx="7" fill="#fff" stroke="#cfd4de" stroke-dasharray="4 3"/>
+  <text x="60" y="98" class="s" text-anchor="middle" fill="#8a91a0">Awake 안 돎</text>
+  <text x="60" y="109" class="xs" text-anchor="middle" fill="#8a91a0">여기서 만든 것이 그대로 남아 있다</text>
+  <path d="M120 99 L138 99" stroke="#8a91a0" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+  <rect x="140" y="84" width="120" height="30" rx="7" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/>
+  <text x="200" y="103" class="t" text-anchor="middle" fill="#1f6b2e">OnSpawn</text>
+  <path d="M260 99 L278 99" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="280" y="84" width="120" height="30" rx="7" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="340" y="103" class="t" text-anchor="middle">플레이</text>
+  <path d="M400 99 L418 99" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="420" y="84" width="120" height="30" rx="7" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.3"/>
+  <text x="480" y="103" class="t" text-anchor="middle">OnDespawn</text>
+
+  <rect x="0" y="132" width="700" height="72" rx="9" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/>
+  <text x="14" y="150" class="t" fill="#8a3708">따라오는 규칙 — <tspan font-weight="800">Awake에서 만든 것은 생애를 넘어 재사용된다</tspan></text>
+  <text x="14" y="168" class="s" fill="#8a3708">지금 <tspan font-family="Consolas,monospace">ConstructBehaviorTree()</tspan>가 Awake에 있다 → <tspan font-weight="800">BT 노드 인스턴스가 생애를 넘어 살아남는다.</tspan></text>
+  <text x="14" y="184" class="s" fill="#8a3708">현재는 상태가 노드가 아니라 컨트롤러 필드(_state · _target · _lastDestPosition)에 있어 우연히 안전하다. <tspan font-weight="800">그 우연을 규칙으로 승격시킨다.</tspan></text>
+  <text x="14" y="199" class="s">대안(OnSpawn마다 BT 재구축)은 스폰마다 노드 할당이라 풀링의 의미가 반쯤 사라진다. → 규칙 쪽을 택한다. <tspan fill="#8a91a0">(Audit M5와 같은 항목)</tspan></text>
+</svg>
+</div>
+
+<table>
+  <thead><tr><th style="width:17%">훅</th><th style="width:26%">호출 시점</th><th style="width:57%">담는 것</th></tr></thead>
+  <tbody>
+    <tr><td class="who"><code>Awake</code></td><td>인스턴스당 <strong>1회</strong> (풀 생성 시점)</td><td>컴포넌트 캐시 · BT 구축 · <code>EnsureOn</code>. <em>여기 만든 것은 상태를 들면 안 된다</em></td></tr>
+    <tr><td class="who"><code>OnSpawn(ctx)</code></td><td>매 스폰 · <strong>비활성 상태</strong></td><td>스탯 주입 후 상태·타겟·쿨다운·BT 리셋 · HP 회복 · CTS 재생성</td></tr>
+    <tr><td class="who"><code>OnEnable</code></td><td><code>SetActive(true)</code>가 부름</td><td><strong>활성 상태를 요구하는 것만</strong> — Animator <code>Rebind</code>/<code>Play</code>. 비활성에서는 무의미하므로 여기 남는다</td></tr>
+    <tr><td class="who"><code>OnDespawn()</code></td><td>매 디스폰</td><td>구독 해제 · HP바 반납 · CTS 취소 · 스포너에 통보</td></tr>
+  </tbody>
+</table>
+
+<div class="callout c-blue">
+  <span class="lbl">이 단계의 산출물</span>
+  <strong>"풀에서 꺼낸 몬스터가 이상하면 <code>OnSpawn</code>만 보면 된다"</strong>는 상태. 지금은 리셋이 <code>OnEnable</code>·<code>SetStat</code>·<code>Awake</code> 세 곳에 흩어져 있고 그 순서를 아무도 통제하지 않는다.
+</div>
+
+<div class="pb"></div>
+<h2><span class="num">2</span>풀링 — 축이 두 개인데 하나가 없다</h2>
+<p class="h2sub">"몬스터별 풀"은 이미 있다. 없는 것은 <strong>그 풀들의 용량과 수명을 정하는 주인</strong>이다.</p>
+
+<div class="fig">
+<p class="figt">⑦ 풀에는 성격이 다른 세 축이 있다</p>
+<svg width="100%" viewBox="0 0 700 214" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="4" width="700" height="58" rx="9" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.4"/>
+  <text x="14" y="22" class="t" fill="#1f6b2e">용량 축 — 맵 진입·이탈에 1회 (저빈도) · <tspan font-weight="800">지금 주인이 없다</tspan></text>
+  <text x="14" y="40" class="mono" fill="#1f6b2e">MapManager.Prepare()  →  집계  →  Pool.Reserve(key, count)</text>
+  <text x="14" y="55" class="mono" fill="#1f6b2e">MapManager.Release()  →  Pool.Release(key)   ── 인스턴스 파괴 + refCount 티켓 반납</text>
+  <text x="470" y="40" class="s" fill="#1f6b2e">실험에서는 하네스 파라미터가</text>
+  <text x="470" y="53" class="s" fill="#1f6b2e">이 자리를 대신한다</text>
+
+  <rect x="0" y="72" width="700" height="52" rx="9" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/>
+  <text x="14" y="90" class="t" fill="#2b3a8f">획득 축 — 스폰마다 (고빈도) · 지금 잘 동작함</text>
+  <text x="14" y="108" class="mono" fill="#2b3a8f">Spawner → Factory → ResourceManager → Pool.Rent(key)</text>
+  <text x="420" y="108" class="s" fill="#c92a2a" font-weight="800">Rent는 절대 풀을 만들지 않는다 ← 새 규칙</text>
+
+  <rect x="0" y="134" width="700" height="44" rx="9" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/>
+  <text x="14" y="152" class="t" fill="#2b3a8f">반납 축 — 디스폰마다</text>
+  <text x="14" y="170" class="mono" fill="#2b3a8f">Monster.OnDespawn → Spawner 통보 → Resource.Destroy → Pool.Return(key)</text>
+
+  <text x="0" y="198" class="s">지금 코드에는 <tspan font-weight="800">용량 축이 아예 없다.</tspan> 그래서 그 책임이 위로는 GameScene 하드코딩으로, 아래로는 <tspan font-family="Consolas,monospace">Pool.Pop</tspan>의 즉석 생성으로 샜다.</text>
+  <text x="0" y="211" class="s" fill="#8a3708">= <tspan font-weight="800">"꺼내달라"는 요청이 "창고를 지어라"로 번역되고 있다.</tspan> 두 축을 가르는 선이 곧 이 단계의 작업이다.</text>
+</svg>
+</div>
+
+<div class="fig">
+<p class="figt">⑧ 프리워밍 30 vs 실제 최대 필요치 <span class="tag bad">실측 ★</span></p>
+<svg width="100%" viewBox="0 0 700 178" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="12" class="s">막대 길이 = 개체 수 (119 기준 정규화). 회색 = 현재 프리워밍 30 · 색상 = 한 섹터 활성 시 실제 최대 필요</text>
+
+  <text x="0" y="38" class="t">2000 AR</text>
+  <rect x="92" y="28" width="101" height="13" rx="3" fill="#cfd4de"/>
+  <text x="199" y="38" class="xs">프리워밍 30</text>
+  <rect x="92" y="44" width="10" height="13" rx="3" fill="#3b5bdb"/>
+  <text x="108" y="54" class="xs">필요 3</text>
+  <text x="560" y="48" class="s" fill="#8a3708">27개 낭비</text>
+
+  <text x="0" y="82" class="t">2001 RL</text>
+  <rect x="92" y="72" width="101" height="13" rx="3" fill="#cfd4de"/>
+  <text x="199" y="82" class="xs">프리워밍 30</text>
+  <rect x="92" y="88" width="400" height="13" rx="3" fill="#c92a2a"/>
+  <text x="498" y="98" class="xs" fill="#c92a2a">필요 119</text>
+  <path d="M193 78 L193 101" stroke="#c92a2a" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <rect x="196" y="88" width="296" height="13" fill="url(#hatch)"/>
+  <text x="560" y="82" class="s" fill="#c92a2a" font-weight="800">게임 중 89회</text>
+  <text x="560" y="95" class="s" fill="#c92a2a" font-weight="800">즉석 Instantiate</text>
+
+  <text x="0" y="128" class="t">2002 Tank</text>
+  <rect x="92" y="118" width="101" height="13" rx="3" fill="#cfd4de"/>
+  <text x="199" y="128" class="xs">프리워밍 30</text>
+  <rect x="92" y="134" width="2" height="13" rx="1" fill="#8a91a0"/>
+  <text x="100" y="144" class="xs">필요 0 — 어느 스포너도 쓰지 않는다</text>
+  <text x="560" y="138" class="s" fill="#8a3708">인스턴스 30개 +</text>
+  <text x="560" y="150" class="s" fill="#8a3708">프리팹 핸들 전부 낭비</text>
+
+  <rect x="0" y="158" width="700" height="18" rx="6" fill="#fff0f0"/>
+  <text x="10" y="171" class="s" fill="#c92a2a">그 89회가 그대로 <tspan font-weight="800">&gt;33ms 히칭 프레임</tspan>으로 잡힌다 — 그런데 히칭 프레임 수가 비교표의 핵심 지표다.</text>
+  <defs><pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="6" stroke="#fff" stroke-width="2" opacity=".55"/></pattern></defs>
+</svg>
+<p class="figcap">빗금 구간 = 풀에 없어서 게임 도중 새로 만들어지는 89마리. <code>PoolManager.Pop</code>은 이때 로그를 남기지 않는다.</p>
+</div>
+
+<div class="fig">
+<p class="figt">⑨ 왜 이것이 "균일한 노이즈"가 아니라 <span class="tag bad">순위를 바꾸는 노이즈</span>인가</p>
+<svg width="100%" viewBox="0 0 700 132" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="12" class="s">스폰/디스폰 빈도가 방법마다 극단적으로 다르다 → 풀 부족 비용도 방법마다 다르게 낀다</text>
+
+  <text x="0" y="34" class="t">방법1 전부</text>  <rect x="110" y="24" width="6" height="12" rx="2" fill="#cfd4de"/> <text x="124" y="34" class="xs">시작 1회, 이후 0</text>
+  <text x="0" y="54" class="t">방법2 구역</text>  <rect x="110" y="44" width="120" height="12" rx="3" fill="#3b5bdb"/> <text x="238" y="54" class="xs">섹터 전환마다 일괄</text>
+  <text x="0" y="74" class="t">방법3 구역+예외</text> <rect x="110" y="64" width="140" height="12" rx="3" fill="#3b5bdb"/> <text x="258" y="74" class="xs">방법2 + 유예분</text>
+  <text x="0" y="94" class="t">방법4 거리</text>  <rect x="110" y="84" width="440" height="12" rx="3" fill="#c92a2a"/> <text x="558" y="94" class="xs" fill="#c92a2a">밴드를 넘나들 때마다</text>
+  <text x="0" y="114" class="t">방법5 느리게</text> <rect x="110" y="104" width="2" height="12" rx="1" fill="#cfd4de"/> <text x="120" y="114" class="xs">0 — 아무도 지우지 않는다</text>
+
+  <rect x="556" y="20" width="144" height="60" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/>
+  <text x="566" y="37" class="s" fill="#8a3708" font-weight="800">방법4가 가장 큰 벌점</text>
+  <text x="566" y="52" class="xs" fill="#8a3708">그런데 그것은 "거리 방식의</text>
+  <text x="566" y="63" class="xs" fill="#8a3708">본질적 비용"이 아니라</text>
+  <text x="566" y="74" class="xs" fill="#8a3708">"내 스폰 구현의 비용"이다</text>
+</svg>
+<p class="figcap">그래서 지표에 <strong>스폰/디스폰 횟수</strong>와 <strong>스폰 1회 평균 비용</strong>을 넣는다. 방법4가 졌을 때 방식 탓인지 구현 탓인지 표에서 갈라야 한다.</p>
+</div>
+
+<div class="callout c-amber">
+  <span class="lbl">이 단계의 채택 조건</span>
+  <code>Pop</code>이 풀을 즉석 생성하면 <strong>개발 빌드 경고</strong>를 띄운다. 그리고 <strong><code>poolMisses == 0</code>인 측정만 채택</strong>한다. 이 경고가 있어야 "사전 할당이 실제로 다 덮었나"를 검증할 수 있고, 없으면 지금처럼 조용히 뚫린 채로 35조합을 다 재게 된다.
+</div>
+
+<div class="pb"></div>
+<h2><span class="num">3</span>스포너 — 스폰/디스폰과 소유권</h2>
+<p class="h2sub">배치는 미룬다. <strong>소유권과 리스폰만</strong> 지금 고친다 — 그것이 방법4의 전제 조건이기 때문이다.</p>
+
+<div class="fig">
+<p class="figt">⑩ 소유 구간 — 지금은 사망과 회수 사이가 끊긴다</p>
+<svg width="100%" viewBox="0 0 700 158" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="12" class="t" fill="#8a3708">지금</text>
+  <line x1="60" y1="34" x2="690" y2="34" stroke="#cfd4de" stroke-width="1.2"/>
+  <rect x="60" y="26" width="300" height="16" rx="4" fill="#3b5bdb"/>
+  <text x="210" y="38" class="xs" text-anchor="middle" fill="#fff">스포너가 소유 (_activeMonsters)</text>
+  <rect x="360" y="26" width="180" height="16" rx="4" fill="#fff0f0" stroke="#c92a2a" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <text x="450" y="38" class="xs" text-anchor="middle" fill="#c92a2a">소유 공백 — 약 2초</text>
+  <rect x="540" y="26" width="150" height="16" rx="4" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="615" y="38" class="xs" text-anchor="middle">풀로 반환됨</text>
+
+  <path d="M360 46 L360 56" stroke="#c92a2a" stroke-width="1"/>
+  <text x="360" y="68" class="xs" text-anchor="middle" fill="#c92a2a">사망 — 즉시 목록에서 제거</text>
+  <path d="M540 46 L540 56" stroke="#8a91a0" stroke-width="1"/>
+  <text x="540" y="68" class="xs" text-anchor="middle">디스폰 연출 종료 → Push</text>
+
+  <text x="0" y="94" class="t" fill="#1f6b2e">목표</text>
+  <line x1="60" y1="116" x2="690" y2="116" stroke="#cfd4de" stroke-width="1.2"/>
+  <rect x="60" y="108" width="480" height="16" rx="4" fill="#2b8a3e"/>
+  <text x="300" y="120" class="xs" text-anchor="middle" fill="#fff">스포너가 소유 — 스폰부터 디스폰 완료까지</text>
+  <rect x="540" y="108" width="150" height="16" rx="4" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="615" y="120" class="xs" text-anchor="middle">풀로 반환됨</text>
+
+  <rect x="0" y="134" width="700" height="22" rx="6" fill="#f7f8fa"/>
+  <text x="10" y="149" class="s">공백 구간에 섹터가 꺼지면 <tspan font-family="Consolas,monospace">DespawnMonsters()</tspan>가 그 몬스터를 모른다 → <tspan font-weight="800">평균·최대 활성 수 지표가 흔들린다.</tspan> 그 지표가 방법3의 유일한 증거다.</text>
+</svg>
+</div>
+
+<div class="fig">
+<p class="figt">⑪ 리스폰 상태가 어디에 있는가 — 방법4가 성립하려면 여기가 바뀌어야 한다 ★</p>
+<svg width="100%" viewBox="0 0 700 186" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="4" width="340" height="126" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="1.4"/>
+  <text x="14" y="24" class="t" fill="#8a3708">지금 — 몬스터 인스턴스에 얹혀 있다</text>
+
+  <rect x="16" y="34" width="140" height="34" rx="7" fill="#fff" stroke="#e8590c" stroke-width="1.1"/>
+  <text x="86" y="49" class="t" text-anchor="middle">Spawner</text>
+  <text x="86" y="62" class="xs" text-anchor="middle">_respawnCts[idx]</text>
+
+  <rect x="184" y="34" width="140" height="34" rx="7" fill="#fff0f0" stroke="#c92a2a" stroke-width="1.3"/>
+  <text x="254" y="49" class="t" text-anchor="middle" fill="#c92a2a">Monster 인스턴스</text>
+  <text x="254" y="62" class="xs" text-anchor="middle" fill="#c92a2a">OnDespawned += 람다</text>
+
+  <path d="M156 51 L182 51" stroke="#c92a2a" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#ar)"/>
+
+  <text x="16" y="88" class="s" fill="#8a3708">리스폰 예약이 <tspan font-family="Consolas,monospace">MonsterSpawner.cs:176</tspan>의 람다에 걸리고,</text>
+  <text x="16" y="102" class="s" fill="#8a3708"><tspan font-family="Consolas,monospace">BMC.cs:85</tspan>의 <tspan font-family="Consolas,monospace">OnDespawned = null</tspan>이 그것을 지운다.</text>
+  <text x="16" y="120" class="s" fill="#c92a2a" font-weight="800">→ 디스폰하면 리스폰 예약도 같이 사라진다.</text>
+
+  <rect x="360" y="4" width="340" height="126" rx="10" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.4"/>
+  <text x="374" y="24" class="t" fill="#1f6b2e">목표 — 스포너가 포인트별로 소유</text>
+
+  <rect x="376" y="34" width="308" height="34" rx="7" fill="#fff" stroke="#2b8a3e" stroke-width="1.1"/>
+  <text x="386" y="49" class="t">Spawner — 포인트별 상태 배열</text>
+  <text x="386" y="62" class="xs">살아있음 / T초 뒤 부활 예정 / 비어있음</text>
+
+  <text x="374" y="88" class="s" fill="#1f6b2e">몬스터 인스턴스와 <tspan font-weight="800">완전히 독립</tspan>이므로</text>
+  <text x="374" y="102" class="s" fill="#1f6b2e">밴드 밖으로 나갔다 돌아와도 상태가 보존된다.</text>
+  <text x="374" y="120" class="s" fill="#1f6b2e" font-weight="800">→ "화면 밖 세계가 멈추지 않는다"가 성립.</text>
+
+  <rect x="0" y="140" width="700" height="42" rx="9" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="14" y="158" class="s" fill="#2b3a8f">이것은 리팩터가 아니라 <tspan font-weight="800">방법4의 구현 판단 4번을 가능하게 만드는 작업</tspan>이다.</text>
+  <text x="14" y="174" class="s" fill="#2b3a8f">지금 코드로는 "디스폰돼도 리스폰 타이머는 스포너가 소유"를 <tspan font-weight="800">표현할 방법 자체가 없다</tspan> → 방법4를 문서대로 만들 수 없다.</text>
+</svg>
+</div>
+
+<div class="callout c-violet">
+  <span class="lbl">지금 하지 않는 것 — 배치 리팩터</span>
+  프리팹 자식 34개 중 <strong>17개만 사용</strong>(306개가 죽은 오브젝트)이고 <code>pointIndex</code>가 하이어라키 순서에 결합돼 있다. 앵커+패턴으로 바꾸면 둘 다 사라진다 — <strong>그러나 실험 경로에는 필요 없다.</strong> 스트레스 씬이 스포너를 코드로 생성해 배치를 우회하고, 실험 중에 배치가 바뀌면 그 전 측정치가 전부 무효가 된다.<br>
+  <span style="font-size:8.4pt">최소 조치 둘만 지금: <code>pointIndex</code> 초과 시 조용한 <code>continue</code>에 경고 · 리젠 딜레이 지터(현재 전부 <code>5.0</code>이라 리젠이 몰린다).</span>
+</div>
+
+<div class="pb"></div>
+<h2><span class="num">4</span>맵 전체 스포너 관리 — 새 레이어의 유일한 존재 이유</h2>
+<p class="h2sub"><code>MapManager ↔ Sector ↔ Spawner ↔ Factory ↔ Pool</code> 체인은 <strong>이미 있다.</strong> 새로 만들 값어치는 하나뿐이다.</p>
+
+<div class="fig">
+<p class="figt">⑫ 이미 있는 것과, 정말 없는 것</p>
+<svg width="100%" viewBox="0 0 700 172" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="16" width="118" height="34" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="59" y="30" class="t" text-anchor="middle">SectorManager</text>
+  <text x="59" y="43" class="xs" text-anchor="middle">있음</text>
+  <path d="M118 33 L136 33" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="138" y="16" width="100" height="34" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="188" y="36" class="t" text-anchor="middle">Sector ×5</text>
+  <path d="M238 33 L256 33" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="258" y="16" width="110" height="34" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="313" y="36" class="t" text-anchor="middle">Spawner ×23</text>
+  <path d="M368 33 L386 33" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="388" y="16" width="122" height="34" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="449" y="36" class="t" text-anchor="middle">MonsterFactory</text>
+  <path d="M510 33 L528 33" stroke="#8a91a0" stroke-width="1.2" marker-end="url(#ar)"/>
+  <rect x="530" y="16" width="170" height="34" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.2"/>
+  <text x="615" y="30" class="t" text-anchor="middle">Resource → Pool</text>
+  <text x="615" y="43" class="xs" text-anchor="middle">Poolable 판정으로 자동 경유</text>
+
+  <text x="0" y="66" class="s" fill="#2b3a8f">↑ 이 체인은 전부 존재하고 정상 동작한다. 스포너가 풀을 직접 잡지 않고 팩토리를 경유하는 것도 이미 맞다.</text>
+
+  <path d="M40 78 C 40 104, 610 106, 612 84" stroke="#2b8a3e" stroke-width="1.6" fill="none" stroke-dasharray="5 3" marker-end="url(#arG)"/>
+  <text x="326" y="126" class="t" text-anchor="middle" fill="#1f6b2e">없는 것은 이 화살표 하나 — 중간을 거치지 않는 용량 축</text>
+  <text x="326" y="143" class="s" text-anchor="middle" fill="#1f6b2e">맵의 스포너 데이터를 전수 집계 → key별 동시 최대치 산출 → Reserve</text>
+  <text x="326" y="160" class="s" text-anchor="middle">그것이 지금 GameScene에 <tspan font-family="Consolas,monospace">CreatePool(prefab, key, 30)</tspan> ×3으로 손으로 박혀 있다</text>
+</svg>
+<p class="figcap">스포너는 획득 축만 알고 용량 축은 모른다. 이 비대칭이 의도된 것이라야 스포너를 몇 개로 늘리든 용량 결정이 한 곳에 남는다.</p>
+</div>
+
+<div class="fig">
+<p class="figt">⑬ 섹터별 몬스터 분포 <span class="tag bad">실측</span> — 집계가 자동이어야 하는 이유</p>
+<svg width="100%" viewBox="0 0 700 172" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="12" class="s">한 번에 한 섹터만 활성 (<tspan font-family="Consolas,monospace">ActivateAllSectors</tspan>는 BenchmarkTester 전용) → 동시 최대치는 가장 큰 섹터가 결정한다</text>
+
+  <text x="0" y="36" class="t">섹터 1</text><rect x="60" y="26" width="257" height="14" rx="3" fill="#3b5bdb"/><text x="325" y="37" class="xs">102</text>
+  <text x="0" y="60" class="t">섹터 2</text><rect x="60" y="50" width="171" height="14" rx="3" fill="#3b5bdb"/><text x="239" y="61" class="xs">68</text>
+  <text x="0" y="84" class="t">섹터 3</text><rect x="60" y="74" width="15" height="14" rx="3" fill="#3b5bdb"/><text x="146" y="85" class="xs">6 — AR 3 + RL 3</text>
+  <text x="0" y="108" class="t">섹터 4</text><rect x="60" y="98" width="300" height="14" rx="3" fill="#c92a2a"/><text x="368" y="109" class="xs" fill="#c92a2a" font-weight="800">119 ← 동시 최대</text>
+  <text x="0" y="132" class="t">섹터 5</text><rect x="60" y="122" width="171" height="14" rx="3" fill="#3b5bdb"/><text x="239" y="133" class="xs">68</text>
+
+  <path d="M136 24 L136 140" stroke="#8a3708" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="140" y="152" class="xs" fill="#8a3708">현재 프리워밍 30</text>
+
+  <rect x="480" y="26" width="220" height="110" rx="9" fill="#f7f8fa" stroke="#cfd4de"/>
+  <text x="492" y="44" class="t">이 표가 손으로 유지될 수 있나</text>
+  <text x="492" y="62" class="s">섹터 편차가 <tspan font-weight="800">6 ~ 119, 20배</tspan>다.</text>
+  <text x="492" y="78" class="s">스포너를 하나 추가·이동할 때마다</text>
+  <text x="492" y="92" class="s">이 숫자가 바뀌는데, 지금은 아무도</text>
+  <text x="492" y="106" class="s">다시 계산하지 않는다.</text>
+  <text x="492" y="126" class="s" fill="#2b3a8f">→ <tspan font-weight="800">집계는 코드가 해야 한다.</tspan></text>
+</svg>
+<p class="figcap">부수 효과 하나 — 섹터별 편차가 이미 20배라, 스포너 내부 구성을 균일하게 가져가도 <strong>섹터 수준에서 밀도 변량이 확보된다.</strong></p>
+</div>
+
+<div class="callout c-violet">
+  <span class="lbl">언제 만드나</span>
+  <strong>8단계.</strong> 실험 경로에서는 스트레스 씬 하네스가 이 역할을 대신하므로 지금 만들 이유가 없다. 다만 <strong>2단계에서 이음새는 미리 뚫어둔다</strong> — <code>CreatePool</code>의 <code>count</code>가 호출자가 계산한 값이 되게. 출처만 다르고(하네스 파라미터 / 스포너 데이터) 이음새는 같다.
+</div>
+
+<div class="pb"></div>
+<h2><span class="num">5</span>방법론 비교 — 기계가 안정된 뒤에 얹는 층</h2>
+<p class="h2sub">다섯은 임의의 후보가 아니라 <strong>한 축 위의 네 점 + 직교하는 하나</strong>다.</p>
+
+<div class="fig">
+<p class="figt">⑭ 두 축과 다섯 방법</p>
+<svg width="100%" viewBox="0 0 700 158" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="14" class="t" fill="#2b3a8f">존재 축 — 누구를 존재하게 할 것인가 (판정 단위가 화면 크기까지 내려온다)</text>
+  <line x1="40" y1="46" x2="660" y2="46" stroke="#3b5bdb" stroke-width="1.6" marker-end="url(#ar)"/>
+  <circle cx="70" cy="46" r="6" fill="#3b5bdb"/><text x="70" y="34" class="t" text-anchor="middle">방법1</text><text x="70" y="64" class="xs" text-anchor="middle">맵 전체 (∞)</text>
+  <circle cx="240" cy="46" r="7" fill="#e8590c"/><text x="240" y="34" class="t" text-anchor="middle" fill="#8a3708">방법2</text><text x="240" y="64" class="xs" text-anchor="middle">구역 100m · 현재</text>
+  <circle cx="410" cy="46" r="6" fill="#3b5bdb"/><text x="410" y="34" class="t" text-anchor="middle">방법3</text><text x="410" y="64" class="xs" text-anchor="middle">구역 + 예외</text>
+  <circle cx="600" cy="46" r="7" fill="#2b8a3e"/><text x="600" y="34" class="t" text-anchor="middle" fill="#1f6b2e">방법4</text><text x="600" y="64" class="xs" text-anchor="middle">반경 약 45m</text>
+  <path d="M648 40 L648 52" stroke="#8a91a0" stroke-width="1" stroke-dasharray="2 2"/><text x="654" y="50" class="xs">화면 25m</text>
+
+  <text x="0" y="96" class="t" fill="#5028c0">품질 축 — 존재하는 것을 얼마나 자주 돌릴 것인가 (직교)</text>
+  <rect x="40" y="104" width="620" height="30" rx="8" fill="#f3f0ff" stroke="#7048e8" stroke-width="1.3"/>
+  <text x="56" y="123" class="t" fill="#5028c0">방법5 — 끄지 않고 틱 등급만 강등 (60Hz / 10Hz / 2Hz)</text>
+  <text x="400" y="123" class="s" fill="#5028c0">→ 방법4와 동시에 적용할 수 있다. 이것이 결론의 뼈대</text>
+  <text x="0" y="152" class="s">방법4는 <tspan font-weight="800">규모</tspan>를 해결하고 밀집에 무력하다. 방법5는 <tspan font-weight="800">밀집</tspan>을 해결하고 규모엔 여전히 O(N)이다. → 고르는 것이 아니라 <tspan font-weight="800">층을 나눠 겹친다.</tspan></text>
+</svg>
+</div>
+
+<div class="fig">
+<p class="figt">⑮ 측정 축 — 밀도가 본론, 총량이 확장성 증거 <span class="tag">2026-08-22 개정</span></p>
+<svg width="100%" viewBox="0 0 700 150" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="4" width="342" height="118" rx="10" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.4"/>
+  <text x="14" y="24" class="t" fill="#1f6b2e">표 A — 밀도 · 본론 (총량 300 고정)</text>
+  <text x="14" y="42" class="s">WALK ~10 · EDGE ~30 · PULL-60 · PULL-100</text>
+  <text x="14" y="60" class="s" fill="#1f6b2e"><tspan font-weight="800">전부 현실 수치다.</tspan> 몹 몰이는 이 장르의 정상 플레이라</text>
+  <text x="14" y="74" class="s" fill="#1f6b2e">"합성 상황 아니냐"는 반론이 성립하지 않는다.</text>
+  <text x="14" y="96" class="s" fill="#1f6b2e" font-weight="800">답하는 질문: 무엇을 골라야 하는가</text>
+  <text x="14" y="113" class="xs">5 방법 × 4 시나리오 = 20 조합</text>
+
+  <rect x="358" y="4" width="342" height="118" rx="10" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.4"/>
+  <text x="372" y="24" class="t" fill="#2b3a8f">표 B — 총량 · 확장성 증거 (WALK 고정)</text>
+  <text x="372" y="42" class="s">200 · 1000 · 3000</text>
+  <text x="372" y="60" class="s" fill="#2b3a8f"><tspan font-weight="800">절대 수치가 아니라 곡선 모양만 읽는다.</tspan></text>
+  <text x="372" y="74" class="s" fill="#2b3a8f">3000은 목표 시나리오가 아니라 <tspan font-weight="800">극한값</tspan>이다.</text>
+  <text x="372" y="96" class="s" fill="#2b3a8f" font-weight="800">답하는 질문: 그 선택이 언제까지 유효한가</text>
+  <text x="372" y="113" class="xs">5 방법 × 3 총량 = 15 조합</text>
+
+  <text x="0" y="140" class="s">여기에 <tspan font-weight="800">체감 지표</tspan>(팝인 횟수 · 깜빡임 · 반응 지연 · 이동 저크)가 나란히 들어간다 — 없으면 "왜 밴드 45m죠?"에 답할 수단이 없다.</text>
+</svg>
+</div>
+
+<h2>착수 순서</h2>
+<p class="h2sub">단계 번호는 관심사의 층이었고, 아래가 실제 시간 순서다.</p>
+
+<div class="fig">
+<p class="figt">⑯ 순서와 대략 기간</p>
+<svg width="100%" viewBox="0 0 700 226" xmlns="http://www.w3.org/2000/svg">
+  <line x1="178" y1="18" x2="178" y2="204" stroke="#eef0f4"/>
+  <line x1="246" y1="18" x2="246" y2="204" stroke="#eef0f4"/>
+  <line x1="314" y1="18" x2="314" y2="204" stroke="#eef0f4"/>
+  <line x1="382" y1="18" x2="382" y2="204" stroke="#eef0f4"/>
+  <line x1="450" y1="18" x2="450" y2="204" stroke="#eef0f4"/>
+  <line x1="518" y1="18" x2="518" y2="204" stroke="#eef0f4"/>
+  <line x1="586" y1="18" x2="586" y2="204" stroke="#eef0f4"/>
+  <line x1="654" y1="18" x2="654" y2="204" stroke="#eef0f4"/>
+  <text x="178" y="12" class="xs" text-anchor="middle">1주</text>
+  <text x="314" y="12" class="xs" text-anchor="middle">3주</text>
+  <text x="450" y="12" class="xs" text-anchor="middle">5주</text>
+  <text x="586" y="12" class="xs" text-anchor="middle">7주</text>
+
+  <text x="0" y="32" class="t" fill="#1f6b2e">0 문서·예측 박제</text>
+  <rect x="110" y="23" width="9" height="12" rx="3" fill="#2b8a3e"/>
+  <text x="125" y="32" class="xs" fill="#1f6b2e">완료 (오늘)</text>
+
+  <text x="0" y="52" class="t" fill="#c92a2a">0.5 Before 영상</text>
+  <rect x="110" y="43" width="9" height="12" rx="3" fill="#c92a2a"/>
+  <text x="125" y="52" class="xs" fill="#c92a2a">★ 방법3을 만들면 다시 못 찍는다</text>
+
+  <text x="0" y="74" class="t">1 생명주기+풀링</text>
+  <rect x="110" y="65" width="54" height="12" rx="3" fill="#e8590c"/>
+  <text x="170" y="74" class="xs">3~4일 · 통제 변수</text>
+
+  <text x="0" y="94" class="t">2 스포너 소유권</text>
+  <rect x="164" y="85" width="41" height="12" rx="3" fill="#e8590c"/>
+  <text x="211" y="94" class="xs">2~3일 · 방법4 전제</text>
+
+  <text x="0" y="114" class="t">3 측정 하네스</text>
+  <rect x="205" y="105" width="68" height="12" rx="3" fill="#3b5bdb"/>
+  <text x="279" y="114" class="xs">1주 · 방법 구현 전</text>
+
+  <text x="0" y="134" class="t">4 기준선 (1·2)</text>
+  <rect x="273" y="125" width="20" height="12" rx="3" fill="#3b5bdb"/>
+  <text x="299" y="134" class="xs">1~2일 · 하네스 자체 검증</text>
+
+  <text x="0" y="154" class="t">5 방법3 → 4 → 5</text>
+  <rect x="293" y="145" width="238" height="12" rx="3" fill="#3b5bdb"/>
+  <text x="537" y="154" class="xs">3~4주 · 본론</text>
+
+  <text x="0" y="174" class="t">6 측정·예측 대조</text>
+  <rect x="531" y="165" width="48" height="12" rx="3" fill="#3b5bdb"/>
+  <text x="585" y="174" class="xs">35조합 × 3회</text>
+
+  <text x="0" y="194" class="t">7 메모리 (G4)</text>
+  <rect x="579" y="185" width="34" height="12" rx="3" fill="#7048e8"/>
+  <text x="619" y="194" class="xs">→ 리소스 파트 연결</text>
+
+  <text x="0" y="214" class="t">8 실제 맵 적용</text>
+  <rect x="613" y="205" width="68" height="12" rx="3" fill="#7048e8"/>
+  <text x="360" y="224" class="xs">③ 배치 · ④ MapManager가 여기서 비로소 필요해진다</text>
+</svg>
+</div>
+
+<div class="callout c-green">
+  <span class="lbl">순서의 근거 세 줄</span>
+  <strong>0·0.5가 지금인 이유</strong> — 둘 다 나중에 복구가 불가능하다. 예측은 구현하면서 결과가 보이기 시작하면 오염되고, Before 영상은 버그를 고치면 사라진다. 합쳐서 하루가 안 걸린다.<br>
+  <strong>1·2가 앞인 이유</strong> — 판단 기준은 하나다. <em>"이걸 고치면 다섯의 상대 순위가 바뀌나?"</em> 바뀌면 통제 변수다.<br>
+  <strong>4를 넣은 이유</strong> — 하네스에 버그가 있는 채로 3~5를 다 만들고 발견하면 전 조합을 다시 돌려야 한다.
+</div>
+
+<div class="footer">
+Operation Kivotos · 몬스터 스폰 파이프라인 5단계 작업 구조 · 2026-08-22 ·
+수치 출처: <code>SpawnerData.json</code> / <code>BackStreetMap.prefab</code> 직접 파싱 ·
+상세 문서: <code>docs/MonsterSimulation/Comparison/07_Prerequisites.md</code>
+</div>
+
+</body>
+</html>

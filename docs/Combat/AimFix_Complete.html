@@ -1,0 +1,777 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>조준 보정 합본</title><style>
+:root{--ink:#1a1c22;--muted:#5b6270;--faint:#8a91a0;--line:#e3e6ec;--line2:#eef0f4;--shade:#f7f8fa;
+--blue:#3b5bdb;--blue-soft:#eef2ff;--blue-ink:#2b3a8f;--amber:#e8590c;--amber-soft:#fff4ec;--amber-ink:#8a3708;
+--green:#2b8a3e;--green-soft:#ebfbee;--green-ink:#1f6b2e;}
+*{box-sizing:border-box}
+@page{size:A4;margin:12mm 13mm}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif;color:var(--ink);margin:0;line-height:1.55;font-size:10.2pt}
+h1{font-size:19pt;margin:0 0 4px;font-weight:800;letter-spacing:-.02em}
+.kicker{font-size:8pt;letter-spacing:.24em;color:var(--blue);font-weight:700;margin-bottom:7px}
+h2{font-size:12.5pt;margin:12px 0 4px;font-weight:800}
+.lead{font-size:10.4pt;color:var(--muted);margin:0 0 6px}
+.fig{border:1px solid var(--line);border-radius:12px;padding:9px 11px 6px;margin:9px 0;background:#fff;break-inside:avoid}
+.figt{font-size:9.8pt;font-weight:800;margin:0 0 3px}
+.figcap{font-size:8.2pt;color:var(--faint);margin:3px 0 2px}
+svg{display:block} svg text{font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif}
+.t{font-size:9.6px;font-weight:700}.t:not([fill]){fill:#1a1c22}
+.tb{font-size:10.6px;font-weight:800}.tb:not([fill]){fill:#1a1c22}
+.s{font-size:8.4px}.s:not([fill]){fill:#5b6270}
+.xs{font-size:7.4px}.xs:not([fill]){fill:#8a91a0}
+.callout{border-radius:11px;padding:9px 13px;margin:9px 0;font-size:9.2pt;line-height:1.55;break-inside:avoid}
+.c-amber{background:var(--amber-soft);color:var(--amber-ink)} .c-blue{background:var(--blue-soft);color:var(--blue-ink)}
+.c-green{background:var(--green-soft);color:var(--green-ink)}
+.callout .lbl{font-weight:800;font-size:8.2pt;letter-spacing:.05em;display:block;margin-bottom:3px}
+.callout ul{margin:2px 0 0;padding-left:16px}.callout li{margin:2px 0}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.stat div{border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+.stat .n{display:block;font-size:16pt;font-weight:800;letter-spacing:-.02em;color:var(--amber-ink)}
+.stat span b{font-weight:800;color:var(--ink)}
+.stat span{font-size:8pt;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:8.8pt;break-inside:avoid}
+th{text-align:left;padding:5px 8px;background:var(--ink);color:#fff;font-weight:700;font-size:8.4pt}
+td{padding:5px 8px;border-bottom:1px solid var(--line2);vertical-align:top}
+tbody tr:nth-child(even){background:var(--shade)}
+td.k{font-weight:800;color:var(--blue-ink);white-space:nowrap}
+.pb{break-before:page}
+.footer{margin-top:10px;padding-top:6px;border-top:1px solid var(--line);font-size:7.6pt;color:var(--faint)}
+
+.f{font-size:12.5px;font-weight:800;fill:#1a1c22}
+.fa{font-size:14px;font-weight:800}
+.cov td{text-align:center}.cov td.k{text-align:left}
+.cov .y{color:#2b8a3e;font-weight:800}.cov .p{color:#e8590c;font-weight:800}.cov .n{color:#c92a2a;font-weight:800}.cov .z{color:#8a91a0}
+ol.steps{margin:4px 0 0;padding-left:18px}ol.steps li{margin:3px 0}
+
+.card{border:1px solid #e3e6ec;border-radius:14px;padding:10px 14px 8px;margin:10px 0;break-inside:avoid;background:#fff}
+.card h3{color:#c92a2a;font-size:11.6pt;margin:0 0 6px;font-weight:800}
+.row{display:flex;gap:16px;align-items:center}
+.row .pic{flex:0 0 54%}
+.row .txt{flex:1;font-size:9.8pt;line-height:1.6}
+.txt p{margin:0 0 5px}
+.txt .good{color:#2b8a3e;font-weight:800}.txt .bad{color:#c92a2a;font-weight:800}
+.big{font-size:10.6pt;line-height:1.7}
+table.easy td,table.easy th{text-align:center}
+
+.lv{display:inline-block;font-size:8.4pt;font-weight:800;padding:2px 10px;border-radius:10px;margin:8px 0 2px;letter-spacing:.04em}
+.lv-e{background:#eef2ff;color:#2b3a8f}.lv-d{background:#fff4ec;color:#8a3708}.lv-p{background:#ebfbee;color:#1f6b2e}
+h2{color:#c92a2a}
+.src{font-size:8.4pt;line-height:1.55}.src li{margin:2px 0}.src a{color:#2b3a8f;text-decoration:none}
+.read{border:1px solid #e3e6ec;border-radius:12px;padding:8px 14px;margin:8px 0;font-size:9.6pt}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8a91a0"/></marker><marker id="ahb" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3b5bdb"/></marker><marker id="aha" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#e8590c"/></marker><marker id="ahg" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2b8a3e"/></marker><marker id="ahr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c92a2a"/></marker><clipPath id="capclip"><rect x="140" y="40" width="60" height="150" rx="30"/></clipPath></defs></svg>
+<div class="kicker">COMBAT · AIM · 합본</div>
+<h1 style="color:#1a1c22">커서로 몹을 찍었는데 왜 빗나갈까</h1>
+<p class="lead" style="color:#1a1c22">쿼터뷰에서 커서로 조준할 때 생기는 문제, 해결 방법, 실무 사례를 한 문서로 정리했다.</p>
+<div class="read"><b>읽는 법</b> — 주제마다 <span class="lv lv-e">쉽게</span>를 먼저 읽고, 식과 정확한 그림이 궁금하면 <span class="lv lv-d">자세히</span>를 본다. 자세히는 건너뛰어도 흐름이 이어진다. 그림 속 숫자는 이해를 돕는 예시값이고, <span class="lv lv-p">실무에선</span>은 공개 자료(GDC 발표·개발사 블로그) 요약이다.</div>
+
+<h2>1. 지금 무슨 일이 일어나나</h2>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="callout c-blue big">카메라에서 커서 쪽으로 <b>레이저</b>를 쏜다고 생각하자. 게임은 이 레이저가 <b>바닥에 찍힌 점</b>을 조준점으로 쓰고, 캐릭터는 그 점을 향해 돌아서 쏜다. 문제는 레이저가 몹을 무시하고 <b>몹 뒤 바닥까지</b> 간다는 것이다.</div>
+<div class="fig"><svg viewBox="0 0 700 250" width="100%">
+<line x1="18.0" y1="205.0" x2="690.0" y2="205.0" stroke="#1a1c22" stroke-width="1.6"/>
+<rect x="162" y="165" width="16" height="40" rx="7" fill="#3b5bdb"/>
+<text x="170.0" y="221.0" class="t" text-anchor="middle" fill="#3b5bdb" >플레이어</text>
+<rect x="314.0" y="133.0" width="32" height="72.0" rx="12" fill="#dfe4ee" stroke="#8a91a0"/>
+<text x="330.0" y="221.0" class="t" text-anchor="middle" >몹</text>
+<circle cx="50" cy="35.0" r="9" fill="#3b5bdb"/>
+<text x="66.0" y="31.0" class="tb" text-anchor="start" fill="#3b5bdb" >카메라</text>
+<line x1="50.0" y1="35.0" x2="330.0" y2="145.0" stroke="#e8590c" stroke-width="2.4"/>
+<line x1="330.0" y1="145.0" x2="482.7" y2="205.0" stroke="#e8590c" stroke-width="2.4" stroke-dasharray="6 4"/>
+<circle cx="330.0" cy="145.0" r="5" fill="#e8590c"/>
+<circle cx="482.7" cy="205" r="7" fill="#e8590c"/>
+<circle cx="360.0" cy="111.0" r="10" fill="#c92a2a"/><text x="360.0" y="115.0" class="t" text-anchor="middle" fill="#fff">①</text><text x="376.0" y="115.0" class="tb" text-anchor="start" >커서가 몹을 가리킨다</text>
+<circle cx="422.0" cy="147.0" r="10" fill="#c92a2a"/><text x="422.0" y="151.0" class="t" text-anchor="middle" fill="#fff">②</text><text x="438.0" y="151.0" class="tb" text-anchor="start" >레이저는 몹을 그냥 통과한다</text>
+<circle cx="500.72727272727275" cy="177" r="10" fill="#c92a2a"/><text x="500.72727272727275" y="181" class="t" text-anchor="middle" fill="#fff">③</text><text x="516.7" y="181.0" class="tb" text-anchor="start" >바닥에 찍힌 이 점을 향해 쏜다</text>
+<line x1="330.0" y1="224.0" x2="478.7" y2="224.0" stroke="#e8590c" stroke-width="2.2" marker-end="url(#aha)"/>
+<text x="406.4" y="240.0" class="tb" text-anchor="middle" fill="#e8590c" >몹보다 3.8m 뒤로 밀림</text>
+</svg></div>
+<div><span class="lv lv-d">자세히</span></div>
+<div class="fig"><div class="figt">밀리는 거리는 닮은 삼각형으로 구한다</div><svg viewBox="0 0 700 262" width="100%">
+<polygon points="40,65.0 40,215 340.0,215" fill="#eef2ff"/>
+<line x1="18.0" y1="215.0" x2="395.0" y2="215.0" stroke="#1a1c22" stroke-width="1.6"/>
+<text x="395.0" y="229.0" class="xs" text-anchor="end" >바닥 (y = 0)</text>
+<rect x="237.0" y="161.0" width="26" height="54.0" rx="9" fill="#dfe4ee" stroke="#8a91a0"/>
+<polygon points="250.0,170.0 250.0,215 340.0,215" fill="#fff4ec" fill-opacity=".85" stroke="#e8590c" stroke-width="1"/>
+<line x1="40.0" y1="65.0" x2="250.0" y2="170.0" stroke="#e8590c" stroke-width="2.0"/>
+<line x1="250.0" y1="170.0" x2="340.0" y2="215.0" stroke="#e8590c" stroke-width="2.0" stroke-dasharray="5 4"/>
+<circle cx="40" cy="65.0" r="8" fill="#3b5bdb"/>
+<text x="54.0" y="59.0" class="t" text-anchor="start" fill="#3b5bdb" >카메라</text>
+<circle cx="250.0" cy="170.0" r="4" fill="#e8590c"/>
+<text x="268.0" y="150.0" class="t" text-anchor="start" fill="#e8590c" >커서가 가리킨 점</text>
+<text x="268.0" y="162.0" class="xs" text-anchor="start" >(몹 위, 높이 h)</text>
+<circle cx="340.0" cy="215" r="5" fill="#e8590c"/>
+<text x="348.0" y="207.0" class="t" text-anchor="start" fill="#e8590c" >조준점 G</text>
+<line x1="22.0" y1="65.0" x2="22.0" y2="215.0" stroke="#5b6270" stroke-width="1.0"/>
+<text x="12.0" y="144.0" class="tb" text-anchor="middle" >H</text>
+<line x1="226.0" y1="170.0" x2="226.0" y2="215.0" stroke="#5b6270" stroke-width="1.0"/>
+<text x="217.0" y="196.5" class="tb" text-anchor="middle" >h</text>
+<line x1="40.0" y1="234.0" x2="250.0" y2="234.0" stroke="#5b6270" stroke-width="1.0"/>
+<line x1="40.0" y1="229.0" x2="40.0" y2="239.0" stroke="#5b6270" stroke-width="1.0"/><line x1="250.0" y1="229.0" x2="250.0" y2="239.0" stroke="#5b6270" stroke-width="1.0"/><line x1="340.0" y1="229.0" x2="340.0" y2="239.0" stroke="#5b6270" stroke-width="1.0"/>
+<text x="145.0" y="252.0" class="t" text-anchor="middle" >D  (카메라 → 몹 수평거리)</text>
+<line x1="250.0" y1="234.0" x2="340.0" y2="234.0" stroke="#e8590c" stroke-width="1.4"/>
+<text x="295.0" y="252.0" class="t" text-anchor="middle" fill="#e8590c" >d  (밀림)</text>
+<rect x="412" y="14" width="278" height="232" rx="12" fill="#f7f8fa" stroke="none"/>
+<text x="428.0" y="40.0" class="tb" text-anchor="start" fill="#1a1c22" >닮은 삼각형 두 개</text><text x="428.0" y="60.0" class="t" text-anchor="start" fill="#1a1c22" >큰 삼각형 (파랑) : 높이 H, 밑변 D + d</text><text x="428.0" y="80.0" class="t" text-anchor="start" fill="#1a1c22" >작은 삼각형 (주황) : 높이 h, 밑변 d</text>
+<text x="428.0" y="112.0" class="f" text-anchor="start" >h / d  =  H / (D + d)</text>
+<text x="428.0" y="142.0" class="fa" text-anchor="start" fill="#e8590c" >d  =  h · D / (H − h)</text>
+<text x="428.0" y="172.0" class="s" text-anchor="start" fill="#1a1c22" >• h ↑ (몹이 클수록, 머리를 찍을수록) → d ↑</text><text x="428.0" y="189.0" class="s" text-anchor="start" fill="#1a1c22" >• H ↓ (카메라가 낮을수록) → d ↑</text><text x="428.0" y="206.0" class="s" text-anchor="start" fill="#1a1c22" >• h → H 이면 분모 → 0, d → ∞</text><text x="428.0" y="223.0" class="s" text-anchor="start" fill="#1a1c22" >   레이가 수평이 되어 바닥에 닿지 않는다</text>
+</svg></div>
+
+<div class="pb"></div>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="callout c-blue big">밀리는 방향은 언제나 <b>카메라 반대쪽(화면 위쪽)</b>이다. 화면 위쪽 몹은 밀려도 같은 줄 위라 맞고, <b>옆에 있는 몹</b>은 쏘는 방향이 틀어져서 빗나간다.</div>
+<div class="fig"><svg viewBox="0 0 700 236" width="100%">
+<rect x="8" y="8" width="336" height="220" rx="14" fill="#fff" stroke="#e3e6ec"/>
+<text x="176.0" y="30.0" class="tb" text-anchor="middle" >화면 위쪽에 있는 몹</text>
+<text x="176.0" y="220.0" class="s" text-anchor="middle" fill="#1a1c22" >▼ 카메라는 이쪽 (화면 아래)</text>
+<circle cx="176" cy="110" r="16" fill="#dfe4ee" stroke="#8a91a0"/>
+<text x="152.0" y="114.0" class="t" text-anchor="end" >몹</text>
+<line x1="176.0" y1="93.0" x2="176.0" y2="69.0" stroke="#e8590c" stroke-width="2.0" marker-end="url(#aha)"/>
+<text x="188.0" y="90.0" class="t" text-anchor="start" fill="#e8590c" >밀림</text>
+<circle cx="176" cy="62" r="5" fill="#e8590c"/>
+<line x1="176.0" y1="186.0" x2="176.0" y2="46.0" stroke="#2b8a3e" stroke-width="2.4" marker-end="url(#ahg)"/>
+<circle cx="176" cy="186" r="10" fill="#3b5bdb"/>
+<text x="192.0" y="190.0" class="tb" text-anchor="start" fill="#3b5bdb" >나</text>
+<text x="38.0" y="120.0" class="tb" text-anchor="start" fill="#2b8a3e" >밀려도 같은 줄 위</text>
+<text x="38.0" y="138.0" class="tb" text-anchor="start" fill="#2b8a3e" >→ 맞는다 ✓</text>
+<rect x="356" y="8" width="336" height="220" rx="14" fill="#fff" stroke="#e3e6ec"/>
+<text x="524.0" y="30.0" class="tb" text-anchor="middle" >옆에 있는 몹</text>
+<text x="524.0" y="220.0" class="s" text-anchor="middle" fill="#1a1c22" >▼ 카메라는 이쪽 (화면 아래)</text>
+<circle cx="586" cy="160" r="16" fill="#dfe4ee" stroke="#8a91a0"/>
+<text x="586.0" y="192.0" class="t" text-anchor="middle" >몹</text>
+<line x1="586.0" y1="143.0" x2="586.0" y2="99.0" stroke="#e8590c" stroke-width="2.0" marker-end="url(#aha)"/>
+<text x="598.0" y="130.0" class="t" text-anchor="start" fill="#e8590c" >밀림</text>
+<circle cx="586" cy="92" r="5" fill="#e8590c"/>
+<line x1="426.0" y1="160.0" x2="656.1" y2="62.2" stroke="#c92a2a" stroke-width="2.4" marker-end="url(#ahr)"/>
+<circle cx="426" cy="160" r="10" fill="#3b5bdb"/>
+<text x="426.0" y="184.0" class="tb" text-anchor="middle" fill="#3b5bdb" >나</text>
+<text x="556.0" y="60.0" class="tb" text-anchor="end" fill="#c92a2a" >줄이 틀어져</text>
+<text x="556.0" y="78.0" class="tb" text-anchor="end" fill="#c92a2a" >→ 몹 위로 지나감 ✕</text>
+</svg></div>
+<div><span class="lv lv-d">자세히</span></div>
+<div class="fig"><div class="figt">밀린 거리 d가 방향 오차 ε로 바뀐다</div><svg viewBox="0 0 700 262" width="100%">
+<line x1="110.0" y1="190.0" x2="260.0" y2="190.0" stroke="#8a91a0" stroke-width="1.2" stroke-dasharray="3 3"/>
+<text x="185.0" y="206.0" class="tb" text-anchor="middle" >R</text>
+<circle cx="260" cy="190" r="16" fill="none" stroke="#2b8a3e" stroke-dasharray="3 3"/>
+<circle cx="260" cy="190" r="12" fill="#dfe4ee" stroke="#8a91a0"/>
+<line x1="260.0" y1="177.0" x2="260.0" y2="121.0" stroke="#e8590c" stroke-width="1.8" marker-end="url(#aha)"/>
+<text x="270.0" y="152.5" class="tb" text-anchor="start" fill="#e8590c" >d</text>
+<text x="282.0" y="152.5" class="xs" text-anchor="start" >카메라 반대쪽으로 밀림</text>
+<circle cx="260" cy="115.0" r="4.5" fill="#e8590c"/>
+<text x="268.0" y="109.0" class="tb" text-anchor="start" fill="#e8590c" >G</text>
+<line x1="110.0" y1="190.0" x2="351.5" y2="69.3" stroke="#3b5bdb" stroke-width="2.2" marker-end="url(#ahb)"/>
+<text x="355.5" y="65.3" class="t" text-anchor="start" fill="#3b5bdb" >탄 경로</text>
+<line x1="260.0" y1="190.0" x2="230.0" y2="130.0" stroke="#c92a2a" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="233.0" y="164.0" class="tb" text-anchor="middle" fill="#c92a2a" >e</text>
+<path d="M156 190 A46 46 0 0 0 151.1 169.4" fill="none" stroke="#1a1c22" stroke-width="1.2"/>
+<text x="162.0" y="183.0" class="tb" text-anchor="start" >ε</text>
+<circle cx="110" cy="190" r="9" fill="#3b5bdb"/>
+<text x="110.0" y="216.0" class="t" text-anchor="middle" fill="#3b5bdb" >플레이어 P</text>
+<text x="282.0" y="194.0" class="t" text-anchor="start" >몹 M</text>
+<text x="282.0" y="208.0" class="xs" text-anchor="start" >α = 90° (옆 몹)</text>
+<line x1="30.0" y1="250.0" x2="30.0" y2="196.0" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ah)"/>
+<text x="38.0" y="246.0" class="xs" text-anchor="start" >카메라 시선 방향</text>
+<rect x="412" y="10" width="278" height="244" rx="12" fill="#f7f8fa" stroke="none"/>
+<text x="428.0" y="36.0" class="tb" text-anchor="start" fill="#1a1c22" >옆에 있는 몹일수록 방향이 틀어진다</text>
+<text x="428.0" y="64.0" class="f" text-anchor="start" >ε = atan( d·sin α / (R + d·cos α) )</text>
+<text x="428.0" y="88.0" class="f" text-anchor="start" >e = R · sin ε</text>
+<text x="428.0" y="114.0" class="fa" text-anchor="start" fill="#2b8a3e" >명중  ⇔  e < r몹 + r탄</text>
+<text x="428.0" y="140.0" class="s" text-anchor="start" fill="#1a1c22" >α = P→M 과 밀림 방향(카메라 시선) 사이 각</text><text x="428.0" y="157.0" class="s" text-anchor="start" fill="#1a1c22" >• α = 0° (화면 위쪽 몹): ε = 0</text><text x="428.0" y="174.0" class="s" text-anchor="start" fill="#1a1c22" >   거리만 밀리고 방향은 그대로 → 맞음</text><text x="428.0" y="191.0" class="s" text-anchor="start" fill="#1a1c22" >• α = 90° (옆 몹): ε = atan(d / R) 로 최대</text><text x="428.0" y="208.0" class="s" text-anchor="start" fill="#1a1c22" >• α = 180° (카메라 쪽 몹) 이고 d > R 이면</text><text x="428.0" y="225.0" class="s" text-anchor="start" fill="#1a1c22" >   G가 플레이어 뒤로 넘어가 정반대로 쏜다</text>
+</svg></div>
+
+<h2 class="pb">2. 몹이 크면 왜 더 심해질까</h2>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="callout c-blue big">큰 몹의 머리처럼 <b>높은 곳</b>을 찍을수록 레이저가 옆으로 눕는다. 누운 레이저는 바닥에 닿기까지 훨씬 멀리 간다. 그래서 키가 조금만 커져도 밀림은 <b>확</b> 커진다.</div>
+<div class="fig"><div class="figt">카메라 높이 5m, 몹까지 5m. 몹의 머리 끝을 찍었을 때</div><svg viewBox="0 0 700 214" width="100%">
+<rect x="8" y="8" width="224" height="200" rx="14" fill="#fff" stroke="#e3e6ec"/>
+<text x="120.0" y="30.0" class="tb" text-anchor="middle" >몹 키 1m</text>
+<line x1="14.0" y1="176.0" x2="226.0" y2="176.0" stroke="#1a1c22" stroke-width="1.4"/>
+<rect x="94.0" y="160.0" width="16" height="16.0" rx="6" fill="#dfe4ee" stroke="#8a91a0"/>
+<circle cx="22" cy="96.0" r="6" fill="#3b5bdb"/>
+<line x1="22.0" y1="96.0" x2="122.0" y2="176.0" stroke="#e8590c" stroke-width="2.0"/>
+<circle cx="102.0" cy="160.0" r="3.5" fill="#e8590c"/>
+<circle cx="122.0" cy="176" r="5" fill="#e8590c"/>
+<line x1="102.0" y1="188.0" x2="119.0" y2="188.0" stroke="#e8590c" stroke-width="2.2" marker-end="url(#aha)"/>
+<text x="120.0" y="203.0" class="tb" text-anchor="middle" fill="#e8590c" >밀림 1.25m</text>
+<rect x="240" y="8" width="224" height="200" rx="14" fill="#fff" stroke="#e3e6ec"/>
+<text x="352.0" y="30.0" class="tb" text-anchor="middle" >몹 키 2m</text>
+<line x1="246.0" y1="176.0" x2="458.0" y2="176.0" stroke="#1a1c22" stroke-width="1.4"/>
+<rect x="326.0" y="144.0" width="16" height="32.0" rx="6" fill="#dfe4ee" stroke="#8a91a0"/>
+<circle cx="254" cy="96.0" r="6" fill="#3b5bdb"/>
+<line x1="254.0" y1="96.0" x2="387.3" y2="176.0" stroke="#e8590c" stroke-width="2.0"/>
+<circle cx="334.0" cy="144.0" r="3.5" fill="#e8590c"/>
+<circle cx="387.3" cy="176" r="5" fill="#e8590c"/>
+<line x1="334.0" y1="188.0" x2="384.3" y2="188.0" stroke="#e8590c" stroke-width="2.2" marker-end="url(#aha)"/>
+<text x="352.0" y="203.0" class="tb" text-anchor="middle" fill="#e8590c" >밀림 3.33m</text>
+<rect x="472" y="8" width="224" height="200" rx="14" fill="#fff" stroke="#e3e6ec"/>
+<text x="584.0" y="30.0" class="tb" text-anchor="middle" >몹 키 3m</text>
+<line x1="478.0" y1="176.0" x2="690.0" y2="176.0" stroke="#1a1c22" stroke-width="1.4"/>
+<rect x="558.0" y="128.0" width="16" height="48.0" rx="6" fill="#dfe4ee" stroke="#8a91a0"/>
+<circle cx="486" cy="96.0" r="6" fill="#3b5bdb"/>
+<line x1="486.0" y1="96.0" x2="686.0" y2="176.0" stroke="#e8590c" stroke-width="2.0"/>
+<circle cx="566.0" cy="128.0" r="3.5" fill="#e8590c"/>
+<circle cx="686.0" cy="176" r="5" fill="#e8590c"/>
+<line x1="566.0" y1="188.0" x2="683.0" y2="188.0" stroke="#e8590c" stroke-width="2.2" marker-end="url(#aha)"/>
+<text x="584.0" y="203.0" class="tb" text-anchor="middle" fill="#e8590c" >밀림 7.5m</text>
+<text x="30.0" y="100.0" class="xs" text-anchor="start" fill="#3b5bdb" >카메라</text>
+</svg></div>
+<table class="easy"><thead><tr><th>몹 키</th><th>조준점이 밀리는 거리</th><th>1m 몹과 비교</th></tr></thead>
+<tbody><tr><td>1m</td><td>1.25m</td><td>1배</td></tr><tr><td>2m</td><td>3.33m</td><td>2.67배</td></tr><tr><td>3m</td><td>7.5m</td><td>6배</td></tr><tr><td>4m</td><td>20m</td><td>16배</td></tr><tr><td>5m</td><td colspan="2">레이저가 바닥에 닿지 않음 → 조준 실패</td></tr></tbody></table>
+<div><span class="lv lv-d">자세히</span></div>
+<div class="fig"><div class="figt">밀림 비율은 k = (커서 높이 ÷ 카메라 높이) 하나로 정해진다</div><svg viewBox="0 0 700 256" width="100%">
+<line x1="60.0" y1="222.0" x2="420.0" y2="222.0" stroke="#e3e6ec" stroke-width="1"/>
+<text x="52.0" y="225.0" class="xs" text-anchor="end" >0</text>
+<line x1="60.0" y1="188.7" x2="420.0" y2="188.7" stroke="#e3e6ec" stroke-width="1"/>
+<text x="52.0" y="191.7" class="xs" text-anchor="end" >1</text>
+<line x1="60.0" y1="155.3" x2="420.0" y2="155.3" stroke="#e3e6ec" stroke-width="1"/>
+<text x="52.0" y="158.3" class="xs" text-anchor="end" >2</text>
+<line x1="60.0" y1="122.0" x2="420.0" y2="122.0" stroke="#e3e6ec" stroke-width="1"/>
+<text x="52.0" y="125.0" class="xs" text-anchor="end" >3</text>
+<line x1="60.0" y1="88.7" x2="420.0" y2="88.7" stroke="#e3e6ec" stroke-width="1"/>
+<text x="52.0" y="91.7" class="xs" text-anchor="end" >4</text>
+<line x1="60.0" y1="55.3" x2="420.0" y2="55.3" stroke="#e3e6ec" stroke-width="1"/>
+<text x="52.0" y="58.3" class="xs" text-anchor="end" >5</text>
+<line x1="60.0" y1="22.0" x2="420.0" y2="22.0" stroke="#e3e6ec" stroke-width="1"/>
+<text x="52.0" y="25.0" class="xs" text-anchor="end" >6</text>
+<text x="60.0" y="236.0" class="xs" text-anchor="middle" >0.0</text>
+<text x="132.0" y="236.0" class="xs" text-anchor="middle" >0.2</text>
+<text x="204.0" y="236.0" class="xs" text-anchor="middle" >0.4</text>
+<text x="276.0" y="236.0" class="xs" text-anchor="middle" >0.6</text>
+<text x="348.0" y="236.0" class="xs" text-anchor="middle" >0.8</text>
+<text x="420.0" y="236.0" class="xs" text-anchor="middle" >1.0</text>
+<line x1="60.0" y1="222.0" x2="420.0" y2="222.0" stroke="#1a1c22" stroke-width="1.2"/><line x1="60.0" y1="22.0" x2="60.0" y2="222.0" stroke="#1a1c22" stroke-width="1.2"/>
+<text x="240.0" y="252.0" class="t" text-anchor="middle" >k = h / H   (커서 높이 ÷ 카메라 높이)</text>
+<text x="16.0" y="16.0" class="t" text-anchor="start" >d / D</text>
+<polyline points="60.0,222.0 60.9,221.9 61.8,221.8 62.7,221.7 63.6,221.7 64.5,221.6 65.4,221.5 66.3,221.4 67.2,221.3 68.1,221.2 69.0,221.1 69.9,221.1 70.8,221.0 71.7,220.9 72.6,220.8 73.5,220.7 74.4,220.6 75.3,220.5 76.2,220.4 77.1,220.3 78.0,220.2 78.9,220.2 79.8,220.1 80.7,220.0 81.6,219.9 82.5,219.8 83.4,219.7 84.3,219.6 85.2,219.5 86.1,219.4 87.0,219.3 87.9,219.2 88.8,219.1 89.7,219.0 90.6,218.9 91.5,218.8 92.4,218.7 93.3,218.6 94.2,218.5 95.1,218.4 96.0,218.3 96.9,218.2 97.8,218.1 98.7,218.0 99.6,217.9 100.5,217.8 101.4,217.7 102.3,217.6 103.2,217.5 104.1,217.3 105.0,217.2 105.9,217.1 106.8,217.0 107.7,216.9 108.6,216.8 109.5,216.7 110.4,216.6 111.3,216.5 112.2,216.3 113.1,216.2 114.0,216.1 114.9,216.0 115.8,215.9 116.7,215.8 117.6,215.7 118.5,215.5 119.4,215.4 120.3,215.3 121.2,215.2 122.1,215.1 123.0,214.9 123.9,214.8 124.8,214.7 125.7,214.6 126.6,214.4 127.5,214.3 128.4,214.2 129.3,214.1 130.2,213.9 131.1,213.8 132.0,213.7 132.9,213.5 133.8,213.4 134.7,213.3 135.6,213.1 136.5,213.0 137.4,212.9 138.3,212.7 139.2,212.6 140.1,212.5 141.0,212.3 141.9,212.2 142.8,212.0 143.7,211.9 144.6,211.8 145.5,211.6 146.4,211.5 147.3,211.3 148.2,211.2 149.1,211.0 150.0,210.9 150.9,210.7 151.8,210.6 152.7,210.4 153.6,210.3 154.5,210.1 155.4,210.0 156.3,209.8 157.2,209.7 158.1,209.5 159.0,209.4 159.9,209.2 160.8,209.0 161.7,208.9 162.6,208.7 163.5,208.5 164.4,208.4 165.3,208.2 166.2,208.1 167.1,207.9 168.0,207.7 168.9,207.5 169.8,207.4 170.7,207.2 171.6,207.0 172.5,206.8 173.4,206.7 174.3,206.5 175.2,206.3 176.1,206.1 177.0,206.0 177.9,205.8 178.8,205.6 179.7,205.4 180.6,205.2 181.5,205.0 182.4,204.8 183.3,204.6 184.2,204.4 185.1,204.2 186.0,204.1 186.9,203.9 187.8,203.7 188.7,203.5 189.6,203.2 190.5,203.0 191.4,202.8 192.3,202.6 193.2,202.4 194.1,202.2 195.0,202.0 195.9,201.8 196.8,201.6 197.7,201.4 198.6,201.1 199.5,200.9 200.4,200.7 201.3,200.5 202.2,200.2 203.1,200.0 204.0,199.8 204.9,199.5 205.8,199.3 206.7,199.1 207.6,198.8 208.5,198.6 209.4,198.4 210.3,198.1 211.2,197.9 212.1,197.6 213.0,197.4 213.9,197.1 214.8,196.9 215.7,196.6 216.6,196.3 217.5,196.1 218.4,195.8 219.3,195.5 220.2,195.3 221.1,195.0 222.0,194.7 222.9,194.5 223.8,194.2 224.7,193.9 225.6,193.6 226.5,193.3 227.4,193.0 228.3,192.7 229.2,192.4 230.1,192.1 231.0,191.8 231.9,191.5 232.8,191.2 233.7,190.9 234.6,190.6 235.5,190.3 236.4,190.0 237.3,189.7 238.2,189.3 239.1,189.0 240.0,188.7 240.9,188.3 241.8,188.0 242.7,187.7 243.6,187.3 244.5,187.0 245.4,186.6 246.3,186.2 247.2,185.9 248.1,185.5 249.0,185.2 249.9,184.8 250.8,184.4 251.7,184.0 252.6,183.6 253.5,183.3 254.4,182.9 255.3,182.5 256.2,182.1 257.1,181.7 258.0,181.3 258.9,180.8 259.8,180.4 260.7,180.0 261.6,179.6 262.5,179.1 263.4,178.7 264.3,178.3 265.2,177.8 266.1,177.4 267.0,176.9 267.9,176.4 268.8,176.0 269.7,175.5 270.6,175.0 271.5,174.5 272.4,174.0 273.3,173.5 274.2,173.0 275.1,172.5 276.0,172.0 276.9,171.5 277.8,170.9 278.7,170.4 279.6,169.9 280.5,169.3 281.4,168.8 282.3,168.2 283.2,167.6 284.1,167.0 285.0,166.4 285.9,165.8 286.8,165.2 287.7,164.6 288.6,164.0 289.5,163.4 290.4,162.7 291.3,162.1 292.2,161.4 293.1,160.8 294.0,160.1 294.9,159.4 295.8,158.7 296.7,158.0 297.6,157.3 298.5,156.6 299.4,155.8 300.3,155.1 301.2,154.3 302.1,153.6 303.0,152.8 303.9,152.0 304.8,151.2 305.7,150.3 306.6,149.5 307.5,148.7 308.4,147.8 309.3,146.9 310.2,146.0 311.1,145.1 312.0,144.2 312.9,143.3 313.8,142.3 314.7,141.4 315.6,140.4 316.5,139.4 317.4,138.4 318.3,137.3 319.2,136.3 320.1,135.2 321.0,134.1 321.9,133.0 322.8,131.9 323.7,130.7 324.6,129.5 325.5,128.3 326.4,127.1 327.3,125.9 328.2,124.6 329.1,123.3 330.0,122.0 330.9,120.7 331.8,119.3 332.7,117.9 333.6,116.4 334.5,115.0 335.4,113.5 336.3,112.0 337.2,110.4 338.1,108.8 339.0,107.2 339.9,105.5 340.8,103.8 341.7,102.1 342.6,100.3 343.5,98.5 344.4,96.6 345.3,94.7 346.2,92.7 347.1,90.7 348.0,88.7 348.9,86.6 349.8,84.4 350.7,82.2 351.6,79.9 352.5,77.6 353.4,75.2 354.3,72.7 355.2,70.1 356.1,67.5 357.0,64.9 357.9,62.1 358.8,59.3 359.7,56.3 360.6,53.3 361.5,50.2 362.4,47.0 363.3,43.7 364.2,40.3 365.1,36.8 366.0,33.1 366.9,29.3 367.8,25.4" fill="none" stroke="#e8590c" stroke-width="2.6" stroke-linejoin="round"/>
+<line x1="420.0" y1="22.0" x2="420.0" y2="222.0" stroke="#c92a2a" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="414.0" y="32.0" class="xs" text-anchor="end" fill="#c92a2a" >k → 1 : 발산</text>
+<circle cx="96.0" cy="218.3" r="4" fill="#1a1c22"/>
+<line x1="96.0" y1="214.3" x2="100.0" y2="198.3" stroke="#8a91a0" stroke-width="1"/>
+<text x="102.0" y="194.3" class="s" text-anchor="start" fill="#1a1c22" >작은 몹 몸통 (0.11)</text>
+<circle cx="132.0" cy="213.7" r="4" fill="#1a1c22"/>
+<line x1="134.0" y1="209.7" x2="158.0" y2="175.7" stroke="#8a91a0" stroke-width="1"/>
+<text x="160.0" y="171.7" class="s" text-anchor="start" fill="#1a1c22" >작은 몹 머리 (0.25)</text>
+<circle cx="240.0" cy="188.7" r="4" fill="#1a1c22"/>
+<text x="250.0" y="202.7" class="s" text-anchor="start" fill="#1a1c22" >큰 몹 몸통 (1.00)</text>
+<circle cx="348.0" cy="88.7" r="4" fill="#1a1c22"/>
+<text x="340.0" y="82.7" class="s" text-anchor="end" fill="#1a1c22" >큰 보스 머리 · 낮은 카메라 (4.00)</text>
+<rect x="440" y="14" width="250" height="226" rx="12" fill="#f7f8fa" stroke="none"/>
+<text x="456.0" y="40.0" class="tb" text-anchor="start" fill="#1a1c22" >카메라·몹 크기와 상관없는 한 장</text>
+<text x="456.0" y="70.0" class="fa" text-anchor="start" fill="#e8590c" >d / D  =  k / (1 − k)</text>
+<text x="456.0" y="98.0" class="s" text-anchor="start" fill="#1a1c22" >앞 식을 H로 나누면 변수가 k 하나만 남는다.</text><text x="456.0" y="113.0" class="s" text-anchor="start" fill="#1a1c22" ></text><text x="456.0" y="128.0" class="s" text-anchor="start" fill="#1a1c22" >• k = 0.2 → 몹까지 거리의 25% 밀림</text><text x="456.0" y="143.0" class="s" text-anchor="start" fill="#1a1c22" >• k = 0.5 → 100% (몹 거리만큼 더)</text><text x="456.0" y="158.0" class="s" text-anchor="start" fill="#1a1c22" >• k = 0.8 → 400%</text><text x="456.0" y="173.0" class="s" text-anchor="start" fill="#1a1c22" ></text><text x="456.0" y="188.0" class="s" text-anchor="start" fill="#1a1c22" >선형이 아니라 쌍곡선이다.</text><text x="456.0" y="203.0" class="s" text-anchor="start" fill="#1a1c22" >작을 때는 거의 평평하다가</text><text x="456.0" y="218.0" class="s" text-anchor="start" fill="#1a1c22" >k가 1에 다가가면 수직으로 꺾인다.</text>
+</svg></div>
+<div class="fig"><div class="figt">몹 크기를 키우면 (옆 몹, 예시값)</div><svg viewBox="0 0 700 258" width="100%">
+<line x1="64.0" y1="222.0" x2="470.0" y2="222.0" stroke="#e3e6ec" stroke-width="1"/>
+<text x="56.0" y="225.0" class="xs" text-anchor="end" >0.0</text>
+<line x1="64.0" y1="188.3" x2="470.0" y2="188.3" stroke="#e3e6ec" stroke-width="1"/>
+<text x="56.0" y="191.3" class="xs" text-anchor="end" >0.5</text>
+<line x1="64.0" y1="154.7" x2="470.0" y2="154.7" stroke="#e3e6ec" stroke-width="1"/>
+<text x="56.0" y="157.7" class="xs" text-anchor="end" >1.0</text>
+<line x1="64.0" y1="121.0" x2="470.0" y2="121.0" stroke="#e3e6ec" stroke-width="1"/>
+<text x="56.0" y="124.0" class="xs" text-anchor="end" >1.5</text>
+<line x1="64.0" y1="87.3" x2="470.0" y2="87.3" stroke="#e3e6ec" stroke-width="1"/>
+<text x="56.0" y="90.3" class="xs" text-anchor="end" >2.0</text>
+<line x1="64.0" y1="53.7" x2="470.0" y2="53.7" stroke="#e3e6ec" stroke-width="1"/>
+<text x="56.0" y="56.7" class="xs" text-anchor="end" >2.5</text>
+<line x1="64.0" y1="20.0" x2="470.0" y2="20.0" stroke="#e3e6ec" stroke-width="1"/>
+<text x="56.0" y="23.0" class="xs" text-anchor="end" >3.0</text>
+<text x="109.1" y="236.0" class="xs" text-anchor="middle" >×1</text>
+<text x="199.3" y="236.0" class="xs" text-anchor="middle" >×2</text>
+<text x="289.6" y="236.0" class="xs" text-anchor="middle" >×3</text>
+<text x="379.8" y="236.0" class="xs" text-anchor="middle" >×4</text>
+<text x="470.0" y="236.0" class="xs" text-anchor="middle" >×5</text>
+<line x1="64.0" y1="222.0" x2="470.0" y2="222.0" stroke="#1a1c22" stroke-width="1.2"/><line x1="64.0" y1="20.0" x2="64.0" y2="222.0" stroke="#1a1c22" stroke-width="1.2"/>
+<text x="267.0" y="252.0" class="t" text-anchor="middle" >몹 크기 배율 s  (키·반지름 모두 ×s, 거리 R = 3m 고정)</text>
+<text x="10.0" y="14.0" class="t" text-anchor="start" >e (m)</text>
+<polyline points="64.0,202.0 64.9,201.6 65.8,201.2 66.7,200.8 67.6,200.4 68.5,200.0 69.4,199.6 70.3,199.2 71.2,198.8 72.1,198.4 73.0,198.0 73.9,197.6 74.8,197.2 75.7,196.8 76.6,196.4 77.5,196.0 78.4,195.6 79.3,195.2 80.2,194.8 81.1,194.5 82.0,194.1 82.9,193.7 83.8,193.3 84.8,192.9 85.7,192.5 86.6,192.1 87.5,191.7 88.4,191.3 89.3,190.9 90.2,190.6 91.1,190.2 92.0,189.8 92.9,189.4 93.8,189.0 94.7,188.6 95.6,188.2 96.5,187.8 97.4,187.5 98.3,187.1 99.2,186.7 100.1,186.3 101.0,185.9 101.9,185.5 102.8,185.2 103.7,184.8 104.6,184.4 105.5,184.0 106.4,183.6 107.3,183.2 108.2,182.9 109.1,182.5 110.0,182.1 110.9,181.7 111.8,181.3 112.7,181.0 113.6,180.6 114.5,180.2 115.4,179.8 116.3,179.5 117.2,179.1 118.1,178.7 119.0,178.3 119.9,178.0 120.8,177.6 121.7,177.2 122.6,176.8 123.5,176.5 124.4,176.1 125.4,175.7 126.3,175.3 127.2,175.0 128.1,174.6 129.0,174.2 129.9,173.9 130.8,173.5 131.7,173.1 132.6,172.8 133.5,172.4 134.4,172.0 135.3,171.7 136.2,171.3 137.1,170.9 138.0,170.6 138.9,170.2 139.8,169.8 140.7,169.5 141.6,169.1 142.5,168.7 143.4,168.4 144.3,168.0 145.2,167.7 146.1,167.3 147.0,166.9 147.9,166.6 148.8,166.2 149.7,165.9 150.6,165.5 151.5,165.2 152.4,164.8 153.3,164.4 154.2,164.1 155.1,163.7 156.0,163.4 156.9,163.0 157.8,162.7 158.7,162.3 159.6,162.0 160.5,161.6 161.4,161.3 162.3,160.9 163.2,160.6 164.1,160.2 165.0,159.9 166.0,159.5 166.9,159.2 167.8,158.8 168.7,158.5 169.6,158.2 170.5,157.8 171.4,157.5 172.3,157.1 173.2,156.8 174.1,156.4 175.0,156.1 175.9,155.8 176.8,155.4 177.7,155.1 178.6,154.7 179.5,154.4 180.4,154.1 181.3,153.7 182.2,153.4 183.1,153.1 184.0,152.7 184.9,152.4 185.8,152.1 186.7,151.7 187.6,151.4 188.5,151.1 189.4,150.7 190.3,150.4 191.2,150.1 192.1,149.7 193.0,149.4 193.9,149.1 194.8,148.8 195.7,148.4 196.6,148.1 197.5,147.8 198.4,147.5 199.3,147.1 200.2,146.8 201.1,146.5 202.0,146.2 202.9,145.9 203.8,145.5 204.7,145.2 205.6,144.9 206.6,144.6 207.5,144.3 208.4,143.9 209.3,143.6 210.2,143.3 211.1,143.0 212.0,142.7 212.9,142.4 213.8,142.1 214.7,141.7 215.6,141.4 216.5,141.1 217.4,140.8 218.3,140.5 219.2,140.2 220.1,139.9 221.0,139.6 221.9,139.3 222.8,139.0 223.7,138.7 224.6,138.4 225.5,138.1 226.4,137.8 227.3,137.5 228.2,137.2 229.1,136.9 230.0,136.6 230.9,136.3 231.8,136.0 232.7,135.7 233.6,135.4 234.5,135.1 235.4,134.8 236.3,134.5 237.2,134.2 238.1,133.9 239.0,133.6 239.9,133.3 240.8,133.0 241.7,132.7 242.6,132.4 243.5,132.1 244.4,131.8 245.3,131.6 246.2,131.3 247.2,131.0 248.1,130.7 249.0,130.4 249.9,130.1 250.8,129.8 251.7,129.6 252.6,129.3 253.5,129.0 254.4,128.7 255.3,128.4 256.2,128.1 257.1,127.9 258.0,127.6 258.9,127.3 259.8,127.0 260.7,126.8 261.6,126.5 262.5,126.2 263.4,125.9 264.3,125.7 265.2,125.4 266.1,125.1 267.0,124.8 267.9,124.6 268.8,124.3 269.7,124.0 270.6,123.8 271.5,123.5 272.4,123.2 273.3,123.0 274.2,122.7 275.1,122.4 276.0,122.2 276.9,121.9 277.8,121.6 278.7,121.4 279.6,121.1 280.5,120.8 281.4,120.6 282.3,120.3 283.2,120.1 284.1,119.8 285.0,119.5 285.9,119.3 286.8,119.0 287.8,118.8 288.7,118.5 289.6,118.3 290.5,118.0 291.4,117.8 292.3,117.5 293.2,117.3 294.1,117.0 295.0,116.7 295.9,116.5 296.8,116.2 297.7,116.0 298.6,115.8 299.5,115.5 300.4,115.3 301.3,115.0 302.2,114.8 303.1,114.5 304.0,114.3 304.9,114.0 305.8,113.8 306.7,113.5 307.6,113.3 308.5,113.1 309.4,112.8 310.3,112.6 311.2,112.3 312.1,112.1 313.0,111.9 313.9,111.6 314.8,111.4 315.7,111.2 316.6,110.9 317.5,110.7 318.4,110.5 319.3,110.2 320.2,110.0 321.1,109.8 322.0,109.5 322.9,109.3 323.8,109.1 324.7,108.8 325.6,108.6 326.5,108.4 327.4,108.2 328.4,107.9 329.3,107.7 330.2,107.5 331.1,107.2 332.0,107.0 332.9,106.8 333.8,106.6 334.7,106.4 335.6,106.1 336.5,105.9 337.4,105.7 338.3,105.5 339.2,105.3 340.1,105.0 341.0,104.8 341.9,104.6 342.8,104.4 343.7,104.2 344.6,103.9 345.5,103.7 346.4,103.5 347.3,103.3 348.2,103.1 349.1,102.9 350.0,102.7 350.9,102.5 351.8,102.2 352.7,102.0 353.6,101.8 354.5,101.6 355.4,101.4 356.3,101.2 357.2,101.0 358.1,100.8 359.0,100.6 359.9,100.4 360.8,100.2 361.7,100.0 362.6,99.8 363.5,99.6 364.4,99.4 365.3,99.2 366.2,99.0 367.1,98.8 368.0,98.6 369.0,98.4 369.9,98.2 370.8,98.0 371.7,97.8 372.6,97.6 373.5,97.4 374.4,97.2 375.3,97.0 376.2,96.8 377.1,96.6 378.0,96.4 378.9,96.2 379.8,96.0 380.7,95.8 381.6,95.6 382.5,95.4 383.4,95.2 384.3,95.0 385.2,94.9 386.1,94.7 387.0,94.5 387.9,94.3 388.8,94.1 389.7,93.9 390.6,93.7 391.5,93.5 392.4,93.4 393.3,93.2 394.2,93.0 395.1,92.8 396.0,92.6 396.9,92.4 397.8,92.3 398.7,92.1 399.6,91.9 400.5,91.7 401.4,91.5 402.3,91.4 403.2,91.2 404.1,91.0 405.0,90.8 405.9,90.7 406.8,90.5 407.7,90.3 408.6,90.1 409.6,90.0 410.5,89.8 411.4,89.6 412.3,89.4 413.2,89.3 414.1,89.1 415.0,88.9 415.9,88.7 416.8,88.6 417.7,88.4 418.6,88.2 419.5,88.1 420.4,87.9 421.3,87.7 422.2,87.6 423.1,87.4 424.0,87.2 424.9,87.1 425.8,86.9 426.7,86.7 427.6,86.6 428.5,86.4 429.4,86.2 430.3,86.1 431.2,85.9 432.1,85.7 433.0,85.6 433.9,85.4 434.8,85.3 435.7,85.1 436.6,84.9 437.5,84.8 438.4,84.6 439.3,84.5 440.2,84.3 441.1,84.1 442.0,84.0 442.9,83.8 443.8,83.7 444.7,83.5 445.6,83.4 446.5,83.2 447.4,83.1 448.3,82.9 449.2,82.7 450.2,82.6 451.1,82.4 452.0,82.3 452.9,82.1 453.8,82.0 454.7,81.8 455.6,81.7 456.5,81.5 457.4,81.4 458.3,81.2 459.2,81.1 460.1,80.9 461.0,80.8 461.9,80.6 462.8,80.5 463.7,80.4 464.6,80.2 465.5,80.1 466.4,79.9 467.3,79.8 468.2,79.6 469.1,79.5 470.0,79.3" fill="none" stroke="#e8590c" stroke-width="2.4" stroke-linejoin="round"/>
+<polyline points="64.0,180.9 64.9,180.1 65.8,179.3 66.7,178.5 67.6,177.8 68.5,177.0 69.4,176.2 70.3,175.4 71.2,174.7 72.1,173.9 73.0,173.1 73.9,172.4 74.8,171.6 75.7,170.8 76.6,170.1 77.5,169.3 78.4,168.6 79.3,167.8 80.2,167.1 81.1,166.3 82.0,165.6 82.9,164.8 83.8,164.1 84.8,163.4 85.7,162.6 86.6,161.9 87.5,161.2 88.4,160.4 89.3,159.7 90.2,159.0 91.1,158.3 92.0,157.5 92.9,156.8 93.8,156.1 94.7,155.4 95.6,154.7 96.5,154.0 97.4,153.3 98.3,152.6 99.2,151.9 100.1,151.2 101.0,150.5 101.9,149.9 102.8,149.2 103.7,148.5 104.6,147.8 105.5,147.1 106.4,146.5 107.3,145.8 108.2,145.1 109.1,144.5 110.0,143.8 110.9,143.2 111.8,142.5 112.7,141.9 113.6,141.2 114.5,140.6 115.4,139.9 116.3,139.3 117.2,138.6 118.1,138.0 119.0,137.4 119.9,136.8 120.8,136.1 121.7,135.5 122.6,134.9 123.5,134.3 124.4,133.7 125.4,133.1 126.3,132.4 127.2,131.8 128.1,131.2 129.0,130.6 129.9,130.1 130.8,129.5 131.7,128.9 132.6,128.3 133.5,127.7 134.4,127.1 135.3,126.6 136.2,126.0 137.1,125.4 138.0,124.8 138.9,124.3 139.8,123.7 140.7,123.2 141.6,122.6 142.5,122.0 143.4,121.5 144.3,121.0 145.2,120.4 146.1,119.9 147.0,119.3 147.9,118.8 148.8,118.3 149.7,117.7 150.6,117.2 151.5,116.7 152.4,116.2 153.3,115.6 154.2,115.1 155.1,114.6 156.0,114.1 156.9,113.6 157.8,113.1 158.7,112.6 159.6,112.1 160.5,111.6 161.4,111.1 162.3,110.6 163.2,110.1 164.1,109.7 165.0,109.2 166.0,108.7 166.9,108.2 167.8,107.8 168.7,107.3 169.6,106.8 170.5,106.4 171.4,105.9 172.3,105.4 173.2,105.0 174.1,104.5 175.0,104.1 175.9,103.6 176.8,103.2 177.7,102.7 178.6,102.3 179.5,101.9 180.4,101.4 181.3,101.0 182.2,100.6 183.1,100.1 184.0,99.7 184.9,99.3 185.8,98.9 186.7,98.5 187.6,98.0 188.5,97.6 189.4,97.2 190.3,96.8 191.2,96.4 192.1,96.0 193.0,95.6 193.9,95.2 194.8,94.8 195.7,94.4 196.6,94.0 197.5,93.6 198.4,93.3 199.3,92.9 200.2,92.5 201.1,92.1 202.0,91.7 202.9,91.4 203.8,91.0 204.7,90.6 205.6,90.3 206.6,89.9 207.5,89.5 208.4,89.2 209.3,88.8 210.2,88.5 211.1,88.1 212.0,87.8 212.9,87.4 213.8,87.1 214.7,86.7 215.6,86.4 216.5,86.0 217.4,85.7 218.3,85.4 219.2,85.0 220.1,84.7 221.0,84.4 221.9,84.0 222.8,83.7 223.7,83.4 224.6,83.1 225.5,82.7 226.4,82.4 227.3,82.1 228.2,81.8 229.1,81.5 230.0,81.2 230.9,80.9 231.8,80.6 232.7,80.2 233.6,79.9 234.5,79.6 235.4,79.3 236.3,79.0 237.2,78.8 238.1,78.5 239.0,78.2 239.9,77.9 240.8,77.6 241.7,77.3 242.6,77.0 243.5,76.7 244.4,76.5 245.3,76.2 246.2,75.9 247.2,75.6 248.1,75.3 249.0,75.1 249.9,74.8 250.8,74.5 251.7,74.3 252.6,74.0 253.5,73.7 254.4,73.5 255.3,73.2 256.2,73.0 257.1,72.7 258.0,72.4 258.9,72.2 259.8,71.9 260.7,71.7 261.6,71.4 262.5,71.2 263.4,70.9 264.3,70.7 265.2,70.5 266.1,70.2 267.0,70.0 267.9,69.7 268.8,69.5 269.7,69.3 270.6,69.0 271.5,68.8 272.4,68.6 273.3,68.3 274.2,68.1 275.1,67.9 276.0,67.6 276.9,67.4 277.8,67.2 278.7,67.0 279.6,66.8 280.5,66.5 281.4,66.3 282.3,66.1 283.2,65.9 284.1,65.7 285.0,65.5 285.9,65.3 286.8,65.0 287.8,64.8 288.7,64.6 289.6,64.4 290.5,64.2 291.4,64.0 292.3,63.8 293.2,63.6 294.1,63.4 295.0,63.2 295.9,63.0 296.8,62.8 297.7,62.6 298.6,62.4 299.5,62.2 300.4,62.0 301.3,61.8 302.2,61.7 303.1,61.5 304.0,61.3 304.9,61.1 305.8,60.9 306.7,60.7 307.6,60.5 308.5,60.4 309.4,60.2 310.3,60.0 311.2,59.8 312.1,59.6 313.0,59.5 313.9,59.3 314.8,59.1 315.7,58.9 316.6,58.8 317.5,58.6 318.4,58.4 319.3,58.3 320.2,58.1 321.1,57.9 322.0,57.8 322.9,57.6 323.8,57.4 324.7,57.3 325.6,57.1 326.5,56.9 327.4,56.8 328.4,56.6 329.3,56.5 330.2,56.3 331.1,56.2 332.0,56.0 332.9,55.8 333.8,55.7 334.7,55.5 335.6,55.4 336.5,55.2 337.4,55.1 338.3,54.9 339.2,54.8 340.1,54.6 341.0,54.5 341.9,54.3 342.8,54.2 343.7,54.1 344.6,53.9 345.5,53.8 346.4,53.6 347.3,53.5 348.2,53.3 349.1,53.2 350.0,53.1 350.9,52.9 351.8,52.8 352.7,52.7 353.6,52.5 354.5,52.4 355.4,52.3 356.3,52.1 357.2,52.0 358.1,51.9 359.0,51.7 359.9,51.6 360.8,51.5 361.7,51.3 362.6,51.2 363.5,51.1 364.4,51.0 365.3,50.8 366.2,50.7 367.1,50.6 368.0,50.5 369.0,50.3 369.9,50.2 370.8,50.1 371.7,50.0 372.6,49.8 373.5,49.7 374.4,49.6 375.3,49.5 376.2,49.4 377.1,49.2 378.0,49.1 378.9,49.0 379.8,48.9 380.7,48.8" fill="none" stroke="#c92a2a" stroke-width="2.4" stroke-linejoin="round"/>
+<polyline points="64.0,211.4 64.9,211.2 65.8,211.0 66.7,210.8 67.6,210.6 68.5,210.4 69.4,210.1 70.3,209.9 71.2,209.7 72.1,209.5 73.0,209.3 73.9,209.1 74.8,208.9 75.7,208.7 76.6,208.5 77.5,208.2 78.4,208.0 79.3,207.8 80.2,207.6 81.1,207.4 82.0,207.2 82.9,207.0 83.8,206.8 84.8,206.6 85.7,206.4 86.6,206.1 87.5,205.9 88.4,205.7 89.3,205.5 90.2,205.3 91.1,205.1 92.0,204.9 92.9,204.7 93.8,204.5 94.7,204.3 95.6,204.0 96.5,203.8 97.4,203.6 98.3,203.4 99.2,203.2 100.1,203.0 101.0,202.8 101.9,202.6 102.8,202.4 103.7,202.2 104.6,202.0 105.5,201.7 106.4,201.5 107.3,201.3 108.2,201.1 109.1,200.9 110.0,200.7 110.9,200.5 111.8,200.3 112.7,200.1 113.6,199.9 114.5,199.7 115.4,199.4 116.3,199.2 117.2,199.0 118.1,198.8 119.0,198.6 119.9,198.4 120.8,198.2 121.7,198.0 122.6,197.8 123.5,197.6 124.4,197.4 125.4,197.2 126.3,197.0 127.2,196.7 128.1,196.5 129.0,196.3 129.9,196.1 130.8,195.9 131.7,195.7 132.6,195.5 133.5,195.3 134.4,195.1 135.3,194.9 136.2,194.7 137.1,194.5 138.0,194.3 138.9,194.1 139.8,193.9 140.7,193.6 141.6,193.4 142.5,193.2 143.4,193.0 144.3,192.8 145.2,192.6 146.1,192.4 147.0,192.2 147.9,192.0 148.8,191.8 149.7,191.6 150.6,191.4 151.5,191.2 152.4,191.0 153.3,190.8 154.2,190.6 155.1,190.4 156.0,190.2 156.9,190.0 157.8,189.8 158.7,189.6 159.6,189.3 160.5,189.1 161.4,188.9 162.3,188.7 163.2,188.5 164.1,188.3 165.0,188.1 166.0,187.9 166.9,187.7 167.8,187.5 168.7,187.3 169.6,187.1 170.5,186.9 171.4,186.7 172.3,186.5 173.2,186.3 174.1,186.1 175.0,185.9 175.9,185.7 176.8,185.5 177.7,185.3 178.6,185.1 179.5,184.9 180.4,184.7 181.3,184.5 182.2,184.3 183.1,184.1 184.0,183.9 184.9,183.7 185.8,183.5 186.7,183.3 187.6,183.1 188.5,182.9 189.4,182.7 190.3,182.5 191.2,182.3 192.1,182.1 193.0,181.9 193.9,181.7 194.8,181.5 195.7,181.3 196.6,181.1 197.5,180.9 198.4,180.7 199.3,180.5 200.2,180.3 201.1,180.1 202.0,179.9 202.9,179.7 203.8,179.5 204.7,179.3 205.6,179.1 206.6,178.9 207.5,178.7 208.4,178.5 209.3,178.3 210.2,178.1 211.1,177.9 212.0,177.7 212.9,177.5 213.8,177.3 214.7,177.1 215.6,176.9 216.5,176.7 217.4,176.5 218.3,176.3 219.2,176.1 220.1,175.9 221.0,175.8 221.9,175.6 222.8,175.4 223.7,175.2 224.6,175.0 225.5,174.8 226.4,174.6 227.3,174.4 228.2,174.2 229.1,174.0 230.0,173.8 230.9,173.6 231.8,173.4 232.7,173.2 233.6,173.0 234.5,172.8 235.4,172.6 236.3,172.4 237.2,172.3 238.1,172.1 239.0,171.9 239.9,171.7 240.8,171.5 241.7,171.3 242.6,171.1 243.5,170.9 244.4,170.7 245.3,170.5 246.2,170.3 247.2,170.1 248.1,169.9 249.0,169.8 249.9,169.6 250.8,169.4 251.7,169.2 252.6,169.0 253.5,168.8 254.4,168.6 255.3,168.4 256.2,168.2 257.1,168.0 258.0,167.9 258.9,167.7 259.8,167.5 260.7,167.3 261.6,167.1 262.5,166.9 263.4,166.7 264.3,166.5 265.2,166.3 266.1,166.2 267.0,166.0 267.9,165.8 268.8,165.6 269.7,165.4 270.6,165.2 271.5,165.0 272.4,164.8 273.3,164.6 274.2,164.5 275.1,164.3 276.0,164.1 276.9,163.9 277.8,163.7 278.7,163.5 279.6,163.3 280.5,163.2 281.4,163.0 282.3,162.8 283.2,162.6 284.1,162.4 285.0,162.2 285.9,162.0 286.8,161.9 287.8,161.7 288.7,161.5 289.6,161.3 290.5,161.1 291.4,160.9 292.3,160.8 293.2,160.6 294.1,160.4 295.0,160.2 295.9,160.0 296.8,159.8 297.7,159.7 298.6,159.5 299.5,159.3 300.4,159.1 301.3,158.9 302.2,158.7 303.1,158.6 304.0,158.4 304.9,158.2 305.8,158.0 306.7,157.8 307.6,157.7 308.5,157.5 309.4,157.3 310.3,157.1 311.2,156.9 312.1,156.8 313.0,156.6 313.9,156.4 314.8,156.2 315.7,156.0 316.6,155.9 317.5,155.7 318.4,155.5 319.3,155.3 320.2,155.2 321.1,155.0 322.0,154.8 322.9,154.6 323.8,154.4 324.7,154.3 325.6,154.1 326.5,153.9 327.4,153.7 328.4,153.6 329.3,153.4 330.2,153.2 331.1,153.0 332.0,152.8 332.9,152.7 333.8,152.5 334.7,152.3 335.6,152.1 336.5,152.0 337.4,151.8 338.3,151.6 339.2,151.4 340.1,151.3 341.0,151.1 341.9,150.9 342.8,150.8 343.7,150.6 344.6,150.4 345.5,150.2 346.4,150.1 347.3,149.9 348.2,149.7 349.1,149.5 350.0,149.4 350.9,149.2 351.8,149.0 352.7,148.8 353.6,148.7 354.5,148.5 355.4,148.3 356.3,148.2 357.2,148.0 358.1,147.8 359.0,147.7 359.9,147.5 360.8,147.3 361.7,147.1 362.6,147.0 363.5,146.8 364.4,146.6 365.3,146.5 366.2,146.3 367.1,146.1 368.0,146.0 369.0,145.8 369.9,145.6 370.8,145.5 371.7,145.3 372.6,145.1 373.5,144.9 374.4,144.8 375.3,144.6 376.2,144.4 377.1,144.3 378.0,144.1 378.9,143.9 379.8,143.8 380.7,143.6 381.6,143.4 382.5,143.3 383.4,143.1 384.3,143.0 385.2,142.8 386.1,142.6 387.0,142.5 387.9,142.3 388.8,142.1 389.7,142.0 390.6,141.8 391.5,141.6 392.4,141.5 393.3,141.3 394.2,141.1 395.1,141.0 396.0,140.8 396.9,140.7 397.8,140.5 398.7,140.3 399.6,140.2 400.5,140.0 401.4,139.8 402.3,139.7 403.2,139.5 404.1,139.4 405.0,139.2 405.9,139.0 406.8,138.9 407.7,138.7 408.6,138.6 409.6,138.4 410.5,138.2 411.4,138.1 412.3,137.9 413.2,137.8 414.1,137.6 415.0,137.4 415.9,137.3 416.8,137.1 417.7,137.0 418.6,136.8 419.5,136.6 420.4,136.5 421.3,136.3 422.2,136.2 423.1,136.0 424.0,135.9 424.9,135.7 425.8,135.5 426.7,135.4 427.6,135.2 428.5,135.1 429.4,134.9 430.3,134.8 431.2,134.6 432.1,134.5 433.0,134.3 433.9,134.1 434.8,134.0 435.7,133.8 436.6,133.7 437.5,133.5 438.4,133.4 439.3,133.2 440.2,133.1 441.1,132.9 442.0,132.8 442.9,132.6 443.8,132.5 444.7,132.3 445.6,132.1 446.5,132.0 447.4,131.8 448.3,131.7 449.2,131.5 450.2,131.4 451.1,131.2 452.0,131.1 452.9,130.9 453.8,130.8 454.7,130.6 455.6,130.5 456.5,130.3 457.4,130.2 458.3,130.0 459.2,129.9 460.1,129.7 461.0,129.6 461.9,129.4 462.8,129.3 463.7,129.1 464.6,129.0 465.5,128.8 466.4,128.7 467.3,128.5 468.2,128.4 469.1,128.3 470.0,128.1" fill="none" stroke="#e8590c" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="5 4"/>
+<polyline points="64.0,209.2 64.9,209.1 65.8,208.9 66.7,208.7 67.6,208.5 68.5,208.3 69.4,208.2 70.3,208.0 71.2,207.8 72.1,207.6 73.0,207.5 73.9,207.3 74.8,207.1 75.7,206.9 76.6,206.7 77.5,206.6 78.4,206.4 79.3,206.2 80.2,206.0 81.1,205.9 82.0,205.7 82.9,205.5 83.8,205.3 84.8,205.1 85.7,205.0 86.6,204.8 87.5,204.6 88.4,204.4 89.3,204.2 90.2,204.1 91.1,203.9 92.0,203.7 92.9,203.5 93.8,203.4 94.7,203.2 95.6,203.0 96.5,202.8 97.4,202.6 98.3,202.5 99.2,202.3 100.1,202.1 101.0,201.9 101.9,201.7 102.8,201.6 103.7,201.4 104.6,201.2 105.5,201.0 106.4,200.9 107.3,200.7 108.2,200.5 109.1,200.3 110.0,200.1 110.9,200.0 111.8,199.8 112.7,199.6 113.6,199.4 114.5,199.2 115.4,199.1 116.3,198.9 117.2,198.7 118.1,198.5 119.0,198.4 119.9,198.2 120.8,198.0 121.7,197.8 122.6,197.6 123.5,197.5 124.4,197.3 125.4,197.1 126.3,196.9 127.2,196.8 128.1,196.6 129.0,196.4 129.9,196.2 130.8,196.0 131.7,195.9 132.6,195.7 133.5,195.5 134.4,195.3 135.3,195.1 136.2,195.0 137.1,194.8 138.0,194.6 138.9,194.4 139.8,194.3 140.7,194.1 141.6,193.9 142.5,193.7 143.4,193.5 144.3,193.4 145.2,193.2 146.1,193.0 147.0,192.8 147.9,192.6 148.8,192.5 149.7,192.3 150.6,192.1 151.5,191.9 152.4,191.8 153.3,191.6 154.2,191.4 155.1,191.2 156.0,191.0 156.9,190.9 157.8,190.7 158.7,190.5 159.6,190.3 160.5,190.1 161.4,190.0 162.3,189.8 163.2,189.6 164.1,189.4 165.0,189.3 166.0,189.1 166.9,188.9 167.8,188.7 168.7,188.5 169.6,188.4 170.5,188.2 171.4,188.0 172.3,187.8 173.2,187.6 174.1,187.5 175.0,187.3 175.9,187.1 176.8,186.9 177.7,186.8 178.6,186.6 179.5,186.4 180.4,186.2 181.3,186.0 182.2,185.9 183.1,185.7 184.0,185.5 184.9,185.3 185.8,185.2 186.7,185.0 187.6,184.8 188.5,184.6 189.4,184.4 190.3,184.3 191.2,184.1 192.1,183.9 193.0,183.7 193.9,183.5 194.8,183.4 195.7,183.2 196.6,183.0 197.5,182.8 198.4,182.7 199.3,182.5 200.2,182.3 201.1,182.1 202.0,181.9 202.9,181.8 203.8,181.6 204.7,181.4 205.6,181.2 206.6,181.0 207.5,180.9 208.4,180.7 209.3,180.5 210.2,180.3 211.1,180.2 212.0,180.0 212.9,179.8 213.8,179.6 214.7,179.4 215.6,179.3 216.5,179.1 217.4,178.9 218.3,178.7 219.2,178.5 220.1,178.4 221.0,178.2 221.9,178.0 222.8,177.8 223.7,177.7 224.6,177.5 225.5,177.3 226.4,177.1 227.3,176.9 228.2,176.8 229.1,176.6 230.0,176.4 230.9,176.2 231.8,176.1 232.7,175.9 233.6,175.7 234.5,175.5 235.4,175.3 236.3,175.2 237.2,175.0 238.1,174.8 239.0,174.6 239.9,174.4 240.8,174.3 241.7,174.1 242.6,173.9 243.5,173.7 244.4,173.6 245.3,173.4 246.2,173.2 247.2,173.0 248.1,172.8 249.0,172.7 249.9,172.5 250.8,172.3 251.7,172.1 252.6,171.9 253.5,171.8 254.4,171.6 255.3,171.4 256.2,171.2 257.1,171.1 258.0,170.9 258.9,170.7 259.8,170.5 260.7,170.3 261.6,170.2 262.5,170.0 263.4,169.8 264.3,169.6 265.2,169.4 266.1,169.3 267.0,169.1 267.9,168.9 268.8,168.7 269.7,168.6 270.6,168.4 271.5,168.2 272.4,168.0 273.3,167.8 274.2,167.7 275.1,167.5 276.0,167.3 276.9,167.1 277.8,167.0 278.7,166.8 279.6,166.6 280.5,166.4 281.4,166.2 282.3,166.1 283.2,165.9 284.1,165.7 285.0,165.5 285.9,165.3 286.8,165.2 287.8,165.0 288.7,164.8 289.6,164.6 290.5,164.5 291.4,164.3 292.3,164.1 293.2,163.9 294.1,163.7 295.0,163.6 295.9,163.4 296.8,163.2 297.7,163.0 298.6,162.8 299.5,162.7 300.4,162.5 301.3,162.3 302.2,162.1 303.1,162.0 304.0,161.8 304.9,161.6 305.8,161.4 306.7,161.2 307.6,161.1 308.5,160.9 309.4,160.7 310.3,160.5 311.2,160.3 312.1,160.2 313.0,160.0 313.9,159.8 314.8,159.6 315.7,159.5 316.6,159.3 317.5,159.1 318.4,158.9 319.3,158.7 320.2,158.6 321.1,158.4 322.0,158.2 322.9,158.0 323.8,157.9 324.7,157.7 325.6,157.5 326.5,157.3 327.4,157.1 328.4,157.0 329.3,156.8 330.2,156.6 331.1,156.4 332.0,156.2 332.9,156.1 333.8,155.9 334.7,155.7 335.6,155.5 336.5,155.4 337.4,155.2 338.3,155.0 339.2,154.8 340.1,154.6 341.0,154.5 341.9,154.3 342.8,154.1 343.7,153.9 344.6,153.7 345.5,153.6 346.4,153.4 347.3,153.2 348.2,153.0 349.1,152.9 350.0,152.7 350.9,152.5 351.8,152.3 352.7,152.1 353.6,152.0 354.5,151.8 355.4,151.6 356.3,151.4 357.2,151.2 358.1,151.1 359.0,150.9 359.9,150.7 360.8,150.5 361.7,150.4 362.6,150.2 363.5,150.0 364.4,149.8 365.3,149.6 366.2,149.5 367.1,149.3 368.0,149.1 369.0,148.9 369.9,148.8 370.8,148.6 371.7,148.4 372.6,148.2 373.5,148.0 374.4,147.9 375.3,147.7 376.2,147.5 377.1,147.3 378.0,147.1 378.9,147.0 379.8,146.8 380.7,146.6 381.6,146.4 382.5,146.3 383.4,146.1 384.3,145.9 385.2,145.7 386.1,145.5 387.0,145.4 387.9,145.2 388.8,145.0 389.7,144.8 390.6,144.6 391.5,144.5 392.4,144.3 393.3,144.1 394.2,143.9 395.1,143.8 396.0,143.6 396.9,143.4 397.8,143.2 398.7,143.0 399.6,142.9 400.5,142.7 401.4,142.5 402.3,142.3 403.2,142.1 404.1,142.0 405.0,141.8 405.9,141.6 406.8,141.4 407.7,141.3 408.6,141.1 409.6,140.9 410.5,140.7 411.4,140.5 412.3,140.4 413.2,140.2 414.1,140.0 415.0,139.8 415.9,139.7 416.8,139.5 417.7,139.3 418.6,139.1 419.5,138.9 420.4,138.8 421.3,138.6 422.2,138.4 423.1,138.2 424.0,138.0 424.9,137.9 425.8,137.7 426.7,137.5 427.6,137.3 428.5,137.2 429.4,137.0 430.3,136.8 431.2,136.6 432.1,136.4 433.0,136.3 433.9,136.1 434.8,135.9 435.7,135.7 436.6,135.5 437.5,135.4 438.4,135.2 439.3,135.0 440.2,134.8 441.1,134.7 442.0,134.5 442.9,134.3 443.8,134.1 444.7,133.9 445.6,133.8 446.5,133.6 447.4,133.4 448.3,133.2 449.2,133.0 450.2,132.9 451.1,132.7 452.0,132.5 452.9,132.3 453.8,132.2 454.7,132.0 455.6,131.8 456.5,131.6 457.4,131.4 458.3,131.3 459.2,131.1 460.1,130.9 461.0,130.7 461.9,130.6 462.8,130.4 463.7,130.2 464.6,130.0 465.5,129.8 466.4,129.7 467.3,129.5 468.2,129.3 469.1,129.1 470.0,128.9" fill="none" stroke="#2b8a3e" stroke-width="2.6" stroke-linejoin="round"/>
+<line x1="380.7" y1="20.0" x2="380.7" y2="222.0" stroke="#c92a2a" stroke-width="1.0" stroke-dasharray="3 3"/>
+<text x="375.7" y="30.0" class="xs" text-anchor="end" fill="#c92a2a" >낮은 카메라 발산</text>
+<circle cx="109.1" cy="182.5" r="3.6" fill="#e8590c"/>
+<text x="115.1" y="175.5" class="xs" text-anchor="start" fill="#e8590c" >ε 11°</text>
+<circle cx="379.8" cy="96.0" r="3.6" fill="#e8590c"/>
+<text x="385.8" y="89.0" class="xs" text-anchor="start" fill="#e8590c" >ε 39°</text>
+<line x1="486.0" y1="34.0" x2="512.0" y2="34.0" stroke="#2b8a3e" stroke-width="2.6"/>
+<text x="518.0" y="38.0" class="s" text-anchor="start" >허용치 r몹 + r탄  (s에 비례)</text>
+<line x1="486.0" y1="54.0" x2="512.0" y2="54.0" stroke="#e8590c" stroke-width="2.6"/>
+<text x="518.0" y="58.0" class="s" text-anchor="start" >머리 · 높은 카메라</text>
+<line x1="486.0" y1="74.0" x2="512.0" y2="74.0" stroke="#c92a2a" stroke-width="2.6"/>
+<text x="518.0" y="78.0" class="s" text-anchor="start" >머리 · 낮은 카메라</text>
+<line x1="486.0" y1="94.0" x2="512.0" y2="94.0" stroke="#e8590c" stroke-width="2.6" stroke-dasharray="5 4"/>
+<text x="518.0" y="98.0" class="s" text-anchor="start" >몸통 · 높은 카메라</text>
+<rect x="482" y="118" width="208" height="112" rx="12" fill="#eef2ff" stroke="none"/>
+<text x="494.0" y="138.0" class="tb" text-anchor="start" fill="#3b5bdb" >읽는 법</text><text x="494.0" y="155.0" class="s" text-anchor="start" fill="#1a1c22" >주황·빨강이 초록 위 = 빗나감</text><text x="494.0" y="172.0" class="s" text-anchor="start" fill="#1a1c22" >몸집도 같이 커져서 명중 여부는</text><text x="494.0" y="189.0" class="s" text-anchor="start" fill="#1a1c22" >어느 정도 상쇄된다. 커지는 건</text><text x="494.0" y="206.0" class="s" text-anchor="start" fill="#1a1c22" >빗나간 '거리'와 '각도', 그리고 발산.</text>
+</svg></div>
+<div class="callout c-amber big"><span class="lbl">정리</span>
+<ol class="steps">
+<li>키가 2배면 밀림은 <b>2.7배</b>, 3배면 <b>6배</b>. 직선이 아니라 쌍곡선으로 커진다.</li>
+<li>큰 몹은 몸도 커서 "완전히 빗나감"보다 <b>"엉뚱한 데로 쏨"</b>으로 느껴진다. 머리 조준 ×1에서 11°, ×4에서 39° 틀어진다.</li>
+<li>몹 키가 카메라 높이에 가까워지면 레이저가 바닥에 닿지 않아 <b>조준 자체가 실패</b>한다. 큰 보스 + 낮은 카메라가 이 경우다.</li>
+</ol></div>
+
+<h2 class="pb">3. 가장 쉬운 해결: 레이저가 몹에도 닿게</h2>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="fig"><svg viewBox="0 0 700 230" width="100%">
+<line x1="18.0" y1="205.0" x2="690.0" y2="205.0" stroke="#1a1c22" stroke-width="1.6"/>
+<rect x="162" y="165" width="16" height="40" rx="7" fill="#3b5bdb"/>
+<text x="170.0" y="221.0" class="t" text-anchor="middle" fill="#3b5bdb" >플레이어</text>
+<rect x="314.0" y="133.0" width="32" height="72.0" rx="12" fill="#dfe4ee" stroke="#8a91a0"/>
+<text x="330.0" y="221.0" class="t" text-anchor="middle" >몹</text>
+<circle cx="50" cy="35.0" r="9" fill="#3b5bdb"/>
+<text x="66.0" y="31.0" class="tb" text-anchor="start" fill="#3b5bdb" >카메라</text>
+<line x1="50.0" y1="35.0" x2="330.0" y2="145.0" stroke="#2b8a3e" stroke-width="2.6"/>
+<line x1="330.0" y1="145.0" x2="482.7" y2="205.0" stroke="#8a91a0" stroke-width="1.4" stroke-dasharray="3 4"/>
+<circle cx="482.7" cy="205" r="5" fill="none" stroke="#8a91a0" stroke-width="1.5"/>
+<text x="482.7" y="193.0" class="t" text-anchor="middle" fill="#5b6270" >예전 조준점</text>
+<circle cx="330.0" cy="145.0" r="7" fill="#2b8a3e"/>
+<text x="354.0" y="119.0" class="tb" text-anchor="start" fill="#2b8a3e" >레이저가 몹에 닿으면 멈춘다</text>
+<text x="354.0" y="135.0" class="tb" text-anchor="start" fill="#2b8a3e" >→ 몹을 그대로 조준</text>
+</svg></div>
+<div class="callout c-green big">커서가 몹 위에 있으면 바닥까지 가지 않고 <b>몹을 바로 조준</b>한다. 이것만으로 대부분 좋아지고 실제 게임도 쓰는 출발점이다. 하지만 네 가지 문제가 남는다.</div>
+
+<div class="card"><h3>남는 문제 1 · 몹 머리 바로 위를 찍으면 확 튄다</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<svg viewBox="0 0 700 250" width="100%">
+<line x1="18.0" y1="205.0" x2="690.0" y2="205.0" stroke="#1a1c22" stroke-width="1.6"/>
+<rect x="162" y="165" width="16" height="40" rx="7" fill="#3b5bdb"/>
+<text x="170.0" y="221.0" class="t" text-anchor="middle" fill="#3b5bdb" >플레이어</text>
+<rect x="314.0" y="133.0" width="32" height="72.0" rx="12" fill="#dfe4ee" stroke="#8a91a0"/>
+<text x="330.0" y="221.0" class="t" text-anchor="middle" >몹</text>
+<circle cx="50" cy="35.0" r="9" fill="#3b5bdb"/>
+<text x="66.0" y="31.0" class="tb" text-anchor="start" fill="#3b5bdb" >카메라</text>
+<line x1="50.0" y1="35.0" x2="330.0" y2="137.0" stroke="#2b8a3e" stroke-width="2.4"/>
+<circle cx="330.0" cy="137.0" r="6" fill="#2b8a3e"/>
+<line x1="50.0" y1="35.0" x2="567.4" y2="205.0" stroke="#e8590c" stroke-width="2.4"/>
+<circle cx="567.4" cy="205" r="7" fill="#e8590c"/>
+<text x="306.0" y="167.0" class="tb" text-anchor="end" fill="#2b8a3e" >머리를 찍으면 → 몹</text>
+<text x="690.0" y="148.0" class="tb" text-anchor="end" fill="#e8590c" >머리 살짝 위를 찍으면 → 저 멀리 바닥</text>
+<line x1="330.0" y1="230.0" x2="563.4" y2="230.0" stroke="#e8590c" stroke-width="2.2" marker-end="url(#aha)"/>
+<text x="448.7" y="246.0" class="tb" text-anchor="middle" fill="#e8590c" >커서는 조금 움직였는데 조준점은 5.9m 튄다</text>
+</svg>
+<div class="txt"><p>몹 위면 몹, 조금만 벗어나면 다시 저 뒤 바닥. <b>원래 문제가 없어진 게 아니라 몹 테두리로 모였을 뿐</b>이다.</p></div>
+<div><span class="lv lv-d">자세히</span></div>
+<svg viewBox="0 0 700 236" width="100%">
+<rect x="101.1" y="40" width="30.7" height="156" fill="#eef2ff"/>
+<text x="116.4" y="54.0" class="xs" text-anchor="middle" fill="#3b5bdb" >실루엣</text>
+<line x1="52.0" y1="196.0" x2="322.0" y2="196.0" stroke="#1a1c22" stroke-width="1.2"/><line x1="52.0" y1="40.0" x2="52.0" y2="196.0" stroke="#1a1c22" stroke-width="1.2"/>
+<text x="187.0" y="212.0" class="s" text-anchor="middle" >커서 위치 (화면 아래 → 위)</text>
+<text x="44.0" y="34.0" class="s" text-anchor="start" fill="#1a1c22" >조준점 깊이</text>
+<text x="187.0" y="230.0" class="tb" text-anchor="middle" >작은 몹 (h = 1m)</text>
+<line x1="52.0" y1="196.0" x2="322.0" y2="46.0" stroke="#8a91a0" stroke-width="1.4" stroke-dasharray="4 3"/>
+<polyline points="52.0,196.0 101.1,168.7 131.8,168.7" fill="none" stroke="#3b5bdb" stroke-width="2.6" stroke-linejoin="round"/>
+<polyline points="131.8,151.7 322.0,46.0" fill="none" stroke="#3b5bdb" stroke-width="2.6" stroke-linejoin="round"/>
+<line x1="131.8" y1="168.7" x2="131.8" y2="151.7" stroke="#e8590c" stroke-width="2.0" stroke-dasharray="4 3"/>
+<text x="137.8" y="164.2" class="t" text-anchor="start" fill="#e8590c" >튐 1.25m</text>
+<rect x="451.1" y="40" width="184.1" height="156" fill="#eef2ff"/>
+<text x="543.1" y="54.0" class="xs" text-anchor="middle" fill="#3b5bdb" >실루엣</text>
+<line x1="402.0" y1="196.0" x2="672.0" y2="196.0" stroke="#1a1c22" stroke-width="1.2"/><line x1="402.0" y1="40.0" x2="402.0" y2="196.0" stroke="#1a1c22" stroke-width="1.2"/>
+<text x="537.0" y="212.0" class="s" text-anchor="middle" >커서 위치 (화면 아래 → 위)</text>
+<text x="394.0" y="34.0" class="s" text-anchor="start" fill="#1a1c22" >조준점 깊이</text>
+<text x="537.0" y="230.0" class="tb" text-anchor="middle" >큰 몹 (h = 3m)</text>
+<line x1="402.0" y1="196.0" x2="672.0" y2="46.0" stroke="#8a91a0" stroke-width="1.4" stroke-dasharray="4 3"/>
+<polyline points="402.0,196.0 451.1,168.7 635.2,168.7" fill="none" stroke="#3b5bdb" stroke-width="2.6" stroke-linejoin="round"/>
+<polyline points="635.2,66.5 672.0,46.0" fill="none" stroke="#3b5bdb" stroke-width="2.6" stroke-linejoin="round"/>
+<line x1="635.2" y1="168.7" x2="635.2" y2="66.5" stroke="#e8590c" stroke-width="2.0" stroke-dasharray="4 3"/>
+<text x="641.2" y="121.6" class="t" text-anchor="start" fill="#e8590c" >튐 7.50m</text>
+<line x1="230.0" y1="10.0" x2="256.0" y2="10.0" stroke="#3b5bdb" stroke-width="2.6"/><text x="262.0" y="14.0" class="s" text-anchor="start" fill="#1a1c22" >몹 포함 레이</text>
+<line x1="370.0" y1="10.0" x2="396.0" y2="10.0" stroke="#8a91a0" stroke-width="1.4" stroke-dasharray="4 3"/><text x="402.0" y="14.0" class="s" text-anchor="start" fill="#1a1c22" >바닥만 보는 레이</text>
+</svg>
+<div class="txt"><p>튀는 크기 = 몹 꼭대기 높이에서의 원래 밀림 = h·D/(H−h). 작은 몹 1.25m, 큰 몹 7.50m. 몹이 클수록 더 크게 튄다.</p></div></div>
+
+<div class="card"><h3>남는 문제 2 · 보이는 모양 ≠ 판정 모양 &nbsp;/&nbsp; 남는 문제 3 · 큰 몹은 "어디를" 찍었나</h3>
+<svg viewBox="0 0 700 250" width="100%">
+<g fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"><ellipse cx="170" cy="120" rx="40" ry="55"/><circle cx="170" cy="52" r="22"/><polygon points="138,92 66,148 78,162 146,116"/><polygon points="202,92 266,58 274,72 206,118"/><polygon points="266,58 300,14 308,20 276,68"/><rect x="146" y="160" width="14" height="38" rx="4"/><rect x="180" y="160" width="14" height="38" rx="4"/></g>
+<g fill="#d7defc" stroke="#3b5bdb" stroke-width="1.2" clip-path="url(#capclip)"><ellipse cx="170" cy="120" rx="40" ry="55"/><circle cx="170" cy="52" r="22"/><polygon points="138,92 66,148 78,162 146,116"/><polygon points="202,92 266,58 274,72 206,118"/><polygon points="266,58 300,14 308,20 276,68"/><rect x="146" y="160" width="14" height="38" rx="4"/><rect x="180" y="160" width="14" height="38" rx="4"/></g>
+<rect x="140" y="40" width="60" height="150" rx="30" fill="none" stroke="#3b5bdb" stroke-width="1.6" stroke-dasharray="5 3"/>
+<text x="214.0" y="186.0" class="s" text-anchor="start" fill="#3b5bdb" >판정 캡슐</text>
+<rect x="22" y="214" width="12" height="12" rx="3" fill="#d7defc" stroke="#3b5bdb"/>
+<text x="40.0" y="224.0" class="s" text-anchor="start" >판정 안 → 레이저가 몹에 닿음</text>
+<rect x="22" y="232" width="12" height="12" rx="3" fill="#fff4ec" stroke="#e8590c"/>
+<text x="40.0" y="242.0" class="s" text-anchor="start" >보이지만 판정 밖 → 레이저가 바닥으로 빠짐</text>
+<circle cx="598" cy="128" r="70" fill="#dfe4ee" stroke="#8a91a0"/>
+<circle cx="478" cy="212" r="10" fill="#dfe4ee" stroke="#8a91a0"/>
+<line x1="392.0" y1="128.0" x2="570.0" y2="74.0" stroke="#2b8a3e" stroke-width="2.0" marker-end="url(#ahg)"/>
+<line x1="392.0" y1="128.0" x2="594.0" y2="128.0" stroke="#e8590c" stroke-width="2.0" stroke-dasharray="5 4" marker-end="url(#aha)"/>
+<line x1="392.0" y1="128.0" x2="486.0" y2="206.0" stroke="#2b8a3e" stroke-width="1.6"/>
+<line x1="392.0" y1="128.0" x2="478.0" y2="212.0" stroke="#e8590c" stroke-width="1.6" stroke-dasharray="5 4"/>
+<circle cx="570" cy="74" r="4" fill="#2b8a3e"/><circle cx="598" cy="128" r="3.5" fill="#e8590c"/>
+<circle cx="486" cy="206" r="3" fill="#2b8a3e"/>
+<text x="570.0" y="50.0" class="s" text-anchor="middle" fill="#2b8a3e" >커서 (노린 부위)</text>
+<text x="606.0" y="146.0" class="s" text-anchor="start" fill="#e8590c" >중심 흡착</text>
+<circle cx="392" cy="128" r="8" fill="#3b5bdb"/>
+<text x="392.0" y="152.0" class="tb" text-anchor="middle" fill="#3b5bdb" >P</text>
+<text x="474.0" y="110.0" class="tb" text-anchor="start" fill="#c92a2a" >17° 차이</text>
+<text x="494.0" y="216.0" class="s" text-anchor="start" fill="#1a1c22" >작은 몹은 5° (거의 같음)</text>
+<text x="372.0" y="22.0" class="t" text-anchor="start" >초록 = 노린 방향 · 주황 = 중심으로 쏜 방향</text>
+<text x="372.0" y="242.0" class="s" text-anchor="start" >큰 몹은 중심으로 쏘면 노린 곳을 놓친다</text>
+</svg>
+<div class="txt"><p><b>왼쪽:</b> 게임은 몹을 단순한 캡슐로 판정한다. 팔·무기처럼 캡슐 밖으로 나온 곳을 찍으면 레이저가 다시 바닥으로 빠진다.</p>
+<p><b>오른쪽:</b> 작은 몹은 중심을 쏴도 5° 차이라 상관없다. 큰 보스의 어깨를 찍었는데 중심으로 쏘면 17° 벗어난다. 차이 = atan(커서가 중심에서 떨어진 거리 ÷ 몹까지 거리).</p></div></div>
+
+<div class="card"><h3>남는 문제 4 · 몹 위를 찍었다고 그 몹을 노린 건 아니다</h3>
+<svg viewBox="0 0 700 170" width="100%">
+<rect x="10" y="8" width="330" height="154" rx="12" fill="#fff" stroke="#e3e6ec"/>
+<rect x="178" y="30" width="44" height="62" rx="14" fill="#e7eaf1" stroke="#8a91a0"/>
+<rect x="132" y="66" width="70" height="70" rx="20" fill="#dfe4ee" stroke="#1a1c22"/>
+<text x="124.0" y="108.0" class="tb" text-anchor="end" >A</text><text x="124.0" y="122.0" class="s" text-anchor="end" fill="#1a1c22" >가까움</text>
+<text x="230.0" y="46.0" class="tb" text-anchor="start" >B</text><text x="230.0" y="60.0" class="s" text-anchor="start" fill="#1a1c22" >멀리</text>
+<path d="M188 78 l10 10 M198 78 l-10 10" stroke="#c92a2a" stroke-width="2.2"/>
+<text x="212.0" y="80.0" class="tb" text-anchor="middle" fill="#c92a2a" >?</text>
+<text x="24.0" y="152.0" class="s" text-anchor="start" >레이가 먼저 맞는 건 A. 노린 건 B일 수도.</text>
+<rect x="360" y="8" width="330" height="154" rx="12" fill="#fff" stroke="#e3e6ec"/>
+<ellipse cx="520" cy="62" rx="74" ry="26" fill="#ebfbee" stroke="#2b8a3e" stroke-dasharray="5 3"/>
+<text x="596.0" y="30.0" class="s" text-anchor="middle" fill="#2b8a3e" >깔고 싶은 장판</text>
+<rect x="498" y="58" width="44" height="76" rx="16" fill="#dfe4ee" stroke="#1a1c22"/>
+<path d="M514 66 l10 10 M524 66 l-10 10" stroke="#c92a2a" stroke-width="2.2"/>
+<text x="374.0" y="152.0" class="s" text-anchor="start" >몹 뒤 바닥을 찍었는데 몹 몸에 걸려 흡착.</text>
+</svg>
+<div class="txt"><p>뒤의 몹을 노렸거나 몹 뒤 바닥에 장판을 깔고 싶었을 수도 있다. 커서 아래 몹을 무조건 고르면 <b>"조준을 뺏겼다"</b>는 느낌이 든다.</p></div></div>
+
+<h2 class="pb">4. 남은 문제를 메우는 다섯 가지 방법</h2>
+
+<div class="card"><h3>① 바닥 대신 허리 높이의 투명한 판에 찍기</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="txt"><p>레이저가 바닥이 아니라 <b>총을 쏘는 높이의 판</b>에 찍히게 한다. 밀림이 3.0m에서 1.0m로 줄어든다. <span class="good">좋은 점</span> 몹이 없어도 되고 튀지 않는다. <span class="bad">한계</span> 판 높이는 하나라 큰 몹 머리는 여전히 어긋난다.</p></div>
+<div><span class="lv lv-d">자세히</span></div>
+<svg viewBox="0 0 700 232" width="100%">
+<line x1="18.0" y1="200.0" x2="395.0" y2="200.0" stroke="#1a1c22" stroke-width="1.6"/>
+<line x1="18.0" y1="170.0" x2="395.0" y2="170.0" stroke="#3b5bdb" stroke-width="1.4" stroke-dasharray="6 4"/>
+<text x="392.0" y="164.0" class="xs" text-anchor="end" fill="#3b5bdb" >조준 평면 y = a</text>
+<rect x="237.0" y="146.0" width="26" height="54.0" rx="9" fill="#dfe4ee" stroke="#8a91a0"/>
+<line x1="40.0" y1="50.0" x2="250.0" y2="155.0" stroke="#e8590c" stroke-width="2.0"/>
+<line x1="250.0" y1="155.0" x2="340.0" y2="200.0" stroke="#8a91a0" stroke-width="1.6" stroke-dasharray="5 4"/>
+<circle cx="40" cy="50.0" r="8" fill="#3b5bdb"/><text x="54.0" y="44.0" class="t" text-anchor="start" fill="#3b5bdb" >카메라</text>
+<circle cx="250.0" cy="155.0" r="4" fill="#e8590c"/>
+<circle cx="280.0" cy="170.0" r="5" fill="#3b5bdb"/>
+<circle cx="340.0" cy="200" r="5" fill="#8a91a0"/>
+<line x1="250.0" y1="216.0" x2="280.0" y2="216.0" stroke="#3b5bdb" stroke-width="2.0"/><text x="265.0" y="230.0" class="t" text-anchor="middle" fill="#3b5bdb" >1.0m</text>
+<line x1="280.0" y1="216.0" x2="340.0" y2="216.0" stroke="#8a91a0" stroke-width="1.4" stroke-dasharray="3 3"/><text x="318.0" y="230.0" class="xs" text-anchor="middle" >바닥이면 3.0m</text>
+<line x1="22.0" y1="170.0" x2="22.0" y2="200.0" stroke="#5b6270" stroke-width="1.0"/><text x="12.0" y="189.0" class="tb" text-anchor="middle" >a</text>
+<rect x="412" y="10" width="278" height="214" rx="12" fill="#f7f8fa" stroke="none"/>
+<text x="428.0" y="36.0" class="tb" text-anchor="start" fill="#1a1c22" >바닥 대신 '쏘는 높이'와 만나는 점</text>
+<text x="428.0" y="66.0" class="fa" text-anchor="start" fill="#3b5bdb" >d(a) = (h − a) · D / (H − h)</text>
+<text x="428.0" y="94.0" class="s" text-anchor="start" fill="#1a1c22" >• a = 0 이면 원래 식 그대로</text><text x="428.0" y="111.0" class="s" text-anchor="start" fill="#1a1c22" >• 커서 높이 h = a 에서 오차 0</text><text x="428.0" y="128.0" class="s" text-anchor="start" fill="#1a1c22" >• 몹이 없어도 동작하고 연속적 (튐 없음)</text><text x="428.0" y="145.0" class="s" text-anchor="start" fill="#1a1c22" >• 콜라이더를 안 보니 실루엣 문제와 무관</text><text x="428.0" y="162.0" class="tb" text-anchor="start" fill="#c92a2a" >한계</text><text x="428.0" y="179.0" class="s" text-anchor="start" fill="#1a1c22" >a는 하나뿐. 큰 몹 머리처럼 h가 a에서</text><text x="428.0" y="196.0" class="s" text-anchor="start" fill="#1a1c22" >멀어지면 (h − a) 가 다시 커진다.</text>
+</svg>
+<div><span class="lv lv-p">실무에선</span></div>
+<div class="txt"><p>Unity 포럼의 탑다운 슈터 조준 질문에 가장 흔한 답이 "바닥 대신 총구 높이에 Plane을 두고 레이캐스트"다.</p></div></div>
+
+<div class="card"><h3>② 3D 공간 말고 "화면"에서 커서에 가까운 몹 고르기</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="txt"><p>플레이어가 보는 <b>화면 위에서</b> 커서 근처 범위 안의 가장 가까운 몹을 고른다. <span class="good">좋은 점</span> 카메라 각도·몹 키와 무관하고, 큰 몹은 화면에서도 커서 잘 잡힌다. <span class="bad">한계</span> 범위 경계는 남는다 → ③.</p></div>
+<div><span class="lv lv-d">자세히</span></div>
+<svg viewBox="0 0 700 210" width="100%">
+<rect x="10" y="8" width="380" height="194" rx="12" fill="#fff" stroke="#e3e6ec"/>
+<text x="22.0" y="26.0" class="xs" text-anchor="start" >화면</text>
+<circle cx="118" cy="128" r="14" fill="#eef0f4" stroke="#8a91a0" stroke-width="1"/>
+<circle cx="118" cy="128" r="2.5" fill="#1a1c22"/>
+<line x1="205.0" y1="105.0" x2="118.0" y2="128.0" stroke="#8a91a0" stroke-width="1.2" stroke-dasharray="3 3"/>
+<text x="118.0" y="155.0" class="s" text-anchor="middle" fill="#1a1c22" >점수 76</text>
+<circle cx="262" cy="78" r="40" fill="#ebfbee" stroke="#2b8a3e" stroke-width="2"/>
+<circle cx="262" cy="78" r="2.5" fill="#1a1c22"/>
+<line x1="205.0" y1="105.0" x2="262.0" y2="78.0" stroke="#2b8a3e" stroke-width="1.2"/>
+<text x="308.0" y="82.0" class="s" text-anchor="start" fill="#2b8a3e" >점수 23</text>
+<circle cx="312" cy="156" r="12" fill="#eef0f4" stroke="#8a91a0" stroke-width="1"/>
+<circle cx="312" cy="156" r="2.5" fill="#1a1c22"/>
+<line x1="205.0" y1="105.0" x2="312.0" y2="156.0" stroke="#8a91a0" stroke-width="1.2" stroke-dasharray="3 3"/>
+<text x="312.0" y="181.0" class="s" text-anchor="middle" fill="#1a1c22" >점수 107</text>
+<circle cx="205" cy="105" r="52" fill="none" stroke="#3b5bdb" stroke-dasharray="5 3"/>
+<path d="M199 99 l12 12 M211 99 l-12 12" stroke="#c92a2a" stroke-width="2.2"/>
+<text x="155.0" y="169.0" class="s" text-anchor="start" fill="#3b5bdb" >선택 반경 ρ</text>
+<rect x="412" y="8" width="278" height="194" rx="12" fill="#f7f8fa" stroke="none"/>
+<text x="428.0" y="34.0" class="tb" text-anchor="start" fill="#1a1c22" >3D 레이 대신 플레이어가 보는 화면에서</text>
+<text x="428.0" y="62.0" class="fa" text-anchor="start" fill="#2b8a3e" >점수ᵢ = ‖π(Mᵢ) − c‖ − ρᵢ</text>
+<text x="428.0" y="88.0" class="s" text-anchor="start" fill="#1a1c22" >π(M) : 몹 위치를 화면에 투영한 점</text><text x="428.0" y="105.0" class="s" text-anchor="start" fill="#1a1c22" >c : 커서,  ρᵢ : 화면에 비친 몹 반지름</text><text x="428.0" y="122.0" class="s" text-anchor="start" fill="#1a1c22" >선택 = 점수 최소 · 단, 점수 < ρ</text><text x="428.0" y="139.0" class="s" text-anchor="start" fill="#1a1c22" >• 카메라 각도·몹 키와 무관 → 원인을 우회</text><text x="428.0" y="156.0" class="s" text-anchor="start" fill="#1a1c22" >• 큰 몹은 ρᵢ가 커서 자연히 잘 잡힌다</text><text x="428.0" y="173.0" class="s" text-anchor="start" fill="#1a1c22" >• 실루엣을 조금 벗어나도 잡힌다</text>
+</svg>
+<div><span class="lv lv-p">실무에선</span></div>
+<div class="txt"><p>커서 방향과 적 방향의 각도를 내적으로 비교하는 콘 판정이 흔하다(gamedev.net). Hades는 맞히고 싶을 만한 적을 추린 뒤 조준 방향에 가장 가까운 적을 고르는 것으로 알려져 있다(비공식 역분석). 큰 각도로 꺾여 "조종을 뺏긴다"·"소환물을 보스보다 먼저 고른다"는 불만도 함께 나온다. <b>우선순위 규칙</b>이 품질을 가른다.</p></div></div>
+
+<div class="card"><h3>③ 자석처럼: 붙잡을 땐 깐깐하게, 놓을 땐 느슨하게</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="txt"><p>몹을 잡는 기준과 놓는 기준을 <b>다르게</b> 둔다. 한 번 잡은 몹은 커서가 조금 흔들려도 놓지 않는다. 같은 움직임에서 조준 바뀜이 6번 → 2번으로 줄었다.</p></div>
+<div><span class="lv lv-d">자세히</span></div>
+<svg viewBox="0 0 700 214" width="100%">
+<line x1="70.0" y1="128.0" x2="390.0" y2="128.0" stroke="#1a1c22" stroke-width="1.2"/><line x1="70.0" y1="18.0" x2="70.0" y2="128.0" stroke="#1a1c22" stroke-width="1.2"/>
+<text x="64.0" y="22.0" class="xs" text-anchor="end" >점수</text>
+<text x="390.0" y="140.0" class="xs" text-anchor="end" >시간 →</text>
+<line x1="70.0" y1="84.0" x2="390.0" y2="84.0" stroke="#8a91a0" stroke-width="1.2" stroke-dasharray="4 3"/><text x="64.0" y="87.0" class="xs" text-anchor="end" >ρ</text>
+<line x1="70.0" y1="97.2" x2="390.0" y2="97.2" stroke="#2b8a3e" stroke-width="1.2" stroke-dasharray="4 3"/><text x="64.0" y="100.2" class="xs" text-anchor="end" fill="#2b8a3e" >ρ_in</text>
+<line x1="70.0" y1="67.5" x2="390.0" y2="67.5" stroke="#c92a2a" stroke-width="1.2" stroke-dasharray="4 3"/><text x="64.0" y="70.5" class="xs" text-anchor="end" fill="#c92a2a" >ρ_out</text>
+<polyline points="70.0,30.8 70.6,30.2 71.3,29.6 71.9,29.2 72.6,28.9 73.2,28.7 73.8,28.6 74.5,28.6 75.1,28.8 75.8,29.0 76.4,29.4 77.0,29.8 77.7,30.4 78.3,30.9 79.0,31.6 79.6,32.2 80.2,32.9 80.9,33.6 81.5,34.3 82.2,35.0 82.8,35.7 83.4,36.3 84.1,36.8 84.7,37.4 85.4,37.8 86.0,38.2 86.6,38.6 87.3,38.9 87.9,39.1 88.6,39.3 89.2,39.5 89.8,39.7 90.5,39.8 91.1,40.0 91.8,40.2 92.4,40.4 93.0,40.6 93.7,40.9 94.3,41.3 95.0,41.8 95.6,42.4 96.2,43.0 96.9,43.8 97.5,44.7 98.2,45.7 98.8,46.8 99.4,48.1 100.1,49.4 100.7,50.9 101.4,52.4 102.0,54.0 102.6,55.7 103.3,57.4 103.9,59.1 104.6,60.9 105.2,62.6 105.8,64.3 106.5,66.0 107.1,67.6 107.8,69.1 108.4,70.5 109.0,71.9 109.7,73.1 110.3,74.1 111.0,75.0 111.6,75.8 112.2,76.4 112.9,76.9 113.5,77.3 114.2,77.5 114.8,77.5 115.4,77.5 116.1,77.3 116.7,77.0 117.4,76.7 118.0,76.3 118.6,75.8 119.3,75.3 119.9,74.8 120.6,74.3 121.2,73.9 121.8,73.4 122.5,73.0 123.1,72.6 123.8,72.3 124.4,72.1 125.0,72.0 125.7,71.9 126.3,71.9 127.0,72.0 127.6,72.1 128.2,72.3 128.9,72.6 129.5,72.9 130.2,73.2 130.8,73.6 131.4,74.0 132.1,74.3 132.7,74.7 133.4,75.0 134.0,75.2 134.6,75.5 135.3,75.6 135.9,75.7 136.6,75.7 137.2,75.7 137.8,75.5 138.5,75.3 139.1,75.1 139.8,74.7 140.4,74.4 141.0,73.9 141.7,73.5 142.3,73.0 143.0,72.5 143.6,72.1 144.2,71.6 144.9,71.2 145.5,70.9 146.2,70.7 146.8,70.6 147.4,70.5 148.1,70.6 148.7,70.8 149.4,71.2 150.0,71.7 150.6,72.0 151.3,72.3 151.9,72.9 152.6,73.5 153.2,74.3 153.8,75.3 154.5,76.3 155.1,77.4 155.8,78.6 156.4,79.9 157.0,81.2 157.7,82.6 158.3,83.9 159.0,85.2 159.6,86.5 160.2,87.8 160.9,89.0 161.5,90.1 162.2,91.1 162.8,92.1 163.4,92.9 164.1,93.6 164.7,94.2 165.4,94.7 166.0,95.0 166.6,95.3 167.3,95.4 167.9,95.4 168.6,95.4 169.2,95.3 169.8,95.1 170.5,94.9 171.1,94.6 171.8,94.3 172.4,94.0 173.0,93.8 173.7,93.5 174.3,93.3 175.0,93.1 175.6,92.9 176.2,92.8 176.9,92.8 177.5,92.8 178.2,92.9 178.8,93.0 179.4,93.2 180.1,93.4 180.7,93.6 181.4,93.9 182.0,94.2 182.6,94.4 183.3,94.6 183.9,94.8 184.6,95.0 185.2,95.1 185.8,95.1 186.5,95.0 187.1,94.8 187.8,94.6 188.4,94.2 189.0,93.7 189.7,93.0 190.3,92.3 191.0,91.5 191.6,90.5 192.2,89.5 192.9,88.3 193.5,87.1 194.2,85.9 194.8,84.6 195.4,83.2 196.1,81.9 196.7,80.6 197.4,79.3 198.0,78.0 198.6,76.9 199.3,75.8 199.9,74.8 200.6,73.9 201.2,73.1 201.8,72.5 202.5,72.0 203.1,71.7 203.8,71.5 204.4,71.5 205.0,71.6 205.7,71.8 206.3,72.2 207.0,72.7 207.6,73.3 208.2,74.0 208.9,74.8 209.5,75.6 210.2,76.5 210.8,77.4 211.4,78.3 212.1,79.2 212.7,80.1 213.4,81.0 214.0,81.8 214.6,82.5 215.3,83.2 215.9,83.9 216.6,84.4 217.2,84.9 217.8,85.3 218.5,85.6 219.1,85.8 219.8,86.0 220.4,86.2 221.0,86.3 221.7,86.4 222.3,86.4 223.0,86.5 223.6,86.5 224.2,86.6 224.9,86.7 225.5,86.9 226.2,87.1 226.8,87.3 227.4,87.7 228.1,88.1 228.7,88.6 229.4,89.1 230.0,89.7 230.6,90.4 231.3,91.2 231.9,92.0 232.6,92.9 233.2,93.7 233.8,94.6 234.5,95.5 235.1,96.4 235.8,97.2 236.4,98.0 237.0,98.7 237.7,99.3 238.3,99.9 239.0,100.3 239.6,100.6 240.2,100.7 240.9,100.8 241.5,100.6 242.2,100.4 242.8,100.0 243.4,99.4 244.1,98.7 244.7,97.9 245.4,96.9 246.0,95.9 246.6,94.7 247.3,93.5 247.9,92.2 248.6,90.9 249.2,89.6 249.8,88.2 250.5,86.9 251.1,85.6 251.8,84.3 252.4,83.2 253.0,82.1 253.7,81.1 254.3,80.2 255.0,79.4 255.6,78.7 256.2,78.1 256.9,77.7 257.5,77.3 258.2,77.1 258.8,77.0 259.4,77.0 260.1,77.0 260.7,77.2 261.4,77.3 262.0,77.6 262.6,77.9 263.3,78.1 263.9,78.4 264.6,78.7 265.2,79.0 265.8,79.2 266.5,79.4 267.1,79.5 267.8,79.6 268.4,79.6 269.0,79.6 269.7,79.5 270.3,79.4 271.0,79.2 271.6,79.0 272.2,78.7 272.9,78.5 273.5,78.2 274.2,77.9 274.8,77.7 275.4,77.5 276.1,77.4 276.7,77.3 277.4,77.3 278.0,77.4 278.6,77.6 279.3,77.9 279.9,78.3 280.6,78.9 281.2,79.5 281.8,80.3 282.5,81.1 283.1,82.1 283.8,83.1 284.4,84.3 285.0,85.5 285.7,86.8 286.3,88.1 287.0,89.4 287.6,90.8 288.2,92.1 288.9,93.4 289.5,94.6 290.2,95.8 290.8,96.8 291.4,97.8 292.1,98.7 292.7,99.4 293.4,100.0 294.0,100.4 294.6,100.7 295.3,100.9 295.9,100.9 296.6,100.8 297.2,100.5 297.8,100.1 298.5,99.6 299.1,99.0 299.8,98.2 300.4,97.5 301.0,96.6 301.7,95.7 302.3,94.8 303.0,93.9 303.6,93.0 304.2,92.1 304.9,91.3 305.5,90.5 306.2,89.7 306.8,89.0 307.4,88.4 308.1,87.9 308.7,87.4 309.4,87.1 310.0,86.8 310.6,86.1 311.3,85.4 311.9,84.8 312.6,84.3 313.2,83.7 313.8,83.2 314.5,82.7 315.1,82.2 315.8,81.7 316.4,81.1 317.0,80.5 317.7,79.8 318.3,79.1 319.0,78.3 319.6,77.4 320.2,76.4 320.9,75.4 321.5,74.3 322.2,73.1 322.8,71.9 323.4,70.6 324.1,69.3 324.7,68.0 325.4,66.6 326.0,65.3 326.6,64.0 327.3,62.7 327.9,61.4 328.6,60.3 329.2,59.2 329.8,58.3 330.5,57.4 331.1,56.7 331.8,56.1 332.4,55.6 333.0,55.3 333.7,55.2 334.3,55.1 335.0,55.3 335.6,55.5 336.2,55.9 336.9,56.4 337.5,57.1 338.2,57.8 338.8,58.5 339.4,59.4 340.1,60.2 340.7,61.1 341.4,62.0 342.0,62.9 342.6,63.7 343.3,64.5 343.9,65.2 344.6,65.8 345.2,66.4 345.8,66.8 346.5,67.1 347.1,67.3 347.8,67.4 348.4,67.4 349.0,67.2 349.7,67.0 350.3,66.6 351.0,66.1 351.6,65.6 352.2,65.0 352.9,64.3 353.5,63.6 354.2,62.9 354.8,62.2 355.4,61.4 356.1,60.7 356.7,60.0 357.4,59.3 358.0,58.7 358.6,58.1 359.3,57.6 359.9,57.1 360.6,56.7 361.2,56.3 361.8,56.0 362.5,55.7 363.1,55.5 363.8,55.3 364.4,55.1 365.0,54.9 365.7,54.7 366.3,54.5 367.0,54.2 367.6,53.8 368.2,53.4 368.9,53.0 369.5,52.4 370.2,51.7 370.8,50.9 371.4,50.0 372.1,49.0 372.7,47.9 373.4,46.7 374.0,45.3 374.6,43.9 375.3,42.4 375.9,40.7 376.6,39.0 377.2,37.3 377.8,35.5 378.5,33.7 379.1,31.9 379.8,30.2 380.4,28.4 381.0,26.8 381.7,25.2 382.3,23.6 383.0,22.2 383.6,21.0 384.2,19.8 384.9,18.8 385.5,17.9 386.2,17.2 386.8,16.6 387.4,16.1 388.1,15.9 388.7,15.7 389.4,15.7 390.0,15.7" fill="none" stroke="#1a1c22" stroke-width="1.6" stroke-linejoin="round"/>
+<rect x="70" y="150" width="320" height="12" fill="#eef0f4"/>
+<rect x="159.0" y="150" width="35.8" height="12" fill="#e8590c"/><rect x="216.6" y="150" width="35.2" height="12" fill="#e8590c"/><rect x="284.4" y="150" width="28.2" height="12" fill="#e8590c"/>
+<text x="64.0" y="160.0" class="xs" text-anchor="end" >임계값 1개</text>
+<text x="396.0" y="160.0" class="xs" text-anchor="start" fill="#e8590c" >전환 6회</text>
+<rect x="70" y="176" width="320" height="12" fill="#eef0f4"/>
+<rect x="235.8" y="176" width="89.0" height="12" fill="#2b8a3e"/>
+<text x="64.0" y="186.0" class="xs" text-anchor="end" >임계값 2개</text>
+<text x="396.0" y="186.0" class="xs" text-anchor="start" fill="#2b8a3e" >전환 2회</text>
+<text x="70.0" y="204.0" class="xs" text-anchor="start" >칠해진 칸 = 타겟을 잡고 있는 상태</text>
+<rect x="462" y="8" width="228" height="196" rx="12" fill="#f7f8fa" stroke="none"/>
+<text x="476.0" y="34.0" class="tb" text-anchor="start" fill="#1a1c22" >잡을 때와 놓을 때 기준을 다르게</text>
+<text x="476.0" y="62.0" class="f" text-anchor="start" fill="#2b8a3e" >잡기 : 점수 < ρ_in</text><text x="476.0" y="83.0" class="f" text-anchor="start" fill="#c92a2a" >놓기 : 점수 > ρ_out</text><text x="476.0" y="104.0" class="s" text-anchor="start" fill="#1a1c22" >(ρ_out > ρ_in)</text>
+<text x="476.0" y="136.0" class="s" text-anchor="start" fill="#1a1c22" >• 경계에서 깜빡임이 사라진다</text><text x="476.0" y="153.0" class="s" text-anchor="start" fill="#1a1c22" >• = 이미 잡은 타겟에 '끈끈함'</text><text x="476.0" y="170.0" class="s" text-anchor="start" fill="#1a1c22" >• 레이 방식의 튐 문제도 이걸로 완화</text>
+</svg>
+<div><span class="lv lv-p">실무에선</span></div>
+<div class="txt"><p>Path of Exile은 마우스를 누르고 있으면 그 대상이 고정돼서 커서를 움직여도 유지된다(포럼). 기준을 두 개 두는 것의 극단적인 형태가 "락온"이다.</p></div></div>
+
+<div class="card"><h3>④ 스킬마다 커서를 다르게 읽기</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<svg viewBox="0 0 700 132" width="100%">
+<rect x="10" y="44" width="120" height="44" rx="10" fill="#fff" stroke="#3b5bdb"/><text x="70.0" y="71.0" class="tb" text-anchor="middle" fill="#3b5bdb" >커서 위치</text>
+<path d="M130 66 C175 66 175 22 210 22" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ah)"/>
+<rect x="214" y="5" width="140" height="34" rx="9" fill="#fff" stroke="#3b5bdb"/><text x="284.0" y="27.0" class="tb" text-anchor="middle" fill="#3b5bdb" >투사체 스킬</text>
+<line x1="356.0" y1="22.0" x2="384.0" y2="22.0" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ah)"/>
+<text x="392.0" y="26.0" class="t" text-anchor="start" >타겟을 고려한 조준점 (②·③ 사용)</text>
+<path d="M130 66 C175 66 175 66 210 66" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ah)"/>
+<rect x="214" y="49" width="140" height="34" rx="9" fill="#fff" stroke="#2b8a3e"/><text x="284.0" y="71.0" class="tb" text-anchor="middle" fill="#2b8a3e" >장판 스킬</text>
+<line x1="356.0" y1="66.0" x2="384.0" y2="66.0" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ah)"/>
+<text x="392.0" y="70.0" class="t" text-anchor="start" >바닥 점 그대로 (몹은 무시)</text>
+<path d="M130 66 C175 66 175 110 210 110" fill="none" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ah)"/>
+<rect x="214" y="93" width="140" height="34" rx="9" fill="#fff" stroke="#e8590c"/><text x="284.0" y="115.0" class="tb" text-anchor="middle" fill="#e8590c" >돌진·회피</text>
+<line x1="356.0" y1="110.0" x2="384.0" y2="110.0" stroke="#8a91a0" stroke-width="1.4" marker-end="url(#ah)"/>
+<text x="392.0" y="114.0" class="t" text-anchor="start" >방향만 쓰고 높이는 버림</text>
+</svg>
+<div class="txt"><p>총은 몹을, 장판은 바닥 그 자리를, 돌진은 방향만 원한다. <b>스킬 종류로 나눠 읽으면</b> 문제 4(조준 뺏김)가 풀린다.</p></div>
+<div><span class="lv lv-p">실무에선</span></div>
+<div class="txt"><p>Wolcen은 "커서 밑에 뭐가 있나"를 담당하는 타겟팅 시스템을 입력 처리와 따로 둔다. 같은 커서 정보를 스킬마다 다르게 쓰기 위한 구조다.</p></div></div>
+
+<div class="card"><h3>⑤ 조준은 그대로, 과녁을 살짝 크게</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="txt"><p>조준을 고치는 대신 <b>맞았는지 판정을 넉넉하게</b> 본다. <span class="good">좋은 점</span> 작은 오차는 아예 못 느낀다. <span class="bad">한계</span> 너무 크면 안 맞을 걸 맞힌다.</p></div>
+<div><span class="lv lv-d">자세히</span></div>
+<svg viewBox="0 0 700 196" width="100%">
+<circle cx="300" cy="104" r="40" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/>
+<circle cx="300" cy="104" r="20" fill="none" stroke="#2b8a3e" stroke-dasharray="3 3"/>
+<circle cx="300" cy="104" r="15" fill="#dfe4ee" stroke="#8a91a0"/>
+<line x1="60.0" y1="130.0" x2="380.0" y2="142.0" stroke="#3b5bdb" stroke-width="2.2" marker-end="url(#ahb)"/>
+<circle cx="60" cy="120" r="8" fill="#3b5bdb"/><text x="60.0" y="146.0" class="tb" text-anchor="middle" fill="#3b5bdb" >P</text>
+<line x1="300.0" y1="104.0" x2="300.0" y2="139.0" stroke="#c92a2a" stroke-width="1.6" stroke-dasharray="3 3"/><text x="292.0" y="153.0" class="tb" text-anchor="start" fill="#c92a2a" >e</text>
+<text x="300.0" y="58.0" class="s" text-anchor="middle" fill="#2b8a3e" >r몹 + r탄 + δ</text>
+<text x="346.0" y="86.0" class="s" text-anchor="start" fill="#2b8a3e" >r몹 + r탄</text>
+<text x="200.0" y="176.0" class="s" text-anchor="middle" fill="#1a1c22" >얇은 판정이면 빗나감, δ만큼 두꺼우면 명중</text>
+<rect x="412" y="8" width="278" height="180" rx="12" fill="#f7f8fa" stroke="none"/>
+<text x="428.0" y="34.0" class="tb" text-anchor="start" fill="#1a1c22" >조준 대신 결과를 관대하게</text>
+<text x="428.0" y="62.0" class="f" text-anchor="start" fill="#2b8a3e" >명중 ⇔ dist(탄 경로, M) < r몹 + r탄 + δ</text>
+<text x="428.0" y="88.0" class="s" text-anchor="start" fill="#1a1c22" >• 레이 → 구(sphere) 캐스트 = 두꺼운 탄</text><text x="428.0" y="105.0" class="s" text-anchor="start" fill="#1a1c22" >• Reticle is King : 발사 순간 커서가 적 위면</text><text x="428.0" y="122.0" class="s" text-anchor="start" fill="#1a1c22" >   명중으로 처리하거나 탄을 살짝 휘게</text><text x="428.0" y="139.0" class="tb" text-anchor="start" fill="#c92a2a" >한계</text><text x="428.0" y="156.0" class="s" text-anchor="start" fill="#1a1c22" >δ가 크면 '안 맞을 걸 맞힌다'.</text><text x="428.0" y="173.0" class="s" text-anchor="start" fill="#1a1c22" >공정성(특히 PvP)과 손맛의 경계.</text>
+</svg>
+<div><span class="lv lv-p">실무에선</span></div>
+<div class="txt"><p>TLOU2는 화살이 아깝게 빗나가는 문제를 레이캐스트 → <b>구 캐스트</b>로 바꾸고 반경을 조금 키워 풀었다. Halo·Witchfire의 bullet magnetism은 쏜 순간 탄 방향을 근처 적 쪽으로 살짝 휜다. Witchfire는 "판정을 키우는 것"과는 다르다고 강조한다. 적의 판정은 그대로 두고 보정을 <b>무기</b>에 붙인다.</p></div></div>
+
+<h2 class="pb">5. 실무에서 더 쓰는 방법</h2>
+<div class="callout c-blue big">위 다섯 가지는 실제로 쓰인다. 실무에서는 여기에 네 가지를 더 겹친다. 마우스 쿼터뷰 조준만 다룬 공식 자료는 찾지 못했다. 그래서 가장 가까운 사례를 우리 상황에 옮겨 설명한다.</div>
+
+<div class="card"><h3>실무 1 · 판정은 카메라가, 캐릭터 탄은 연출만 (TLOU2 이중 프로브)</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<div class="txt"><p>TLOU2 발표는 3인칭 슈팅의 진짜 문제를 <b>"카메라와 캐릭터가 따로 논다"</b>로 정의한다. 우리 문제도 똑같다. 커서(카메라)는 몹을 보는데 탄은 캐릭터에서 나간다.</p>
+<p>해법: <b>보는 쪽(카메라)이 맞았는지 정하고</b>, 캐릭터 탄은 그 결과를 향해 날아가는 연출로 만든다. 쿼터뷰에서는 <b>커서 레이가 곧 카메라 탄</b>이라 그대로 옮길 수 있다.</p></div>
+<div><span class="lv lv-d">자세히</span></div>
+<svg viewBox="0 0 700 250" width="100%">
+<line x1="14.0" y1="215.0" x2="400.0" y2="215.0" stroke="#1a1c22" stroke-width="1.6"/>
+<rect x="129" y="177" width="14" height="38" rx="6" fill="#3b5bdb"/>
+<text x="136.0" y="230.0" class="t" text-anchor="middle" fill="#3b5bdb" >플레이어</text>
+<rect x="250" y="157.4" width="28" height="57.6" rx="11" fill="#dfe4ee" stroke="#8a91a0"/>
+<text x="284.0" y="207.0" class="t" text-anchor="start" >몹</text>
+<line x1="40" y1="79.0" x2="250.0" y2="161.5" stroke="#2b8a3e" stroke-opacity=".22" stroke-width="16" stroke-linecap="round"/>
+<line x1="40.0" y1="79.0" x2="250.0" y2="161.5" stroke="#2b8a3e" stroke-width="1.6" stroke-dasharray="5 3"/>
+<circle cx="40" cy="79.0" r="8" fill="#3b5bdb"/><text x="52.0" y="71.0" class="tb" text-anchor="start" fill="#3b5bdb" >카메라</text>
+<line x1="144.0" y1="183.0" x2="246.0" y2="162.5" stroke="#3b5bdb" stroke-width="2.4" marker-end="url(#ahb)"/>
+<circle cx="250.0" cy="161.5" r="5" fill="#2b8a3e"/>
+<circle cx="150" cy="52" r="10" fill="#c92a2a"/><text x="150" y="56" class="t" text-anchor="middle" fill="#fff">①</text><text x="164.0" y="56.0" class="tb" text-anchor="start" fill="#2b8a3e" >카메라 탄 (안 보임)</text>
+<text x="164.0" y="72.0" class="s" text-anchor="start" fill="#1a1c22" >커서 레이를 두껍게 · 몹만 맞음</text>
+<circle cx="276" cy="131.5" r="10" fill="#c92a2a"/><text x="276" y="135.5" class="t" text-anchor="middle" fill="#fff">②</text><text x="290.0" y="135.5" class="tb" text-anchor="start" fill="#2b8a3e" >맞은 점 P*</text>
+<circle cx="186" cy="236" r="10" fill="#c92a2a"/><text x="186" y="240" class="t" text-anchor="middle" fill="#fff">③</text><text x="200.0" y="240.0" class="tb" text-anchor="start" fill="#3b5bdb" >캐릭터 탄 (보임): 총구 → P*</text>
+<rect x="412" y="10" width="278" height="232" rx="12" fill="#f7f8fa" stroke="none"/>
+<text x="428.0" y="36.0" class="tb" text-anchor="start" fill="#1a1c22" >TLOU2 이중 프로브를 쿼터뷰로 옮기면</text>
+<text x="428.0" y="64.0" class="f" text-anchor="start" fill="#2b8a3e" >P* = 구 캐스트(커서 레이, r, 몹만)</text>
+<text x="428.0" y="88.0" class="f" text-anchor="start" fill="#3b5bdb" >탄 방향 = (P* − 총구) 정규화</text>
+<text x="428.0" y="114.0" class="s" text-anchor="start" fill="#1a1c22" >• 판정은 '플레이어가 보는 화면' 기준</text><text x="428.0" y="131.0" class="s" text-anchor="start" fill="#1a1c22" >• 캐릭터 탄은 결과를 따라가는 연출</text><text x="428.0" y="148.0" class="s" text-anchor="start" fill="#1a1c22" >• 원작엔 벽만 검사하는 숨은 레이가 하나 더</text><text x="428.0" y="165.0" class="s" text-anchor="start" fill="#1a1c22" >• 안 맞으면 → ① 허리 높이 판으로</text><text x="428.0" y="182.0" class="tb" text-anchor="start" fill="#c92a2a" >한계</text><text x="428.0" y="199.0" class="s" text-anchor="start" fill="#1a1c22" >플레이어에게 유리 → 경쟁 게임엔 부적합</text><text x="428.0" y="216.0" class="s" text-anchor="start" fill="#1a1c22" >(발표자가 직접 밝힌 단점)</text>
+</svg>
+<div class="txt"><p>원작 구성: ① 카메라 탄 = 조준점 방향 구 캐스트, 벽 무시 · ② 숨은 레이캐스트 = 카메라 탄을 따라가며 벽만 검사 · ③ 캐릭터 탄 = 카메라 탄의 예상 충돌점에서 역산, 적에게만 충돌. 결론 슬라이드는 <b>"Reticle is King"</b>(화면에 보이는 조준이 곧 결과)이다. 우리 "몹 포함 레이"와 "판정 두께"를 하나로 합친 형태이고, 두께 덕분에 테두리에서 튀는 문제도 줄어든다.</p></div></div>
+
+<div class="card"><h3>실무 2 · 판정을 넓히지 말고 모양을 맞추기</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<svg viewBox="0 0 700 250" width="100%">
+<g transform="translate(-10,0)">
+<g fill="#eef0f4" stroke="#8a91a0" stroke-width="1"><ellipse cx="170" cy="120" rx="40" ry="55"/><circle cx="170" cy="52" r="22"/><polygon points="138,92 66,148 78,162 146,116"/><polygon points="202,92 266,58 274,72 206,118"/><polygon points="266,58 300,14 308,20 276,68"/><rect x="146" y="160" width="14" height="38" rx="4"/><rect x="180" y="160" width="14" height="38" rx="4"/></g>
+<rect x="140" y="40" width="60" height="150" rx="30" fill="#3b5bdb" fill-opacity=".28" stroke="#3b5bdb" stroke-dasharray="5 3"/>
+</g>
+<text x="175.0" y="222.0" class="tb" text-anchor="middle" fill="#3b5bdb" >캡슐 하나</text>
+<text x="175.0" y="240.0" class="t" text-anchor="middle" fill="#c92a2a" >팔·무기는 판정 밖</text>
+<g transform="translate(340,0)">
+<g fill="#eef0f4" stroke="#8a91a0" stroke-width="1"><ellipse cx="170" cy="120" rx="40" ry="55"/><circle cx="170" cy="52" r="22"/><polygon points="138,92 66,148 78,162 146,116"/><polygon points="202,92 266,58 274,72 206,118"/><polygon points="266,58 300,14 308,20 276,68"/><rect x="146" y="160" width="14" height="38" rx="4"/><rect x="180" y="160" width="14" height="38" rx="4"/></g>
+<circle cx="170" cy="52" r="21" fill="#3b5bdb" fill-opacity=".28" stroke="#3b5bdb"/>
+<line x1="150" y1="95" x2="190" y2="95" stroke="#3b5bdb" stroke-opacity=".32" stroke-width="26" stroke-linecap="round"/>
+<line x1="148" y1="124" x2="192" y2="124" stroke="#3b5bdb" stroke-opacity=".32" stroke-width="30" stroke-linecap="round"/>
+<line x1="152" y1="152" x2="188" y2="152" stroke="#3b5bdb" stroke-opacity=".32" stroke-width="24" stroke-linecap="round"/>
+<line x1="140" y1="104" x2="76" y2="152" stroke="#3b5bdb" stroke-opacity=".32" stroke-width="16" stroke-linecap="round"/>
+<line x1="202" y1="104" x2="266" y2="68" stroke="#3b5bdb" stroke-opacity=".32" stroke-width="16" stroke-linecap="round"/>
+<line x1="272" y1="62" x2="300" y2="22" stroke="#3b5bdb" stroke-opacity=".32" stroke-width="10" stroke-linecap="round"/>
+<line x1="153" y1="168" x2="153" y2="194" stroke="#3b5bdb" stroke-opacity=".32" stroke-width="14" stroke-linecap="round"/>
+<line x1="187" y1="168" x2="187" y2="194" stroke="#3b5bdb" stroke-opacity=".32" stroke-width="14" stroke-linecap="round"/>
+</g>
+<text x="525.0" y="222.0" class="tb" text-anchor="middle" fill="#3b5bdb" >부위별 캡슐 여러 개</text>
+<text x="525.0" y="240.0" class="t" text-anchor="middle" fill="#2b8a3e" >보이는 모양을 따라간다</text>
+<line x1="330.0" y1="120.0" x2="362.0" y2="120.0" stroke="#8a91a0" stroke-width="2" marker-end="url(#ah)"/>
+</svg>
+<div class="txt"><p>보이는 모양과 판정이 다르면 판정을 키워서 덮지 않는다. <b>판정 모양 자체를 몸에 맞게</b> 여러 개로 쪼갠다.</p></div>
+<div><span class="lv lv-p">실무에선</span></div>
+<div class="txt"><p>TLOU2는 상체 박스 하나를 <b>척추 관절마다 붙인 가로 캡슐 여러 개</b>로 바꿔서 숙이거나 비튼 자세의 이상한 명중·빗나감을 없앴다. Witchfire는 반대로 보정 계산에는 <b>척추 같은 핵심 뼈만</b> 쓴다. 잠깐 든 손 때문에 조준이 끌려가지 않게 하려는 것이다. 맞았는지 볼 땐 정밀하게, 끌어당길 땐 단순하게.</p></div></div>
+
+<div class="card"><h3>실무 3 · 무기에 붙은 원 세 개와 약점 우선 (Witchfire)</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<svg viewBox="0 0 700 236" width="100%">
+<ellipse cx="206" cy="150" rx="24" ry="44" fill="#dfe4ee" stroke="#8a91a0"/>
+<circle cx="182" cy="102" r="12" fill="#f6d5d5" stroke="#c92a2a"/>
+<text x="150.0" y="98.0" class="s" text-anchor="end" fill="#c92a2a" >머리</text>
+<circle cx="170" cy="118" r="84" fill="none" stroke="#3b5bdb" stroke-width="1.4" stroke-dasharray="6 4"/>
+<circle cx="170" cy="118" r="48" fill="#3b5bdb" fill-opacity=".08" stroke="#3b5bdb" stroke-width="1.4"/>
+<circle cx="170" cy="118" r="20" fill="none" stroke="#c92a2a" stroke-width="1.6"/>
+<path d="M164 112 l12 12 M176 112 l-12 12" stroke="#1a1c22" stroke-width="2.2"/>
+<line x1="173.0" y1="115.0" x2="178.0" y2="108.0" stroke="#c92a2a" stroke-width="1.6" marker-end="url(#ahr)"/>
+<text x="84.0" y="30.0" class="s" text-anchor="start" fill="#3b5bdb" >바깥 원 : 적이 닿으면 탄착점을 그쪽으로 당김</text>
+<text x="84.0" y="222.0" class="s" text-anchor="start" fill="#3b5bdb" >안쪽 원 : 적이 조금이라도 들어오면 명중</text>
+<text x="268.0" y="70.0" class="s" text-anchor="start" fill="#c92a2a" >약점 원 : 머리가 들어오면</text>
+<text x="268.0" y="85.0" class="s" text-anchor="start" fill="#c92a2a" >몸을 조준해도 머리로</text>
+<line x1="420.0" y1="190.0" x2="680.0" y2="190.0" stroke="#1a1c22" stroke-width="1.2"/><line x1="420.0" y1="40.0" x2="420.0" y2="190.0" stroke="#1a1c22" stroke-width="1.2"/>
+<polyline points="420.0,160.0 607.2,50.0 628.0,182.0 680.0,186.0" fill="none" stroke="#2b8a3e" stroke-width="2.6" stroke-linejoin="round"/>
+<line x1="607.2" y1="40.0" x2="607.2" y2="190.0" stroke="#8a91a0" stroke-width="1" stroke-dasharray="3 3"/>
+<text x="607.2" y="204.0" class="s" text-anchor="middle" fill="#1a1c22" >무기 사거리</text>
+<text x="680.0" y="204.0" class="xs" text-anchor="end" >거리 →</text>
+<text x="414.0" y="44.0" class="xs" text-anchor="end" >보정 세기</text>
+<text x="428.0" y="28.0" class="s" text-anchor="start" fill="#2b8a3e" >멀수록 세지다가 사거리 밖에선 뚝 떨어짐</text>
+</svg>
+<div class="txt"><p>커서 둘레에 원 세 개를 둔다. 바깥 원에 닿으면 끌어당기고, 안쪽 원에 들어오면 명중이고, <b>약점 원에 머리가 들어오면 머리로</b> 보낸다. 보정 세기는 무기 사거리까지 거리에 따라 커지다가 사거리 밖에선 급히 줄어든다.</p></div>
+<div><span class="lv lv-d">자세히</span></div>
+<div class="txt"><p>문제 3("큰 몹은 어디를 노렸나")에 대한 실무 답에 가깝다. 중심으로 끌지도, 찍은 점만 쓰지도 않고 <b>부위에 우선순위</b>를 둔다. 무기마다 원 크기와 세기가 따로 있고, 옆에서 보면 거리 감쇠 때문에 완벽하지 않은 원뿔 모양이 된다.</p></div></div>
+
+<div class="card"><h3>실무 4 · 화면 픽셀로 고르기 (ID 버퍼 피킹)</h3>
+<div><span class="lv lv-e">쉽게</span></div>
+<svg viewBox="0 0 700 176" width="100%">
+<rect x="20" y="22" width="300" height="132" rx="12" fill="#fff" stroke="#e3e6ec"/>
+<text x="170.0" y="14.0" class="tb" text-anchor="middle" >플레이어가 보는 화면</text>
+<rect x="170" y="40" width="46" height="66" rx="16" fill="#c9d1e3" stroke="#8a91a0"/>
+<rect x="120" y="70" width="70" height="76" rx="22" fill="#dfe4ee" stroke="#8a91a0"/>
+<polygon points="188,96 250,70 254,80 190,110" fill="#dfe4ee" stroke="#8a91a0"/>
+<path d="M234 72 l9 9 M243 72 l-9 9" stroke="#c92a2a" stroke-width="2.2"/>
+<rect x="400" y="22" width="300" height="132" rx="12" fill="#fff" stroke="#e3e6ec"/>
+<text x="550.0" y="14.0" class="tb" text-anchor="middle" >몰래 그리는 ID 화면</text>
+<rect x="550" y="40" width="46" height="66" rx="16" fill="#74c0fc" stroke="none"/>
+<rect x="500" y="70" width="70" height="76" rx="22" fill="#ffd43b" stroke="none"/>
+<polygon points="568,96 630,70 634,80 570,110" fill="#ffd43b" stroke="none"/>
+<path d="M614 72 l9 9 M623 72 l-9 9" stroke="#c92a2a" stroke-width="2.2"/>
+<text x="535.0" y="128.0" class="tb" text-anchor="middle" >ID 1</text>
+<text x="573.0" y="58.0" class="tb" text-anchor="middle" >ID 2</text>
+<line x1="326.0" y1="88.0" x2="394.0" y2="88.0" stroke="#8a91a0" stroke-width="2" marker-end="url(#ah)"/>
+<text x="360.0" y="108.0" class="xs" text-anchor="middle" >커서 밑</text><text x="360.0" y="120.0" class="xs" text-anchor="middle" >한 픽셀 읽기</text>
+<text x="520.0" y="172.0" class="s" text-anchor="middle" fill="#2b8a3e" >커서 밑 색 = ID 1의 팔 → 실루엣 그대로 정확</text>
+</svg>
+<div class="txt"><p>몹마다 고유한 색으로 <b>보이지 않는 화면을 한 장 더</b> 그리고, 커서 밑 한 픽셀의 색으로 무엇인지 알아낸다. 실루엣 그대로 정확하다. <span class="bad">한계</span> GPU에서 값을 읽어오는 비용과 지연 때문에 에디터(Blender)·RTS 선택에 주로 쓰고, 슈팅 판정에는 잘 쓰지 않는다. 테두리 튐 문제는 그대로 남는다.</p></div></div>
+
+<div class="callout c-amber big"><span class="lbl">우리와는 무관한 것</span>
+<b>마찰(friction, 커서 감속)</b> — 적 근처에서 조준 속도를 늦추는 보정. Halo와 Witchfire 모두 <b>컨트롤러 전용</b>이다. 마우스 쿼터뷰에는 해당하지 않는다.</div>
+
+<h2>6. 쿼터뷰에 옮기면: 추천 흐름</h2>
+<div class="fig"><svg viewBox="0 0 700 214" width="100%">
+<rect x="8" y="20" width="92" height="44" rx="11" fill="#fff" stroke="#1a1c22"/>
+<text x="54.0" y="42.0" class="tb" text-anchor="middle" fill="#1a1c22" >커서</text>
+<rect x="128" y="14" width="170" height="56" rx="11" fill="#fff" stroke="#2b8a3e"/>
+<text x="213.0" y="38.0" class="tb" text-anchor="middle" fill="#2b8a3e" >카메라 탄</text>
+<text x="213.0" y="54.0" class="s" text-anchor="middle" fill="#1a1c22" >커서 레이 구 캐스트 · 몹만</text>
+<rect x="332" y="14" width="170" height="56" rx="11" fill="#fff" stroke="#2b8a3e"/>
+<text x="417.0" y="38.0" class="tb" text-anchor="middle" fill="#2b8a3e" >맞은 점으로 탄 방향 역산</text>
+<text x="417.0" y="54.0" class="s" text-anchor="middle" fill="#1a1c22" >(TLOU2 방식)</text>
+<rect x="536" y="14" width="156" height="56" rx="11" fill="#fff" stroke="#3b5bdb"/>
+<text x="614.0" y="38.0" class="tb" text-anchor="middle" fill="#3b5bdb" >한 번 잡으면 유지</text>
+<text x="614.0" y="54.0" class="s" text-anchor="middle" fill="#1a1c22" >③ 자석</text>
+<rect x="128" y="128" width="170" height="56" rx="11" fill="#fff" stroke="#3b5bdb"/>
+<text x="213.0" y="152.0" class="tb" text-anchor="middle" fill="#3b5bdb" >화면 반경 안 가까운 몹</text>
+<text x="213.0" y="168.0" class="s" text-anchor="middle" fill="#1a1c22" >② 화면 좌표</text>
+<rect x="332" y="128" width="170" height="56" rx="11" fill="#fff" stroke="#e8590c"/>
+<text x="417.0" y="152.0" class="tb" text-anchor="middle" fill="#e8590c" >허리 높이 판으로 조준</text>
+<text x="417.0" y="168.0" class="s" text-anchor="middle" fill="#1a1c22" >① 몹이 없을 때</text>
+<rect x="536" y="128" width="156" height="56" rx="11" fill="#fff" stroke="#e8590c"/>
+<text x="614.0" y="152.0" class="tb" text-anchor="middle" fill="#e8590c" >장판 스킬은 바닥 그대로</text>
+<text x="614.0" y="168.0" class="s" text-anchor="middle" fill="#1a1c22" >④ 스킬별</text>
+<line x1="100.0" y1="42.0" x2="124.0" y2="42.0" stroke="#8a91a0" stroke-width="1.8" marker-end="url(#ah)"/>
+<line x1="298.0" y1="42.0" x2="328.0" y2="42.0" stroke="#2b8a3e" stroke-width="1.8" marker-end="url(#ahg)"/><text x="313.0" y="36.0" class="xs" text-anchor="middle" fill="#2b8a3e" >맞음</text>
+<line x1="502.0" y1="42.0" x2="532.0" y2="42.0" stroke="#8a91a0" stroke-width="1.8" marker-end="url(#ah)"/>
+<line x1="213.0" y1="70.0" x2="213.0" y2="124.0" stroke="#c92a2a" stroke-width="1.8" marker-end="url(#ahr)"/><text x="220.0" y="102.0" class="xs" text-anchor="start" fill="#c92a2a" >안 맞음</text>
+<path d="M298 156 C312 156 312 60 330 52" fill="none" stroke="#3b5bdb" stroke-width="1.6" marker-end="url(#ahb)"/>
+<text x="316.0" y="118.0" class="xs" text-anchor="middle" fill="#3b5bdb" >있음</text>
+<line x1="298.0" y1="170.0" x2="328.0" y2="170.0" stroke="#c92a2a" stroke-width="1.8" marker-end="url(#ahr)"/><text x="313.0" y="182.0" class="xs" text-anchor="middle" fill="#c92a2a" >없음</text>
+<text x="350.0" y="206.0" class="s" text-anchor="middle" fill="#1a1c22" >판정은 마지막에 ⑤ 살짝 넉넉하게 · 큰 몹은 부위별 캡슐로</text>
+</svg></div>
+<div class="callout c-green big"><span class="lbl">순서대로 읽기</span>
+<ol class="steps">
+<li>커서 레이를 <b>몹만 맞는 두꺼운 구 캐스트</b>로 쏜다 (실무 1).</li>
+<li>맞으면 그 점을 향해 총구에서 탄 방향을 역산한다. 한 번 잡은 몹은 쉽게 놓지 않는다 (③).</li>
+<li>안 맞으면 화면 반경 안의 가까운 몹을 찾는다 (②). 그것도 없으면 허리 높이 판으로 조준한다 (①).</li>
+<li>장판 스킬은 이 흐름을 타지 않고 바닥 점을 그대로 쓴다 (④).</li>
+<li>판정은 살짝 넉넉하게 (⑤). 큰 보스는 부위별 캡슐(실무 2)과 약점 우선(실무 3)을 더한다.</li>
+</ol></div>
+
+<h2 class="pb">7. 한 장 요약</h2>
+<div class="fig"><svg viewBox="0 0 700 168" width="100%">
+<rect x="8" y="8" width="204" height="154" rx="14" fill="#fff" stroke="#3b5bdb"/>
+<text x="110.0" y="36.0" class="tb" text-anchor="middle" fill="#3b5bdb" >누구를 노렸나?</text>
+<rect x="20" y="52" width="180" height="21" rx="10" fill="#f7f8fa" stroke="none"/>
+<text x="110.0" y="67.0" class="t" text-anchor="middle" >레이저가 몹에도 닿게</text>
+<rect x="20" y="78" width="180" height="21" rx="10" fill="#f7f8fa" stroke="none"/>
+<text x="110.0" y="93.0" class="t" text-anchor="middle" >② 화면에서 가까운 몹</text>
+<rect x="20" y="104" width="180" height="21" rx="10" fill="#f7f8fa" stroke="none"/>
+<text x="110.0" y="119.0" class="t" text-anchor="middle" >③ 자석처럼 붙잡기</text>
+<rect x="20" y="130" width="180" height="21" rx="10" fill="#f7f8fa" stroke="none"/>
+<text x="110.0" y="145.0" class="t" text-anchor="middle" >④ 스킬마다 다르게</text>
+<line x1="216.0" y1="84.0" x2="238.0" y2="84.0" stroke="#8a91a0" stroke-width="1.8" marker-end="url(#ah)"/>
+<rect x="244" y="8" width="204" height="154" rx="14" fill="#fff" stroke="#e8590c"/>
+<text x="346.0" y="36.0" class="tb" text-anchor="middle" fill="#e8590c" >어디로 쏘나?</text>
+<rect x="256" y="52" width="180" height="21" rx="10" fill="#f7f8fa" stroke="none"/>
+<text x="346.0" y="67.0" class="t" text-anchor="middle" >① 허리 높이 판</text>
+<rect x="256" y="78" width="180" height="21" rx="10" fill="#f7f8fa" stroke="none"/>
+<text x="346.0" y="93.0" class="t" text-anchor="middle" >작은 몹은 중심, 큰 몹은 찍은 곳</text>
+<line x1="452.0" y1="84.0" x2="474.0" y2="84.0" stroke="#8a91a0" stroke-width="1.8" marker-end="url(#ah)"/>
+<rect x="480" y="8" width="204" height="154" rx="14" fill="#fff" stroke="#2b8a3e"/>
+<text x="582.0" y="36.0" class="tb" text-anchor="middle" fill="#2b8a3e" >맞았나?</text>
+<rect x="492" y="52" width="180" height="21" rx="10" fill="#f7f8fa" stroke="none"/>
+<text x="582.0" y="67.0" class="t" text-anchor="middle" >⑤ 과녁 살짝 크게</text>
+</svg></div>
+<table class="cov">
+<thead><tr><th>방법</th><th>바닥 밀림·발산</th><th>테두리 튐</th><th>모양 차이</th><th>큰 몹 어디를</th><th>의도 모호</th></tr></thead>
+<tbody>
+<tr><td class="k">레이저가 몹에도 닿게</td><td class="p">◐ 몹 위만</td><td class="n">✕ 새로 생김</td><td class="n">✕</td><td class="n">✕ 중심 고정</td><td class="n">✕ 흡착</td></tr>
+<tr><td class="k">① 허리 높이 판</td><td class="p">◐ 판 근처만</td><td class="y">● 연속</td><td class="y">● 무관</td><td class="n">✕</td><td class="z">—</td></tr>
+<tr><td class="k">② 화면에서 가까운 몹</td><td class="y">●</td><td class="p">◐ 범위 경계</td><td class="y">●</td><td class="p">◐</td><td class="p">◐ 우선순위</td></tr>
+<tr><td class="k">③ 자석 (잡기·놓기)</td><td class="z">—</td><td class="y">●</td><td class="z">—</td><td class="z">—</td><td class="z">—</td></tr>
+<tr><td class="k">④ 스킬별 해석</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="y">●</td></tr>
+<tr><td class="k">⑤ 과녁 살짝 크게</td><td class="p">◐ 작은 오차만</td><td class="z">—</td><td class="p">◐</td><td class="z">—</td><td class="z">—</td></tr>
+<tr><td class="k">실무 1 · 카메라 판정 + 역산</td><td class="y">●</td><td class="p">◐ 두께만큼</td><td class="p">◐ 두께만큼</td><td class="y">● 맞은 점</td><td class="n">✕</td></tr>
+<tr><td class="k">실무 2 · 부위별 캡슐</td><td class="z">—</td><td class="z">—</td><td class="y">●</td><td class="p">◐</td><td class="z">—</td></tr>
+<tr><td class="k">실무 3 · 원 세 개 + 약점</td><td class="z">—</td><td class="p">◐</td><td class="z">—</td><td class="y">●</td><td class="z">—</td></tr>
+<tr><td class="k">실무 4 · 픽셀 피킹</td><td class="z">—</td><td class="n">✕</td><td class="y">●</td><td class="z">—</td><td class="z">—</td></tr>
+</tbody></table>
+<p class="lead" style="font-size:8.6pt;color:#1a1c22">● 해결 &nbsp; ◐ 일부 &nbsp; ✕ 안 됨·악화 &nbsp; — 해당 없음</p>
+
+<div class="callout c-green big"><span class="lbl">결론</span>
+<ol class="steps">
+<li>"레이저가 몹에도 닿게"는 좋은 출발점이지만 문제를 <b>몹 테두리로 모을 뿐</b>이다.</li>
+<li>한 방법으로 다 막히는 칸은 없다. 실무는 <b>여러 개를 겹친다</b>.</li>
+<li>쿼터뷰에서 가장 설득력 있는 축은 <b>"판정은 커서(카메라)가, 탄은 연출만"</b>(TLOU2)이다. 커서 레이가 곧 카메라 탄이라 구조를 그대로 옮길 수 있다.</li>
+</ol></div>
+
+<h2 class="pb">출처</h2>
+<ol class="src">
+<li>Derek Mattson, "A Second Shot: Improving Ranged Combat in The Last of Us Part II", GDC 2024 — <a href="https://www.gdcvault.com/play/1034215/A-Second-Shot-Improving-Ranged">GDC Vault</a> · <a href="https://media.gdcvault.com/gdc2024/Slides/GDC+slide+presentations/Mattson_Derek_ASecondShot_Notes.pdf">발표 노트 PDF</a> (이중 프로브, 구 캐스트, 척추 캡슐, Reticle is King)</li>
+<li>The Astronauts, "Witchfire aim assist" — <a href="https://www.theastronauts.com/2019/02/witchfire-aim-assist">theastronauts.com</a> (원 세 개, 약점 우선, 거리 감쇠, 핵심 뼈만 검사, 마찰은 컨트롤러 전용)</li>
+<li>Halopedia, "Aim assist" · "Magnetism" — <a href="https://www.halopedia.org/Aim_assist">Aim assist</a> · <a href="https://halopedia.org/Magnetism">Magnetism</a> (탄 방향 보정, 감속은 컨트롤러 전용)</li>
+<li>Unity Discussions — <a href="https://discussions.unity.com/t/mouse-aim-offset-correction-in-a-top-perspective-3d-game-with-2-dimensional-xz-aim/729892">Mouse aim offset correction in a top-perspective 3D game</a> · <a href="https://discussions.unity.com/t/3d-top-down-shooter-aiming-issue/860531">3D Top Down Shooter Aiming Issue</a> (총구 높이 평면)</li>
+<li>gamedev.net — <a href="https://gamedev.net/forums/topic/705028-aim-assist-and-bullets-correction">aim assist and bullets correction</a> (콘 판정, 내적)</li>
+<li>Steam 커뮤니티 — <a href="https://steamcommunity.com/app/1145360/discussions/0/2261312148314172223">Hades targeting 토론</a> (비공식, 우선순위 불만)</li>
+<li>Path of Exile 포럼 — <a href="https://pathofexile.com/forum/view-thread/1118912">Click-and-hold monster targeting</a> (누르고 있으면 대상 고정)</li>
+<li>Wolcen Update #58 — <a href="https://gamebanshee.com/kd89x">gamebanshee.com</a> (커서 밑 감지를 입력과 분리)</li>
+<li>Blender GPU select — <a href="https://projects.blender.org/archive/blender-archive/src/commit/1bbf1ed03c081e61f5c76688a46d12e92da2856f/source/blender/gpu/GPU_select.h">GPU_select.h</a> · Apple Developer Forums <a href="https://developer.apple.com/forums/thread/68587">Picking with Metal</a> (ID·깊이 버퍼 피킹)</li>
+</ol>
+
+<div class="footer">쿼터뷰 조준 보정 합본 · 이론판(AimFix_Theory) + 쉬운판(AimFix_Easy) + 실무 사례 · 그림 숫자는 예시값(프로젝트 실측 아님) · 생성: docs/Combat/tools/aim_fix_full_gen.py</div>
+</body></html>

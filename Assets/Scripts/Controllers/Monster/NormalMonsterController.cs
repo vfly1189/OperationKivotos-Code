@@ -36,9 +36,15 @@ public abstract class NormalMonsterController : BaseMonsterController
 
     private Vector3 _homePosition;
     private bool _leashActive;          // 필드 스포너가 만든 몹만 켠다 — 던전 웨이브 · 보스 소환 몹은 리쉬 없음
-    private bool _isReturning;          // _state와 따로 둔다 — 공격/장전 애니 이벤트가 _state를 덮어쓰기 때문
+    private bool _isReturning;          // 귀환 중인가 — 쓰는 곳은 리쉬뿐
     private float _returnDeadline;
+
+    // 마지막으로 튼 이동 · 대기 애니 — 매 프레임 CrossFade를 다시 걸지 않기 위한 캐시. 행동 판단에는 쓰지 않는다.
+    private int _locoAnim;
+    private static readonly int MoveHash = Animator.StringToHash("Move");
+    private static readonly int IdleHash = Animator.StringToHash("Idle");
     private float _chaseStoppingDistance;
+    private ObstacleAvoidanceType _defaultAvoidance;   // 끄기 실험 원복용 (프리팹 값)
 
     private const float AwayFromHome = 2f;   // 이보다 집에서 떨어져 있고 대상이 없으면 "쫓아왔다가 놓친 것" (도착 판정 1m보다 커야 왕복 안 함)
 
@@ -53,6 +59,7 @@ public abstract class NormalMonsterController : BaseMonsterController
         _chaseStoppingDistance = _attackRange - 0.5f;
         _agent.stoppingDistance = _chaseStoppingDistance;
         _agent.updateRotation = true;
+        _defaultAvoidance = _agent.obstacleAvoidanceType;
     }
 
     protected override void Start()
@@ -92,7 +99,9 @@ public abstract class NormalMonsterController : BaseMonsterController
         _lastDestPosition = Vector3.zero;
         _leashActive = false;
         _isReturning = false;
+        _locoAnim = 0;
         _agent.stoppingDistance = _chaseStoppingDistance;
+        _agent.obstacleAvoidanceType = _defaultAvoidance;   // 끄기 실험 원복
         Stat.HealthComp.IsInvincible = false;
 
         if (Managers.Party != null)
@@ -112,6 +121,21 @@ public abstract class NormalMonsterController : BaseMonsterController
         ReleaseHpBar();
         Managers.Party.OnActiveCharacterChanged -= OnPlayerCharacterChanged;      
         base.OnDespawn();
+    }
+
+    public override void ApplyCostOff(MonsterCostOff off)
+    {
+        base.ApplyCostOff(off);
+        // HP바는 오브젝트째 끈다 — 스크립트만 끄면 캔버스 갱신 비용이 남는다. 회수(ReleaseHpBar)는 꺼진 채로도 풀에 돌아간다.
+        if (IsOff(MonsterCostOff.HpBar) && _hpBar != null) _hpBar.gameObject.SetActive(false);
+        // 회피만 끈다 — 에이전트를 끄면 이동 자체가 멈춘다
+        if (IsOff(MonsterCostOff.Avoidance) && _agent != null) _agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance;
+    }
+
+    // 갱신 LOD — 화면 밖 HP바는 안 보이므로 오브젝트째 끈다(위치 계산 + 캔버스 갱신). 체력 갱신은 꺼진 채로도 반영된다.
+    protected override void OnReducedChanged(bool reduced)
+    {
+        if (_hpBar != null && !IsOff(MonsterCostOff.HpBar)) _hpBar.gameObject.SetActive(!reduced);
     }
 
     void BindHpBar()
@@ -143,36 +167,62 @@ public abstract class NormalMonsterController : BaseMonsterController
         UpdateTarget(player);
     }
 
+    // 사망은 BT 밖(Health.OnDead → OnDeath). 위에서부터 처음 Running/Success인 곳에서 멈춘다.
+    //  리쉬 → 행동 중 → 전투 → 추적 → 대기
     protected override void ConstructBehaviorTree()
     {
-        // 0. 사망 노드
-        Node deadSequence = new Sequence(new List<Node> 
-        { 
-            new ActionNode(CheckIsDead), 
-            new ActionNode(HandleDeadState) 
-        });
+        // 리쉬 — 행동 중이어도 귀환이 끊는다 → 행동 중 노드보다 앞
+        Node leashNode = new ActionNode(HandleLeash);
 
-        // 1. 전투 노드 (자식 클래스마다 공격/장전 방식이 다르므로 추상화하여 받아옴)
+        // 행동 중 — 끝날 때까지 여기서 멈춘다. 뒤의 전투 · 추적 · 대기는 행동 중인지 다시 묻지 않는다.
+        Node actionNode = new ActionNode(ContinueAction);
+
+        // 전투 — 자식 클래스마다 공격/장전 방식이 다르므로 추상화하여 받아옴
         Node combatNode = GetCombatNode();
 
-        // 2. 추적 노드
-        Node chaseSequence = new Sequence(new List<Node> 
-        { 
-            new ActionNode(CheckDetectRange), 
-            new ActionNode(TrackTarget) 
+        // 추적
+        Node chaseSequence = new Sequence(new List<Node>
+        {
+            new ActionNode(CheckDetectRange),
+            new ActionNode(TrackTarget)
         });
-
-        // 0.5 리쉬 노드 — 사망 다음, 전투보다 앞. 복귀 중엔 공격·추적을 하지 않는다.
-        Node leashNode = new ActionNode(HandleLeash);
 
         _topNode = new Selector(new List<Node>
         {
-            deadSequence,
             leashNode,
+            actionNode,
             combatNode,
             chaseSequence,
             new ActionNode(Idle)
         });
+    }
+
+    private NodeState ContinueAction()
+    {
+        if (!IsActing) return NodeState.Failure;
+        if (FaceTargetWhileActing) RotateToTarget();
+        return NodeState.Running;
+    }
+
+    // 행동 중인가 · 그동안 대상을 바라보나 — SS가 답한다(실행 중인 패턴과 그 패턴의 값)
+    protected bool IsActing => _ss != null && _ss.IsBusy;
+    private bool FaceTargetWhileActing => IsActing && _ss.Current._faceTarget;
+
+    // 리쉬가 행동을 끊을 때
+    private void StopAction() => _ss?.Cancel();
+
+    // 행동이 시작된 직후 공통 — 멈춰 서고, 끝난 뒤 이동 · 대기 애니를 다시 틀게(행동 애니가 덮었으므로)
+    protected void OnActionStarted()
+    {
+        _locoAnim = 0;
+        if (_agent != null && _agent.enabled) _agent.isStopped = true;
+    }
+
+    private void PlayLoco(int hash)
+    {
+        if (_locoAnim == hash) return;
+        _locoAnim = hash;
+        _anim.CrossFade(hash, 0.1f);
     }
 
     #region Leash
@@ -221,9 +271,9 @@ public abstract class NormalMonsterController : BaseMonsterController
 
         if (LogLeash) GameLog.Log($"[Leash] {name} 귀환 시작 ({reason}) — 집에서 {distance:F1}m");
 
-        // 공격·장전 중이었어도 끊는다. 애니 이벤트가 _state를 바꿔도 _isReturning이 우선.
-        _state = MonsterState.Moving;
-        _anim.CrossFade("Move", 0.1f);
+        // 공격·장전 중이었어도 끊는다 — 행동 끝 애니 이벤트는 Move로 바뀌어 안 올 수 있으므로 여기서 끝낸다.
+        StopAction();
+        PlayLoco(MoveHash);
 
         if (_agent != null && _agent.enabled)
         {
@@ -249,24 +299,21 @@ public abstract class NormalMonsterController : BaseMonsterController
             _agent.isStopped = true;
         }
 
-        _state = MonsterState.Idle;
-        _anim.CrossFade("Idle", 0.1f);
+        PlayLoco(IdleHash);
 
         OnReturnedHome();
     }
 
-    // 교전 = 살아 있고 (귀환 · 추적 · 공격 · 장전 중이거나 대상이 감지 거리 안).
-    //  감지 거리를 같이 보는 이유: 공격·장전 종료 애니 이벤트가 _state를 Idle로 돌린 뒤 다음 행동 트리 평가 전까지
+    // 교전 = 살아 있고 (귀환 · 공격 · 장전 중이거나 대상이 감지 거리 안). 추적은 감지 거리 안일 때만 하므로 감지에 포함된다.
+    //  감지 거리를 같이 보는 이유: 공격·장전 종료 애니 이벤트가 행동을 끝낸 뒤 다음 행동 트리 평가 전까지
     //  한 프레임 틈이 있다. 스포너 틱이 그 틈에 읽으면 싸우는 중인 몹을 회수한다.
     //  끝나는 것은 리쉬가 보장한다 — 대상을 놓치면 귀환하고, 집에 도착하면 Idle.
     public override bool IsEngaged
     {
         get
         {
-            if (_state == MonsterState.Dead || Stat.HealthComp.CurrentHp <= 0) return false;
-            return _isReturning
-                || _state == MonsterState.Moving || _state == MonsterState.Attacking || _state == MonsterState.Reloading
-                || IsTargetDetected();
+            if (IsDead) return false;
+            return _isReturning || IsActing || IsTargetDetected();
         }
     }
 
@@ -288,13 +335,8 @@ public abstract class NormalMonsterController : BaseMonsterController
     protected abstract Node GetCombatNode();
 
 
-    protected override NodeState HandleDeadState()
+    protected override void OnDeath()
     {
-        // 중복 실행 방지 
-        if (_state == MonsterState.Dead) return NodeState.Running;
-
-      
-
         if (_agent != null && _agent.enabled)
         {
             _agent.isStopped = true;
@@ -306,7 +348,7 @@ public abstract class NormalMonsterController : BaseMonsterController
 
         CallOnDead();
 
-        return base.HandleDeadState();
+        base.OnDeath();
     }
 
    
@@ -322,12 +364,15 @@ public abstract class NormalMonsterController : BaseMonsterController
         return Vector3.Distance(transform.position, _target.position) <= _detectRange;
     }
 
+    protected bool IsTargetInAttackRange()
+    {
+        if (_target == null) return false;
+        return Vector3.Distance(transform.position, _target.position) <= _attackRange;
+    }
+
+    // 행동 중이면 여기까지 오지 않는다(ContinueAction이 먼저 멈춤)
     private NodeState TrackTarget()
     {
-        // 공격이나 장전 중이면 추적 불가
-        if (_state == MonsterState.Attacking || _state == MonsterState.Reloading)
-            return NodeState.Failure;
-
         if (_agent != null && _agent.enabled)
         {
             _agent.isStopped = false;
@@ -340,28 +385,15 @@ public abstract class NormalMonsterController : BaseMonsterController
             }
         }
 
-        if (_state != MonsterState.Moving)
-        {
-            _state = MonsterState.Moving;
-            _anim.CrossFade("Move", 0.1f);
-        }
-
+        PlayLoco(MoveHash);
         return NodeState.Success;
     }
 
     private NodeState Idle()
     {
-        if (_state == MonsterState.Attacking || _state == MonsterState.Reloading)
-            return NodeState.Running;
-
         if (_agent != null && _agent.enabled) _agent.isStopped = true;
 
-        if (_state != MonsterState.Idle)
-        {
-            _state = MonsterState.Idle;
-            _anim.CrossFade("Idle", 0.1f);
-        }
-
+        PlayLoco(IdleHash);
         return NodeState.Success;
     }
 
@@ -375,13 +407,4 @@ public abstract class NormalMonsterController : BaseMonsterController
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 10f);
         }
     }
-
-    // 애니메이션 이벤트 (공통)
-    public void OnAttackEvent(AudioClip sfx)
-    {
-        if (_isReturning) return;   // 공격 애니에서 Move로 블렌드되는 중에도 이벤트가 올 수 있다
-        if (sfx != null) Managers.Sound.Play(sfx, Define.Sound.Effect);
-        PerformAttackAction();
-    }
-    protected abstract void PerformAttackAction(); // 실제 투사체 발사나 타격 판정
 }

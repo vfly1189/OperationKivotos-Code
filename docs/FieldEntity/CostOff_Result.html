@@ -1,0 +1,840 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>끄기 실험</title><style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:14px 0 3px; font-weight:800; break-after:avoid; }
+  h3{ font-size:10pt; margin:10px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:9px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:8.2px; } .s:not([fill]){ fill:#5b6270; }
+  .xs{ font-size:7.2px; } .xs:not([fill]){ fill:#8a91a0; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:8.6pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 7px; background:var(--ink); color:#fff; font-weight:700; font-size:8.2pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:4px 7px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.k{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  td.c{ text-align:center; }
+  .callout{ border-radius:11px; padding:9px 13px; margin:9px 0; font-size:9pt; line-height:1.5; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); } .c-violet .lbl{ color:var(--violet); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; display:block; margin-bottom:3px; }
+  .callout ul{ margin:2px 0 0; padding-left:16px; } .callout li{ margin:2px 0; }
+  .pb{ break-before:page; }
+  .two{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .card{ border:1px solid var(--line); border-left:4px solid var(--blue); border-radius:10px; padding:7px 11px 6px; margin:7px 0; break-inside:avoid; font-size:8.7pt; line-height:1.45; }
+  .card.a{ border-left-color:var(--amber); } .card.v{ border-left-color:var(--violet); } .card.g{ border-left-color:var(--green); } .card.k{ border-left-color:var(--ink); }
+  .card .hd{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; gap:8px; }
+  .card .hd b{ font-size:9.6pt; } .card .hd span{ font-size:7.8pt; color:var(--muted); white-space:nowrap; }
+  .card p{ margin:0 0 3px; }
+  .num{ font-weight:800; color:var(--amber-ink); }
+  .ok{ color:var(--green-ink); font-weight:800; } .ng{ color:var(--amber-ink); font-weight:800; } .mid{ color:var(--violet-ink); font-weight:800; }
+  .footer{ margin-top:12px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+
+  .stat{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:8px 0; }
+  .stat div{ border:1px solid var(--line); border-radius:10px; padding:7px 10px; }
+  .stat b{ display:block; font-size:15pt; font-weight:800; letter-spacing:-.02em; }
+  .stat span{ font-size:7.8pt; color:var(--muted); }
+  td.m{ color:var(--faint); }
+  body{ font-size:10.4pt; line-height:1.6; }
+  .fig svg{ margin:2px 0; }
+  .big{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 6px; }
+  .big div{ border:1px solid var(--line); border-radius:12px; padding:9px 11px; }
+  .big .q{ font-size:8.4pt; color:var(--muted); display:block; }
+  .big .v{ font-size:15pt; font-weight:800; display:block; margin-top:2px; letter-spacing:-.02em; }
+  .big .n{ font-size:8pt; font-weight:800; }
+  .word{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:6px 0; }
+  .word div{ background:var(--shade); border-radius:10px; padding:7px 10px; font-size:8.8pt; line-height:1.45; }
+  .word b{ display:block; font-size:9.2pt; margin-bottom:1px; }
+  table td, table th{ font-size:9.2pt; } td.r{ text-align:right; white-space:nowrap; } td strong{ white-space:nowrap; }
+</style></head><body>
+
+<div class="kicker">FieldEntity · 갱신 LOD 0단계 · 끄기 실험 · 2026-10-12</div>
+<h1>몬스터 한 마리의 비용은 어디에 쓰이나</h1>
+<p class="lead">거리 방식으로 <strong>살아 있는 몬스터 수</strong>는 줄였다. 남은 몬스터의 약 88%는 화면 밖에 있는데도 비용을 다 낸다.
+다음 단계(갱신 LOD)는 그 몬스터들의 <strong>한 마리당 비용</strong>을 줄이는 것이다. 무엇부터 줄일지 정하려고,
+비용 항목 네 가지를 <strong>하나씩 통째로 꺼 보고</strong> 한 마리 비용이 최대 얼마나 내려가는지 쟀다.</p>
+
+<div class="big">
+  <div><span class="q">행동 트리 끔</span><span class="v" style="color:#3b5bdb">−35%</span><span class="n" style="color:#3b5bdb">가장 큼 → 1순위</span></div>
+  <div><span class="q">Animator 끔</span><span class="v" style="color:#7048e8">−27%</span><span class="n" style="color:#7048e8">큼 → 2순위</span></div>
+  <div><span class="q">HP바 끔</span><span class="v" style="color:#2b8a3e">−15%</span><span class="n" style="color:#2b8a3e">중간 → 3순위</span></div>
+  <div><span class="q">회피 끔</span><span class="v" style="color:#8a91a0">−1%</span><span class="n" style="color:#8a91a0">거의 없음 → 생략</span></div>
+</div>
+<p class="s" style="color:var(--muted);font-size:8.6pt;margin-top:0">각 칸 = 그 항목을 껐을 때 몬스터 한 마리 비용이 줄어든 비율 (기준: 아무것도 안 끈 상태 11.81μs/마리).</p>
+
+<h2>읽기 전에 — 용어 세 개</h2>
+<div class="word">
+  <div><b>한 마리 비용 (μs/마리)</b>몬스터가 한 마리 늘 때 프레임 시간이 늘어나는 양. 1μs = 0.001ms.</div>
+  <div><b>끄기 실험</b>실제 게임에 넣을 동작이 아니다. "이 항목이 0이면 최대 얼마나 빨라지나"(상한)를 재는 것.</div>
+  <div><b>밀도 ×4</b>스폰 지점마다 몬스터를 4배로. 차이가 잘 보이게 부하를 키운 것 — 켜지는 스폰 지점은 그대로.</div>
+</div>
+
+<h2>1. 몬스터가 늘 때 프레임 시간이 얼마나 느나</h2>
+<div class="fig"><div class="figt">살아 있는 몬스터 수에 따른 프레임 시간 — 다섯 조건</div>
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 428.347734 202.232906" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-12T23:55:59.670408</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.8.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 202.232906 
+L 428.347734 202.232906 
+L 428.347734 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 23.707734 174.744 
+L 425.467734 174.744 
+L 425.467734 2.88 
+L 23.707734 2.88 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 23.707734 174.744 
+L 23.707734 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2"/>
+     <g id="text_1">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="23.707734" y="184.697359" transform="rotate(-0 23.707734 184.697359)">0</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 71.536306 174.744 
+L 71.536306 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4"/>
+     <g id="text_2">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="71.536306" y="184.697359" transform="rotate(-0 71.536306 184.697359)">50</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 119.364877 174.744 
+L 119.364877 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6"/>
+     <g id="text_3">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="119.364877" y="184.697359" transform="rotate(-0 119.364877 184.697359)">100</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 167.193449 174.744 
+L 167.193449 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8"/>
+     <g id="text_4">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="167.193449" y="184.697359" transform="rotate(-0 167.193449 184.697359)">150</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 215.02202 174.744 
+L 215.02202 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10"/>
+     <g id="text_5">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="215.02202" y="184.697359" transform="rotate(-0 215.02202 184.697359)">200</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_11">
+      <path d="M 262.850592 174.744 
+L 262.850592 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12"/>
+     <g id="text_6">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="262.850592" y="184.697359" transform="rotate(-0 262.850592 184.697359)">250</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_13">
+      <path d="M 310.679163 174.744 
+L 310.679163 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14"/>
+     <g id="text_7">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="310.679163" y="184.697359" transform="rotate(-0 310.679163 184.697359)">300</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_15">
+      <path d="M 358.507734 174.744 
+L 358.507734 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16"/>
+     <g id="text_8">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="358.507734" y="184.697359" transform="rotate(-0 358.507734 184.697359)">350</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_17">
+      <path d="M 406.336306 174.744 
+L 406.336306 2.88 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18"/>
+     <g id="text_9">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="406.336306" y="184.697359" transform="rotate(-0 406.336306 184.697359)">400</text>
+     </g>
+    </g>
+    <g id="text_10">
+     <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="224.587734" y="197.343453" transform="rotate(-0 224.587734 197.343453)">살아 있는 몬스터 (마리)</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_19">
+      <path d="M 23.707734 174.744 
+L 425.467734 174.744 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20"/>
+     <g id="text_11">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="20.207734" y="177.97068" transform="rotate(-0 20.207734 177.97068)">0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_21">
+      <path d="M 23.707734 148.303385 
+L 425.467734 148.303385 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_22"/>
+     <g id="text_12">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="20.207734" y="151.530064" transform="rotate(-0 20.207734 151.530064)">1</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_23">
+      <path d="M 23.707734 121.862769 
+L 425.467734 121.862769 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_24"/>
+     <g id="text_13">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="20.207734" y="125.089449" transform="rotate(-0 20.207734 125.089449)">2</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_25">
+      <path d="M 23.707734 95.422154 
+L 425.467734 95.422154 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_26"/>
+     <g id="text_14">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="20.207734" y="98.648834" transform="rotate(-0 20.207734 98.648834)">3</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_27">
+      <path d="M 23.707734 68.981538 
+L 425.467734 68.981538 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_28"/>
+     <g id="text_15">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="20.207734" y="72.208218" transform="rotate(-0 20.207734 72.208218)">4</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_29">
+      <path d="M 23.707734 42.540923 
+L 425.467734 42.540923 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_30"/>
+     <g id="text_16">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="20.207734" y="45.767603" transform="rotate(-0 20.207734 45.767603)">5</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_31">
+      <path d="M 23.707734 16.100308 
+L 425.467734 16.100308 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_32"/>
+     <g id="text_17">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="20.207734" y="19.326987" transform="rotate(-0 20.207734 19.326987)">6</text>
+     </g>
+    </g>
+    <g id="text_18">
+     <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="9.516641" y="88.812" transform="rotate(-90 9.516641 88.812)">프레임 시간 (ms, 중앙값)</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 23.707734 174.744 
+L 23.707734 2.88 
+" style="fill: none; stroke: #e3e6ec; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 23.707734 174.744 
+L 425.467734 174.744 
+" style="fill: none; stroke: #e3e6ec; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="PathCollection_1">
+    <defs>
+     <path id="m307efa9f16" d="M 0 1.732051 
+C 0.459345 1.732051 0.899939 1.549551 1.224745 1.224745 
+C 1.549551 0.899939 1.732051 0.459345 1.732051 0 
+C 1.732051 -0.459345 1.549551 -0.899939 1.224745 -1.224745 
+C 0.899939 -1.549551 0.459345 -1.732051 0 -1.732051 
+C -0.459345 -1.732051 -0.899939 -1.549551 -1.224745 -1.224745 
+C -1.549551 -0.899939 -1.732051 -0.459345 -1.732051 0 
+C -1.732051 0.459345 -1.549551 0.899939 -1.224745 1.224745 
+C -0.899939 1.549551 -0.459345 1.732051 0 1.732051 
+z
+" style="stroke: #3b5bdb"/>
+    </defs>
+    <g clip-path="url(#pf31896c6a9)">
+     <use xlink:href="#m307efa9f16" x="33.273449" y="142.195602" style="fill: #3b5bdb; stroke: #3b5bdb"/>
+     <use xlink:href="#m307efa9f16" x="52.404877" y="136.854598" style="fill: #3b5bdb; stroke: #3b5bdb"/>
+     <use xlink:href="#m307efa9f16" x="90.667734" y="129.874276" style="fill: #3b5bdb; stroke: #3b5bdb"/>
+     <use xlink:href="#m307efa9f16" x="148.06202" y="117.077018" style="fill: #3b5bdb; stroke: #3b5bdb"/>
+     <use xlink:href="#m307efa9f16" x="224.587734" y="103.84349" style="fill: #3b5bdb; stroke: #3b5bdb"/>
+     <use xlink:href="#m307efa9f16" x="281.98202" y="87.437088" style="fill: #3b5bdb; stroke: #3b5bdb"/>
+     <use xlink:href="#m307efa9f16" x="358.507734" y="71.678481" style="fill: #3b5bdb; stroke: #3b5bdb"/>
+     <use xlink:href="#m307efa9f16" x="415.90202" y="58.682919" style="fill: #3b5bdb; stroke: #3b5bdb"/>
+    </g>
+   </g>
+   <g id="line2d_33">
+    <path d="M 23.707734 144.038041 
+L 425.467734 58.874298 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #3b5bdb; stroke-width: 1.3; stroke-linecap: square"/>
+   </g>
+   <g id="PathCollection_2">
+    <defs>
+     <path id="md0e27392c8" d="M 0 1.732051 
+C 0.459345 1.732051 0.899939 1.549551 1.224745 1.224745 
+C 1.549551 0.899939 1.732051 0.459345 1.732051 0 
+C 1.732051 -0.459345 1.549551 -0.899939 1.224745 -1.224745 
+C 0.899939 -1.549551 0.459345 -1.732051 0 -1.732051 
+C -0.459345 -1.732051 -0.899939 -1.549551 -1.224745 -1.224745 
+C -1.549551 -0.899939 -1.732051 -0.459345 -1.732051 0 
+C -1.732051 0.459345 -1.549551 0.899939 -1.224745 1.224745 
+C -0.899939 1.549551 -0.459345 1.732051 0 1.732051 
+z
+" style="stroke: #7048e8"/>
+    </defs>
+    <g clip-path="url(#pf31896c6a9)">
+     <use xlink:href="#md0e27392c8" x="33.273449" y="139.551541" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="52.404877" y="137.198326" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="90.667734" y="127.04513" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="109.799163" y="123.092258" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="148.06202" y="112.291266" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="167.193449" y="108.748224" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="224.587734" y="97.881131" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="281.98202" y="73.873052" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="301.113449" y="75.93542" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="358.507734" y="62.344944" style="fill: #7048e8; stroke: #7048e8"/>
+     <use xlink:href="#md0e27392c8" x="415.90202" y="49.798872" style="fill: #7048e8; stroke: #7048e8"/>
+    </g>
+   </g>
+   <g id="line2d_34">
+    <path d="M 23.707734 142.443718 
+L 425.467734 46.838185 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #7048e8; stroke-width: 1.3; stroke-linecap: square"/>
+   </g>
+   <g id="PathCollection_3">
+    <defs>
+     <path id="mddc4ab469f" d="M 0 1.732051 
+C 0.459345 1.732051 0.899939 1.549551 1.224745 1.224745 
+C 1.549551 0.899939 1.732051 0.459345 1.732051 0 
+C 1.732051 -0.459345 1.549551 -0.899939 1.224745 -1.224745 
+C 0.899939 -1.549551 0.459345 -1.732051 0 -1.732051 
+C -0.459345 -1.732051 -0.899939 -1.549551 -1.224745 -1.224745 
+C -1.549551 -0.899939 -1.732051 -0.459345 -1.732051 0 
+C -1.732051 0.459345 -1.549551 0.899939 -1.224745 1.224745 
+C -0.899939 1.549551 -0.459345 1.732051 0 1.732051 
+z
+" style="stroke: #2b8a3e"/>
+    </defs>
+    <g clip-path="url(#pf31896c6a9)">
+     <use xlink:href="#mddc4ab469f" x="33.273449" y="141.137978" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="52.404877" y="137.647817" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="90.667734" y="127.970551" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="109.799163" y="121.571922" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="128.930592" y="115.398039" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="148.06202" y="108.56314" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="167.193449" y="108.245852" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="186.324877" y="87.489969" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="224.587734" y="90.319115" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="281.98202" y="66.363918" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="301.113449" y="67.527305" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="358.507734" y="53.5931" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+     <use xlink:href="#mddc4ab469f" x="415.90202" y="43.307701" style="fill: #2b8a3e; stroke: #2b8a3e"/>
+    </g>
+   </g>
+   <g id="line2d_35">
+    <path d="M 23.707734 144.783947 
+L 425.467734 32.977483 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #2b8a3e; stroke-width: 1.3; stroke-linecap: square"/>
+   </g>
+   <g id="PathCollection_4">
+    <defs>
+     <path id="mb298ba43b2" d="M 0 1.732051 
+C 0.459345 1.732051 0.899939 1.549551 1.224745 1.224745 
+C 1.549551 0.899939 1.732051 0.459345 1.732051 0 
+C 1.732051 -0.459345 1.549551 -0.899939 1.224745 -1.224745 
+C 0.899939 -1.549551 0.459345 -1.732051 0 -1.732051 
+C -0.459345 -1.732051 -0.899939 -1.549551 -1.224745 -1.224745 
+C -1.549551 -0.899939 -1.732051 -0.459345 -1.732051 0 
+C -1.732051 0.459345 -1.549551 0.899939 -1.224745 1.224745 
+C -0.899939 1.549551 -0.459345 1.732051 0 1.732051 
+z
+" style="stroke: #e8590c"/>
+    </defs>
+    <g clip-path="url(#pf31896c6a9)">
+     <use xlink:href="#mb298ba43b2" x="33.273449" y="139.630863" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="52.404877" y="136.299345" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="90.667734" y="124.639034" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="109.799163" y="118.504811" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="128.930592" y="110.493305" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="148.06202" y="102.376036" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="167.193449" y="96.506219" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="186.324877" y="93.227583" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="224.587734" y="81.382187" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="243.719163" y="69.272385" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="281.98202" y="53.408016" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="301.113449" y="46.321931" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="358.507734" y="33.974164" style="fill: #e8590c; stroke: #e8590c"/>
+     <use xlink:href="#mb298ba43b2" x="415.90202" y="23.900289" style="fill: #e8590c; stroke: #e8590c"/>
+    </g>
+   </g>
+   <g id="line2d_36">
+    <path d="M 23.707734 144.200554 
+L 425.467734 13.867228 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke-dasharray: 5.2,2.6; stroke-dashoffset: 0; stroke: #e8590c; stroke-width: 1.3"/>
+   </g>
+   <g id="text_19">
+    <text style="fill: #5b6270; font: 7.5px 'Malgun Gothic'; text-anchor: end" x="420.684877" y="166.811815" transform="rotate(-0 420.684877 166.811815)">기울기가 낮을수록 = 몬스터 한 마리가 싸다</text>
+   </g>
+   <g id="PathCollection_5">
+    <defs>
+     <path id="mcf33975703" d="M 0 1.732051 
+C 0.459345 1.732051 0.899939 1.549551 1.224745 1.224745 
+C 1.549551 0.899939 1.732051 0.459345 1.732051 0 
+C 1.732051 -0.459345 1.549551 -0.899939 1.224745 -1.224745 
+C 0.899939 -1.549551 0.459345 -1.732051 0 -1.732051 
+C -0.459345 -1.732051 -0.899939 -1.549551 -1.224745 -1.224745 
+C -1.549551 -0.899939 -1.732051 -0.459345 -1.732051 0 
+C -1.732051 0.459345 -1.549551 0.899939 -1.224745 1.224745 
+C -0.899939 1.549551 -0.459345 1.732051 0 1.732051 
+z
+" style="stroke: #1a1c22"/>
+    </defs>
+    <g clip-path="url(#pf31896c6a9)">
+     <use xlink:href="#mcf33975703" x="33.273449" y="139.94815" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="52.404877" y="136.537311" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="90.667734" y="124.321746" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="109.799163" y="116.31024" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="128.930592" y="110.387542" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="148.06202" y="102.323154" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="167.193449" y="101.424174" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="186.324877" y="80.721172" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="224.587734" y="79.689988" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="281.98202" y="53.725303" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="358.507734" y="33.207386" style="fill: #1a1c22; stroke: #1a1c22"/>
+     <use xlink:href="#mcf33975703" x="415.90202" y="22.313852" style="fill: #1a1c22; stroke: #1a1c22"/>
+    </g>
+   </g>
+   <g id="line2d_37">
+    <path d="M 23.707734 144.251835 
+L 425.467734 13.122006 
+" clip-path="url(#pf31896c6a9)" style="fill: none; stroke: #1a1c22; stroke-width: 2; stroke-linecap: square"/>
+   </g>
+   <g id="legend_1">
+    <g id="line2d_38">
+     <path d="M 30.907734 13.81125 
+L 38.907734 13.81125 
+L 46.907734 13.81125 
+" style="fill: none; stroke: #1a1c22; stroke-width: 2; stroke-linecap: square"/>
+    </g>
+    <g id="text_20">
+     <text style="font: 8px 'Malgun Gothic'; text-anchor: start" x="53.307734" y="16.61125" transform="rotate(-0 53.307734 16.61125)">끄기 없음 — 마리당 11.8μs</text>
+    </g>
+    <g id="line2d_39">
+     <path d="M 30.907734 26.23375 
+L 38.907734 26.23375 
+L 46.907734 26.23375 
+" style="fill: none; stroke: #3b5bdb; stroke-width: 1.3; stroke-linecap: square"/>
+    </g>
+    <g id="text_21">
+     <text style="font: 8px 'Malgun Gothic'; text-anchor: start" x="53.307734" y="29.03375" transform="rotate(-0 53.307734 29.03375)">행동 트리 끔 — 마리당 7.7μs</text>
+    </g>
+    <g id="line2d_40">
+     <path d="M 30.907734 38.65625 
+L 38.907734 38.65625 
+L 46.907734 38.65625 
+" style="fill: none; stroke: #7048e8; stroke-width: 1.3; stroke-linecap: square"/>
+    </g>
+    <g id="text_22">
+     <text style="font: 8px 'Malgun Gothic'; text-anchor: start" x="53.307734" y="41.45625" transform="rotate(-0 53.307734 41.45625)">Animator 끔 — 마리당 8.6μs</text>
+    </g>
+    <g id="line2d_41">
+     <path d="M 30.907734 51.07875 
+L 38.907734 51.07875 
+L 46.907734 51.07875 
+" style="fill: none; stroke: #2b8a3e; stroke-width: 1.3; stroke-linecap: square"/>
+    </g>
+    <g id="text_23">
+     <text style="font: 8px 'Malgun Gothic'; text-anchor: start" x="53.307734" y="53.87875" transform="rotate(-0 53.307734 53.87875)">HP바 끔 — 마리당 10.1μs</text>
+    </g>
+    <g id="line2d_42">
+     <path d="M 30.907734 63.50125 
+L 38.907734 63.50125 
+L 46.907734 63.50125 
+" style="fill: none; stroke-dasharray: 5.2,2.6; stroke-dashoffset: 0; stroke: #e8590c; stroke-width: 1.3"/>
+    </g>
+    <g id="text_24">
+     <text style="font: 8px 'Malgun Gothic'; text-anchor: start" x="53.307734" y="66.30125" transform="rotate(-0 53.307734 66.30125)">회피 끔 — 마리당 11.7μs</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pf31896c6a9">
+   <rect x="23.707734" y="2.88" width="401.76" height="171.864"/>
+  </clipPath>
+ </defs>
+</svg>
+
+<div class="figcap">점 = 생존 몬스터 수를 20마리씩 묶은 구간의 프레임 시간 중앙값, 선 = 그 점들에 맞춘 직선. 모든 선이 왼쪽 끝(몬스터 0)에서 약 1.13~1.22ms로 모인다 — 몬스터와 상관없는 고정 비용은 같고, <strong>기울기(한 마리 비용)만 달라진다</strong>. 회피 끔(점선)은 기준선과 거의 겹친다.</div></div>
+
+<div class="fig"><div class="figt">한 마리 비용 — 막대가 짧을수록 그 항목이 비쌌다는 뜻</div>
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 459.496562 164.230016" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-12T23:55:59.718615</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.8.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 164.230016 
+L 459.496562 164.230016 
+L 459.496562 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 54.856563 136.438297 
+L 456.616562 136.438297 
+L 456.616562 8.926297 
+L 54.856563 8.926297 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 54.856563 136.438297 
+L 54.856563 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2"/>
+     <g id="text_1">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="54.856563" y="146.391656" transform="rotate(-0 54.856563 146.391656)">0</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 110.271735 136.438297 
+L 110.271735 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4"/>
+     <g id="text_2">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="110.271735" y="146.391656" transform="rotate(-0 110.271735 146.391656)">2</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 165.686907 136.438297 
+L 165.686907 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6"/>
+     <g id="text_3">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="165.686907" y="146.391656" transform="rotate(-0 165.686907 146.391656)">4</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 221.10208 136.438297 
+L 221.10208 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8"/>
+     <g id="text_4">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="221.10208" y="146.391656" transform="rotate(-0 221.10208 146.391656)">6</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 276.517252 136.438297 
+L 276.517252 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10"/>
+     <g id="text_5">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="276.517252" y="146.391656" transform="rotate(-0 276.517252 146.391656)">8</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_11">
+      <path d="M 331.932425 136.438297 
+L 331.932425 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12"/>
+     <g id="text_6">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="331.932425" y="146.391656" transform="rotate(-0 331.932425 146.391656)">10</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_13">
+      <path d="M 387.347597 136.438297 
+L 387.347597 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14"/>
+     <g id="text_7">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="387.347597" y="146.391656" transform="rotate(-0 387.347597 146.391656)">12</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_15">
+      <path d="M 442.762769 136.438297 
+L 442.762769 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke: #eef0f4; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16"/>
+     <g id="text_8">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="442.762769" y="146.391656" transform="rotate(-0 442.762769 146.391656)">14</text>
+     </g>
+    </g>
+    <g id="text_9">
+     <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: middle" x="255.736562" y="159.340563" transform="rotate(-0 255.736562 159.340563)">몬스터 한 마리가 프레임마다 드는 시간 (μs)</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_17"/>
+     <g id="text_10">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="51.356563" y="25.508977" transform="rotate(-0 51.356563 25.508977)">끄기 없음</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_18"/>
+     <g id="text_11">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="51.356563" y="50.708977" transform="rotate(-0 51.356563 50.708977)">행동 트리 끔</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_19"/>
+     <g id="text_12">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="51.356563" y="75.908977" transform="rotate(-0 51.356563 75.908977)">Animator 끔</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_20"/>
+     <g id="text_13">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="51.356563" y="101.108977" transform="rotate(-0 51.356563 101.108977)">HP바 끔</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_21"/>
+     <g id="text_14">
+      <text style="fill: #5b6270; font: 8.5px 'Malgun Gothic'; text-anchor: end" x="51.356563" y="126.308977" transform="rotate(-0 51.356563 126.308977)">회피 끔</text>
+     </g>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 54.856563 29.842297 
+L 382.03098 29.842297 
+L 382.03098 14.722297 
+L 54.856563 14.722297 
+z
+" clip-path="url(#p5f7f011d57)" style="fill: #1a1c22"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 54.856563 55.042297 
+L 267.34367 55.042297 
+L 267.34367 39.922297 
+L 54.856563 39.922297 
+z
+" clip-path="url(#p5f7f011d57)" style="fill: #3b5bdb"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 54.856563 80.242297 
+L 293.396374 80.242297 
+L 293.396374 65.122297 
+L 54.856563 65.122297 
+z
+" clip-path="url(#p5f7f011d57)" style="fill: #7048e8"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 54.856563 105.442297 
+L 333.818375 105.442297 
+L 333.818375 90.322297 
+L 54.856563 90.322297 
+z
+" clip-path="url(#p5f7f011d57)" style="fill: #2b8a3e"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 54.856563 130.642297 
+L 380.043673 130.642297 
+L 380.043673 115.522297 
+L 54.856563 115.522297 
+z
+" clip-path="url(#p5f7f011d57)" style="fill: #c9ced8"/>
+   </g>
+   <g id="line2d_22">
+    <path d="M 349.313538 136.438297 
+L 349.313538 8.926297 
+" clip-path="url(#p5f7f011d57)" style="fill: none; stroke-dasharray: 3,2; stroke-dashoffset: 0; stroke: #8a91a0"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 54.856563 136.438297 
+L 54.856563 8.926297 
+" style="fill: none; stroke: #e3e6ec; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 54.856563 136.438297 
+L 456.616562 136.438297 
+" style="fill: none; stroke: #e3e6ec; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_15">
+    <text style="fill: #1a1c22; font: 700 8.5px 'Malgun Gothic'; text-anchor: start" x="386.187118" y="24.50425" transform="rotate(-0 386.187118 24.50425)">11.81μs</text>
+   </g>
+   <g id="text_16">
+    <text style="fill: #1a1c22; font: 700 8.5px 'Malgun Gothic'; text-anchor: start" x="271.499808" y="49.70425" transform="rotate(-0 271.499808 49.70425)">7.67μs   −35%</text>
+   </g>
+   <g id="text_17">
+    <text style="fill: #1a1c22; font: 700 8.5px 'Malgun Gothic'; text-anchor: start" x="297.552511" y="74.90425" transform="rotate(-0 297.552511 74.90425)">8.61μs   −27%</text>
+   </g>
+   <g id="text_18">
+    <text style="fill: #1a1c22; font: 700 8.5px 'Malgun Gothic'; text-anchor: start" x="337.974513" y="100.10425" transform="rotate(-0 337.974513 100.10425)">10.07μs   −15%</text>
+   </g>
+   <g id="text_19">
+    <text style="fill: #1a1c22; font: 700 8.5px 'Malgun Gothic'; text-anchor: start" x="384.19981" y="125.30425" transform="rotate(-0 384.19981 125.30425)">11.74μs   −1%</text>
+   </g>
+   <g id="text_20">
+    <text style="fill: #8a91a0; font: 7.3px 'Malgun Gothic'; text-anchor: end" x="345.1574" y="8.422297" transform="rotate(-0 345.1574 8.422297)">−10% 선</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p5f7f011d57">
+   <rect x="54.856563" y="8.926297" width="401.76" height="127.512"/>
+  </clipPath>
+ </defs>
+</svg>
+
+<div class="figcap">점선 = 기준에서 −10%. 같은 조건을 두 번 돌렸을 때 기울기가 약 5% 차이 났으므로, 이보다 작게 줄어든 항목은 "효과 작음"으로 본다(회색).</div></div>
+
+<table><thead><tr><th>조건</th><th>한 마리 비용</th><th>절감</th><th>400마리일 때</th><th>p50 (ms)</th><th>p99 (ms)</th><th>6.94ms 넘음</th><th>평균 생존</th></tr></thead><tbody>
+<tr><td><strong>끄기 없음</strong></td><td class="r">11.81μs</td><td class="r">—</td><td class="r">5.88ms</td><td class="r">2.07</td><td class="r">5.37</td><td class="r">81</td><td class="r">119</td></tr><tr><td><strong>행동 트리 끔</strong></td><td class="r">7.67μs</td><td class="r">−35%</td><td class="r">4.23ms</td><td class="r">1.84</td><td class="r">3.95</td><td class="r">67</td><td class="r">116</td></tr><tr><td><strong>Animator 끔</strong></td><td class="r">8.61μs</td><td class="r">−27%</td><td class="r">4.67ms</td><td class="r">1.98</td><td class="r">4.27</td><td class="r">66</td><td class="r">119</td></tr><tr><td><strong>HP바 끔</strong></td><td class="r">10.07μs</td><td class="r">−15%</td><td class="r">5.16ms</td><td class="r">1.95</td><td class="r">4.94</td><td class="r">61</td><td class="r">119</td></tr><tr><td><strong>회피 끔</strong></td><td class="r">11.74μs</td><td class="r">−1%</td><td class="r">5.85ms</td><td class="r">2.11</td><td class="r">5.48</td><td class="r">85</td><td class="r">123</td></tr>
+</tbody></table>
+<p class="s" style="color:var(--muted);font-size:8.6pt">400마리일 때 = 맞춘 직선으로 계산한 프레임 시간. 평균 생존이 조건마다 비슷해(116~123마리) p50 · p99도 그대로 비교할 수 있다.</p>
+
+<h2>2. 항목을 어떻게 껐나</h2>
+<table><thead><tr><th style="width:15%">항목</th><th style="width:33%">끈 방법</th><th>같이 사라진 것 · 주의</th></tr></thead><tbody>
+<tr><td><strong>행동 트리</strong></td><td>몬스터가 매 프레임 하는 "판단"(감지 · 추적 · 공격 결정)을 건너뜀</td><td>판단을 안 하니 움직이지도 쏘지도 않는다 → 이동 · 애니 전환 · 사격 비용도 같이 빠졌다. 그래서 −35%는 "판단 + 판단이 일으키는 일"의 합.</td></tr>
+<tr><td><strong>Animator</strong></td><td>애니메이션 컴포넌트를 끔 (몬스터가 한 자세로 굳음)</td><td>발사 · 공격 끝 · 장전 끝이 애니 신호라, 그냥 끄면 공격 상태에서 영영 못 빠져나온다. 그래서 신호 시각만 흉내 냈다(발사 0.58초 · 공격 끝 2.55초 · 장전 끝 2.83초) — 사격은 그대로 일어난다.</td></tr>
+<tr><td><strong>HP바</strong></td><td>머리 위 HP바 오브젝트를 통째로 끔</td><td>스크립트(위치 계산)만 끄면 UI 캔버스 갱신 비용이 남아서 오브젝트째 껐다.</td></tr>
+<tr><td><strong>회피</strong></td><td>길찾기 에이전트의 "서로 피하기"만 끔</td><td>에이전트 자체를 끄면 이동이 멈추므로 회피 계산만 껐다. 이동은 그대로.</td></tr>
+</tbody></table>
+<div class="callout c-blue"><span class="lbl">합이 100%가 아닌 이유</span>세 항목 절감을 더하면 9.1μs로 기준 11.81μs의 77%다. 행동 트리를 끄면 애니 전환 · 사격도 줄어드는 것처럼 항목끼리 겹치는 부분이 있어서, 이 합은 "셋 다 끄면 줄어드는 양"보다 크게 잡힌다. 그래도 순서(행동 트리 &gt; Animator &gt; HP바 ≫ 회피)는 분명하다.</div>
+
+<h2>3. 결과 읽기 — 무엇을 줄일까</h2>
+<div class="callout c-green"><span class="lbl">구현할 것 (순서대로)</span>
+<ul>
+<li><strong>① 행동 트리 — 화면 밖이면 덜 자주 판단</strong> (상한 −35%). 매 프레임 대신 몇 프레임에 한 번만 판단한다. 시작 프레임을 몬스터마다 엇갈려야 한 프레임에 몰리지 않는다.</li>
+<li><strong>② Animator — 화면 밖이면 뼈 계산 생략</strong> (상한 −27%). 애니 신호(발사 등)는 계속 와야 하므로 완전히 끄지 못하고, 신호는 살리고 뼈 위치 계산만 건너뛰는 설정(CullUpdateTransforms)을 쓴다 → 실제 절감은 이 상한보다 작다.</li>
+<li><strong>③ HP바 — 화면 밖이면 끔</strong> (상한 −15%). 화면 밖 HP바는 어차피 안 보이므로 상한에 가깝게 얻을 수 있다. 셋 중 가장 쉽다.</li>
+</ul></div>
+<div class="callout c-amber"><span class="lbl">생략할 것 — 회피 (−1%)</span>회피 계산은 <strong>움직이는</strong> 몬스터만 한다. 화면 밖 몬스터는 대부분 제자리에 서 있고, 이 맵은 멀리서 쏘는 원거리 몬스터(RL)가 대부분이라 플레이어 주위로 몰려들지도 않는다. 그래서 꺼도 거의 안 줄었다. (근접 몬스터가 몰려드는 맵이라면 다시 볼 항목.)</div>
+
+<h2>측정은 이렇게 했다</h2>
+<table><tbody>
+<tr><td style="width:22%"><strong>조건</strong></td><td>개발 빌드 · 같은 PC · 1920×1080 창 · 프레임 제한 없음 · 거리 방식(⑤) · 밀도 ×4 (스폰 지점 23개 · 슬롯 1,452개). 끄는 항목만 바꿔서 실행.</td></tr>
+<tr><td><strong>같은 길</strong></td><td>자동 주행. 회피 끔 기록이 두 번째 "끌고 가기" 직전에 끊겨서, 다섯 조건 모두 <strong>맵 한 바퀴 ~ 경계 왕복 4곳 · 끌고 가기 1번(약 214초)</strong>으로 맞춰 비교했다.</td></tr>
+<tr><td><strong>한 마리 비용 계산</strong></td><td>몬스터를 만들거나 치운 프레임은 뺀다(그 순간 비용이 섞이므로) → 생존 몬스터 20마리 단위로 묶어 중앙값 → 직선을 맞춰 기울기를 읽는다.</td></tr>
+<tr><td><strong>횟수</strong></td><td>조건마다 1번(시간상). 같은 조건 반복 시 기울기 차이 약 5% → 10% 넘는 차이만 의미 있게 본다. 행동 트리 · Animator · HP바는 이 기준을 크게 넘는다.</td></tr>
+<tr><td><strong>정상 동작 확인</strong></td><td>다섯 조건 모두 화면 안 등장 0 · 끌고 온 몬스터 소실 0 · 몬스터 풀 확장 0. 교전 유예는 끝날 때 0(Animator 끔 포함 — 신호 흉내가 제대로 동작).</td></tr>
+</tbody></table>
+<div class="callout c-violet"><span class="lbl">주의 — 예전 숫자와 비교하지 말 것</span>예전 비용 식의 "마리당 7.58μs"는 정책 7개의 실행별 중앙값을 하나의 직선으로 맞춘 값이고, 여기 11.81μs는 한 실행 안에서 몬스터 수에 따라 맞춘 값이다. 계산 방법이 달라 직접 비교하지 않는다. 같은 방법으로 ×1 기록(10-10 빌드)을 계산하면 10.1~10.6μs다.</div>
+
+<div class="callout c-blue"><span class="lbl">한 줄로</span>몬스터 한 마리 비용의 대부분은 <strong>행동 트리(−35%) · Animator(−27%) · HP바(−15%)</strong>에서 나오고, 회피는 거의 0이다. 화면 밖 몬스터에 이 세 가지를 순서대로 줄인다.</div>
+
+<div class="footer">데이터: 개발 빌드 MetricsLogs <code>20261012_232020 · off-bt_20261012_232534 · off-anim_20261012_233047 · off-hpbar_20261012_234150 · off-avoid_20261012_234703</code> · 생성 <code>docs/FieldEntity/tools/costoff_report/gen.py</code></div>
+</body></html>

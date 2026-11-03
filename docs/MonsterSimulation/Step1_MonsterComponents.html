@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>1단계 명세서 — 몬스터 컴포넌트 확립</title>
+<style>
+  :root{
+    --ink:#1a1c22; --muted:#5b6270; --faint:#8a91a0;
+    --line:#e3e6ec; --line2:#eef0f4; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+    --red:#d6336c; --red-soft:#fff0f4; --red-ink:#9c2050;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; line-height:1.5; font-size:10pt; }
+  h1{ font-size:19pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:7px; }
+  h2{ font-size:12pt; margin:18px 0 3px; font-weight:800; break-after:avoid; }
+  h3{ font-size:10.2pt; margin:12px 0 3px; font-weight:800; break-after:avoid; }
+  .h2sub{ color:var(--muted); font-size:8.8pt; margin:2px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  p{ margin:0 0 6px; } strong{ font-weight:800; }
+  em{ font-style:normal; background:linear-gradient(transparent 60%,#ffe8a3 60%); font-weight:700; }
+  code{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.4pt; background:var(--shade); padding:1px 4px; border-radius:5px; border:1px solid var(--line2); }
+  .lead{ font-size:10.4pt; color:var(--muted); margin:0 0 4px; }
+  ul,ol{ margin:4px 0 8px; padding-left:18px; } li{ margin:0 0 3px; }
+  .fig{ border:1px solid var(--line); border-radius:12px; padding:9px 11px 5px; margin:10px 0; background:#fff; break-inside:avoid; }
+  .figt{ font-size:9.5pt; font-weight:800; margin:0 0 3px; }
+  .figt .tag{ font-size:7.2pt; font-weight:800; color:#fff; background:var(--blue); border-radius:20px; padding:1px 7px; vertical-align:middle; margin-left:6px; letter-spacing:.03em; }
+  .figcap{ font-size:8.2pt; color:var(--faint); margin:3px 0 2px; }
+  svg{ display:block; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:9.6px; font-weight:700; fill:#1a1c22; }
+  .tb{ font-size:10.4px; font-weight:800; fill:#1a1c22; }
+  .s{ font-size:8.2px; fill:#5b6270; }
+  .xs{ font-size:7.2px; fill:#8a91a0; }
+  .mono{ font-family:"Cascadia Code","Consolas",monospace; font-size:7.8px; }
+  table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:9pt; break-inside:avoid; }
+  th{ text-align:left; padding:5px 8px; background:var(--ink); color:#fff; font-weight:700; font-size:8.4pt; }
+  th:first-child{ border-radius:7px 0 0 0; } th:last-child{ border-radius:0 7px 0 0; }
+  td{ padding:5px 8px; border-bottom:1px solid var(--line2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; } tbody tr:nth-child(even){ background:var(--shade); }
+  td.who{ font-weight:800; color:var(--blue-ink); white-space:nowrap; }
+  td.mn{ font-family:"Cascadia Code","Consolas",monospace; font-size:8.2pt; }
+  .callout{ border-radius:11px; padding:10px 14px; margin:10px 0; font-size:9.2pt; line-height:1.48; break-inside:avoid; }
+  .c-blue{ background:var(--blue-soft); color:var(--blue-ink); } .c-blue .lbl{ color:var(--blue); }
+  .c-amber{ background:var(--amber-soft); color:var(--amber-ink); } .c-amber .lbl{ color:var(--amber); }
+  .c-green{ background:var(--green-soft); color:var(--green-ink); } .c-green .lbl{ color:var(--green); }
+  .c-violet{ background:var(--violet-soft); color:var(--violet-ink); } .c-violet .lbl{ color:var(--violet); }
+  .callout .lbl{ font-weight:800; font-size:8pt; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
+  .footer{ margin-top:14px; padding-top:7px; border-top:1px solid var(--line); font-size:7.6pt; color:var(--faint); }
+  .pb{ break-before:page; }
+  .ok{ color:var(--green); font-weight:800; }
+  .warn{ color:var(--amber); font-weight:800; }
+  .bad{ color:var(--red); font-weight:800; }
+  .meta{ font-size:8.4pt; color:var(--faint); margin:0 0 10px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .box{ border:1px solid var(--line); border-radius:10px; padding:9px 11px; background:#fff; }
+  .box h4{ margin:0 0 4px; font-size:9.4pt; font-weight:800; }
+  .box p{ font-size:8.8pt; color:var(--muted); margin:0 0 4px; }
+  .sub{ font-size:7.6pt; color:var(--faint); font-weight:400; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Operation Kivotos · 사전작업 1단계</div>
+<h1>몬스터 컴포넌트 확립 — 생애 계약 명세서</h1>
+<p class="lead">풀에서 재사용되는 몬스터가 <em>매번 같은 상태로 시작하도록</em> 만든다.<br>
+지금은 그것이 계약이 아니라 우연에 기대고 있다.</p>
+<p class="meta">작성 2026-08-24 · 대상 <code>Assets/Scripts/Controllers/Monster/**</code> · 선행 07_Prerequisites 2.1 · 후속 2단계(ResourceManager 이음새) · 3단계(스포너 소유권)</p>
+
+<div class="callout c-blue">
+<span class="lbl">한 장 요약</span>
+Unity의 <code>Awake</code>·<code>Start</code>는 <strong>오브젝트가 새로 만들어질 때만</strong> 돈다.
+풀에서 꺼내 쓰는 몬스터는 이 둘을 건너뛴다. 그래서 "매 스폰마다 해야 하는 일"을 놓을 자리가 없고,
+지금은 그 일이 <code>OnEnable</code>·<code>Start</code>·<code>SetStat</code>·<code>HandleDeadState</code> 네 군데에 흩어져 있다.
+<strong>이 문서는 그 자리를 <code>OnSpawn</code>/<code>OnDespawn</code> 두 개로 만들고, 흩어진 것을 옮기는 작업을 정의한다.</strong>
+</div>
+
+<h2>0. 왜 지금 이 작업인가</h2>
+<div class="h2sub">측정의 유효성 문제 — 성능 개선이 아니다</div>
+
+<p>이 트랙의 목적은 5가지 몬스터 관리 방법을 <strong>같은 기준으로 재는 것</strong>이다.
+그런데 지금 상태로 재면 숫자가 방법의 차이가 아니라 <strong>재사용 버그의 차이</strong>를 잰다.</p>
+
+<table>
+<thead><tr><th style="width:22%">재려는 것</th><th style="width:39%">지금 섞여 들어오는 것</th><th>결과</th></tr></thead>
+<tbody>
+<tr><td class="who">히칭 프레임</td><td>풀 재사용 때 HP바를 다시 비동기 로드</td><td>방법마다 스폰 빈도가 달라 <strong>순위가 뒤집힐 수 있다</strong></td></tr>
+<tr><td class="who">평균 활성 수</td><td>디스폰돼도 남는 HP바·구독</td><td>"껐다"의 정의가 흔들린다</td></tr>
+<tr><td class="who">스폰 1회 비용</td><td>초기화가 4군데로 흩어져 무엇을 뺐는지 말할 수 없다</td><td>개선의 원인을 특정할 수 없다</td></tr>
+</tbody>
+</table>
+
+<div class="callout c-amber">
+<span class="lbl">판단 기준 (07_Prerequisites 0절)</span>
+<strong>이걸 고치면 5가지 방법의 상대 순위가 바뀌나?</strong> → 바뀐다. 그래서 재기 <strong>전에</strong> 한다.
+</div>
+
+<h2>1. 이 문서의 범위</h2>
+<div class="h2sub">무엇을 하고 무엇을 안 하는지 먼저 못 박는다</div>
+
+<div class="grid2">
+<div class="box">
+<h4 style="color:#1f6b2e">한다</h4>
+<p>· 생애 훅 4개 정의 (<code>Awake</code>/<code>OnSpawn</code>/<code>OnEnable</code>/<code>OnDespawn</code>)</p>
+<p>· 몬스터 컴포넌트의 <strong>모든 필드가 어느 훅에서 리셋되는지</strong> 전수 정리</p>
+<p>· 구독·생성한 것을 같은 층에서 반납하도록 짝 맞추기</p>
+<p>· 자식 컨트롤러(Normal/Ranged/AR/RL/Tank/Boss)까지 내려 적용</p>
+</div>
+<div class="box">
+<h4 style="color:#9c2050">안 한다 (다음 단계)</h4>
+<p>· <code>ResourceManager</code>에 <code>activate:false</code> 오버로드 추가 → <strong>2단계</strong></p>
+<p>· 풀 용량 외부 주입, <code>Pop</code> 즉석생성 경고 → <strong>2단계</strong></p>
+<p>· 스포너가 리스폰 상태를 소유 → <strong>3단계</strong></p>
+<p>· 스포너 배치 리팩터(앵커+패턴) → 실험 종료 후</p>
+</div>
+</div>
+
+<div class="callout c-violet">
+<span class="lbl">중요 — 1단계만으로는 증상이 안 사라진다</span>
+<code>OnSpawn</code>을 만들어도 <strong>그것을 불러줄 사람이 2단계에 있다.</strong>
+지금은 <code>ResourceManager.Instantiate</code>가 마지막에 <code>SetActive(true)</code>를 해버려서
+팩토리가 끼어들 틈이 없다. 1단계는 <em>받을 그릇을 만드는 일</em>이고, 물을 붓는 건 2단계다.
+<strong>1단계 끝나고 플레이 테스트해서 "안 고쳐졌네" 하지 말 것.</strong> 검증은 2단계 이후에 한다.
+</div>
+
+<div class="footer">Step1_MonsterComponents · 1 / 11</div>
+
+<!-- ==================== PAGE 2 ==================== -->
+<div class="pb"></div>
+<h2>2. 개념 — 풀링이 무엇을 바꾸는가</h2>
+<div class="h2sub">모든 문제가 여기 한 곳에서 나온다</div>
+
+<p>Unity의 생명주기 함수는 두 종류로 나뉜다.</p>
+<ul>
+<li><strong>오브젝트가 태어날 때 딱 한 번</strong> — <code>Awake</code>, <code>Start</code></li>
+<li><strong>켜지고 꺼질 때마다</strong> — <code>OnEnable</code>, <code>OnDisable</code></li>
+</ul>
+
+<p>오브젝트 풀링은 <em>죽은 오브젝트를 지우지 않고 꺼서 보관했다가 다시 켜는 것</em>이다.
+그래서 <strong>두 번째 생애부터는 <code>Awake</code>와 <code>Start</code>가 돌지 않는다.</strong>
+아래 그림이 이 명세서 전체의 출발점이다.</p>
+
+<div class="fig">
+<p class="figt">그림 1. 같은 오브젝트의 두 생애 — 무엇이 빠지는가<span class="tag">핵심</span></p>
+<svg viewBox="0 0 700 240" width="100%">
+  <text class="tb" x="0" y="14">첫 번째 생애 — 새로 만들어질 때</text>
+  <line x1="0" y1="24" x2="700" y2="24" stroke="#e3e6ec" stroke-width="1"/>
+  <line x1="14" y1="58" x2="686" y2="58" stroke="#c8cedb" stroke-width="2"/>
+
+  <rect x="14" y="38" width="88" height="40" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t" x="58" y="56" text-anchor="middle" fill="#2b3a8f">Instantiate</text>
+  <text class="xs" x="58" y="70" text-anchor="middle">오브젝트 생성</text>
+
+  <rect x="116" y="38" width="88" height="40" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="t" x="160" y="56" text-anchor="middle" fill="#1f6b2e">Awake</text>
+  <text class="xs" x="160" y="70" text-anchor="middle">조립 · 1회</text>
+
+  <rect x="218" y="38" width="88" height="40" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+  <text class="t" x="262" y="56" text-anchor="middle" fill="#5028c0">OnEnable</text>
+  <text class="xs" x="262" y="70" text-anchor="middle">켜짐 반응</text>
+
+  <rect x="320" y="38" width="88" height="40" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="t" x="364" y="56" text-anchor="middle" fill="#1f6b2e">Start</text>
+  <text class="xs" x="364" y="70" text-anchor="middle">첫 프레임 · 1회</text>
+
+  <rect x="422" y="38" width="108" height="40" rx="8" fill="#f7f8fa" stroke="#c8cedb"/>
+  <text class="t" x="476" y="56" text-anchor="middle">Update × N</text>
+  <text class="xs" x="476" y="70" text-anchor="middle">행동트리 평가</text>
+
+  <rect x="544" y="38" width="108" height="40" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+  <text class="t" x="598" y="56" text-anchor="middle" fill="#5028c0">OnDisable</text>
+  <text class="xs" x="598" y="70" text-anchor="middle">꺼짐 반응</text>
+
+  <path d="M 652 84 C 678 100, 672 110, 636 112 L 56 112 C 22 112, 24 122, 30 134"
+        fill="none" stroke="#8a91a0" stroke-width="1.4" stroke-dasharray="4 3"/>
+  <text class="s" x="346" y="108" text-anchor="middle">풀에 반납 — 지우지 않고 꺼서 보관</text>
+
+  <text class="tb" x="0" y="152">두 번째 생애 — 풀에서 꺼내 쓸 때</text>
+  <line x1="0" y1="162" x2="700" y2="162" stroke="#e3e6ec" stroke-width="1"/>
+  <line x1="14" y1="196" x2="686" y2="196" stroke="#c8cedb" stroke-width="2"/>
+
+  <rect x="14" y="176" width="88" height="40" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t" x="58" y="194" text-anchor="middle" fill="#2b3a8f">Pool.Pop</text>
+  <text class="xs" x="58" y="208" text-anchor="middle">보관함에서 꺼냄</text>
+
+  <rect x="116" y="176" width="88" height="40" rx="8" fill="#fff0f4" stroke="#d6336c" stroke-dasharray="4 3"/>
+  <text class="t" x="160" y="194" text-anchor="middle" fill="#9c2050">Awake ✕</text>
+  <text class="xs" x="160" y="208" text-anchor="middle" fill="#9c2050">돌지 않음</text>
+
+  <rect x="218" y="176" width="88" height="40" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+  <text class="t" x="262" y="194" text-anchor="middle" fill="#5028c0">OnEnable</text>
+  <text class="xs" x="262" y="208" text-anchor="middle">이것만 돈다</text>
+
+  <rect x="320" y="176" width="88" height="40" rx="8" fill="#fff0f4" stroke="#d6336c" stroke-dasharray="4 3"/>
+  <text class="t" x="364" y="194" text-anchor="middle" fill="#9c2050">Start ✕</text>
+  <text class="xs" x="364" y="208" text-anchor="middle" fill="#9c2050">돌지 않음</text>
+
+  <rect x="422" y="176" width="108" height="40" rx="8" fill="#f7f8fa" stroke="#c8cedb"/>
+  <text class="t" x="476" y="194" text-anchor="middle">Update × N</text>
+  <text class="xs" x="476" y="208" text-anchor="middle">이전 생애 상태로 시작</text>
+
+  <rect x="544" y="176" width="108" height="40" rx="8" fill="#f3f0ff" stroke="#7048e8"/>
+  <text class="t" x="598" y="194" text-anchor="middle" fill="#5028c0">OnDisable</text>
+  <text class="xs" x="598" y="208" text-anchor="middle">꺼짐 반응</text>
+
+  <text class="s" x="350" y="234" text-anchor="middle" fill="#9c2050">✕ 표시된 두 칸이 사라진 자리 — "매번 해야 하는 일"이 갈 곳을 잃는다</text>
+</svg>
+<p class="figcap">Awake·Start는 인스턴스당 1회. 풀 재사용은 인스턴스를 재활용하므로 이 둘을 건너뛴다.</p>
+</div>
+
+<h3>그래서 실제로 무슨 일이 벌어지나</h3>
+<p>초기화 코드를 놓을 자리가 <code>OnEnable</code>밖에 없어진다. 그런데 <code>OnEnable</code>에는 두 가지 구조적 한계가 있다.</p>
+
+<table>
+<thead><tr><th style="width:24%">한계</th><th>내용</th></tr></thead>
+<tbody>
+<tr><td class="who">인자를 못 받는다</td><td>유니티가 부르는 함수라 <code>OnEnable(스탯, 레벨, 스폰지점)</code> 같은 형태가 불가능하다. 그래서 데이터는 <strong>따로, 나중에</strong> 넣게 되고 순서가 어긋난다.</td></tr>
+<tr><td class="who">이미 켜진 뒤다</td><td><code>OnEnable</code>이 도는 순간 오브젝트는 이미 활성이다. 같은 프레임에 <code>Update</code>·물리·애니메이터가 돌기 시작한다. <strong>준비가 끝나기 전에 게임이 시작된다.</strong></td></tr>
+</tbody>
+</table>
+
+<div class="footer">Step1_MonsterComponents · 2 / 11</div>
+
+<!-- ==================== PAGE 3 ==================== -->
+<div class="pb"></div>
+<h2>3. 실무 패턴 — 왜 다들 "스폰 훅"을 따로 만드나</h2>
+<div class="h2sub">이건 내가 지어낸 구조가 아니다</div>
+
+<p>2장의 한계는 유니티만의 문제가 아니다. <strong>재사용되는 오브젝트를 다루는 프레임워크는 예외 없이
+"생성 훅"과 "스폰 훅"을 분리해 두었다.</strong> 이름만 다를 뿐 같은 결론이다.</p>
+
+<table>
+<thead><tr><th style="width:26%">프레임워크</th><th style="width:36%">생성 / 파괴 훅</th><th>스폰 / 디스폰 훅</th></tr></thead>
+<tbody>
+<tr><td class="who">Unity MonoBehaviour</td><td class="mn">Awake / OnDestroy</td><td><span class="bad">없음</span> — 직접 만들어야 한다</td></tr>
+<tr><td class="who">Unity ObjectPool&lt;T&gt;</td><td class="mn">createFunc / actionOnDestroy</td><td class="mn">actionOnGet / actionOnRelease</td></tr>
+<tr><td class="who">Netcode for GameObjects</td><td class="mn">Awake / OnDestroy</td><td class="mn">OnNetworkSpawn / OnNetworkDespawn</td></tr>
+<tr><td class="who">Photon Fusion</td><td class="mn">Awake / OnDestroy</td><td class="mn">Spawned() / Despawned()</td></tr>
+<tr><td class="who">Unreal Actor</td><td class="mn">생성자 / BeginDestroy</td><td class="mn">BeginPlay / EndPlay</td></tr>
+</tbody>
+</table>
+
+<div class="callout c-blue">
+<span class="lbl">읽는 법</span>
+표의 오른쪽 열이 비어 있는 건 <strong>MonoBehaviour 하나뿐</strong>이다.
+유니티가 기본으로 안 주니까 프로젝트마다 직접 만든다 — 그게 이번 작업이다.
+<strong>"풀링을 쓰면서 스폰 훅을 안 만든 것"이 결함이지, 만드는 게 특별한 설계가 아니다.</strong>
+</div>
+
+<h3>3.1 채택할 계약 — 훅 4개</h3>
+
+<div class="fig">
+<p class="figt">그림 2. 생애 훅 4개와 각자의 성격<span class="tag">계약</span></p>
+<svg viewBox="0 0 700 222" width="100%">
+  <text class="s" x="0" y="12">← 인스턴스 수명 (딱 1번)</text>
+  <text class="s" x="700" y="12" text-anchor="end">생애마다 반복 (매 스폰) →</text>
+  <line x1="0" y1="20" x2="700" y2="20" stroke="#e3e6ec"/>
+
+  <rect x="0" y="30" width="166" height="152" rx="10" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="tb" x="83" y="50" text-anchor="middle" fill="#1f6b2e">Awake</text>
+  <text class="xs" x="83" y="63" text-anchor="middle" fill="#1f6b2e">인스턴스당 1회 · 조립</text>
+  <line x1="14" y1="72" x2="152" y2="72" stroke="#b7e0c0"/>
+  <text class="s" x="14" y="88">· 컴포넌트 캐시</text>
+  <text class="s" x="14" y="102">· 행동트리 구축</text>
+  <text class="s" x="14" y="116">· EnsureOn 부착</text>
+  <text class="s" x="14" y="130">· 에이전트 파라미터</text>
+  <text class="xs" x="14" y="154">두 번 다시 안 돈다.</text>
+  <text class="xs" x="14" y="166">여기 둔 건 영원히 유지됨</text>
+
+  <rect x="178" y="30" width="166" height="152" rx="10" fill="#eef2ff" stroke="#3b5bdb" stroke-width="2"/>
+  <text class="tb" x="261" y="50" text-anchor="middle" fill="#2b3a8f">OnSpawn(ctx)</text>
+  <text class="xs" x="261" y="63" text-anchor="middle" fill="#2b3a8f">매 스폰 · 비활성 상태에서</text>
+  <line x1="192" y1="72" x2="330" y2="72" stroke="#c3cdf5"/>
+  <text class="s" x="192" y="88">· 체력 회복</text>
+  <text class="s" x="192" y="102">· 상태 · 타겟 · 탄약 리셋</text>
+  <text class="s" x="192" y="116">· 행동트리 노드 리셋</text>
+  <text class="s" x="192" y="130">· 쿨다운 비우기</text>
+  <text class="xs" x="192" y="154">새로 만든 훅. 인자를 받는다.</text>
+  <text class="xs" x="192" y="166">아직 안 켜졌으므로 안전</text>
+
+  <rect x="356" y="30" width="166" height="152" rx="10" fill="#f3f0ff" stroke="#7048e8"/>
+  <text class="tb" x="439" y="50" text-anchor="middle" fill="#5028c0">OnEnable</text>
+  <text class="xs" x="439" y="63" text-anchor="middle" fill="#5028c0">매 활성화 · 켜짐 반응만</text>
+  <line x1="370" y1="72" x2="508" y2="72" stroke="#d8cffa"/>
+  <text class="s" x="370" y="88">· Animator Rebind</text>
+  <text class="s" x="370" y="102">· 등장 애니 재생</text>
+  <text class="s" x="370" y="116">· 콜라이더 켜기</text>
+  <text class="xs" x="370" y="140">"켜져 있어야만 되는 것"만.</text>
+  <text class="xs" x="370" y="152">데이터 초기화는 넣지 않는다</text>
+
+  <rect x="534" y="30" width="166" height="152" rx="10" fill="#fff4ec" stroke="#e8590c" stroke-width="2"/>
+  <text class="tb" x="617" y="50" text-anchor="middle" fill="#8a3708">OnDespawn()</text>
+  <text class="xs" x="617" y="63" text-anchor="middle" fill="#8a3708">매 디스폰 · 반납</text>
+  <line x1="548" y1="72" x2="686" y2="72" stroke="#f8d6bd"/>
+  <text class="s" x="548" y="88">· 이벤트 구독 해제</text>
+  <text class="s" x="548" y="102">· HP바 반납</text>
+  <text class="s" x="548" y="116">· 취소 토큰 정리</text>
+  <text class="s" x="548" y="130">· 이벤트 핸들러 비우기</text>
+  <text class="xs" x="548" y="154">새로 만든 훅.</text>
+  <text class="xs" x="548" y="166">OnSpawn과 짝을 이룬다</text>
+
+  <path d="M 261 192 C 261 206, 617 206, 617 192" fill="none" stroke="#e8590c" stroke-width="1.4" stroke-dasharray="4 3"/>
+  <text class="s" x="439" y="218" text-anchor="middle" fill="#8a3708">이 둘은 반드시 짝 — OnSpawn에서 잡은 것은 OnDespawn에서 놓는다</text>
+</svg>
+<p class="figcap">왼쪽 두 칸이 "준비", 오른쪽 두 칸이 "반응과 반납". 파랑·주황이 새로 생기는 계약이다.</p>
+</div>
+
+<div class="footer">Step1_MonsterComponents · 3 / 11</div>
+
+<!-- ==================== PAGE 4 ==================== -->
+<div class="pb"></div>
+<h2>4. 진단 ① — 지금의 스폰 순서</h2>
+<div class="h2sub">실제 코드를 따라간 호출 순서</div>
+
+<p>스포너가 몬스터 하나를 만들 때 실제로 일어나는 일이다. <strong>위에서 아래로 따라가면 된다.</strong></p>
+
+<div class="fig">
+<p class="figt">그림 3. 현재 스폰 경로 — 체력을 먼저 채우고 최대체력을 나중에 넣는다<span class="tag" style="background:#d6336c">문제</span></p>
+<svg viewBox="0 0 700 322" width="100%">
+  <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L6,3 L0,6 z" fill="#d6336c"/></marker></defs>
+  <line x1="150" y1="24" x2="150" y2="296" stroke="#e3e6ec" stroke-width="2"/>
+
+  <circle cx="150" cy="34" r="5" fill="#3b5bdb"/>
+  <rect x="168" y="20" width="300" height="28" rx="7" fill="#f7f8fa" stroke="#c8cedb"/>
+  <text class="t" x="180" y="38">MonsterSpawner.SpawnPointRoutineAsync</text>
+  <text class="xs" x="482" y="38">스폰 시작</text>
+
+  <circle cx="150" cy="72" r="5" fill="#3b5bdb"/>
+  <rect x="168" y="58" width="300" height="28" rx="7" fill="#f7f8fa" stroke="#c8cedb"/>
+  <text class="t" x="180" y="76">MonsterFactory.CreateMonsterByMonsterIDAsync</text>
+  <text class="xs" x="482" y="76">데이터 조회 · 레벨 계산</text>
+
+  <circle cx="150" cy="110" r="5" fill="#3b5bdb"/>
+  <rect x="168" y="96" width="300" height="28" rx="7" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t" x="180" y="114" fill="#2b3a8f">Resource.InstantiateAsync(key, pos, rot)</text>
+  <text class="xs" x="482" y="114">여기부터 통제 밖</text>
+
+  <rect x="186" y="134" width="446" height="98" rx="9" fill="#fff0f4" stroke="#d6336c"/>
+  <text class="xs" x="198" y="150" fill="#9c2050">ResourceManager 내부 — 호출자가 끼어들 수 없는 구간</text>
+
+  <rect x="198" y="158" width="176" height="24" rx="6" fill="#fff" stroke="#f0a8c0"/>
+  <text class="t" x="208" y="174">Pool.Pop() → 인스턴스</text>
+  <path d="M 380 170 L 396 170" stroke="#d6336c" stroke-width="1.4" marker-end="url(#ar)"/>
+  <rect x="402" y="158" width="218" height="24" rx="6" fill="#fff" stroke="#f0a8c0"/>
+  <text class="t" x="412" y="174">agent.Warp(pos) · rotation</text>
+
+  <rect x="198" y="192" width="176" height="26" rx="6" fill="#d6336c"/>
+  <text class="t" x="286" y="209" text-anchor="middle" fill="#ffffff">go.SetActive(true)</text>
+  <path d="M 380 205 L 396 205" stroke="#d6336c" stroke-width="1.4" marker-end="url(#ar)"/>
+  <rect x="402" y="192" width="218" height="26" rx="6" fill="#fff" stroke="#d6336c"/>
+  <text class="t" x="412" y="209" fill="#9c2050">OnEnable → Recover()</text>
+  <text class="xs" x="402" y="228" fill="#9c2050">이 시점의 MaxHp = 이전 생애 값</text>
+
+  <circle cx="150" cy="254" r="5" fill="#e8590c"/>
+  <rect x="168" y="240" width="300" height="28" rx="7" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t" x="180" y="258" fill="#8a3708">monsterStat.SetStat(baseData, levelStat)</text>
+  <text class="xs" x="482" y="253">이제서야 진짜 MaxHp</text>
+  <text class="xs" x="482" y="264" fill="#8a3708">→ 내부에서 Recover() 또 호출</text>
+
+  <circle cx="150" cy="294" r="5" fill="#8a91a0"/>
+  <rect x="168" y="280" width="300" height="28" rx="7" fill="#f7f8fa" stroke="#c8cedb"/>
+  <text class="t" x="180" y="298">스포너가 사망 이벤트 구독 · 목록 등록</text>
+</svg>
+<p class="figcap">붉은 상자가 문제 구간. <code>SetActive(true)</code>가 ResourceManager 안쪽에 있어서 팩토리가 그 앞에 못 들어간다.</p>
+</div>
+
+<div class="callout c-amber">
+<span class="lbl">이게 왜 "지금 안 터지는데?"인가 — 가장 중요한 대목</span>
+<code>Recover()</code>가 <strong>두 번</strong> 불린다. 첫 번째는 <code>OnEnable</code>에서 <em>이전 생애의 MaxHp</em>로,
+두 번째는 <code>SetStat</code> 끝에서 <em>올바른 MaxHp</em>로.
+<strong>두 번째가 첫 번째를 덮어써서 최종 체력은 맞는다.</strong><br><br>
+즉 지금 동작하는 이유는 설계가 아니라 <strong>덮어쓰기가 우연히 순서를 맞춰주기 때문</strong>이다.
+<code>SetStat</code>에서 <code>Recover()</code> 한 줄만 지우면 그날로 깨진다.
+이것이 <strong>"우연히 맞는 코드(incidental correctness)"</strong>이고, 감사 등급으로는 <strong>잠재 결함</strong>이다.
+</div>
+
+<h3>4.1 그 사이에 이미 벌어지는 일들</h3>
+<p>최종 체력은 맞더라도, <code>SetActive(true)</code>와 <code>SetStat</code> 사이에 아래가 이미 실행된다.</p>
+
+<table>
+<thead><tr><th style="width:34%">그 사이에 시작되는 것</th><th>무엇을 보고 시작하나</th></tr></thead>
+<tbody>
+<tr><td class="who">HP바 비동기 로드<div class="sub">NormalMonsterController.OnEnable</div></td><td>이전 생애 스탯. 로드가 끝나 <code>SetTarget</code>이 불릴 땐 값이 맞지만, <strong>시작 시점의 근거가 잘못돼 있다</strong></td></tr>
+<tr><td class="who">에이전트 지연 활성<div class="sub">RangedMonsterController.OnEnable</div></td><td>1프레임 뒤 <code>_agent.enabled = true</code>. 이때 위치가 <code>Warp</code>로 들어간 값인지 보장이 없다</td></tr>
+<tr><td class="who">행동트리 평가<div class="sub">BaseMonsterController.Update</div></td><td><code>CheckIsDead</code>가 <code>CurrentHp</code>를 읽는다. 스탯 주입 전 한 프레임을 이전 값으로 돈다</td></tr>
+<tr><td class="who">이벤트 발화<div class="sub">Health.OnHpChanged</div></td><td><code>Recover</code>가 <code>OnHpChanged</code>를 쏜다 → 한 프레임에 <strong>두 번</strong> 발화</td></tr>
+</tbody>
+</table>
+
+<div class="footer">Step1_MonsterComponents · 4 / 11</div>
+
+<!-- ==================== PAGE 5 ==================== -->
+<div class="pb"></div>
+<h2>5. 진단 ② — 상태 인벤토리</h2>
+<div class="h2sub">몬스터가 들고 있는 모든 값이 언제 리셋되는지 전수 조사</div>
+
+<p>실무에서 <strong>pooled object state audit</strong>이라고 부르는 작업이다.
+"재사용될 때 이 값이 지난 생애 것을 물고 오는가?"를 필드 하나하나에 묻는다.
+아래는 몬스터 컴포넌트 전체를 훑은 결과다.</p>
+
+<div class="fig">
+<p class="figt">그림 4. 리셋 커버리지 — 20개 상태 중 절반이 계약 밖<span class="tag" style="background:#e8590c">진단</span></p>
+<svg viewBox="0 0 700 112" width="100%">
+  <rect x="0" y="14" width="272" height="34" rx="6" fill="#2b8a3e"/>
+  <rect x="274" y="14" width="134" height="34" fill="#e8590c"/>
+  <rect x="410" y="14" width="290" height="34" rx="6" fill="#d6336c"/>
+  <text class="tb" x="136" y="36" text-anchor="middle" fill="#ffffff">8 · 제대로 리셋됨</text>
+  <text class="tb" x="341" y="36" text-anchor="middle" fill="#ffffff">4 · 우연히</text>
+  <text class="tb" x="555" y="36" text-anchor="middle" fill="#ffffff">8 · 리셋 안 됨</text>
+
+  <text class="s" x="0" y="64">40 %</text>
+  <text class="s" x="274" y="64">20 %</text>
+  <text class="s" x="410" y="64">40 %</text>
+
+  <line x1="0" y1="74" x2="700" y2="74" stroke="#e3e6ec"/>
+  <rect x="0" y="84" width="10" height="10" rx="2" fill="#2b8a3e"/>
+  <text class="s" x="16" y="93">계약대로 매 생애 초기화된다</text>
+  <rect x="0" y="100" width="10" height="10" rx="2" fill="#e8590c"/>
+  <text class="s" x="16" y="109">다른 코드가 덮어써서 결과적으로 맞는다 — 그 코드가 사라지면 깨진다</text>
+  <rect x="392" y="100" width="10" height="10" rx="2" fill="#d6336c"/>
+  <text class="s" x="408" y="109">지난 생애 값을 그대로 물고 온다</text>
+</svg>
+<p class="figcap">주황(우연히)이 가장 위험한 구간이다. 지금은 동작하므로 테스트로 발견되지 않는다.</p>
+</div>
+
+<table>
+<thead><tr><th style="width:19%">클래스</th><th style="width:25%">상태</th><th style="width:9%">판정</th><th>지금 어디서 리셋되나 / 안 되면 무슨 일</th></tr></thead>
+<tbody>
+<tr><td class="who">BaseMonster</td><td class="mn">_state</td><td><span class="ok">OK</span></td><td><code>OnEnable</code>에서 <code>Spawning</code></td></tr>
+<tr><td></td><td class="mn">_monsterCts</td><td><span class="ok">OK</span></td><td><code>OnEnable</code>에서 재생성, <code>OnDisable</code>에서 취소</td></tr>
+<tr><td></td><td class="mn">_anim / _col</td><td><span class="ok">OK</span></td><td><code>Rebind</code> · <code>enabled = true</code></td></tr>
+<tr><td></td><td class="mn">OnDespawned</td><td><span class="warn">우연</span></td><td><code>OnEnable</code>에서 <code>null</code> — <strong>다음 생애가 시작될 때 지난 생애 흔적을 지운다.</strong> 순서가 거꾸로다</td></tr>
+<tr><td></td><td class="mn">OnDead</td><td><span class="bad">없음</span></td><td>아무도 비우지 않는다. 구독자가 쌓이면 중복 발화</td></tr>
+<tr><td></td><td class="mn">_abilityRunner._cd</td><td><span class="bad">없음</span></td><td>쿨다운이 <strong>절대 시각</strong>으로 기록된다. 죽고 7초 만에 리스폰되면 쿨 10초짜리는 <strong>쿨 상태로 부활</strong></td></tr>
+<tr><td class="who">NormalMonster</td><td class="mn">_target</td><td><span class="bad">없음</span></td><td><code>Start</code>에서만 설정 → 재사용 시 지난 생애 타겟 유지</td></tr>
+<tr><td></td><td class="mn">_hpBar</td><td><span class="warn">우연</span></td><td><strong>죽었을 때만</strong> 반납된다. 섹터 이탈 디스폰에는 정리 코드가 없다 (→ 6장)</td></tr>
+<tr><td></td><td class="mn">_lastDestPosition</td><td><span class="bad">없음</span></td><td>지난 목적지가 남아 <strong>부활 직후 첫 <code>SetDestination</code>이 스킵될 수 있다</strong></td></tr>
+<tr><td></td><td class="mn">_agent.enabled</td><td><span class="warn">우연</span></td><td>사망 경로에서만 <code>false</code>. 디스폰 경로는 켜진 채 반납 → <code>Warp</code> 신뢰성 문제</td></tr>
+<tr><td></td><td class="mn">_initialized</td><td><span class="ok">OK</span></td><td>인스턴스 수명 플래그 — <strong>의도적으로</strong> 안 지운다</td></tr>
+<tr><td class="who">RangedMonster</td><td class="mn">_currentAmmo</td><td><span class="ok">OK</span></td><td><code>OnEnable</code>에서 <code>_maxAmmo</code></td></tr>
+<tr><td class="who">MonsterTank</td><td class="mn">_flag</td><td><span class="bad">없음</span></td><td>착탄 오프셋 순번이 지난 생애에서 이어진다</td></tr>
+<tr><td class="who">MonsterStat</td><td class="mn">OnMonsterDead</td><td><span class="warn">우연</span></td><td><code>SetStat</code>이 <code>null</code>로 비운다 — <strong>이벤트 소유자가 아닌 쪽이 남의 구독을 지운다</strong> (감사 M8)</td></tr>
+<tr><td></td><td class="mn">OnKilledByAttacker</td><td><span class="ok">OK</span></td><td><code>MonsterReward.Bind</code>가 <code>-=</code> 후 <code>+=</code> (멱등)</td></tr>
+<tr><td></td><td class="mn">HealthComp</td><td><span class="ok">OK</span></td><td><code>SetStat</code> 끝의 <code>Recover()</code></td></tr>
+<tr><td class="who">BTNode 3종</td><td class="mn">RandomNode._currentNode<br>WaitNode._isWaiting<br>BossSequence._childIndex</td><td><span class="bad">없음</span></td><td>노드가 상태를 들고 있는데 리셋 지점이 없다.<br><strong>지금은 일반몹 트리가 이 노드를 안 쓰고 보스는 풀을 안 타서 발현하지 않는다</strong> (감사 M5 · 잠재)</td></tr>
+</tbody>
+</table>
+
+<div class="footer">Step1_MonsterComponents · 5 / 11</div>
+
+<!-- ==================== PAGE 6 ==================== -->
+<div class="pb"></div>
+<h2>6. 진단 ③ — 짝이 안 맞는 것들</h2>
+<div class="h2sub">잡은 곳과 놓는 곳이 다른 층에 있다</div>
+
+<p>프로그래밍에서 가장 오래된 규칙 중 하나가 <strong>"잡은 사람이 놓는다"</strong>이다.
+파일을 열었으면 닫고, 메모리를 할당했으면 해제하고, <em>이벤트를 구독했으면 해제한다.</em>
+C++의 RAII, C#의 <code>using</code>, 유니티의 <code>OnEnable</code>/<code>OnDisable</code> 쌍이 전부 같은 발상이다.</p>
+
+<p>지금 몬스터는 이 짝이 세 군데에서 깨져 있다.</p>
+
+<div class="fig">
+<p class="figt">그림 5. 획득과 반납의 대칭 — 점선은 끊어진 짝<span class="tag" style="background:#d6336c">문제</span></p>
+<svg viewBox="0 0 700 216" width="100%">
+  <text class="tb" x="4" y="14">잡는 곳</text>
+  <text class="tb" x="696" y="14" text-anchor="end">놓는 곳</text>
+  <line x1="0" y1="22" x2="700" y2="22" stroke="#e3e6ec"/>
+
+  <rect x="0" y="32" width="234" height="38" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t" x="12" y="49" fill="#2b3a8f">Party.OnActiveCharacterChanged +=</text>
+  <text class="xs" x="12" y="62">NormalMonsterController.Start</text>
+  <path d="M 240 51 L 456 51" stroke="#d6336c" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <text class="xs" x="348" y="45" text-anchor="middle" fill="#9c2050">짝 없음</text>
+  <rect x="462" y="32" width="238" height="38" rx="8" fill="#fff0f4" stroke="#d6336c" stroke-dasharray="5 4"/>
+  <text class="t" x="474" y="49" fill="#9c2050">어디에도 없다</text>
+  <text class="xs" x="474" y="62" fill="#9c2050">풀에 반납돼도 구독 유지 · 감사 M1</text>
+
+  <rect x="0" y="84" width="234" height="38" rx="8" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t" x="12" y="101" fill="#2b3a8f">HP바 생성 + OnHpChanged +=</text>
+  <text class="xs" x="12" y="114">CreateHpBarAsync (Start · OnEnable)</text>
+  <path d="M 240 103 L 456 103" stroke="#e8590c" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <text class="xs" x="348" y="97" text-anchor="middle" fill="#8a3708">한쪽 경로만</text>
+  <rect x="462" y="84" width="238" height="38" rx="8" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="t" x="474" y="101" fill="#8a3708">HandleDeadState — 사망 경로만</text>
+  <text class="xs" x="474" y="114" fill="#8a3708">섹터 이탈 디스폰에는 정리 없음</text>
+
+  <rect x="0" y="136" width="234" height="38" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="t" x="12" y="153" fill="#1f6b2e">_monsterCts = new</text>
+  <text class="xs" x="12" y="166">BaseMonsterController.OnEnable</text>
+  <path d="M 240 155 L 456 155" stroke="#2b8a3e" stroke-width="1.6"/>
+  <text class="xs" x="348" y="149" text-anchor="middle" fill="#1f6b2e">짝 맞음</text>
+  <rect x="462" y="136" width="238" height="38" rx="8" fill="#ebfbee" stroke="#2b8a3e"/>
+  <text class="t" x="474" y="153" fill="#1f6b2e">OnDisable → CancelMonsterTasks</text>
+  <text class="xs" x="474" y="166" fill="#1f6b2e">이건 올바른 형태의 예시</text>
+
+  <line x1="0" y1="186" x2="700" y2="186" stroke="#e3e6ec"/>
+  <text class="s" x="0" y="200">세 번째 줄이 정답의 모양이다 — 같은 층(OnEnable ↔ OnDisable)에서 잡고 놓는다.</text>
+  <text class="s" x="0" y="212">위 두 줄은 잡는 층과 놓는 층이 달라서, 경로에 따라 놓치는 경우가 생긴다.</text>
+</svg>
+</div>
+
+<h3>6.1 대표 증상 — 몬스터 없는 HP바</h3>
+<p>두 번째 줄이 만드는 실제 버그를 따라가 보자.</p>
+
+<table>
+<thead><tr><th style="width:7%">순서</th><th>일어나는 일</th></tr></thead>
+<tbody>
+<tr><td class="who">1</td><td>플레이어가 섹터를 벗어난다 → <code>DespawnMonsters()</code> → <code>Resource.Destroy(monster)</code> → <strong>풀에 반납(비활성화)</strong></td></tr>
+<tr><td class="who">2</td><td>몬스터는 꺼졌다. 그런데 HP바는 <code>CanvasWorld</code> 자식이라 <strong>여전히 켜져 있다</strong></td></tr>
+<tr><td class="who">3</td><td><code>UI_MonsterHPBar.LateUpdate</code>는 <code>_targetTr == null</code>일 때만 자기를 지운다. <strong>비활성 오브젝트는 <code>null</code>이 아니다</strong> → 안 지워진다</td></tr>
+<tr><td class="who">4</td><td>결과 — <strong>몬스터 없는 HP바가 남아 매 프레임 <code>LateUpdate</code>를 돈다</strong></td></tr>
+<tr><td class="who">5</td><td>다시 그 섹터에 들어가도 <code>_hpBar != null</code>이라 재생성 조건에 안 걸린다. 옛 바를 계속 쓴다</td></tr>
+</tbody>
+</table>
+
+<div class="callout c-amber">
+<span class="lbl">이게 측정에 미치는 영향</span>
+방법4(거리 기반)는 <strong>밴드를 넘나들 때마다 디스폰</strong>한다. 즉 <strong>이 경로를 가장 많이 타는 방법이다.</strong>
+고치지 않고 재면 방법4에만 유령 HP바가 쌓이고, 그 <code>LateUpdate</code> 비용이
+"거리 기반 방식이 비싸다"는 결론으로 잘못 읽힌다.
+<strong>순위를 바꾸는 오염이므로 재기 전에 고쳐야 한다.</strong>
+</div>
+
+<div class="footer">Step1_MonsterComponents · 6 / 11</div>
+
+<!-- ==================== PAGE 7 ==================== -->
+<div class="pb"></div>
+<h2>7. 설계 — 목표 구조</h2>
+<div class="h2sub">순서를 뒤집고, 훅을 두 개 만든다</div>
+
+<div class="fig">
+<p class="figt">그림 6. 목표 스폰 경로 — 다 준비하고 나서 켠다<span class="tag" style="background:#2b8a3e">목표</span></p>
+<svg viewBox="0 0 700 254" width="100%">
+  <line x1="150" y1="24" x2="150" y2="230" stroke="#e3e6ec" stroke-width="2"/>
+
+  <circle cx="150" cy="34" r="5" fill="#3b5bdb"/>
+  <rect x="168" y="20" width="330" height="28" rx="7" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="t" x="180" y="38" fill="#2b3a8f">Resource.Instantiate(..., activate: false)</text>
+  <text class="xs" x="512" y="38" fill="#8a3708">← 2단계에서 추가</text>
+
+  <circle cx="150" cy="72" r="5" fill="#8a91a0"/>
+  <rect x="168" y="58" width="330" height="28" rx="7" fill="#f7f8fa" stroke="#c8cedb"/>
+  <text class="t" x="180" y="76">transform.position / rotation</text>
+  <text class="xs" x="512" y="76">비활성이라 Warp 불필요</text>
+
+  <circle cx="150" cy="110" r="5" fill="#8a91a0"/>
+  <rect x="168" y="96" width="330" height="28" rx="7" fill="#f7f8fa" stroke="#c8cedb"/>
+  <text class="t" x="180" y="114">Stat.SetStat(baseData, levelStat)</text>
+  <text class="xs" x="512" y="114">데이터 주입</text>
+
+  <circle cx="150" cy="148" r="5" fill="#2b8a3e"/>
+  <rect x="168" y="134" width="330" height="28" rx="7" fill="#ebfbee" stroke="#2b8a3e" stroke-width="2"/>
+  <text class="t" x="180" y="152" fill="#1f6b2e">ctrl.OnSpawn(ctx)</text>
+  <text class="xs" x="512" y="147" fill="#1f6b2e">★ 새 훅</text>
+  <text class="xs" x="512" y="158" fill="#1f6b2e">모든 상태 리셋</text>
+
+  <circle cx="150" cy="186" r="5" fill="#7048e8"/>
+  <rect x="168" y="172" width="330" height="28" rx="7" fill="#f3f0ff" stroke="#7048e8"/>
+  <text class="t" x="180" y="190" fill="#5028c0">go.SetActive(true) → OnEnable</text>
+  <text class="xs" x="512" y="190" fill="#5028c0">이제서야 켠다</text>
+
+  <circle cx="150" cy="228" r="5" fill="#8a91a0"/>
+  <rect x="168" y="214" width="330" height="28" rx="7" fill="#f7f8fa" stroke="#c8cedb"/>
+  <text class="t" x="180" y="232">Update — 행동트리 평가 시작</text>
+  <text class="xs" x="512" y="232">첫 프레임부터 정상 상태</text>
+</svg>
+<p class="figcap">그림 3과 비교하면 <code>SetStat</code>과 <code>SetActive</code>의 순서가 뒤집혔다. 이 한 번의 뒤집기가 4장의 문제 4개를 모두 없앤다.</p>
+</div>
+
+<h3>7.1 훅 배치표 — 무엇을 어디로 옮기나</h3>
+
+<table>
+<thead><tr><th style="width:15%">훅</th><th style="width:43%">담을 것</th><th>지금 어디에 있나</th></tr></thead>
+<tbody>
+<tr><td class="who">Awake</td><td>컴포넌트 캐시 · 행동트리 구축 · <code>MonsterReward</code>/<code>DamageNumberPresenter</code> 부착 · 에이전트 파라미터</td><td><span class="ok">그대로 유지</span></td></tr>
+<tr><td class="who" style="color:#1f6b2e">OnSpawn(ctx)</td>
+  <td>· <code>_state = Spawning</code><br>
+      · <code>_monsterCts</code> 재생성<br>
+      · <code>OnDead</code> / <code>OnDespawned</code> 비우기<br>
+      · <code>_currentAmmo</code> · <code>_flag</code> · <code>_lastDestPosition</code> · <code>_target</code> 리셋<br>
+      · 행동트리 노드 리셋 (<code>_topNode.Reset()</code> 신설)<br>
+      · <code>_abilityRunner</code> 쿨다운 비우기<br>
+      · <code>HealthComp.Recover()</code></td>
+  <td>흩어져 있음 —<br><code>OnEnable</code>(Base · Ranged)<br><code>Start</code>(Normal)<br><code>SetStat</code>(Stat)</td></tr>
+<tr><td class="who" style="color:#5028c0">OnEnable</td><td>· <code>_col.enabled = true</code><br>· <code>_anim.Rebind()</code> + <code>Play("Appear")</code><br>· 에이전트 지연 활성</td><td>같은 자리 — <strong>데이터 초기화만 빠져나간다</strong></td></tr>
+<tr><td class="who" style="color:#8a3708">OnDespawn()</td>
+  <td>· <code>Party.OnActiveCharacterChanged -=</code><br>
+      · HP바 구독 해제 + 반납<br>
+      · <code>Stat.OnMonsterDead</code> 구독 해제<br>
+      · <code>CancelMonsterTasks()</code><br>
+      · <code>_agent.enabled = false</code></td>
+  <td>일부만 <code>HandleDeadState</code>(사망 경로)에<br>나머지 <span class="bad">없음</span></td></tr>
+</tbody>
+</table>
+
+<div class="callout c-blue">
+<span class="lbl">설계 포인트 — OnDespawn은 두 경로가 함께 부른다</span>
+지금은 <strong>사망</strong>과 <strong>디스폰</strong>이 서로 다른 정리 코드를 갖고 있어서 한쪽만 챙겨진다.
+<code>OnDespawn()</code>을 만들면 두 경로가 <strong>같은 정리 함수</strong>로 합류한다.<br>
+사망 → 연출 2초 → <code>OnDespawn</code> → 풀 반납 &nbsp;·&nbsp; 섹터 이탈 → <code>OnDespawn</code> → 풀 반납
+</div>
+
+<div class="footer">Step1_MonsterComponents · 7 / 11</div>
+
+<!-- ==================== PAGE 8 ==================== -->
+<div class="pb"></div>
+<h2>8. 설계 원칙 4개</h2>
+<div class="h2sub">이 문서의 모든 판단이 이 넷에서 나온다</div>
+
+<div class="fig">
+<p class="figt">P1. 조립과 초기화를 나눈다 <span class="sub">construction vs initialization</span></p>
+<p style="font-size:9.2pt;margin:2px 0 4px">
+<strong>조립</strong>은 "이 오브젝트가 무엇으로 이루어졌나" — 컴포넌트 찾기, 트리 만들기. 한 번만 하면 된다.<br>
+<strong>초기화</strong>는 "이번 생애를 어떤 값으로 시작하나" — 체력, 탄약, 타겟. 매번 해야 한다.<br>
+지금은 이 둘이 <code>Awake</code>·<code>OnEnable</code>·<code>Start</code>에 섞여 있다. 섞이면 <em>어느 것이 매번 도는지 코드만 봐서는 알 수 없다.</em></p>
+</div>
+
+<div class="fig">
+<p class="figt">P2. 데이터를 먼저 넣고 나중에 켠다 <span class="sub">initialize before activate</span></p>
+<p style="font-size:9.2pt;margin:2px 0 4px">
+활성화는 <strong>돌이킬 수 없는 사건</strong>이다. 켜는 순간 <code>Update</code>·물리·애니메이터·코루틴이 전부 출발한다.
+그 전에 모든 값이 제자리에 있어야 한다.<br>
+<strong>부수 효과</strong> — 비활성 상태에서 위치를 옮기면 <code>NavMeshAgent.Warp</code>가 필요 없어진다.
+에이전트는 켜질 때 자기 위치를 기준으로 NavMesh에 스냅하기 때문이다.
+지금은 꺼진 에이전트에 <code>Warp</code>를 부르고 있어 위치가 반영 안 될 수 있다 — <strong>2단계에서 검증 대상.</strong></p>
+</div>
+
+<div class="fig">
+<p class="figt">P3. 잡은 층에서 놓는다 <span class="sub">acquire / release symmetry</span></p>
+<p style="font-size:9.2pt;margin:2px 0 4px">
+<code>OnSpawn</code>에서 구독했으면 <code>OnDespawn</code>에서 해제한다. <code>OnEnable</code>에서 잡았으면 <code>OnDisable</code>에서 놓는다.
+<strong>층을 건너뛰면 경로에 따라 새는 구멍이 생긴다</strong> — 6장의 HP바가 정확히 그 사례다.<br>
+같은 이유로 <strong>이벤트를 비우는 주체는 그 이벤트의 소유자</strong>여야 한다.
+<code>MonsterStat.SetStat</code>이 <code>OnMonsterDead = null</code>을 하는 건 <em>스포너가 건 구독을 스탯이 지우는</em> 형태라 잘못됐다.</p>
+</div>
+
+<div class="fig">
+<p class="figt">P4. 우연히 맞는 것을 계약으로 바꾼다 <span class="sub">incidental correctness → contract</span></p>
+<p style="font-size:9.2pt;margin:2px 0 4px">
+지금 체력이 맞는 이유는 <code>Recover()</code>가 두 번 불리기 때문이고, 탄약이 맞는 이유는 <code>OnEnable</code>에 마침 그 줄이 있기 때문이다.
+<strong>둘 다 "이렇게 하기로 정해서"가 아니라 "어쩌다 보니"다.</strong><br>
+이런 코드는 테스트로 발견되지 않는다. <em>지금은 동작하니까.</em> 그래서 상태 인벤토리(5장) 같은
+전수 조사가 필요하고, 표에 <strong>주황(우연히)</strong> 칸을 따로 둔 것이다.</p>
+</div>
+
+<div class="footer">Step1_MonsterComponents · 8 / 11</div>
+
+<!-- ==================== PAGE 9 ==================== -->
+<div class="pb"></div>
+<h2>9. 작업 순서</h2>
+<div class="h2sub">파일 단위 체크리스트</div>
+
+<table>
+<thead><tr><th style="width:5%">#</th><th style="width:32%">파일</th><th>할 일</th></tr></thead>
+<tbody>
+<tr><td class="who">1</td><td class="mn">IPooledMonster <span class="sub">신설</span></td><td><code>OnSpawn(in SpawnContext)</code> / <code>OnDespawn()</code> 인터페이스 정의. 컨텍스트에 담을 것 = 스탯 데이터 · 스폰 지점 · 소유 스포너</td></tr>
+<tr><td class="who">2</td><td class="mn">BaseMonsterController</td><td>훅 2개 구현 · <code>OnEnable</code>에서 데이터 초기화 걷어내기 · <code>OnDead</code>/<code>OnDespawned</code> 비우기를 <code>OnDespawn</code>으로 · 쿨다운 초기화</td></tr>
+<tr><td class="who">3</td><td class="mn">BTNode</td><td>추상 <code>Reset()</code> 추가. <code>Selector</code>/<code>Sequence</code>는 자식 전파, 상태 노드 3종은 자기 필드 리셋</td></tr>
+<tr><td class="who">4</td><td class="mn">NormalMonsterController</td><td><span class="bad">핵심</span> <code>Start</code>의 파티 구독 → <code>OnSpawn</code>, 해제를 <code>OnDespawn</code>에 · HP바 반납을 <code>OnDespawn</code>으로 일원화 · <code>_target</code>/<code>_lastDestPosition</code> 리셋 · <code>_initialized</code> 유지 여부 판단</td></tr>
+<tr><td class="who">5</td><td class="mn">RangedMonsterController</td><td><code>_currentAmmo</code>를 <code>OnEnable</code> → <code>OnSpawn</code>으로 이동</td></tr>
+<tr><td class="who">6</td><td class="mn">MonsterTankController</td><td><code>_flag</code> 리셋 추가</td></tr>
+<tr><td class="who">7</td><td class="mn">MonsterStat</td><td><code>OnMonsterDead = null</code> 제거(소유자에게 반환) · <code>Recover()</code> 호출 유지 여부 결정</td></tr>
+<tr><td class="who">8</td><td class="mn">BossMonsterController</td><td>연출·사망 플래그를 <code>OnSpawn</code>으로 (감사 M6). 보스는 현재 풀을 타지 않으므로 <strong>계약만 맞추고 검증은 생략</strong></td></tr>
+</tbody>
+</table>
+
+<h2 style="margin-top:20px">10. 완료 판정</h2>
+<div class="h2sub">무엇이 참이면 이 단계가 끝났다고 말할 수 있나</div>
+
+<p>1단계만으로는 눈에 보이는 변화가 없다(1장 참고). 그래서 <strong>완료 판정은 동작이 아니라 성질로 한다.</strong></p>
+
+<table>
+<thead><tr><th style="width:7%">#</th><th style="width:34%">확인할 것</th><th>방법</th></tr></thead>
+<tbody>
+<tr><td class="who">C1</td><td>5장 표의 <span class="bad">빨강 8개</span>가 전부 <span class="ok">초록</span>이 된다</td><td>표를 그대로 체크리스트로 재사용. 각 필드가 <code>OnSpawn</code>/<code>OnDespawn</code> 중 하나에 명시적으로 등장하는지 확인</td></tr>
+<tr><td class="who">C2</td><td><span class="warn">주황 4개</span>도 초록이 된다</td><td>"덮어써서 맞는" 형태를 없앤다. <code>SetStat</code>의 <code>Recover()</code>를 지워도 체력이 맞아야 한다</td></tr>
+<tr><td class="who">C3</td><td>구독·해제가 같은 층에 있다</td><td><code>+=</code>를 전수 검색해 각각의 <code>-=</code>가 짝 훅에 있는지 대조 (그림 5)</td></tr>
+<tr><td class="who">C4</td><td>디스폰 경로가 하나로 합류한다</td><td>사망 경로와 섹터 이탈 경로가 <strong>같은 <code>OnDespawn()</code></strong>을 통과하는지</td></tr>
+<tr><td class="who">C5</td><td>유령 HP바가 0이다</td><td>섹터 왕복 10회 후 <code>CanvasWorld</code> 자식 수가 진입 전과 같은지 (<strong>2단계 이후 실측</strong>)</td></tr>
+</tbody>
+</table>
+
+<div class="callout c-green">
+<span class="lbl">C5만 뒤로 미루는 이유</span>
+C1~C4는 <strong>코드를 읽어서 판정</strong>할 수 있다. C5는 실제로 돌려봐야 하는데,
+그러려면 <code>OnSpawn</code>을 불러줄 호출자(2단계)가 있어야 한다.
+<strong>1단계 완료 판정은 C1~C4로 하고, C5는 2단계 완료 판정에 넘긴다.</strong>
+</div>
+
+<div class="footer">Step1_MonsterComponents · 9 / 11</div>
+
+<!-- ==================== PAGE 10 ==================== -->
+<div class="pb"></div>
+<h2>11. 남기는 기록</h2>
+<div class="h2sub">이 작업이 포트폴리오에서 하는 역할</div>
+
+<p>이 단계는 성능 수치를 만들지 않는다. 대신 <strong>세 가지를 기록으로 남긴다.</strong></p>
+
+<div class="grid2">
+<div class="box">
+<h4>① 상태 인벤토리 표 (5장)</h4>
+<p>"풀링을 쓴다"고 말하는 것과 <strong>"풀링 때문에 무엇이 깨지는지 전수 조사했다"</strong>고 말하는 것은 다르다.
+20개 중 12개가 계약 밖이었다는 숫자가 그 차이를 만든다.</p>
+</div>
+<div class="box">
+<h4>② "우연히 맞는 코드"의 발견 (4장)</h4>
+<p>체력이 맞는 이유가 <code>Recover()</code> 두 번 호출이었다는 것.
+<strong>버그를 고친 이야기보다, 안 터지는 이유를 설명할 수 있는 편이 강하다.</strong></p>
+</div>
+</div>
+<div class="box" style="margin-top:10px">
+<h4>③ 측정 오염원의 제거 근거 (6.1)</h4>
+<p>유령 HP바는 <strong>방법4에만 많이 낀다.</strong> 이걸 안 고치고 재면
+"거리 기반 방식이 비싸다"는 잘못된 결론이 나온다.
+<strong>측정 전에 통제 변수를 확보했다는 것</strong> 자체가 이 트랙의 주장 중 하나다.</p>
+</div>
+
+<div class="callout c-violet">
+<span class="lbl">면접에서 이 단계를 한 줄로 말한다면</span>
+"오브젝트 풀링을 쓰면 <code>Awake</code>와 <code>Start</code>가 안 도니까, <strong>매 스폰마다 해야 하는 일을 놓을 자리를 따로 만들었습니다.</strong>
+그러면서 몬스터가 들고 있는 상태 20개를 전부 훑었는데 절반이 지난 생애 값을 물고 오고 있었습니다.
+그중 <strong>지금 안 터지는 것들이 더 위험해서</strong> 따로 표시해 뒀습니다."
+</div>
+
+<h2 style="margin-top:20px">12. 온라인 게임이었다면 — 무엇이 달라지나</h2>
+<div class="h2sub">상위 주제(대규모 필드 엔티티 관리)와의 연결</div>
+
+<p>이 프로젝트에는 서버가 없다. 그래서 <strong>존재(누가 있나)와 품질(얼마나 잘 도나)을 클라가 전부 갖는다.</strong>
+서버가 생기면 이 명세서의 어디가 이사 가고 어디가 남는지 미리 정리해 둔다.</p>
+
+<table>
+<thead><tr><th style="width:26%">이 문서의 항목</th><th style="width:22%">서버가 생기면</th><th>근거</th></tr></thead>
+<tbody>
+<tr><td class="who">누구를 스폰할지 결정</td><td><span class="bad">서버로 이동</span></td><td>클라가 정하면 맵핵이 된다. 존재는 신뢰 경계 안쪽에 있어야 한다</td></tr>
+<tr><td class="who">OnSpawn / OnDespawn 훅</td><td><span class="ok">그대로 남음</span></td><td>이름이 <code>OnNetworkSpawn</code>/<code>Spawned()</code>로 바뀔 뿐 <strong>같은 자리, 같은 역할</strong> (3장 표)</td></tr>
+<tr><td class="who">상태 인벤토리</td><td><span class="ok">그대로 남음</span></td><td>오히려 더 중요해진다. 클라 프록시가 지난 생애 값을 물고 오면 <strong>서버와 어긋난 화면</strong>이 된다</td></tr>
+<tr><td class="who">HP바 수명 관리</td><td><span class="ok">그대로 남음</span></td><td>100% 클라 표현 계층</td></tr>
+<tr><td class="who">스폰 1회 프레임 비용</td><td><span class="ok">그대로 남음</span></td><td>대역폭이 아니라 프레임 예산 문제 — 서버가 대신 내주지 않는다</td></tr>
+</tbody>
+</table>
+
+<div class="callout c-blue">
+<span class="lbl">정리</span>
+5개 중 <strong>서버로 넘어가는 건 하나뿐</strong>이다. 나머지 넷은 온라인 게임의 클라이언트 개발자 책상에도 그대로 있다.<br>
+<strong>싱글 게임은 온라인의 쉬운 버전이 아니라 관찰자가 한 명인 버전이고, 관찰자가 한 명이라 실제로 만들고 잴 수 있다.</strong>
+</div>
+
+<div class="footer">Step1_MonsterComponents · 10 / 11</div>
+
+<!-- ==================== PAGE 11 ==================== -->
+<div class="pb"></div>
+<h2>13. 이 다음</h2>
+<div class="h2sub">3단계까지의 흐름</div>
+
+<div class="fig">
+<svg viewBox="0 0 700 136" width="100%">
+  <defs><marker id="ar2" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L6,3 L0,6 z" fill="#8a91a0"/></marker></defs>
+
+  <rect x="0" y="16" width="216" height="64" rx="10" fill="#ebfbee" stroke="#2b8a3e" stroke-width="2"/>
+  <text class="tb" x="14" y="37" fill="#1f6b2e">1단계 · 이 문서</text>
+  <text class="s" x="14" y="54">몬스터 컴포넌트 · 생애 계약</text>
+  <text class="xs" x="14" y="69">받을 그릇을 만든다</text>
+
+  <path d="M 222 48 L 240 48" stroke="#8a91a0" stroke-width="1.6" marker-end="url(#ar2)"/>
+
+  <rect x="246" y="16" width="216" height="64" rx="10" fill="#eef2ff" stroke="#3b5bdb"/>
+  <text class="tb" x="260" y="37" fill="#2b3a8f">2단계</text>
+  <text class="s" x="260" y="54">ResourceManager 이음새 · 풀 예산</text>
+  <text class="xs" x="260" y="69">물을 붓는다 — 여기서 검증</text>
+
+  <path d="M 468 48 L 486 48" stroke="#8a91a0" stroke-width="1.6" marker-end="url(#ar2)"/>
+
+  <rect x="492" y="16" width="208" height="64" rx="10" fill="#fff4ec" stroke="#e8590c"/>
+  <text class="tb" x="506" y="37" fill="#8a3708">3단계</text>
+  <text class="s" x="506" y="54">스포너 소유권</text>
+  <text class="xs" x="506" y="69">누가 없앨 권한을 갖나</text>
+
+  <line x1="0" y1="96" x2="700" y2="96" stroke="#e3e6ec"/>
+  <text class="s" x="0" y="114">그 뒤 → 측정 하네스 → 기준선(방법1·2) → 방법3·4·5 → 전 조합 측정 → 실제 맵 적용</text>
+  <text class="xs" x="0" y="128">상세는 07_Prerequisites 4절</text>
+</svg>
+</div>
+
+<div class="callout c-amber">
+<span class="lbl">착수 전 마지막 확인 — 복구 불가능한 두 가지</span>
+<strong>① 예측 박제</strong> — 방법4를 만들기 시작하면 결과가 보인다. 그 뒤에 쓴 예측은 예측이 아니다.<br>
+<strong>② 경계 소실 Before 영상</strong> — 방법3을 만들면 다시 찍을 수 없다. 방법2의 유일한 시각 증거다.<br>
+둘 다 합쳐서 반나절이고, <strong>코드를 손대는 순간부터 값이 떨어지기 시작한다.</strong>
+</div>
+
+<div class="footer">Step1_MonsterComponents · 11 / 11 · Operation Kivotos · 2026-08-24</div>
+
+</body>
+</html>

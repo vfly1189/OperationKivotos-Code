@@ -6,6 +6,15 @@ public struct ActivationLayout
 {
     public Sector[] _sectors;
     public SpawnerRecord[] _records;
+    public RunConditions _conditions;
+}
+
+// 측정 조건 — 판정엔 안 쓰고 계측 파일 이름 · 헤더에만 남긴다
+public struct RunConditions
+{
+    public int Density;              // 밀도 배율(슬롯 복제 수)
+    public MonsterCostOff CostOff;   // 끄기 실험 항목
+    public bool UpdateLod;           // 갱신 LOD
 }
 
 public class ActivationManager
@@ -60,8 +69,10 @@ public class ActivationManager
 
         _records = layout._records;
         System.DateTime startedAt = System.DateTime.Now;   // 켜고 끈 로그와 계측 파일이 같은 시각 이름을 쓴다
-        ActivationLog.Begin(layout._records, shadows, startedAt);
-        FieldMetrics.Begin(real, shadows, startedAt);
+        RunConditions conditions = layout._conditions;
+        conditions.Density = Mathf.Max(1, conditions.Density);
+        ActivationLog.Begin(layout._records, shadows, startedAt, conditions);
+        FieldMetrics.Begin(real, shadows, startedAt, conditions);
         foreach (Run run in _runs) ActivationLog.AddPolicy(run.Type, run.Policy, run == _runs[0]);
     }
 

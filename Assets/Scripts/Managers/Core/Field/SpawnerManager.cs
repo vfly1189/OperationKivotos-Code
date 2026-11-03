@@ -28,6 +28,19 @@ public class SpawnerManager
     //  로그 대신 계측 CSV(frames의 deferred 열 · events의 defer/recall)로 본다 — Debug.Log가 틱 비용에 섞이므로.
     public int DeferredCount => _deferred.Count;
 
+    // 끄기 실험(갱신 LOD 0단계) — 측정 전용. 스폰 직후 몹마다 적용(GameScene이 인스펙터 · -off로 정한다).
+    public MonsterCostOff _costOff = MonsterCostOff.None;
+
+    // 갱신 LOD — 화면 밖(여유 포함)이면서 교전 중이 아닌 몹을 '줄임' 상태로. 화면 안이거나 교전 중이면 원래대로.
+    //  여유 = 뷰포트 기준 바깥 15% — 화면에 들어오기 전에 미리 원래대로 돌려, 굳은 자세 · 늦게 뜨는 HP바가 보이지 않게.
+    public bool _updateLod = true;
+    public int _lodBtInterval = 8;          // 줄임 상태 행동 트리 = 8프레임에 한 번
+    public float _lodScreenMargin = 0.15f;
+    // 줄이기는 프레임당 이만큼만 — 한 번에 68마리가 스폰되면 다음 판정에서 전부 줄임으로 바뀌며 HP바 끄기가 한 프레임에 몰린다
+    //  (에디터 1.3ms, 스폰 프레임과 겹침). 화면 밖이라 몇 프레임 늦어도 보이지 않는다. 원래대로 돌리기는 늦으면 보이므로 상한 없음.
+    public int _lodReduceBudgetPerFrame = 16;
+    int _lodPhase;
+
     // 등록(Init)과 가동(Run)을 나눈다. 가동 전에도 Activate는 받아 두고, 스폰만 미룬다.
     //  몬스터 OnSpawn이 파티를 읽으므로 파티가 준비된 뒤(GameScene.CreateCharacters 이후)에 가동.
     bool _isRunning;
@@ -135,6 +148,7 @@ public class SpawnerManager
         slot._instance = monster.GetComponent<BaseMonsterController>();
         slot._state = SlotState.Alive;
         if (slot._instance is NormalMonsterController normal) normal.EnableLeash();   // 리쉬는 필드 몹 규칙
+        if (_costOff != MonsterCostOff.None) slot._instance.ApplyCostOff(_costOff);
         slot._instance.Stat.OnMonsterDead += HandleDead;
         slot._instance.OnDespawned += HandleDespawned;
 
@@ -156,6 +170,38 @@ public class SpawnerManager
             // 스폰 예산이 바닥나면 SpawnDue가 중간에 끝나므로 유예 목록을 먼저 본다.
             TickDeferred(now);
             SpawnDue(now);
+        }
+
+        if (_updateLod) TickLod();
+    }
+
+    void TickLod()
+    {
+        using (FieldMetrics.Lod.Auto())
+        {
+            Camera cam = Camera.main;   // 틱마다 한 번 — 몹마다 부르면 비용이 몹 수에 비례
+            if (cam == null) return;
+
+            float lo = -_lodScreenMargin, hi = 1f + _lodScreenMargin;
+            int reduceBudget = _lodReduceBudgetPerFrame;
+            foreach (KeyValuePair<BaseMonsterController, SpawnSlot> pair in _monsterBySpawnSlot)
+            {
+                BaseMonsterController mc = pair.Key;
+                if (mc == null) continue;
+
+                Vector3 v = cam.WorldToViewportPoint(mc.transform.position);
+                bool nearScreen = v.z > 0f && v.x >= lo && v.x <= hi && v.y >= lo && v.y <= hi;
+                bool reduce = !nearScreen && !mc.IsEngaged;
+                if (reduce == mc.IsReduced) continue;
+                if (reduce && reduceBudget-- <= 0) continue;   // 남은 몹은 다음 프레임에
+
+                // 여유 띠를 건너뛰고 이미 화면 안에서야 원래대로 = 늦은 복원 (통과 조건: 0)
+                if (!reduce && v.z > 0f && v.x >= 0f && v.x <= 1f && v.y >= 0f && v.y <= 1f)
+                    FieldMetrics.Event(FieldMetrics.EventKind.LodLate, pair.Value, mc.transform.position, "late", mc.IsEngaged);
+
+                mc.SetReduced(reduce, _lodBtInterval, _lodPhase);
+                _lodPhase = (_lodPhase + 1) % _lodBtInterval;
+            }
         }
     }
 
@@ -235,19 +281,20 @@ public class SpawnerManager
         using (FieldMetrics.Sample.Auto())
         {
             Camera cam = Camera.main;   // 표본마다 한 번 — 몹마다 부르면 비용이 몹 수에 비례해 커진다
-            int onScreen = 0;
+            int onScreen = 0, reduced = 0;
             foreach (BaseMonsterController mc in _monsterBySpawnSlot.Keys)
             {
                 if (mc == null) continue;
                 FieldMetrics.Viewport(cam, mc.transform.position, out bool visible);
                 if (visible) onScreen++;
+                if (mc.IsReduced) reduced++;
             }
 
             int activeSpawners = 0;
             foreach (SpawnerRecord record in _records.Values)
                 if (record.IsActive) activeSpawners++;
 
-            FieldMetrics.SampleFrame(_monsterBySpawnSlot.Count, onScreen, _deferred.Count, activeSpawners);
+            FieldMetrics.SampleFrame(_monsterBySpawnSlot.Count, onScreen, _deferred.Count, activeSpawners, reduced);
         }
     }
 
@@ -255,6 +302,8 @@ public class SpawnerManager
     public void Clear()
     {
         _isRunning = false;
+        _costOff = MonsterCostOff.None;
+        _lodPhase = 0;
 
         _sceneCTS?.Cancel();
         _sceneCTS?.Dispose();

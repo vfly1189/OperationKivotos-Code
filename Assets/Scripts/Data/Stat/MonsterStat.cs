@@ -64,6 +64,12 @@ public class MonsterStat : BaseStat
         OnMonsterDead?.Invoke(_controller);
     }
 
+    public override DamageInfo BuildOutgoingDamage(GameObject attacker)
+    {
+        float finalDamage = Attack.Value;
+        return new DamageInfo(finalDamage, attacker, false);
+    }
+
 
     //public override void Init()
     //{
