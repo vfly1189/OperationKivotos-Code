@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>SkillSystem 전체 구조</title>
+<style>
+  :root{
+    --ink:#1a1c22; --line:#e3e6ec; --shade:#f7f8fa;
+    --blue:#3b5bdb; --blue-soft:#eef2ff; --blue-ink:#2b3a8f;
+    --amber:#e8590c; --amber-soft:#fff4ec; --amber-ink:#8a3708;
+    --green:#2b8a3e; --green-soft:#ebfbee; --green-ink:#1f6b2e;
+    --violet:#7048e8; --violet-soft:#f3f0ff; --violet-ink:#5028c0;
+    --red:#c00000; --box:#8c9bb5;
+  }
+  *{ box-sizing:border-box; }
+  @page{ size:A4; margin:12mm 13mm; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; color:var(--ink); margin:0; font-size:10.4pt; line-height:1.55; background:#fff; }
+  h1{ font-size:18pt; margin:0 0 4px; font-weight:800; letter-spacing:-.02em; }
+  h2{ font-size:13.5pt; margin:4px 0 6px; font-weight:800; color:var(--red); }
+  .kicker{ font-size:8pt; letter-spacing:.24em; color:var(--blue); font-weight:700; text-transform:uppercase; margin-bottom:6px; }
+  .lead{ font-size:10.6pt; margin:2px 0 8px; }
+  strong{ font-weight:800; }
+  svg{ display:block; margin:4px 0 6px; }
+  svg text{ font-family:"Malgun Gothic","맑은 고딕","Segoe UI",sans-serif; }
+  .t{ font-size:11px; font-weight:700; } .t:not([fill]){ fill:#1a1c22; }
+  .tb{ font-size:13px; font-weight:800; } .tb:not([fill]){ fill:#1a1c22; }
+  .s{ font-size:10px; } .s:not([fill]){ fill:#1a1c22; }
+  .xs{ font-size:9px; } .xs:not([fill]){ fill:#1a1c22; }
+  .c{ text-anchor:middle; } .e{ text-anchor:end; }
+  .pb{ break-before:page; }
+
+  .lbox{ border:1.6px solid var(--box); border-radius:14px; padding:10px 18px 10px; margin:10px 0; break-inside:avoid; }
+  .lbox h3{ text-align:center; color:var(--red); font-size:12.5pt; font-weight:800; margin:0 0 6px; }
+  .lbox h3 .n{ display:inline-block; background:var(--red); color:#fff; border-radius:7px; padding:0 8px; margin-right:6px; font-size:10.5pt; }
+  .lbox ol{ list-style:none; counter-reset:n; padding:0; margin:2px 0 0; }
+  .lbox ol>li{ counter-increment:n; margin:5px 0 6px; font-size:10.2pt; }
+  .lbox ol>li>b::before{ content:counter(n) ". "; color:var(--red); }
+  .lbox ol>li>b{ font-weight:800; }
+  .lbox ol>li>div{ margin:1px 0 0 16px; font-size:9.6pt; }
+  .lbox ol>li>div::before{ content:"• "; }
+  .concl{ text-align:center; font-weight:800; color:var(--red); font-size:10.6pt; margin:8px 0 2px; padding-top:7px; border-top:1px dashed var(--line); }
+  pre.code{ font-family:Consolas,"D2Coding",monospace; font-size:8.6pt; line-height:1.45; background:#1a1c22; color:#e9ecf3; border-radius:9px; padding:8px 12px; margin:6px 0 4px 16px; white-space:pre; }
+  pre.code .k{ color:#8fb4ff; } pre.code .m{ color:#9be3a7; }
+  .ref{ font-family:Consolas,monospace; font-size:8.6pt; color:var(--blue-ink); font-weight:700; }
+
+  table.m{ width:100%; border-collapse:collapse; font-size:9.4pt; margin:6px 0; }
+  table.m th{ background:#4F81BD; color:#fff; font-weight:800; padding:5px 7px; text-align:left; }
+  table.m td{ padding:4px 7px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.m tr:nth-child(even) td{ background:#f4f6fa; }
+  .b{ display:inline-block; border-radius:6px; padding:0 6px; font-size:8.4pt; font-weight:800; color:#fff; white-space:nowrap; }
+  .b.same{ background:var(--green); } .b.diff{ background:var(--amber); } .b.none{ background:#868e96; } .b.todo{ background:var(--red); }
+  .two{ display:flex; gap:12px; } .two>.lbox{ flex:1; margin-top:4px; }
+
+  .ref2{ font-family:Consolas,monospace; font-size:9.5px; font-weight:700; }
+  .b.sim{ background:var(--blue); }
+  table.m td.ref{ font-size:8.8pt; }
+
+  .ok{ color:var(--green); font-weight:800; }
+
+  table.m.cmp td{ font-size:8.7pt; padding:3px 6px; }
+  table.m.cmp td:first-child{ font-weight:800; white-space:nowrap; }
+  .hl{ background:#fff4ec !important; }
+  .halo{ paint-order:stroke; stroke:#fff; stroke-width:4px; stroke-linejoin:round; }
+</style></head><body>
+
+<!-- ===================== 1쪽 ===================== -->
+<div class="kicker">CombatAbility · 08 · 2026-11-04 · 플레이 확인 (보스 · AR · RL · Tank)</div>
+<h1>SkillSystem 전체 구조 — 보스 · 일반몹 공용</h1>
+<p class="lead">같은 SkillSystem을 <strong>보스는 HP선 · 가중치로, 일반몹은 탄 수로</strong> 부른다 — SS는 누가 부르는지 모른다.
+GAS를 모티브로 언제 / 써도 되나 / 순서 / 신호 / 무엇을 / 어디에 / 결과를 층으로 나눴고, 보스 하나와 일반몹 셋이 같은 코드 위에서 에셋만 다르게 돈다.</p>
+
+<h2>1. 층 지도 — 층마다 아는 것이 하나</h2>
+<svg viewBox="0 0 700 468" width="100%"><defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker><marker id="r1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker><marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker></defs><rect x="0" y="0" width="116" height="50" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/><text x="58.0" y="29.0" class="t c" fill="#3b5bdb">언제</text><rect x="126" y="0" width="360" height="50" rx="8" fill="#fff" stroke="#3b5bdb" stroke-width="1.3"/><text x="306.0" y="22.0" class="t c">컨트롤러 BT</text><text x="306.0" y="37.0" class="xs c">Boss · Normal MonsterController</text><rect x="496" y="0" width="168" height="50" rx="8" fill="#fff" stroke="#dee2e6" stroke-width="1"/><text x="580.0" y="29.0" class="s c">사망 · 리쉬 · 사거리 · 간격</text><line x1="306" y1="51" x2="306" y2="57" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a1)"/><rect x="0" y="58" width="116" height="50" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.6"/><text x="58.0" y="87.0" class="t c" fill="#3b5bdb">무엇을 쓸까</text><rect x="126" y="58" width="360" height="50" rx="8" fill="#fff" stroke="#3b5bdb" stroke-width="1.3"/><text x="306.0" y="80.0" class="t c">선택기</text><text x="306.0" y="95.0" class="xs c">BossMonsterPatternSelector · AmmoPatternSelector</text><rect x="496" y="58" width="168" height="50" rx="8" fill="#fff" stroke="#dee2e6" stroke-width="1"/><text x="580.0" y="87.0" class="s c">HP선 · 가중치 / 탄 수</text><line x1="306" y1="109" x2="306" y2="115" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a1)"/><rect x="0" y="116" width="116" height="50" rx="8" fill="#fff4ec" stroke="#c00000" stroke-width="1.6"/><text x="58.0" y="145.0" class="t c" fill="#c00000">써도 되나 · 실행</text><rect x="126" y="116" width="360" height="50" rx="8" fill="#fff" stroke="#c00000" stroke-width="1.3"/><text x="306.0" y="138.0" class="t c">SkillSystem</text><text x="306.0" y="153.0" class="xs c">Grant · CanUse · TryUseSkill · Cancel</text><rect x="496" y="116" width="168" height="50" rx="8" fill="#fff" stroke="#dee2e6" stroke-width="1"/><text x="580.0" y="145.0" class="s c">보유 · 쿨 · 태그</text><line x1="306" y1="167" x2="306" y2="173" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a1)"/><rect x="0" y="174" width="116" height="50" rx="8" fill="#fff4ec" stroke="#c00000" stroke-width="1.6"/><text x="58.0" y="203.0" class="t c" fill="#c00000">순서</text><rect x="126" y="174" width="360" height="50" rx="8" fill="#fff" stroke="#c00000" stroke-width="1.3"/><text x="306.0" y="196.0" class="t c">PatternRunner</text><text x="306.0" y="211.0" class="xs c">Pattern → PatternAction (Animation · Timeline)</text><rect x="496" y="174" width="168" height="50" rx="8" fill="#fff" stroke="#dee2e6" stroke-width="1"/><text x="580.0" y="203.0" class="s c">Action 순서 · 지금 Action</text><line x1="306" y1="225" x2="306" y2="231" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a1)"/><rect x="0" y="232" width="116" height="50" rx="8" fill="#fff4ec" stroke="#c00000" stroke-width="1.6"/><text x="58.0" y="261.0" class="t c" fill="#c00000">신호</text><rect x="126" y="232" width="360" height="50" rx="8" fill="#fff" stroke="#c00000" stroke-width="1.3"/><text x="306.0" y="254.0" class="t c">Receiver → SS.SendTag</text><text x="306.0" y="269.0" class="xs c">TagMarker · 애니 이벤트 → Action.OnTag · Task</text><rect x="496" y="232" width="168" height="50" rx="8" fill="#fff" stroke="#dee2e6" stroke-width="1"/><text x="580.0" y="261.0" class="s c">태그 + memo 조건</text><line x1="306" y1="283" x2="306" y2="289" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a1)"/><rect x="0" y="290" width="116" height="50" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/><text x="58.0" y="319.0" class="t c" fill="#2b8a3e">무엇을</text><rect x="126" y="290" width="360" height="50" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.3"/><text x="306.0" y="312.0" class="t c">PatternEvent</text><text x="306.0" y="327.0" class="xs c">Strike · Field · Projectile · Summon · Activation · Choose</text><rect x="496" y="290" width="168" height="50" rx="8" fill="#fff" stroke="#dee2e6" stroke-width="1"/><text x="580.0" y="319.0" class="s c">점 하나에 무엇을</text><line x1="306" y1="341" x2="306" y2="347" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a1)"/><rect x="0" y="348" width="116" height="50" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/><text x="58.0" y="377.0" class="t c" fill="#2b8a3e">어디에 · 간격</text><rect x="126" y="348" width="360" height="50" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.3"/><text x="306.0" y="370.0" class="t c">PointEmitter</text><text x="306.0" y="385.0" class="xs c">Placement · Anchor (Caster · Target · Socket · Saved)</text><rect x="496" y="348" width="168" height="50" rx="8" fill="#fff" stroke="#dee2e6" stroke-width="1"/><text x="580.0" y="377.0" class="s c">기준점 · 모양 · 간격 · 회차</text><line x1="306" y1="399" x2="306" y2="405" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a1)"/><rect x="0" y="406" width="116" height="50" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/><text x="58.0" y="435.0" class="t c" fill="#2b8a3e">결과</text><rect x="126" y="406" width="360" height="50" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.3"/><text x="306.0" y="428.0" class="t c">DamageSpec → HitShape</text><text x="306.0" y="443.0" class="xs c">투사체 콜라이더 → Health</text><rect x="496" y="406" width="168" height="50" rx="8" fill="#fff" stroke="#dee2e6" stroke-width="1"/><text x="580.0" y="435.0" class="s c">패킷 · 판정 · 방어/사망</text><path d="M670,2 L680,2 L680,106 L670,106" fill="none" stroke="#3b5bdb" stroke-width="1.5"/><text x="690" y="54.0" class="t" fill="#3b5bdb" transform="rotate(90 690 54.0)" text-anchor="middle">종류마다</text><path d="M670,118 L680,118 L680,280 L670,280" fill="none" stroke="#c00000" stroke-width="1.5"/><text x="690" y="199.0" class="t" fill="#c00000" transform="rotate(90 690 199.0)" text-anchor="middle">공용 · 핵심</text><path d="M670,292 L680,292 L680,454 L670,454" fill="none" stroke="#2b8a3e" stroke-width="1.5"/><text x="690" y="373.0" class="t" fill="#2b8a3e" transform="rotate(90 690 373.0)" text-anchor="middle">공용 · 부품</text></svg>
+
+<div class="lbox">
+  <h3>지키는 규칙</h3>
+  <ol>
+    <li><b>아래층은 PatternContext만 읽는다</b><div>시전자 · 타겟 출처 · 소켓 · memo · 스탯 · 토큰 — 컨트롤러가 누구인지 모른다</div></li>
+    <li><b>Event는 상속 한 번, 나머지는 조합</b><div>위치 · 간격(PointEmitter) · 세기(DamageSpec) · 판정(HitShape)은 필드로 든다</div></li>
+    <li><b>Action은 상태 가능, Event는 무상태</b><div>Action은 한 번에 하나, Event는 겹쳐 Fire될 수 있다</div></li>
+    <li><b>new DamageInfo는 Stat 안에서만</b><div>판정하는 쪽은 HitPoint만 채운다</div></li>
+  </ol>
+</div>
+
+<!-- ===================== 2쪽 ===================== -->
+<div class="pb"></div>
+<h2>2. 한 패턴의 일생 — AR 공격 한 번</h2>
+<svg viewBox="0 0 700 542" width="100%"><defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker><marker id="r2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker><marker id="b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker></defs><rect x="4" y="0" width="108" height="32" rx="8" fill="#fff" stroke="#8c9bb5" stroke-width="1.5"/><text x="58.0" y="20.0" class="t c">BT · 선택기</text><line x1="58" y1="32" x2="58" y2="538" stroke="#ced4da" stroke-width="1" stroke-dasharray="3 3"/><rect x="121" y="0" width="108" height="32" rx="8" fill="#fff4ec" stroke="#c00000" stroke-width="1.5"/><text x="175.0" y="20.0" class="t c" fill="#c00000">SkillSystem</text><line x1="175" y1="32" x2="175" y2="538" stroke="#ced4da" stroke-width="1" stroke-dasharray="3 3"/><rect x="238" y="0" width="108" height="32" rx="8" fill="#fff4ec" stroke="#c00000" stroke-width="1.5"/><text x="292.0" y="20.0" class="t c" fill="#c00000">Runner · Action</text><line x1="292" y1="32" x2="292" y2="538" stroke="#ced4da" stroke-width="1" stroke-dasharray="3 3"/><rect x="355" y="0" width="108" height="32" rx="8" fill="#fff" stroke="#8c9bb5" stroke-width="1.5"/><text x="409.0" y="20.0" class="t c">Receiver</text><line x1="409" y1="32" x2="409" y2="538" stroke="#ced4da" stroke-width="1" stroke-dasharray="3 3"/><rect x="472" y="0" width="108" height="32" rx="8" fill="#fff" stroke="#8c9bb5" stroke-width="1.5"/><text x="526.0" y="20.0" class="t c">Task · Event</text><line x1="526" y1="32" x2="526" y2="538" stroke="#ced4da" stroke-width="1" stroke-dasharray="3 3"/><rect x="589" y="0" width="108" height="32" rx="8" fill="#fff" stroke="#8c9bb5" stroke-width="1.5"/><text x="643.0" y="20.0" class="t c">Health</text><line x1="643" y1="32" x2="643" y2="538" stroke="#ced4da" stroke-width="1" stroke-dasharray="3 3"/><line x1="62" y1="66" x2="171" y2="66" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a2)"/><text x="116.5" y="61" class="xs halo c">① CanUse? (보유 · 쿨 · 태그)</text><line x1="171" y1="99" x2="62" y2="99" stroke="#1a1c22" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a2)"/><text x="116.5" y="94" class="xs halo c">✔ → 선택 확정(탄 −1 · 기믹 사용)</text><line x1="62" y1="132" x2="171" y2="132" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a2)"/><text x="116.5" y="127" class="xs halo c">② TryUseSkill(pattern, ctx)</text><line x1="179" y1="165" x2="288" y2="165" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a2)"/><text x="233.5" y="160" class="xs halo c">③ Runner.Start (memo 비움)</text><path d="M292,190 L322,190 L322,202 L295,202" fill="none" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#a2)"/><text x="328" y="198" class="xs halo">④ Begin — CrossFade · Play</text><line x1="405" y1="231" x2="179" y2="231" stroke="#c00000" stroke-width="1.5" marker-end="url(#r2)"/><text x="292.0" y="226" class="xs halo c" fill="#c00000">⑤ 클립 이벤트 → SendTag(Fire)</text><line x1="179" y1="264" x2="288" y2="264" stroke="#c00000" stroke-width="1.5" marker-end="url(#r2)"/><text x="233.5" y="259" class="xs halo c" fill="#c00000">OnEvent(tag)</text><line x1="296" y1="297" x2="522" y2="297" stroke="#c00000" stroke-width="1.5" marker-end="url(#r2)"/><text x="409.0" y="292" class="xs halo c" fill="#c00000">Action.OnTag → Task.Matches → Fire</text><path d="M526,322 L556,322 L556,334 L529,334" fill="none" stroke="#1a1c22" stroke-width="1.3" marker-end="url(#a2)"/><text x="562" y="330" class="xs halo">⑥ Pack 1번 · 점마다 결과</text><line x1="530" y1="363" x2="639" y2="363" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a2)"/><text x="584.5" y="358" class="xs halo c">TakeDamage(복사본)</text><line x1="405" y1="396" x2="179" y2="396" stroke="#c00000" stroke-width="1.5" marker-end="url(#r2)"/><text x="292.0" y="391" class="xs halo c" fill="#c00000">⑦ SendTag(End)</text><line x1="179" y1="429" x2="288" y2="429" stroke="#c00000" stroke-width="1.5" marker-end="url(#r2)"/><text x="233.5" y="424" class="xs halo c" fill="#c00000">Action 끝 → 다음 Action</text><line x1="288" y1="462" x2="179" y2="462" stroke="#1a1c22" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a2)"/><text x="233.5" y="457" class="xs halo c">마지막 → PatternEnded · IsBusy=false</text><line x1="171" y1="495" x2="62" y2="495" stroke="#1a1c22" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a2)"/><text x="116.5" y="490" class="xs halo c">다음 판단</text><rect x="2" y="213" width="6" height="92" fill="#c00000" rx="2"/><text x="12" y="225" class="xs" fill="#c00000">신호</text></svg>
+<p class="concl">빨간 구간(신호)만 애니 · 타임라인에 따라 다르고, 나머지 길은 보스와 몹이 같다</p>
+<div class="lbox">
+  <h3>단계마다 누가</h3>
+  <ol>
+    <li><b>고르기 → 허락 (①②)</b><div>선택기가 SS.CanUse로 거른 뒤 확정 — SS도 같은 CanUse로 같은 프레임에 받으므로 어긋나지 않는다</div></li>
+    <li><b>순서 (③④)</b><div>Runner가 memo를 비우고 첫 Action을 시작 — Action은 애니 CrossFade 또는 타임라인 Play</div></li>
+    <li><b>신호 (⑤)</b><div>Receiver → SS.SendTag → 지금 Action의 OnTag(끝 태그) → Task 중 태그 · 조건이 맞는 것만 Fire</div></li>
+    <li><b>결과 (⑥)</b><div>Event가 Fire 때 패킷 1번, PointEmitter가 점 · 간격 · 회차대로 결과를 낸다</div></li>
+    <li><b>끝 (⑦)</b><div>끝 태그 또는 상태 종료 → 다음 Action → 마지막이면 PatternEnded, BT가 다음 판단</div></li>
+  </ol>
+</div>
+
+<!-- ===================== 3쪽 ===================== -->
+<div class="pb"></div>
+<h2>3. 몬스터에 붙는 방식 — 같은 SS, 다른 호출자</h2>
+<svg viewBox="0 0 700 300" width="100%"><defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker><marker id="r3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker><marker id="b3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker></defs><rect x="250" y="0" width="200" height="46" rx="8" fill="#f1f3f5" stroke="#495057" stroke-width="1.5"/><text x="350.0" y="20.0" class="t c">BaseMonsterController</text><text x="350.0" y="35.0" class="xs c">사망 이벤트 · SS 생애 · BuildContext</text><path d="M350,46 L350,62 M120,62 L580,62 M120,62 L120,74 M580,62 L580,74" fill="none" stroke="#1a1c22" stroke-width="1.3"/><rect x="20" y="74" width="200" height="46" rx="8" fill="#fff" stroke="#3b5bdb" stroke-width="1.5"/><text x="120.0" y="94.0" class="t c">BossMonsterController</text><text x="120.0" y="109.0" class="xs c">행동 중 → 간격 → 선택</text><rect x="480" y="74" width="200" height="46" rx="8" fill="#fff" stroke="#3b5bdb" stroke-width="1.5"/><text x="580.0" y="94.0" class="t c">NormalMonsterController</text><text x="580.0" y="109.0" class="xs c">리쉬 → 행동 중 → 전투 → 추적</text><line x1="580" y1="120" x2="580" y2="132" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a3)"/><rect x="480" y="134" width="200" height="40" rx="8" fill="#fff" stroke="#3b5bdb" stroke-width="1.3"/><text x="580.0" y="151.0" class="t c">SkillMonsterController</text><text x="580.0" y="166.0" class="xs c">사거리 안이면 시도</text><rect x="20" y="140" width="200" height="46" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.5"/><text x="120.0" y="160.0" class="t c">BossMonsterPatternSelector</text><text x="120.0" y="175.0" class="xs c">HP선 기믹 + 가중치</text><rect x="480" y="188" width="200" height="40" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.5"/><text x="580.0" y="205.0" class="t c">AmmoPatternSelector</text><text x="580.0" y="220.0" class="xs c">탄 있으면 공격 · 없으면 장전</text><line x1="120" y1="120" x2="120" y2="138" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a3)"/><line x1="580" y1="174" x2="580" y2="186" stroke="#1a1c22" stroke-width="1.2" marker-end="url(#a3)"/><rect x="260" y="150" width="180" height="70" rx="12" fill="#fff4ec" stroke="#c00000" stroke-width="2"/><text x="350" y="176" class="tb c" fill="#c00000">SkillSystem</text><text x="350" y="194" class="ref2 c" fill="#2b3a8f">CanUse · TryUseSkill</text><text x="350" y="210" class="xs c" fill="#c00000">누가 부르는지 모른다</text><line x1="222" y1="170" x2="258" y2="178" stroke="#3b5bdb" stroke-width="1.5" marker-end="url(#b3)"/><line x1="478" y1="208" x2="442" y2="198" stroke="#3b5bdb" stroke-width="1.5" marker-end="url(#b3)"/><text x="254" y="200" class="xs e" fill="#3b5bdb">HP · 가중치로</text><text x="460" y="226" class="xs c" fill="#3b5bdb">탄 수로</text><line x1="350" y1="222" x2="350" y2="240" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a3)"/><rect x="40" y="244" width="140" height="48" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.4"/><text x="110.0" y="265.0" class="t c">Hieronymus</text><text x="110.0" y="280.0" class="xs c">Timeline · 장판 · 소환</text><rect x="200" y="244" width="140" height="48" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.4"/><text x="270.0" y="265.0" class="t c">AR</text><text x="270.0" y="280.0" class="xs c">5연발 · 탄 3</text><rect x="360" y="244" width="140" height="48" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.4"/><text x="430.0" y="265.0" class="t c">RL</text><text x="430.0" y="280.0" class="xs c">로켓 1 · 탄 1</text><rect x="520" y="244" width="140" height="48" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.4"/><text x="590.0" y="265.0" class="t c">Tank</text><text x="590.0" y="280.0" class="xs c">좌/우 포격 · 탄 4</text><text x="350" y="238" class="xs"></text></svg>
+
+<div class="two">
+  <div class="lbox">
+    <h3>Base가 맡는 것 (모든 몬스터)</h3>
+    <ol>
+      <li><b>사망 = Health.OnDead 이벤트</b><div>OnDeath → SS.Cancel · 콜라이더 · Death · 디스폰</div></li>
+      <li><b>SS 생애</b><div>OnSpawn ResetState · OnDespawn Cancel</div></li>
+      <li><b>BuildContext()</b><div>시전자 · 타겟 · 소켓 · 스탯 · 생애 토큰</div></li>
+    </ol>
+  </div>
+  <div class="lbox">
+    <h3>MonsterState 해체</h3>
+    <ol>
+      <li><b>살았나</b><div>Health.IsDead</div></li>
+      <li><b>행동 중</b><div>SS.IsBusy (회전은 Pattern._faceTarget)</div></li>
+      <li><b>교전 중</b><div>계산 — 살아 있고 귀환 · 행동 · 감지 중</div></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ===================== 4쪽 ===================== -->
+<div class="pb"></div>
+<h2>4. 데미지 — 읽기 · 판정 · 계산 · 보이기를 나눈다</h2>
+<svg viewBox="0 0 700 150" width="100%"><defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker><marker id="r4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker><marker id="b4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker></defs><rect x="0" y="40" width="130" height="60" rx="8" fill="#fff4ec" stroke="#c00000" stroke-width="1.6"/><text x="65.0" y="67.0" class="t c" fill="#c00000">Event.Fire</text><text x="65.0" y="82.0" class="xs c">DamageSpec.Pack</text><rect x="160" y="40" width="130" height="60" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.3"/><text x="225.0" y="60.0" class="t c">BaseStat</text><text x="225.0" y="75.0" class="xs c">BuildOutgoingDamage</text><text x="225.0" y="88.0" class="xs c">Attack × 배율 · 치명타</text><line x1="132" y1="70" x2="158" y2="70" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a4)"/><text x="145" y="62" class="xs c" fill="#c00000">1번</text><rect x="330" y="4" width="170" height="56" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.5"/><text x="415.0" y="22.0" class="t c">제자리 — HitShape</text><text x="415.0" y="37.0" class="xs c">OverlapSphere · 중복 제거</text><text x="415.0" y="50.0" class="xs c">점마다 · 틱마다</text><rect x="330" y="82" width="170" height="56" rx="8" fill="#fff" stroke="#2b8a3e" stroke-width="1.5"/><text x="415.0" y="100.0" class="t c">날아감 — 투사체</text><text x="415.0" y="115.0" class="xs c">패킷을 넘김</text><text x="415.0" y="128.0" class="xs c">콜라이더가 판정</text><path d="M292,70 L310,70 L310,32 L328,32" fill="none" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a4)"/><path d="M310,70 L310,110 L328,110" fill="none" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a4)"/><rect x="540" y="40" width="160" height="60" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.6"/><text x="620.0" y="67.0" class="t c" fill="#2b8a3e">Health.TakeDamage</text><text x="620.0" y="82.0" class="xs c">무적 · 방어 · 사망</text><path d="M502,32 L520,32 L520,70 L538,70" fill="none" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a4)"/><path d="M502,110 L520,110 L520,70" fill="none" stroke="#1a1c22" stroke-width="1.5"/><text x="620" y="118" class="xs c">복사본 + HitPoint만</text></svg>
+<table class="m">
+  <tr><th style="width:18%">Event</th><th>판정</th><th style="width:30%">중복 제거</th></tr>
+  <tr><td class="ref">StrikeEvent</td><td>점마다 HitShape · <span class="ref">_delay</span>가 있으면 경고 → 지연 → 같은 자리</td><td>Fire 단위 (지연 타격은 점마다)</td></tr>
+  <tr><td class="ref">FieldEvent</td><td>장판마다 틱 루프</td><td>틱 단위</td></tr>
+  <tr><td class="ref">ProjectileEvent</td><td>투사체 콜라이더 (패킷을 넘김)</td><td>투사체가 처리</td></tr>
+</table>
+
+<h2>5. 신호 입구 둘 — Unity 전달 방식이 둘이라서</h2>
+<svg viewBox="0 0 700 200" width="100%"><defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker><marker id="r5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker><marker id="b5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker></defs><rect x="0" y="10" width="150" height="46" rx="8" fill="#fff" stroke="#8c9bb5" stroke-width="1.3"/><text x="75.0" y="30.0" class="t c">TagMarker</text><text x="75.0" y="45.0" class="xs c">타임라인 마커</text><rect x="0" y="110" width="150" height="46" rx="8" fill="#fff" stroke="#8c9bb5" stroke-width="1.3"/><text x="75.0" y="130.0" class="t c">애니 이벤트</text><text x="75.0" y="145.0" class="xs c">OnAnimTag(태그)</text><rect x="200" y="10" width="190" height="46" rx="8" fill="#fff" stroke="#7048e8" stroke-width="1.5"/><text x="295.0" y="30.0" class="t c">TimelineTagReceiver</text><text x="295.0" y="45.0" class="xs c">INotificationReceiver.OnNotify</text><rect x="200" y="110" width="190" height="46" rx="8" fill="#fff" stroke="#7048e8" stroke-width="1.5"/><text x="295.0" y="130.0" class="t c">AnimationTagReceiver</text><text x="295.0" y="145.0" class="xs c">이름으로 호출 · PlaySfx</text><line x1="152" y1="33" x2="198" y2="33" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a5)"/><line x1="152" y1="133" x2="198" y2="133" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a5)"/><rect x="460" y="56" width="170" height="54" rx="8" fill="#fff4ec" stroke="#c00000" stroke-width="1.8"/><text x="545.0" y="80.0" class="t c" fill="#c00000">SkillSystem.SendTag</text><text x="545.0" y="95.0" class="xs c">→ Runner.OnEvent</text><path d="M392,33 L425,33 L425,76 L458,76" fill="none" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a5)"/><path d="M392,133 L425,133 L425,90 L458,90" fill="none" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a5)"/><path d="M75,156 L75,186 L545,186 L545,112" fill="none" stroke="#c00000" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#r5)"/><text x="310" y="180" class="xs c" fill="#c00000">이벤트 이름이 SendTag였을 때 — SS.SendTag도 같이 불려 태그 2번 (11-04 버그)</text></svg>
+<div class="lbox">
+  <h3>정한 것</h3>
+  <ol>
+    <li><b>애니 이벤트 함수 이름은 오브젝트 안에서 유일하게</b><div>같은 이름의 함수를 가진 컴포넌트 전부에 간다 → <span class="ref">OnAnim…</span> 접두사</div></li>
+    <li><b>입구는 SS 밖에</b><div>SS가 Unity 전달 방식 · 함수 이름에 묶이지 않게 — SS는 태그만 받는다</div></li>
+    <li><b>두 입구는 하나로 합칠 수 있다</b><div>전달 방식이 둘일 뿐 — 지금은 둘로 두고 동작 확인</div></li>
+  </ol>
+</div>
+
+<!-- ===================== 5쪽 ===================== -->
+<div class="pb"></div>
+<h2>6. 이관 기록 — 확장 증거</h2>
+<svg viewBox="0 0 700 150" width="100%"><defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker><marker id="r6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker><marker id="b6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker></defs><line x1="20" y1="40" x2="680" y2="40" stroke="#ced4da" stroke-width="2"/><circle cx="110" cy="40" r="9" fill="#fff" stroke="#e8590c" stroke-width="2.5"/><text x="110" y="20" class="ref2 c" fill="#2b3a8f">8c071058</text><text x="110" y="72" class="tb c">공용화 + AR</text><text x="110" y="102" class="tb c" fill="#e8590c">.cs 다수</text><text x="110" y="124" class="xs c">SS 생애 · 신호 · 끝 태그 · 부품</text><circle cx="350" cy="40" r="9" fill="#fff" stroke="#2b8a3e" stroke-width="2.5"/><text x="350" y="20" class="ref2 c" fill="#2b3a8f">fb55dfaf</text><text x="350" y="72" class="tb c">RL</text><text x="350" y="102" class="tb c" fill="#2b8a3e">.cs 0</text><text x="350" y="124" class="xs c">프리팹 · 클립만</text><circle cx="590" cy="40" r="9" fill="#fff" stroke="#3b5bdb" stroke-width="2.5"/><text x="590" y="20" class="ref2 c" fill="#2b3a8f">13b82158</text><text x="590" y="72" class="tb c">Tank</text><text x="590" y="102" class="tb c" fill="#3b5bdb">.cs 1</text><text x="590" y="124" class="xs c">StrikeEvent 옵션 (보스도 사용)</text></svg>
+<div class="lbox">
+  <h3>공용으로 만들려면 SS로 무엇을 올려야 했나</h3>
+  <ol>
+    <li><b>사망 · 생애 처리</b><div>보스 컨트롤러 안에 있던 것을 Base로 — 몹도 같은 길</div></li>
+    <li><b>ctx 조립</b><div>BuildContext를 Base 한 곳에</div></li>
+    <li><b>애니 이벤트 신호 · 태그로 끝나는 Action</b><div>보스는 타임라인이라 필요 없었다 — 몹의 이어지는 애니(Attack_Start → Ing → End)</div></li>
+  </ol>
+  <p class="concl">부품이 갖춰진 뒤 RL은 .cs 0줄 — 새 행동(Tank)은 기존 Event 옵션 하나</p>
+</div>
+
+<h2>7. 끊기 · 생애</h2>
+<table class="m">
+  <tr><th style="width:16%">경우</th><th>경로</th><th style="width:30%">이미 나간 Event</th></tr>
+  <tr><td>사망</td><td>Health.OnDead → OnDeath → SS.Cancel (보스는 생애 토큰도)</td><td>생애 토큰으로 멈춤</td></tr>
+  <tr><td>회수</td><td>Pool.Push → OnDespawn → SS.Cancel → 토큰 취소</td><td>멈춤</td></tr>
+  <tr><td>리쉬 귀환</td><td>StopAction → SS.Cancel</td><td><strong style="color:#c00000">계속 돈다</strong> — 패턴 토큰 없음</td></tr>
+  <tr><td>새 생애</td><td>OnSpawn → SS.ResetState(쿨) · 선택기 ResetState</td><td>—</td></tr>
+</table>
+
+<!-- ===================== 6쪽 ===================== -->
+<div class="pb"></div>
+<h2>8. 대조 — AbilitySystem · SkillSystem · GAS</h2>
+<table class="m cmp"><tr><th style="width:15%">항목</th><th style="width:28%">AbilitySystem (플레이어)</th><th style="width:29%">SkillSystem (보스 · 몹)</th><th>GAS (UE)</th></tr><tr><td>단위</td><td class="">AbilityData(SO) = Effect 목록</td><td class="">Pattern(프리팹) = Action 목록</td><td>GameplayAbility</td></tr><tr><td>무엇을 쓸까</td><td class="">입력 (Q · E · 평타)</td><td class="">선택기 (HP선 · 가중치 / 탄 수)</td><td>AI · 입력 바인딩 (ASC 밖)</td></tr><tr><td>써도 되나</td><td class="hl">Runner.Commit — 쿨 · Required/Blocked</td><td class="">SS.CanUse — 보유 · 쿨 · (태그 자리)</td><td>CanActivate — 쿨 GE · 비용 · 태그</td></tr><tr><td>쿨 소유</td><td class="">Runner (캐스터별 절대 시각)</td><td class="">SS (캐스터별 마지막 사용)</td><td>쿨다운 GameplayEffect</td></tr><tr><td>흐름</td><td class="">Effect 순서대로 await</td><td class="hl">Action 순서 + Task 신호 반응</td><td>Ability 그래프 + AbilityTask</td></tr><tr><td>타이밍</td><td class="">애니 비트 번호</td><td class="hl">태그 (TagMarker · 애니 이벤트)</td><td>AnimNotify → GameplayEvent</td></tr><tr><td>분기 · 선택</td><td class="">없음 (선형)</td><td class="hl">ChooseEvent + Task 조건(memo)</td><td>그래프 분기</td></tr><tr><td>위치</td><td class="">Anchor (Effect 필드)</td><td class="hl">Placement · Anchor · PointEmitter</td><td>TargetActor · TargetData</td></tr><tr><td>결과</td><td class="">Effect (Spawn · Status …)</td><td class="">Event + DamageSpec · HitShape</td><td>GameplayEffect</td></tr><tr><td>연출</td><td class="">Effect 안 (SpawnVFX)</td><td class="">Event 안 부품</td><td>GameplayCue (분리)</td></tr><tr><td>상태 태그</td><td class="hl">Required · Blocked · Grants</td><td class="">자리만 (CheckCurrentTag)</td><td>Activation · Blocked · Cancel</td></tr><tr><td>취소</td><td class="">캐스터 액션 토큰</td><td class="">SS.Cancel + 생애 토큰</td><td>EndAbility · CancelWithTag</td></tr><tr><td>데미지</td><td class="">BuildOutgoingDamage → Health</td><td class="">같음 (DamageSpec이 Pack)</td><td>GE Execution → AttributeSet</td></tr><tr><td>네트워크</td><td class="">없음</td><td class="">없음 (완전 싱글)</td><td>예측 · 복제</td></tr></table>
+<p class="xs" style="font-size:8.4pt;margin:2px 0 0;">주황 칸 = 그 시스템이 GAS에 가장 가까운 층</p>
+
+<!-- ===================== 7쪽 ===================== -->
+<div class="pb"></div>
+<h2>9. 어느 층이 GAS에 가까운가</h2>
+<svg viewBox="0 0 700 320" width="100%"><defs><marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker><marker id="r7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker><marker id="b7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker></defs><rect x="190" y="0" width="240" height="30" rx="8" fill="#fff" stroke="#8c9bb5" stroke-width="1.3"/><text x="310.0" y="19.0" class="t c">AbilitySystem (플레이어)</text><rect x="450" y="0" width="240" height="30" rx="8" fill="#fff" stroke="#c00000" stroke-width="1.5"/><text x="570.0" y="19.0" class="t c" fill="#c00000">SkillSystem (보스 · 몹)</text><rect x="0" y="38" width="180" height="30" rx="8" fill="#f4f6fa" stroke="#8c9bb5" stroke-width="1.3"/><text x="90.0" y="57.0" class="s c">허락 (쿨 · 태그)</text><rect x="190" y="38" width="240" height="30" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/><text x="310.0" y="57.0" class="s c" fill="#2b8a3e">GAS와 같음</text><rect x="450" y="38" width="240" height="30" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/><text x="570.0" y="57.0" class="s c" fill="#e8590c">비슷</text><rect x="0" y="73" width="180" height="30" rx="8" fill="#f4f6fa" stroke="#8c9bb5" stroke-width="1.3"/><text x="90.0" y="92.0" class="s c">흐름 (여러 단계)</text><rect x="190" y="73" width="240" height="30" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/><text x="310.0" y="92.0" class="s c" fill="#e8590c">비슷</text><rect x="450" y="73" width="240" height="30" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/><text x="570.0" y="92.0" class="s c" fill="#2b8a3e">GAS와 같음</text><rect x="0" y="108" width="180" height="30" rx="8" fill="#f4f6fa" stroke="#8c9bb5" stroke-width="1.3"/><text x="90.0" y="127.0" class="s c">신호 (애니 · 타임라인)</text><rect x="190" y="108" width="240" height="30" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/><text x="310.0" y="127.0" class="s c" fill="#e8590c">비슷</text><rect x="450" y="108" width="240" height="30" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/><text x="570.0" y="127.0" class="s c" fill="#2b8a3e">GAS와 같음</text><rect x="0" y="143" width="180" height="30" rx="8" fill="#f4f6fa" stroke="#8c9bb5" stroke-width="1.3"/><text x="90.0" y="162.0" class="s c">분기 · 선택</text><rect x="190" y="143" width="240" height="30" rx="8" fill="#f1f3f5" stroke="#868e96" stroke-width="1.2"/><text x="310.0" y="162.0" class="s c" fill="#868e96">없음</text><rect x="450" y="143" width="240" height="30" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/><text x="570.0" y="162.0" class="s c" fill="#2b8a3e">GAS와 같음</text><rect x="0" y="178" width="180" height="30" rx="8" fill="#f4f6fa" stroke="#8c9bb5" stroke-width="1.3"/><text x="90.0" y="197.0" class="s c">위치 (타게팅)</text><rect x="190" y="178" width="240" height="30" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/><text x="310.0" y="197.0" class="s c" fill="#e8590c">비슷</text><rect x="450" y="178" width="240" height="30" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/><text x="570.0" y="197.0" class="s c" fill="#2b8a3e">GAS와 같음</text><rect x="0" y="213" width="180" height="30" rx="8" fill="#f4f6fa" stroke="#8c9bb5" stroke-width="1.3"/><text x="90.0" y="232.0" class="s c">결과 (데미지)</text><rect x="190" y="213" width="240" height="30" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/><text x="310.0" y="232.0" class="s c" fill="#e8590c">비슷</text><rect x="450" y="213" width="240" height="30" rx="8" fill="#fff4ec" stroke="#e8590c" stroke-width="1.2"/><text x="570.0" y="232.0" class="s c" fill="#e8590c">비슷</text><rect x="0" y="248" width="180" height="30" rx="8" fill="#f4f6fa" stroke="#8c9bb5" stroke-width="1.3"/><text x="90.0" y="267.0" class="s c">연출 분리</text><rect x="190" y="248" width="240" height="30" rx="8" fill="#f1f3f5" stroke="#868e96" stroke-width="1.2"/><text x="310.0" y="267.0" class="s c" fill="#868e96">없음</text><rect x="450" y="248" width="240" height="30" rx="8" fill="#f1f3f5" stroke="#868e96" stroke-width="1.2"/><text x="570.0" y="267.0" class="s c" fill="#868e96">없음</text><rect x="0" y="283" width="180" height="30" rx="8" fill="#f4f6fa" stroke="#8c9bb5" stroke-width="1.3"/><text x="90.0" y="302.0" class="s c">상태 태그 부여</text><rect x="190" y="283" width="240" height="30" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.2"/><text x="310.0" y="302.0" class="s c" fill="#2b8a3e">GAS와 같음</text><rect x="450" y="283" width="240" height="30" rx="8" fill="#f1f3f5" stroke="#868e96" stroke-width="1.2"/><text x="570.0" y="302.0" class="s c" fill="#868e96">없음</text></svg>
+<div class="two">
+  <div class="lbox">
+    <h3>AbilitySystem</h3>
+    <ol>
+      <li><b>허락 층이 GAS에 가장 가깝다</b><div>Required · Blocked · Grants 태그, Commit / Fire 분리</div></li>
+      <li><b>흐름이 선형 Effect 목록</b><div>선택 · 분기 · 여러 단계를 못 담아 보스에서 막혔다(②)</div></li>
+    </ol>
+  </div>
+  <div class="lbox">
+    <h3>SkillSystem</h3>
+    <ol>
+      <li><b>흐름 · 신호 · 타게팅이 GAS에 가깝다</b><div>Action 순서 + 태그 신호 + Placement</div></li>
+      <li><b>상태 태그 게이트는 자리만</b><div>AbilitySystem의 Required/Blocked/Grants를 가져올 자리</div></li>
+    </ol>
+  </div>
+</div>
+
+<h2>10. 둘이 이미 만나는 이음새</h2>
+<svg viewBox="0 0 700 120" width="100%"><defs><marker id="a8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a1c22"/></marker><marker id="r8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c00000"/></marker><marker id="b8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b5bdb"/></marker></defs><rect x="0" y="6" width="220" height="46" rx="8" fill="#fff" stroke="#8c9bb5" stroke-width="1.3"/><text x="110.0" y="26.0" class="t c">플레이어 — AbilityRunner</text><text x="110.0" y="41.0" class="xs c">Commit → Fire → Effect</text><rect x="0" y="66" width="220" height="46" rx="8" fill="#fff" stroke="#c00000" stroke-width="1.5"/><text x="110.0" y="86.0" class="t c">몬스터 — SkillSystem</text><text x="110.0" y="101.0" class="xs c">TryUseSkill → Event</text><rect x="270" y="34" width="200" height="52" rx="8" fill="#eef2ff" stroke="#3b5bdb" stroke-width="1.5"/><text x="370.0" y="57.0" class="t c">BuildOutgoingDamage</text><text x="370.0" y="72.0" class="xs c">BaseStat — 패킷</text><rect x="510" y="34" width="190" height="52" rx="8" fill="#ebfbee" stroke="#2b8a3e" stroke-width="1.5"/><text x="605.0" y="57.0" class="t c" fill="#2b8a3e">IDamageable → Health</text><text x="605.0" y="72.0" class="xs c">계산은 한 곳</text><path d="M222,29 L246,29 L246,54 L268,54" fill="none" stroke="#1a1c22" stroke-width="1.4" marker-end="url(#a8)"/><path d="M222,89 L246,89 L246,66 L268,66" fill="none" stroke="#1a1c22" stroke-width="1.4" marker-end="url(#a8)"/><line x1="472" y1="60" x2="508" y2="60" stroke="#1a1c22" stroke-width="1.5" marker-end="url(#a8)"/></svg>
+<p class="concl" style="border-top:none;">플레이어 이관은 이 이음새 위에서 — 입력이 선택기 자리에 들어간다</p>
+
+<!-- ===================== 8쪽 ===================== -->
+<div class="pb"></div>
+<h2>11. GAS에서 가져오지 않은 것 — 범위 결정</h2>
+<table class="m">
+  <tr><th style="width:24%">GAS</th><th>이유</th><th style="width:22%">가져올 때</th></tr>
+  <tr><td>AttributeSet · GE Modifier</td><td>스탯은 BaseStat이 이미 담당, 버프는 플레이어 쪽 ApplyStatModifier</td><td>몬스터 버프가 생길 때</td></tr>
+  <tr><td>GameplayCue</td><td>연출과 결과가 같은 점 · 같은 순간 → Event 안 부품으로 충분</td><td>연출만 따로 재사용할 때</td></tr>
+  <tr><td>상태 태그 게이트 · 패턴 취소</td><td>생애 중 끊는 경우가 리쉬뿐</td><td>스턴 · 무력화</td></tr>
+  <tr><td>예측 · 복제</td><td>완전 싱글</td><td>—</td></tr>
+</table>
+
+<div class="lbox">
+  <h3>남은 일</h3>
+  <ol>
+    <li><b>패턴 토큰</b><div>Runner가 패턴마다 토큰(생애 토큰에 연결) → 리쉬 · 스턴이 연사 중간을 끊는다. 남아야 하는 장판은 생애 토큰을 고른다</div></li>
+    <li><b>상태 태그 게이트를 SS로</b><div>Required / Blocked / Grants를 CheckCurrentTag 자리에 — State.Casting 부여 = 실행 중 거절</div></li>
+    <li><b>두 번째 보스</b><div>보스 키 데이터화(BossDungeonScene 하드코딩) → Prefab Variant + 패턴 재구성, diff .cs 0</div></li>
+    <li><b>플레이어 SS 이관</b><div>데미지 이음새는 이미 같다 — 입력이 선택기 자리</div></li>
+    <li><b>선택</b><div>신호 입구 통합 · Tank 착탄 지면 스냅 · 끄기 실험 Animator 항목 정리</div></li>
+  </ol>
+</div>
+
+</body></html>

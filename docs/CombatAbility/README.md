@@ -31,6 +31,9 @@
 | [03_SkillSystem_Structure.pdf](03_SkillSystem_Structure.pdf) | ④ 구현 중 점검 (10-27) — BMC · MPS · SS · Pattern 구조도 · 실행 순서 · 평가 · 구현 목록 P0~P2 · GAS 층별 비교 (8쪽) |
 | [04_Placement_Explained.pdf](04_Placement_Explained.pdf) | Placement 설명 (10-30, 설계안) — 기준점 + 모양 · Pose/방향 · 출처 3가지 · PatternContext · 타겟을 언제 읽나 · 경고→타격 고정(memo) · GAS Targeting 대응 (5쪽) |
 | [05_Pattern_Event_Structure.pdf](05_Pattern_Event_Structure.pdf) | Pattern Event 구조 (10-31, 구현 · 컴파일 확인 · 플레이 미확인) — 전체 흐름 · Event 5개(상속 1단 + PointEmitter 조합) · 간격/묶음 · 기준점 4 × 모양 4 · 패턴 4개 조립 · 패턴 3 실행 순서 · 바뀐 파일 · 남은 일 (6쪽) |
+| [06_Final_Structure.pdf](06_Final_Structure.pdf) · [.md](06_Final_Structure.md) | **최종 구조 (10-31, 커밋 b7660195 · 플레이 확인)** — 층 지도 · 한 패턴의 일생 · 의존 방향 · Context · Event/Emitter · Placement · 프리팹 배선 · 실제 패턴 6개 · 취소 경로 · 계약 8 · 확장 표 · GAS 대응 · 남은 일 (9쪽) |
+| [07_Damage_Pipeline.pdf](07_Damage_Pipeline.pdf) | 데미지 파이프라인 (11-04) — 읽기 · 판정 · 계산 · 보이기 분리 · 세 방법 비교 · 패킹 시점 · 콜라이더 vs 쿼리 · 정할 것 3개 (4쪽) |
+| [08_SkillSystem_Overview.pdf](08_SkillSystem_Overview.pdf) · [.md](08_SkillSystem_Overview.md) | **전체 구조 (11-04, 커밋 8c071058 · fb55dfaf · 13b82158 · 플레이 확인)** — 보스 · 일반몹 공용 · 층 지도 · 한 패턴의 일생 · 같은 SS 다른 호출자 · 데미지 · 신호 입구 둘 · 이관 기록(RL .cs 0) · 끊기 · AbilitySystem · SkillSystem · GAS 대조 · 남은 일 (8쪽) |
 
 HTML 원본은 같은 이름으로 옆에 있다. PDF는 Chrome headless로 인쇄 (절대경로 필수).
 
