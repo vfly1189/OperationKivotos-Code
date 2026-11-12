@@ -22,6 +22,19 @@ public static class MonsterFactory
         return CreateAsync(monsterBaseData, monsterAddressableKey, mapId, position, rotation, token);
     }
 
+    // 데이터는 dataKey, 프리팹은 prefabKey — 같은 스탯에 다른 외형(예: 반전 보스 Variant)
+    public static UniTask<GameObject> CreateMonsterByAddressableKeyAsync(
+        string dataKey,
+        string prefabKey,
+        int mapId,
+        Vector3 position,
+        Quaternion rotation,
+        CancellationToken token = default)
+    {
+        MonsterBaseData monsterBaseData = Managers.Data.GetData<string, MonsterBaseData, MonsterAddressableMarker>(dataKey);
+        return CreateAsync(monsterBaseData, prefabKey, mapId, position, rotation, token);
+    }
+
     public static UniTask<GameObject> CreateMonsterByMonsterIDAsync(
         int monsterID,
         int mapId,

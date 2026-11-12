@@ -11,6 +11,13 @@ public class BulletController : MonoBehaviour, IProjectile
     [Header("On-Hit Effects (표식 등 명중 시 대상에 적용, 없으면 비워둠)")]
     [SerializeField] private EffectData[] _onHitEffects;
 
+    [Header("되돌아오기 (선택 · 0 = 끔)")]
+    [Tooltip("초. 이 시간 동안 감속하며 나갔다가, 쏜 쪽으로 가속하며 돌아온다(부메랑). 쏜 쪽에 닿으면 회수. 쏜 쪽이 없으면 그냥 직진")]
+    [SerializeField] private float _returnAfter = 0f;
+    [SerializeField] private float _returnArriveRadius = 0.8f;
+
+    private float _age;
+
     private GameObject _shooter;
     private DamageInfo _damageInfo;
 
@@ -35,6 +42,7 @@ public class BulletController : MonoBehaviour, IProjectile
     {
         _damageInfo = damageInfo;
         _shooter = shooter;
+        _age = 0f;   // 풀 재사용 — 되돌아오기 시계 초기화
 
         // [핵심] 쏘는 사람 레이어에 따라 내 레이어 결정 -> 매트릭스 설정에 따라 충돌 자동 필터링
         if (shooter.layer == _layerPlayer)
@@ -64,8 +72,48 @@ public class BulletController : MonoBehaviour, IProjectile
 
     void Update()
     {
+        if (_returnAfter > 0f)
+        {
+            MoveBoomerang(Time.deltaTime);
+            return;
+        }
+
         // 앞으로 전진
         transform.Translate(Vector3.forward * _speed * Time.deltaTime);
+    }
+
+    // 나감: _speed → 0 감속 (_returnAfter초) / 돌아옴: 0 → _speed 가속(_returnAfter의 절반), 쏜 쪽을 계속 바라보며 따라감
+    private void MoveBoomerang(float dt)
+    {
+        _age += dt;
+
+        if (_age < _returnAfter)
+        {
+            float outSpeed = _speed * (1f - _age / _returnAfter);
+            transform.Translate(Vector3.forward * outSpeed * dt);
+            return;
+        }
+
+        if (_shooter == null || !_shooter.activeInHierarchy)
+        {
+            transform.Translate(Vector3.forward * _speed * dt);
+            return;
+        }
+
+        Vector3 home = _shooter.transform.position;
+        home.y = transform.position.y;                 // 높이는 유지 — 바닥으로 꽂히지 않게
+        Vector3 to = home - transform.position;
+        float dist = to.magnitude;
+
+        if (dist <= _returnArriveRadius)
+        {
+            Managers.Resource.Destroy(gameObject);
+            return;
+        }
+
+        float backSpeed = Mathf.Min(_speed, _speed * (_age - _returnAfter) / (_returnAfter * 0.5f));
+        transform.rotation = Quaternion.LookRotation(to / dist);
+        transform.position += (to / dist) * Mathf.Min(backSpeed * dt, dist);
     }
 
     private void OnTriggerEnter(Collider other)

@@ -26,6 +26,13 @@ public class BossDungeonScene : BaseScene
 
     private DungeonSequenceDirector _clearDirector;
 
+    // [임시 하드코딩] Hard = 반전(Insane) 맵 · 보스. 보스 키 데이터화(난이도 → 맵 · 보스 키) 전까지만.
+    // 스탯 데이터는 원본 키 그대로 — 바뀌는 것은 프리팹(에셋)뿐.
+    private const string BossDataKey   = "Hieronymus_Boss";
+    private const string InsaneMapKey  = "BossDungeonMap_Insane";
+    private const string InsaneBossKey = "Hieronymus_Boss_Insane";
+    private static bool IsInsane => Managers.Context.SelectedDifficulty == Define.DungeonDifficulty.Hard;
+
     protected override async void Init()
     {
         base.Init();
@@ -87,7 +94,9 @@ public class BossDungeonScene : BaseScene
         GameObject root = new GameObject { name = "@Map" };
 
         // ResourceManager에 위임
-        GameObject prefab = await Managers.Resource.LoadAsync<GameObject>(_preloadData.bossDungeon);
+        GameObject prefab = IsInsane
+            ? await Managers.Resource.LoadAsync<GameObject>(InsaneMapKey)
+            : await Managers.Resource.LoadAsync<GameObject>(_preloadData.bossDungeon);
 
         if (prefab != null)
         {
@@ -195,10 +204,11 @@ public class BossDungeonScene : BaseScene
 
         _bossSpawnPoint = _curMap.transform.Find("BossSpawnPoint");
 
-        string addressableKey = "Hieronymus_Boss";
+        string prefabKey = IsInsane ? InsaneBossKey : BossDataKey;
 
         GameObject boss = await MonsterFactory.CreateMonsterByAddressableKeyAsync(
-            addressableKey,
+            BossDataKey,
+            prefabKey,
             Managers.Context.CurrentDungeonID,
             _bossSpawnPoint.position,
             _bossSpawnPoint.rotation
