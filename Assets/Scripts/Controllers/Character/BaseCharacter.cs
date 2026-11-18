@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Playables;
 
-public class BaseCharacter : MonoBehaviour, IAbilityCaster
+public class BaseCharacter : MonoBehaviour, IAnchorSet
 {
     [Header("Base Settings")]
     [SerializeField] protected float _speed = 5.0f;
@@ -20,16 +20,23 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     [SerializeField] protected Transform _firePoint;
     //[SerializeField] protected ParticleSystem fireEffectParticle;
 
-    [SerializeField] protected List<AbilitySlotEntry> _abilities = new List<AbilitySlotEntry>();
-    // 슬롯 하나당 어빌리티 "리스트". 인스펙터에 같은 슬롯을 여러 개 넣으면 그 순서가 비트 인덱스가 된다.
-    private Dictionary<CharacterAbilitySlot, List<AbilityData>> _slotMap;
-    private readonly AbilityRunner _abilityRunner = new AbilityRunner();
-    private GameplayTagContainer _ownedTags;   // 캐스터 보유 태그 (게이트 판독·GrantsTags 부여 대상)
+    [Header("Skill (SkillSystem) — 몬스터 · 보스와 같은 실행 구조, 고르는 곳만 입력")]
+    [SerializeField] protected Pattern _attackPattern;     // 평타 — Attack 상태 동안 애니 비트를 받는다
+    [SerializeField] protected Pattern _qPattern;          // Q — 컷신 뒤 Q_Skill 상태 동안 애니 비트를 받는다 (없으면 Q 불가)
+    [Tooltip("애니 이벤트 AbilityBeat의 intParameter(비트 번호) → 이 목록의 태그로 SkillSystem에 보낸다")]
+    [SerializeField] protected List<GameplayTagSO> _beatTags = new List<GameplayTagSO>();
+    private SkillSystem _ss;
 
     [Header("Role")]
     [SerializeField] protected RoleDataSO _roleData;          // 역할 (= E스킬을 결정)
-    [SerializeField] protected AbilityData _eAbilityOverride; // 있으면 역할 기본 E를 덮어씀 (모델 1)
-    protected AbilityData _eAbility;                          // 해석된 E (override ?? 역할 기본)
+    [SerializeField] protected Pattern _ePatternOverride;     // 있으면 역할 기본 E를 덮어씀
+    [Tooltip("역할 E가 없을 때 쓰는 이 캐릭터의 E — 비어 있으면 쿨 · 애니만")]
+    [SerializeField] protected Pattern _eDefaultPattern;
+    protected Pattern _ePattern;                              // 해석된 E (override ?? 역할 기본의 복제 ?? 기본)
+
+    // 이관 원본 (AbilitySystem) — Tools/Player/Migrate Abilities to SkillSystem 이 읽는다. 이관 확인 뒤 삭제
+    [SerializeField, HideInInspector] protected List<AbilitySlotEntry> _abilities = new List<AbilitySlotEntry>();
+    [SerializeField, HideInInspector] protected AbilityData _eAbilityOverride;
 
     public CharacterStat Stat { get; private set; }
     public IInteractable CurrentInteractable { get; private set; }
@@ -49,40 +56,15 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
 
     public event Action<BaseCharacter> OnCharacterDead;
 
-    #region Ability
+    #region Skill
 
-    // 슬롯 → 어빌리티 리스트 매핑 구축. 역할(_eAbility) 해석 이후에 호출해야 한다.
-    // 인스펙터 _abilities의 등장 순서 = 각 슬롯 리스트 내 비트 인덱스.
-    protected void BuildSlotMap()
+    private Pattern SlotPattern(CharacterAbilitySlot slot) => slot switch
     {
-        _slotMap = new Dictionary<CharacterAbilitySlot, List<AbilityData>>();
-        foreach (var e in _abilities)
-        {
-            if (e.Ability == null) continue;
-            if (!_slotMap.TryGetValue(e.Slot, out var list))
-                _slotMap[e.Slot] = list = new List<AbilityData>();
-            list.Add(e.Ability);
-        }
-
-        // 역할이 부여한 E를 Ex 슬롯 [0]으로 흡수 (별도 경로 제거)
-        if (_eAbility != null)
-        {
-            if (!_slotMap.TryGetValue(CharacterAbilitySlot.E_Skill, out var exList))
-                _slotMap[CharacterAbilitySlot.E_Skill] = exList = new List<AbilityData>();
-            exList.Insert(0, _eAbility);
-        }
-    }
-
-    // 비트(fire) 전용 진입점. slot = 어느 스킬(상태가 결정), beat = 그 슬롯 안에서 몇 번째 발사.
-    // 평타·Q는 애니메이션 이벤트(AbilityBeat)가 이걸 부른다. 쿨/코스트는 admission(UseSkillQ 등의 Commit)이 소유하므로
-    // 여기선 이펙트만 발사한다(무게이트).
-    public void UseAbility(CharacterAbilitySlot slot, int beat = 0)
-    {
-        var token = _actionCts?.Token ?? CancellationToken.None;
-        if (_slotMap.TryGetValue(slot, out var list) && beat >= 0 && beat < list.Count)
-            _abilityRunner.Fire(list[beat], BuildCtx(), token).Forget();
-    }
-
+        CharacterAbilitySlot.BaseAttack => _attackPattern,
+        CharacterAbilitySlot.Q_Skill => _qPattern,
+        CharacterAbilitySlot.E_Skill => _ePattern,
+        _ => null,
+    };
 
     private float SlotCooldown(CharacterAbilitySlot slot) => slot switch
     {
@@ -91,31 +73,46 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         _ => 0f,   // 평타: 쿨 없음
     };
 
-    public float SlotCooldownRemaining(CharacterAbilitySlot slot) => _slotMap.TryGetValue(slot, out var ability)
-        && ability.Count > 0 ? _abilityRunner.CooldownRemaining(ability[0]) : 0f;
+    public float SlotCooldownRemaining(CharacterAbilitySlot slot) => _ss != null ? _ss.CooldownRemaining(SlotPattern(slot)) : 0f;
 
-    public float SlotCooldownDuration(CharacterAbilitySlot slot) => _slotMap.TryGetValue(slot, out var ability)
-        && ability.Count > 0 ? _abilityRunner.CooldownDuration(ability[0]) : 0f;
+    public float SlotCooldownDuration(CharacterAbilitySlot slot) => _ss != null ? _ss.CooldownDuration(SlotPattern(slot)) : 0f;
 
-    // 궁극기(Q) 준비 = 에너지 만충 && Q 쿨 0. 쿨은 러너(절대시각)라 "쿨 끝남" 이벤트가 없어 UI가 폴링으로 읽는다.
+    // 궁극기(Q) 준비 = 에너지 만충 && Q 쿨 0. 쿨은 SkillSystem(절대시각)이라 "쿨 끝남" 이벤트가 없어 UI가 폴링으로 읽는다.
     public bool IsUltimateReady =>
         Stat != null
         && Stat.CurrentEnergy >= Stat.MaxEnergy.Value
         && SlotCooldownRemaining(CharacterAbilitySlot.Q_Skill) <= 0f;
 
-    private AbilityContext BuildCtx()
+    // 몬스터의 BuildContext와 같은 자리 — 시전자 · 소켓(총구) · 스탯 · 지금 상태의 토큰
+    private PatternContext BuildCtx() => new PatternContext
     {
-        var ctx = new AbilityContext
-        {
-            Caster = this,
-            CasterGO = gameObject,
-            CasterStat = Stat,
-            Object = _firePoint,   // 총구 = 스폰 기준 (aim은 캐릭터 회전이 firePoint에 반영됨)
-            Target = null,
-            TargetPoint = transform.position + transform.forward,
-            Tags = _ownedTags,   // 태그 게이트 판독 대상
-        };
-        return ctx;
+        owner = _ss,
+        targets = null,
+        sockets = this,
+        cToken = _actionCts != null ? _actionCts.Token : CancellationToken.None,
+        stat = Stat,
+    };
+
+    // 소켓 — "Muzzle" = 총구, 그 밖은 VfxAnchorSet의 부착점
+    public bool TryGet(string key, out Transform t)
+    {
+        t = null;
+        if (key == "Muzzle") t = _firePoint;
+        else if (TryGetComponent(out VfxAnchorSet set)) t = set.Get(key);
+        return t != null;
+    }
+
+    // 역할 E — 역할이 든 패턴 프리팹을 내 밑에 하나 복제 (같은 역할끼리 프리팹 공유, 실행 상태는 캐릭터마다)
+    private void ResolveEPattern()
+    {
+        if (_ePattern != null) return;
+        if (_ePatternOverride != null) { _ePattern = _ePatternOverride; return; }
+        if (_roleData == null || _roleData.ePattern == null) { _ePattern = _eDefaultPattern; return; }
+
+        Transform parent = transform.Find("Skills");
+        if (parent == null) parent = transform;
+        _ePattern = Instantiate(_roleData.ePattern, parent);
+        _ePattern.name = _roleData.ePattern.name;
     }
 
     #endregion
@@ -134,14 +131,15 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         // 데미지 표시(토스트) 책임을 Stat에서 분리 — DamageNumberPresenter 부착·바인딩
         DamageNumberPresenter.EnsureOn(gameObject, Stat);
 
-        // 보유 태그 컨테이너 확보 (게이트 판독용). 저장=Owner, 만료=StatusRunner, 판독=AbilityRunner.
-        _ownedTags = GameplayTagOwner.EnsureOn(gameObject).Owned;
+        // 보유 태그 컨테이너 확보 (상태 태그 부착 대상). 저장=Owner, 만료=StatusRunner.
+        GameplayTagOwner.EnsureOn(gameObject);
 
-        // E스킬 해석 (모델 1): 캐릭터 오버라이드가 있으면 그것, 없으면 역할 기본 E
-        _eAbility = _eAbilityOverride != null ? _eAbilityOverride
-                  : (_roleData != null ? _roleData.eAbility : null);
+        // 스킬 실행 = SkillSystem (몬스터 · 보스와 같은 컴포넌트)
+        _ss = GetComponent<SkillSystem>();
+        if (_ss == null) _ss = gameObject.AddComponent<SkillSystem>();
 
-        BuildSlotMap();
+        // E스킬 해석: 캐릭터 오버라이드가 있으면 그것, 없으면 역할 기본 E
+        ResolveEPattern();
 
         _stateMachine = new CharacterStateMachine();
         _movement = new CharacterMovement(transform, _speed);
@@ -182,6 +180,7 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     {
         if (Stat != null) Stat.HealthComp.OnDead -= HandleDeath;
         CancelCurrentAction();
+        _ss?.Cancel();   // 교체로 꺼질 때 하던 패턴을 들고 있지 않게
     }
 
     #endregion
@@ -220,16 +219,12 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     public void UseSkillQ()
     {
         if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.HealthComp.IsDead) return;
-        if (!_slotMap.TryGetValue(CharacterAbilitySlot.Q_Skill, out var list) || list.Count == 0) return;
-
-        AbilityData q0 = list[0];
+        if (_qPattern == null) return;
         if (Stat.CurrentEnergy < Stat.MaxEnergy.Value) return;   // 궁게이지 만충이어야 발동
 
         // 쿨·궁게이지는 '입력 시점'에 소비한다(컷신 내내 쿨이 도는 게 보여야 함).
-        // 이펙트는 이후 Q_Skill 애니의 AbilityBeat → UseAbility(Q_Skill) → Fire 로 나간다.
-        var ctx = BuildCtx();
-        ctx.CoolDown = SlotCooldown(CharacterAbilitySlot.Q_Skill);
-        if (!_abilityRunner.Commit(q0, ctx)) return;             // 쿨 검사+시작(입력 시점)
+        // 패턴은 컷신 뒤 Q_Skill 상태에 들어갈 때 시작하고, 그 애니의 비트를 받는다 (OnStateChanged).
+        if (!_ss.TryCommit(_qPattern, SlotCooldown(CharacterAbilitySlot.Q_Skill))) return;   // 쿨 검사+시작(입력 시점)
         Stat.ConsumeUltimateGauge();                             // 궁게이지 0 + OnEnergyChanged
 
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.QSkillCutScene);
@@ -239,20 +234,15 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     {
         if (!_stateMachine.CanUseSkill || IsUsingSkill || Stat.HealthComp.IsDead) return;
 
-        if (!_slotMap.TryGetValue(CharacterAbilitySlot.E_Skill, out var list) || list.Count == 0) return;
+        if (_ePattern == null) return;
 
-        AbilityData e0 = list[0];
-
-        // E는 즉발: 게이트(쿨)와 발사가 같은 순간. Commit(쿨 검사+시작) 통과 시에만 상태전이 후 Fire.
-        var ctx = BuildCtx();
-        ctx.CoolDown = SlotCooldown(CharacterAbilitySlot.E_Skill);
-        if (!_abilityRunner.Commit(e0, ctx)) return;
+        // E는 즉발: 게이트(쿨)와 시작이 같은 순간. 쿨 통과 시에만 상태전이 후 시작.
+        if (!_ss.TryCommit(_ePattern, SlotCooldown(CharacterAbilitySlot.E_Skill))) return;
 
         _stateMachine.ChangeState(CharacterStateMachine.PlayerState.E_Skill);
 
-        // ChangeState 후 새로 만들어진 액션 토큰으로 발사(상태가 다시 바뀌면 캐스트 취소되도록)
-        var token = _actionCts?.Token ?? CancellationToken.None;
-        _abilityRunner.Fire(e0, ctx, token).Forget();
+        // ChangeState 후 새로 만들어진 액션 토큰으로 시작(상태가 다시 바뀌면 끊기도록)
+        _ss.PlaySkill(_ePattern, BuildCtx(), beginNow: true);
     }
 
 
@@ -293,6 +283,19 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     {
         CancelCurrentAction();
         _actionCts = new CancellationTokenSource();
+
+        // 상태가 바뀌면 하던 패턴은 끝 — 새 상태가 패턴을 갖고 있으면 그걸 시작 (비트를 받는 쪽)
+        if (_ss != null)
+        {
+            _ss.Cancel();
+            Pattern p = newState switch
+            {
+                CharacterStateMachine.PlayerState.Attack => _attackPattern,
+                CharacterStateMachine.PlayerState.Q_Skill => _qPattern,
+                _ => null,
+            };
+            if (p != null) _ss.PlaySkill(p, BuildCtx(), beginNow: true);
+        }
 
         Stat.HealthComp.IsInvincible = newState == CharacterStateMachine.PlayerState.QSkillCutScene
                          || newState == CharacterStateMachine.PlayerState.Q_Skill
@@ -430,7 +433,10 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
         if (e.objectReferenceParameter is AudioClip sfx)
             Managers.Sound.Play(sfx, Define.Sound.Effect);
 
-        UseAbility(slot, e.intParameter);   // intParameter = 비트 인덱스
+        // 지금 상태의 패턴(OnStateChanged에서 시작)이 이 비트 태그를 받아 Task → Event를 실행한다
+        int beat = e.intParameter;
+        if (_ss != null && beat >= 0 && beat < _beatTags.Count && _beatTags[beat] != null)
+            _ss.SendTag(_beatTags[beat]);
     }
 
     // 현재 상태에 대응하는 슬롯. 대응이 없으면 -1(무효)을 돌려 비트를 무시하게 한다.
@@ -446,10 +452,6 @@ public class BaseCharacter : MonoBehaviour, IAbilityCaster
     #endregion
 
     #region Virtual Methods
-
-    // 기본 평타 = Attack 슬롯 발동. 대부분의 캐릭터는 이 기본만으로 충분하다(서브클래스 불필요).
-    // 차징·특수 발동이 필요한 캐릭터만 override 한다.
-    protected virtual void PerformAttackAction() => UseAbility(CharacterAbilitySlot.BaseAttack);
 
     protected virtual void PlaySFXOnly() { }
     protected virtual void PlaySFX() { }

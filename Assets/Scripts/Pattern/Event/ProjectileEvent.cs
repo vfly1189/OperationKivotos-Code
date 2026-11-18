@@ -12,10 +12,15 @@ public class ProjectileEvent : PatternEvent
 
     [SerializeField] private DamageSpec _damage;
 
+    [Tooltip("켜면 탄마다 따로 패킹 — 치명타를 탄마다 굴린다(플레이어 연사 · 산탄). 끄면 발사 한 번에 한 번")]
+    [SerializeField] private bool _packPerShot;
+
     protected override UniTask FireAsync(PatternContext ctx, CancellationToken token)
     {
-        DamageInfo packet = _damage.Pack(ctx);
         GameObject shooter = ctx.owner.gameObject;
+        if (_packPerShot) return _emit.Run(ctx, p => Shoot(p, _damage.Pack(ctx), shooter), token);
+
+        DamageInfo packet = _damage.Pack(ctx);
         return _emit.Run(ctx, p => Shoot(p, packet, shooter), token);
     }
 

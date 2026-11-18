@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum AnchorSource { Caster, Target, Socket, Saved }
-public enum FacingSource { AnchorForward, TowardTarget, World }
+public enum FacingSource { AnchorForward, TowardTarget, World, CasterForward }   // CasterForward = 시전자 몸통(조준) 방향 — 총구 본이 몸통과 다른 축이어도
 public enum PointFacing { Inherit, Outward, Inward }   // 모양이 만든 점 하나하나가 볼 쪽
 
 // 기준점 하나 — 어디서(source) · 어느 쪽을 앞으로(facing) · 얼마나 떨어져(offset).
@@ -76,6 +76,10 @@ public struct Anchor
 
             case FacingSource.World:
                 rot = Quaternion.identity;
+                break;
+
+            case FacingSource.CasterForward:
+                if (ctx.owner != null) rot = ctx.owner.transform.rotation;
                 break;
         }
 

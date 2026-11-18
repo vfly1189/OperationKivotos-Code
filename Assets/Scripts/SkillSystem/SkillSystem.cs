@@ -11,7 +11,7 @@ using UnityEngine.Playables;
 public class SkillSystem : MonoBehaviour
 {
     private Animator _animator;
-    private MonsterStat _stat;
+    private BaseStat _stat;   // 몬스터 · 캐릭터 공용
 
     private NodeState _state = NodeState.Failure;
 
@@ -20,6 +20,8 @@ public class SkillSystem : MonoBehaviour
 
     private readonly HashSet<Pattern> _granted = new HashSet<Pattern>();
     public Dictionary<Pattern, float> _patternLastUsedTime = new Dictionary<Pattern, float>();
+    // 쿨 길이를 부르는 쪽이 정한 패턴 (플레이어 Q · E = 캐릭터 데이터의 쿨). 없으면 Pattern._coolDown
+    private readonly Dictionary<Pattern, float> _cooldownOverride = new Dictionary<Pattern, float>();
 
     private PatternRunner _runner = new PatternRunner();
     //Effect 목록
@@ -29,7 +31,7 @@ public class SkillSystem : MonoBehaviour
     public void Awake()
     {
         _animator = GetComponent<Animator>();
-        _stat = GetComponent<MonsterStat>();
+        _stat = GetComponent<BaseStat>();
 
     }
 
@@ -54,17 +56,41 @@ public class SkillSystem : MonoBehaviour
         return true;
     }
 
-    public void PlaySkill(Pattern pattern, PatternContext ctx)
+    // beginNow = 첫 동작을 이 자리에서 시작 — 같은 프레임에 들어올 신호를 놓치지 않게 (플레이어 입력 · 애니 비트)
+    public void PlaySkill(Pattern pattern, PatternContext ctx, bool beginNow = false)
     {
         _runner.Start(pattern, ctx);
+        if (beginNow && _runner.IsBusy && _runner.Tick() == NodeState.Success) PatternEnded?.Invoke();
     }
+
+    // 게이트만 — 쿨 검사 + 쿨 시작. 실행은 PlaySkill이 따로 (입력 시점에 쿨을 걸고 실행은 나중인 플레이어 Q)
+    public bool TryCommit(Pattern pattern, float cooldown)
+    {
+        if (pattern == null || !CheckIsCoolDown(pattern) || !CheckCurrentTag()) return false;
+        _cooldownOverride[pattern] = cooldown;
+        _patternLastUsedTime[pattern] = Time.time;
+        return true;
+    }
+
+    private float CooldownOf(Pattern pattern)
+        => _cooldownOverride.TryGetValue(pattern, out float cd) ? cd : pattern._coolDown;
 
     //true면 사용가능, false면 사용 불가능
     public bool CheckIsCoolDown(Pattern pattern)
     {
         if (!_patternLastUsedTime.TryGetValue(pattern, out float last)) return true;
-        return last + pattern._coolDown < Time.time;
+        return last + CooldownOf(pattern) < Time.time;
     }
+
+    // UI 폴링용 — 절대시각이라 꺼져 있던 동안(캐릭터 교체)에도 흐른다
+    public float CooldownRemaining(Pattern pattern)
+    {
+        if (pattern == null || !_patternLastUsedTime.TryGetValue(pattern, out float last)) return 0f;
+        return Mathf.Max(0f, last + CooldownOf(pattern) - Time.time);
+    }
+
+    public float CooldownDuration(Pattern pattern)
+        => pattern != null && _patternLastUsedTime.ContainsKey(pattern) ? CooldownOf(pattern) : 0f;
 
     //나중에 태그에 Stunned , Casting .. 이런 상태라면 false 처리
     //일단은 true
@@ -96,5 +122,6 @@ public class SkillSystem : MonoBehaviour
     public void ResetState()
     {
         _patternLastUsedTime.Clear();
+        _cooldownOverride.Clear();
     }
 }

@@ -8,6 +8,10 @@ public class RoleDataSO : ScriptableObject
     public ERole role;
 
     [Header("역할이 부여하는 E스킬 (역할이 결정, 캐릭터 아님)")]
+    [Tooltip("E 패턴 프리팹 — 캐릭터가 Init에서 자기 밑에 하나 만들어 SkillSystem으로 돌린다")]
+    public Pattern ePattern;
+
+    [HideInInspector, Tooltip("이관 원본 (AbilitySystem) — Tools/Player/Migrate Abilities to SkillSystem 이 읽는다")]
     public AbilityData eAbility;
 
     // 후속(Phase 2~3): 역할 소유 태그(Role.XXX), 역할 패시브 등
